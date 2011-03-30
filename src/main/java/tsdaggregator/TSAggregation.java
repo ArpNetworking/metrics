@@ -33,9 +33,10 @@ public class TSAggregation {
 			//Calculate the start of the new aggregation
 			DateTime hour = time.hourOfDay().roundFloorCopy();
 			DateTime startPeriod = hour;
-			while (startPeriod.isBefore(time) && startPeriod.plus(_Specifier.getPeriod()).isAfter(time)) {
+			while (!(startPeriod.isBefore(time) && startPeriod.plus(_Specifier.getPeriod()).isAfter(time))) {
 				startPeriod = startPeriod.plus(_Specifier.getPeriod());
 			}
+			_PeriodStart = startPeriod;
 			emitAggregations();
 			_NumberOfSamples = 0;
 			_Samples.clear();
@@ -46,6 +47,9 @@ public class TSAggregation {
 	{
 		System.out.println("emitting statistics");
 		Double[] dsamples = _Samples.toArray(new Double[0]);
+		if (dsamples.length == 0) {
+			return;
+		}
 		for (Statistic s : _Statistics) {
 			System.out.println(s.getName() + ": " + s.calculate(dsamples));
 		}

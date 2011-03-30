@@ -11,7 +11,7 @@ public class TPStatistic implements Statistic{
 	}
 	
 	public  Double calculate(Double[] orderedValues) {
-		int index = (int) (Math.ceil(_TStat * (orderedValues.length - 1)));
+		int index = (int) (Math.ceil((_TStat / 100) * (orderedValues.length - 1)));
 		return orderedValues[index];
 	}
 }
