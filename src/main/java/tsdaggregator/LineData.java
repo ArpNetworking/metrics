@@ -3,6 +3,7 @@ package tsdaggregator;
 import java.util.*;
 
 import org.joda.time.DateTime;
+import org.joda.time.chrono.ISOChronology;
 
 public class LineData {
 	Map<String, Double> _Variables = new HashMap<String, Double>();
@@ -22,10 +23,14 @@ public class LineData {
     			vals.put(splits[0].trim(), value);
     		}
     	}
-    	Double time = vals.get("timestamp");
-    	//double with whole number unix time, and fractional seconds
-    	Long ticks = Math.round(time * 1000);  
-    	_Time = new DateTime(ticks);
+    	if (vals.containsKey("initTimestamp")) {
+	    	Double time = vals.get("initTimestamp");
+	    	//double with whole number unix time, and fractional seconds
+	    	Long ticks = Math.round(time * 1000);  
+	    	_Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
+	    	vals.remove("initTimestamp");
+		}
+    	
     	_Variables = vals;
 	}
 	

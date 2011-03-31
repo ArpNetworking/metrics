@@ -14,4 +14,13 @@ public class TPStatistic implements Statistic{
 		int index = (int) (Math.ceil((_TStat / 100) * (orderedValues.length - 1)));
 		return orderedValues[index];
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof TPStatistic) {
+			TPStatistic other = (TPStatistic)obj;
+			return other._TStat.equals(_TStat);
+		}
+		return false;
+	}
 }

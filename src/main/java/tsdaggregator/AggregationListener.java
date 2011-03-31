@@ -1,5 +1,5 @@
 package tsdaggregator;
 
 public interface AggregationListener {
-	void PostFoo();
+	void recordAggregation(AggregatedData data);
 }

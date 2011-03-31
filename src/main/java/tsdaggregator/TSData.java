@@ -8,10 +8,10 @@ public class TSData {
 	private String _MetricName;
 	private Set<TSAggregation> _Aggregations = new HashSet<TSAggregation>();
 	
-	public TSData(String metricName, Set<AggregationSpecifier> aggregations)
+	public TSData(String metricName, Set<Period> aggregations)
 	{
-		for (AggregationSpecifier spec : aggregations) {
-			_Aggregations.add(new TSAggregation(spec));
+		for (Period period : aggregations) {
+			_Aggregations.add(new TSAggregation(period, ConsoleListener.getInstance()));
 		}
 	}
 	
