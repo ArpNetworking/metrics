@@ -7,6 +7,7 @@ public class AggregatedData {
 	Statistic _Statistic;
 	String _Service;
 	String _Host;
+	String _Metric;
 	Double _Value;
 	DateTime _PeriodStart;
 	Period _Period;
@@ -46,6 +47,12 @@ public class AggregatedData {
 	}
 	public void setPeriodStart(DateTime periodStart) {
 		_PeriodStart = periodStart;
+	}
+	public void setMetric(String value) {
+		_Metric = value;
+	}
+	public String getMetric() {
+		return _Metric;
 	}
 
 	@Override

@@ -7,9 +7,10 @@ package tsdaggregator;
 
 import java.io.*;
 import java.util.*;
+
 import org.apache.commons.cli.*;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.joda.time.Period;
 
 /**
  *
@@ -17,7 +18,7 @@ import org.apache.log4j.PropertyConfigurator;
  */
 public class TsdAggregator {
 	
-	static Logger _Logger = Logger.getLogger(TsdAggregator.class);
+	static final Logger _Logger = Logger.getLogger(TsdAggregator.class);
 
     /**
      * @param args the command line arguments
@@ -36,9 +37,6 @@ public class TsdAggregator {
 			printUsage(options);
 			return;
 		}
-		
-		PropertyConfigurator.configure("log4j.properties");
-		
 		
 		if (!cl.hasOption("f")) {
 			System.err.println("no file found, must specify file on the command line");
@@ -61,21 +59,36 @@ public class TsdAggregator {
 		_Logger.info("using file " + cl.getOptionValue("f"));
 		_Logger.info("using hostname " + cl.getOptionValue("h"));
 		_Logger.info("using servicename " + cl.getOptionValue("s"));
+		
+		Set<Period> defaultPeriods = new HashSet<Period>();
+		defaultPeriods.add(Period.minutes(1));
+		defaultPeriods.add(Period.minutes(5));
+		defaultPeriods.add(Period.minutes(60));
+		
     	
     	
         HashMap<String, TSData> aggregations = new HashMap<String, TSData>();
         try {
-			FileReader fileReader = new FileReader(args[0]);
+			FileReader fileReader = new FileReader(cl.getOptionValue("f"));
 			BufferedReader reader = new BufferedReader(fileReader);
 			String line;
 			while ((line = reader.readLine()) != null) {
-				System.out.println(line);
+				//System.out.println(line);
 				LineData data = new LineData();
 				data.parseLogLine(line);
 				for (Map.Entry<String, Double> entry : data.getVariables().entrySet()) {
 					TSData tsdata = aggregations.get(entry.getKey());
+					if (tsdata == null) {
+						tsdata = new TSData(entry.getKey(), defaultPeriods);
+						aggregations.put(entry.getKey(), tsdata);
+					}
 					tsdata.addMetric(entry.getValue(), data.getTime());
 				}
+			}
+			
+			//close all aggregations
+			for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
+				entry.getValue().close();
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

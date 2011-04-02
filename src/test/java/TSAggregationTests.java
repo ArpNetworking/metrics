@@ -1,3 +1,5 @@
+import java.util.*;
+
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.integration.junit4.JMock;
@@ -17,7 +19,7 @@ public class TSAggregationTests {
 	@Test
 	public void TestContruct() {
 		Period period = new Period(0, 5, 0, 0);
-		TSAggregation agg = new TSAggregation(period, ConsoleListener.getInstance());
+		TSAggregation agg = new TSAggregation("test metric", period, ConsoleListener.getInstance());
 		Assert.assertNotNull(agg);
 	}
 	
@@ -25,6 +27,10 @@ public class TSAggregationTests {
 	public void TestSimpleAggregation() {
 		final Period period = new Period(0, 5, 0, 0);
 		final AggregationListener listener = context.mock(AggregationListener.class);
+		Set<Statistic> stats = new HashSet<Statistic>();
+		stats.add(new TPStatistic(100d));
+		stats.add(new TPStatistic(50d));
+		stats.add(new TPStatistic(0d));
 		
 		final AggregatedData tp100data = new AggregatedData() {{ 
 			setPeriod(period); 
@@ -59,7 +65,7 @@ public class TSAggregationTests {
 			oneOf(listener).recordAggregation(with(equal(tp50data)));
 		}});
 		
-		TSAggregation agg = new TSAggregation(period, listener);
+		TSAggregation agg = new TSAggregation("foometric", period, listener, stats);
 		agg.addSample(1d, new DateTime(2011, 1, 3, 15, 23, 38, 181, DateTimeZone.UTC));
 		agg.addSample(2d, new DateTime(2011, 1, 3, 15, 23, 39, 181, DateTimeZone.UTC));
 		agg.addSample(3d, new DateTime(2011, 1, 3, 15, 23, 40, 181, DateTimeZone.UTC));

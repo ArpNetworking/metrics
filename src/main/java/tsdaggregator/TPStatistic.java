@@ -1,13 +1,19 @@
 package tsdaggregator;
 
+import java.text.DecimalFormat;
+
+import org.apache.log4j.Logger;
+
 public class TPStatistic implements Statistic{
+	static final Logger _Logger = Logger.getLogger(TPStatistic.class);
+	static final DecimalFormat FORMAT = new DecimalFormat("##0.#");
 	Double _TStat = 0.0;
 	public TPStatistic(Double tstat) {
 		_TStat = tstat;
 	}
 	
 	public String getName()	{
-		return "tp" + _TStat.toString();
+		return "tp" + FORMAT.format(_TStat);
 	}
 	
 	public  Double calculate(Double[] orderedValues) {

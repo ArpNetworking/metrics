@@ -10,7 +10,7 @@ public class ConsoleListener implements AggregationListener {
 	}
 	@Override
 	public void recordAggregation(AggregatedData data) {
-		System.out.println(data.getHost() + "\\" + data.getService()
+		System.out.println(data.getHost() + "::" + data.getService() + "::" + data.getMetric()
 				+ " " + data.getPeriodStart() + " [" + data.getPeriod() + "] " + 
 				data.getStatistic().getName() + ": " +
 				data.getValue().toString());

@@ -1,29 +1,40 @@
 package tsdaggregator;
 
-import java.util.AbstractList;
-import java.util.ArrayList;
-
-import org.apache.commons.collections.list.*;
+import java.util.*;
 import org.joda.time.*;
 
 public class TSAggregation {
 	Period _Period;
 	Integer _NumberOfSamples = 0;
-	@SuppressWarnings("unchecked")
-	AbstractList<Double> _Samples = new TreeList();
+	ArrayList<Double> _Samples = new ArrayList<Double>();
 	DateTime _PeriodStart = new DateTime(0);
-	ArrayList<Statistic> _Statistics = new ArrayList<Statistic>();
+	Set<Statistic> _Statistics = new HashSet<Statistic>();
+	String _Metric;
 	AggregationListener _Listener;
+	private static final Set<Statistic> DEFAULT_STATS = BuildDefaultStats();
 	
-	
-	public TSAggregation(Period period, AggregationListener listener) {
-		_Period = period;
-		_Statistics.add(new TPStatistic(100d));
-		_Statistics.add(new TPStatistic(50d));
-		_Statistics.add(new TPStatistic(0d));
-		_Listener = listener;
+	private static Set<Statistic> BuildDefaultStats() {
+		Set<Statistic> stats = new HashSet<Statistic>();
+		stats.add(new TPStatistic(100d));
+		stats.add(new TPStatistic(99d));
+		stats.add(new TPStatistic(99.9d));
+		stats.add(new TPStatistic(50d));
+		stats.add(new TPStatistic(0d));
+		stats.add(new NStatistic());
+		stats.add(new MeanStatistic());
+		return stats;
 	}
 	
+	public TSAggregation(String metric, Period period, AggregationListener listener) {
+		this(metric, period, listener, DEFAULT_STATS);
+	}
+	public TSAggregation(String metric, Period period, AggregationListener listener, Set<Statistic> stats) {
+		_Metric = metric;
+		_Period = period;
+		_Statistics.addAll(stats);
+		
+		_Listener = listener;
+	}
 	public void addSample(Double value, DateTime time) {
 		rotateAggregation(time);
 		_Samples.add(value);
@@ -45,6 +56,10 @@ public class TSAggregation {
 		}
 	}
 	
+	public void close() {
+		emitAggregations();
+	}
+	
 	public AggregationListener getListener() {
 		return _Listener;
 	}
@@ -55,6 +70,7 @@ public class TSAggregation {
 
 	private void emitAggregations()
 	{
+		Collections.sort(_Samples);
 		Double[] dsamples = _Samples.toArray(new Double[0]);
 		if (dsamples.length == 0) {
 			return;
@@ -69,6 +85,7 @@ public class TSAggregation {
 				data.setStatistic(stat);
 				data.setValue(value);
 				data.setPeriodStart(_PeriodStart);
+				data.setMetric(_Metric);
 				_Listener.recordAggregation(data);
 			}
 		}
