@@ -29,6 +29,7 @@ public class TsdAggregator {
     	options.addOption("f", "file", true, "file to be parsed");
     	options.addOption("s", "service", true, "service name");
     	options.addOption("h", "host", true, "host the metrics were generated on");
+    	options.addOption("u", "uri", true, "metrics server uri");
     	CommandLineParser parser = new PosixParser();
     	CommandLine cl;
     	try {
@@ -56,16 +57,24 @@ public class TsdAggregator {
 			return;
 		}
 		
+		if (!cl.hasOption("u")) {
+			System.err.println("metrics server uri not specified");
+			printUsage(options);
+			return;
+		}
+		
 		_Logger.info("using file " + cl.getOptionValue("f"));
 		_Logger.info("using hostname " + cl.getOptionValue("h"));
 		_Logger.info("using servicename " + cl.getOptionValue("s"));
+		_Logger.info("using uri " + cl.getOptionValue("u"));
 		
 		Set<Period> defaultPeriods = new HashSet<Period>();
 		defaultPeriods.add(Period.minutes(1));
 		defaultPeriods.add(Period.minutes(5));
 		defaultPeriods.add(Period.minutes(60));
 		
-    	
+    	AggregationListener httpListener = new HttpPostListener(cl.getOptionValue("u"));
+    	AggregationListener listener = new BufferingListener(httpListener, 50);
     	
         HashMap<String, TSData> aggregations = new HashMap<String, TSData>();
         try {
@@ -79,7 +88,7 @@ public class TsdAggregator {
 				for (Map.Entry<String, Double> entry : data.getVariables().entrySet()) {
 					TSData tsdata = aggregations.get(entry.getKey());
 					if (tsdata == null) {
-						tsdata = new TSData(entry.getKey(), defaultPeriods);
+						tsdata = new TSData(entry.getKey(), defaultPeriods, listener, cl.getOptionValue("h"), cl.getOptionValue("s"));
 						aggregations.put(entry.getKey(), tsdata);
 					}
 					tsdata.addMetric(entry.getValue(), data.getTime());
@@ -90,6 +99,7 @@ public class TsdAggregator {
 			for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
 				entry.getValue().close();
 			}
+			listener.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
