@@ -16,9 +16,11 @@ public class TSData {
 		}
 	}
 	
-	public void addMetric(Double data, DateTime time) {
+	public void addMetric(ArrayList<Double> data, DateTime time) {
 		for (TSAggregation aggregation : _Aggregations) {
-			aggregation.addSample(data, time);
+                    for (Double val : data) {
+			aggregation.addSample(val, time);
+                    }
 		}
 	}
 	

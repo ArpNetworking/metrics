@@ -85,7 +85,7 @@ public class TsdAggregator {
 				//System.out.println(line);
 				LineData data = new LineData();
 				data.parseLogLine(line);
-				for (Map.Entry<String, Double> entry : data.getVariables().entrySet()) {
+				for (Map.Entry<String, ArrayList<Double>> entry : data.getVariables().entrySet()) {
 					TSData tsdata = aggregations.get(entry.getKey());
 					if (tsdata == null) {
 						tsdata = new TSData(entry.getKey(), defaultPeriods, listener, cl.getOptionValue("h"), cl.getOptionValue("s"));

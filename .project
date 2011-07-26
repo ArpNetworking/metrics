@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
+	<links/>
 	<name>tsdaggregator</name>
 	<comment/>
 	<projects/>
@@ -12,5 +13,5 @@
 			<arguments/>
 		</buildCommand>
 	</buildSpec>
-	<links/>
+	<linkedResources/>
 </projectDescription>
