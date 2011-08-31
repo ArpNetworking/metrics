@@ -30,6 +30,7 @@ public class TsdAggregator {
     	options.addOption("s", "service", true, "service name");
     	options.addOption("h", "host", true, "host the metrics were generated on");
     	options.addOption("u", "uri", true, "metrics server uri");
+        options.addOption("p", "parser", true, "parser to use to parse log lines");
     	CommandLineParser parser = new PosixParser();
     	CommandLine cl;
     	try {
@@ -62,23 +63,27 @@ public class TsdAggregator {
 			printUsage(options);
 			return;
 		}
-		
-		_Logger.info("using file " + cl.getOptionValue("f"));
-		_Logger.info("using hostname " + cl.getOptionValue("h"));
-		_Logger.info("using servicename " + cl.getOptionValue("s"));
-		_Logger.info("using uri " + cl.getOptionValue("u"));
+                
+                String fileName = cl.getOptionValue("f");
+                String hostName = cl.getOptionValue("h");
+		String serviceName = cl.getOptionValue("s");
+                String metricsUri = cl.getOptionValue("u");
+		_Logger.info("using file " + fileName);
+		_Logger.info("using hostname " + hostName);
+		_Logger.info("using servicename " + serviceName);
+		_Logger.info("using uri " + metricsUri);
 		
 		Set<Period> defaultPeriods = new HashSet<Period>();
 		defaultPeriods.add(Period.minutes(1));
 		defaultPeriods.add(Period.minutes(5));
 		defaultPeriods.add(Period.minutes(60));
 		
-    	AggregationListener httpListener = new HttpPostListener(cl.getOptionValue("u"));
+    	AggregationListener httpListener = new HttpPostListener(metricsUri);
     	AggregationListener listener = new BufferingListener(httpListener, 50);
     	
         HashMap<String, TSData> aggregations = new HashMap<String, TSData>();
         try {
-			FileReader fileReader = new FileReader(cl.getOptionValue("f"));
+			FileReader fileReader = new FileReader(fileName);
 			BufferedReader reader = new BufferedReader(fileReader);
 			String line;
 			while ((line = reader.readLine()) != null) {
@@ -88,7 +93,7 @@ public class TsdAggregator {
 				for (Map.Entry<String, ArrayList<Double>> entry : data.getVariables().entrySet()) {
 					TSData tsdata = aggregations.get(entry.getKey());
 					if (tsdata == null) {
-						tsdata = new TSData(entry.getKey(), defaultPeriods, listener, cl.getOptionValue("h"), cl.getOptionValue("s"));
+						tsdata = new TSData(entry.getKey(), defaultPeriods, listener, hostName, serviceName);
 						aggregations.put(entry.getKey(), tsdata);
 					}
 					tsdata.addMetric(entry.getValue(), data.getTime());
