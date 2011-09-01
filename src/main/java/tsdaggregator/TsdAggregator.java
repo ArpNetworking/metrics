@@ -166,7 +166,7 @@ public class TsdAggregator {
             listener = new BufferingListener(httpListener, 50);
         } else if (!outputFile.equals("")) {
             AggregationListener fileListener = new FileListener(outputFile);
-            listener = new BufferingListener(fileListener);
+            listener = new BufferingListener(fileListener, 500);
         }
 
         HashMap<String, TSData> aggregations = new HashMap<String, TSData>();
