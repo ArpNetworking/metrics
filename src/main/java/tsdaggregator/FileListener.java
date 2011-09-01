@@ -20,13 +20,18 @@ public class FileListener implements AggregationListener {
     FileWriter _Writer;
     static final Logger _Logger = Logger.getLogger(FileListener.class);
 
-    public FileListener(String file) throws IOException {
+    public FileListener(String file) {
         _FileName = file;
-        _Writer = new FileWriter(_FileName);
     }
 
     @Override
     public void recordAggregation(AggregatedData[] data) {
+        try {
+            _Writer = new FileWriter(_FileName, true);
+        } catch (IOException ex) {
+            _Logger.error("Could not open output file for writing: " + _FileName, ex);
+            return;
+        }
         StringBuilder sb = new StringBuilder();
         if (data.length > 0) {
             for (AggregatedData d : data) {

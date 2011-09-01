@@ -71,7 +71,7 @@ public class TsdAggregator {
             printUsage(options);
             return;
         }
-        
+
         Class parserClass = QueryLogLineData.class;
         if (cl.hasOption("p")) {
             String lineParser = cl.getOptionValue("p");
@@ -86,13 +86,13 @@ public class TsdAggregator {
                 return;
             }
         }
-        
+
         String[] periodOptions = {"PT1M", "PT5M", "PT1H"};
         if (cl.hasOption("d")) {
             periodOptions = cl.getOptionValues("d");
         }
-        
-        
+
+
         Pattern filter = Pattern.compile(".*");
         if (cl.hasOption("e")) {
             String[] filters = cl.getOptionValues("e");
@@ -106,7 +106,7 @@ public class TsdAggregator {
             }
             filter = Pattern.compile(builder.toString(), Pattern.CASE_INSENSITIVE);
         }
-        
+
         Set<Statistic> statisticsClasses = new HashSet<Statistic>();
         if (cl.hasOption("t")) {
             String[] statisticsStrings = cl.getOptionValues("t");
@@ -142,11 +142,11 @@ public class TsdAggregator {
         if (cl.hasOption("u")) {
             metricsUri = cl.getOptionValue("u");
         }
-        
+
         if (cl.hasOption("o")) {
             outputFile = cl.getOptionValue("o");
         }
-        
+
         _Logger.info("using file " + fileName);
         _Logger.info("using hostname " + hostName);
         _Logger.info("using servicename " + serviceName);
@@ -165,18 +165,12 @@ public class TsdAggregator {
             AggregationListener httpListener = new HttpPostListener(metricsUri);
             listener = new BufferingListener(httpListener, 50);
         } else if (!outputFile.equals("")) {
-            AggregationListener fileListener = null;
-            try {
-                fileListener = new FileListener(outputFile);
-            } catch (IOException ex) {
-                _Logger.error("Could not open output file for writing: " + outputFile, ex);
-                return;
-            }
+            AggregationListener fileListener = new FileListener(outputFile);
             listener = new BufferingListener(fileListener);
         }
 
         HashMap<String, TSData> aggregations = new HashMap<String, TSData>();
-        
+
         ArrayList<String> files = new ArrayList<String>();
         File file = new File(fileName);
         if (file.isFile()) {
@@ -229,7 +223,7 @@ public class TsdAggregator {
             }
         }
     }
-    
+
     private static void findFilesRecursive(File dir, ArrayList<String> files, Pattern filter) {
         String[] list = dir.list();
         Arrays.sort(list);
