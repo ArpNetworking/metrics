@@ -110,21 +110,24 @@ public class TSAggregation {
 				aggregates.add(data);
 			}
 		}
-		Arrays.sort(dsamples);
-		for (Statistic stat : _OrderedStatistics) {
-			Double value = stat.calculate(dsamples);
-			if (_Listener != null) {
-				AggregatedData data = new AggregatedData();
-				data.setPeriod(_Period);
-				data.setHost(_HostName);
-				data.setService(_ServiceName);
-				data.setStatistic(stat);
-				data.setValue(value);
-				data.setPeriodStart(_PeriodStart);
-				data.setMetric(_Metric);
-				aggregates.add(data);
-			}
-		}
+                //only sort if there are ordered statistics
+                if (_OrderedStatistics.size() > 0) {
+                    Arrays.sort(dsamples);
+                    for (Statistic stat : _OrderedStatistics) {
+                            Double value = stat.calculate(dsamples);
+                            if (_Listener != null) {
+                                    AggregatedData data = new AggregatedData();
+                                    data.setPeriod(_Period);
+                                    data.setHost(_HostName);
+                                    data.setService(_ServiceName);
+                                    data.setStatistic(stat);
+                                    data.setValue(value);
+                                    data.setPeriodStart(_PeriodStart);
+                                    data.setMetric(_Metric);
+                                    aggregates.add(data);
+                            }
+                    }
+                }
 		_Listener.recordAggregation(aggregates.toArray(new AggregatedData[0]));
 	}
 }
