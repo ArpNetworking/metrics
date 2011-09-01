@@ -4,7 +4,7 @@ import java.text.DecimalFormat;
 
 import org.apache.log4j.Logger;
 
-public class TPStatistic implements Statistic{
+public class TPStatistic implements OrderedStatistic {
 	static final Logger _Logger = Logger.getLogger(TPStatistic.class);
 	static final DecimalFormat FORMAT = new DecimalFormat("##0.#");
 	Double _TStat = 0.0;
