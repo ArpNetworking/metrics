@@ -1,10 +1,15 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
+apply plugin: 'maven'
 
 repositories {
     mavenRepo urls: "http://artifactory.arpnetworking.com:8081/artifactory/repo/"
 }
+configurations {
+    deployJars
+}
+
 
 dependencies {
     compile group: 'commons-collections', name: 'commons-collections', version: '3.2'
@@ -22,21 +27,25 @@ dependencies {
 
     testCompile group: 'junit', name: 'junit', version: '4.8.2'
     testCompile group: 'org.jmock', name: 'jmock-junit4', version: '2.5.1'
+
+    deployJars group: 'org.apache.maven.wagon', name: 'wagon-http', version: '1.0-beta-2'
+
+
 }
 
 buildscript {
     // using a variable to make wiki look cleaner
     def githubBase = 'https://github.com/valkolovos/gradle_cobertura/raw/master/ivy'
     try {
-        apply from: "${githubBase}/gradle_cobertura/gradle_cobertura/1.0-rc4/coberturainit.gradle"
+        //apply from: "${githubBase}/gradle_cobertura/gradle_cobertura/1.0-rc4/coberturainit.gradle"
     } catch (all) { 
         println "Could not load cobertura plugin from inetnet"
     }
 }
-
 mainClassName = 'tsdaggregator.TsdAggregator'
-sourceCompatibility = 1.6
+sourceCompatibility = 1.7
 version = '0.1-SNAPSHOT'
+group = 'com.arpnetworking'
 jar {
 
     manifest {
@@ -45,4 +54,17 @@ jar {
     }
 }
 
+task lint(dependsOn: compileJava) {
+	compileJava.options.compilerArgs = ["-Xlint:unchecked"]
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+        name = 'httpDeployer' // optional
+        configuration = configurations.deployJars
+        repository(url: "http://artifactory.arpnetworking.com:8081/artifactory/libs-snapshot-local/") {
+            authentication(userName: "pusher", password: "pushwo")
+        }
+    }
+}
 

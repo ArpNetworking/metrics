@@ -8,11 +8,11 @@ import org.joda.time.DateTime;
 import org.joda.time.chrono.ISOChronology;
 import org.codehaus.jackson.map.*;
 
-public class LineData {
+public class QueryLogLineData implements LogLine {
 
     Map<String, ArrayList<Double>> _Variables = new HashMap<String, ArrayList<Double>>();
     DateTime _Time = new DateTime(0);
-    static final Logger _Logger = Logger.getLogger(LineData.class);
+    static final Logger _Logger = Logger.getLogger(QueryLogLineData.class);
 
     private void parseLegacyLogLine(String line) {
         HashMap<String, ArrayList<Double>> vals = new HashMap<String, ArrayList<Double>>();
@@ -31,7 +31,7 @@ public class LineData {
                 if (key.endsWith("-start")) {
                     removalCandidates.add(key.replaceFirst("-start$", ""));
                 } else {
-                    ArrayList values = new ArrayList();
+                    ArrayList<Double> values = new ArrayList<Double>();
                     values.add(value);
                     vals.put(key, values);
                 }
@@ -55,9 +55,10 @@ public class LineData {
         _Variables = vals;
     }
 
+    @SuppressWarnings("unchecked")
     public void parseV2aLogLine(Map<String, Object> line) {
-        Map<?, ?> counters = (Map) line.get("counters");
-        for (Map.Entry entry : counters.entrySet()) {
+        Map<String, Double> counters = (Map<String, Double>) line.get("counters");
+        for (Map.Entry<String, Double> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
 
@@ -65,10 +66,10 @@ public class LineData {
             _Variables.put(entry.getKey().toString(), counter);
         }
 
-        Map<?, ?> timers = (Map) line.get("timers");
-        for (Map.Entry entry : timers.entrySet()) {
+        Map<String, ArrayList<Double>> timers = (Map<String, ArrayList<Double>>) line.get("timers");
+        for (Map.Entry<String, ArrayList<Double>> entry : timers.entrySet()) {
 
-            _Variables.put(entry.getKey().toString(), (ArrayList<Double>) entry.getValue());
+            _Variables.put(entry.getKey().toString(), entry.getValue());
         }
 
         if (_Variables.containsKey("initTimestamp")) {
@@ -80,6 +81,8 @@ public class LineData {
         }
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public void parseLogLine(String line) {
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -88,16 +91,19 @@ public class LineData {
             if (version.equals("2a")) {
                 parseV2aLogLine(jsonLine);
             }
-        } catch (IOException e) {
-            _Logger.warn("Legacy, non-json tsd line found: ", e);
+       
+        } catch (IOException ex) {
+            _Logger.warn("Legacy, non-json tsd line found: ", ex);
             parseLegacyLogLine(line);
         }
     }
 
+    @Override
     public DateTime getTime() {
         return _Time;
     }
 
+    @Override
     public Map<String, ArrayList<Double>> getVariables() {
         return _Variables;
     }

@@ -5,19 +5,19 @@ import org.joda.time.DateTime;
 import org.joda.time.chrono.ISOChronology;
 import org.junit.Test;
 
-import tsdaggregator.LineData;
+import tsdaggregator.QueryLogLineData;
 
 
 public class LineDataTests {
 	@Test
 	public void ConstructTest()	{
-		LineData data = new LineData();
+		QueryLogLineData data = new QueryLogLineData();
 		Assert.assertNotNull(data);
 	}
 	
 	@Test
 	public void ParseSingleEntry() {
-		LineData data = new LineData();
+		QueryLogLineData data = new QueryLogLineData();
 		data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005,]");
 		Map<String, ArrayList<Double>> map = data.getVariables();
 		Assert.assertEquals(1, map.size());
@@ -30,7 +30,7 @@ public class LineDataTests {
 	
 	@Test
 	public void ParseMultipleEntries() {
-		LineData data = new LineData();
+		QueryLogLineData data = new QueryLogLineData();
 		data.parseLogLine("[initTimestamp=1300976164.85,passport/signin=395539.999008,passport/_signinValidatePassword=390913.009644,passport/signinValid=1,]");
 		Map<String, ArrayList<Double>> map = data.getVariables();
 		Assert.assertEquals(3, map.size());
@@ -41,7 +41,7 @@ public class LineDataTests {
         
         @Test
         public void Parse2aVersionentry() {
-            LineData data = new LineData();
+            QueryLogLineData data = new QueryLogLineData();
             data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
             Map<String, ArrayList<Double>> map = data.getVariables();
             Assert.assertEquals(1, map.size());

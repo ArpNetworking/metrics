@@ -10,6 +10,8 @@ import java.util.*;
 import org.apache.commons.cli.*;
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
+import org.joda.time.format.ISOPeriodFormat;
+import org.joda.time.format.PeriodFormatter;
 
 /**
  *
@@ -30,6 +32,8 @@ public class TsdAggregator {
         options.addOption("h", "host", true, "host the metrics were generated on");
         options.addOption("u", "uri", true, "metrics server uri");
         options.addOption("p", "parser", true, "parser to use to parse log lines");
+        options.addOption("d", "period", true, "aggregation time period in ISO 8601 standard notation (multiple allowed)");
+        options.addOption("t", "statistic", true, "statistic of aggregation to record (multiple allowed)");
         CommandLineParser parser = new PosixParser();
         CommandLine cl;
         try {
@@ -62,6 +66,26 @@ public class TsdAggregator {
             printUsage(options);
             return;
         }
+        
+        Class parserClass = QueryLogLineData.class;
+        if (cl.hasOption("p")) {
+            String lineParser = cl.getOptionValue("p");
+            try {
+                parserClass = Class.forName(lineParser);
+                if (!LogLine.class.isAssignableFrom(parserClass)) {
+                    _Logger.error("parser class [" + lineParser + "] does not implement requried LogLine interface");
+                    return;
+                }
+            } catch (ClassNotFoundException ex) {
+                _Logger.error("could not find parser class [" + lineParser + "] on classpath");
+                return;
+            }
+        }
+        
+        String[] periodOptions = {"PT1M", "PT5M", "PT1H"};
+        if (cl.hasOption("d")) {
+            periodOptions = cl.getOptionValues("d");
+        }
 
         String fileName = cl.getOptionValue("f");
         String hostName = cl.getOptionValue("h");
@@ -72,44 +96,80 @@ public class TsdAggregator {
         _Logger.info("using servicename " + serviceName);
         _Logger.info("using uri " + metricsUri);
 
-        Set<Period> defaultPeriods = new HashSet<Period>();
-        defaultPeriods.add(Period.minutes(1));
-        defaultPeriods.add(Period.minutes(5));
-        defaultPeriods.add(Period.minutes(60));
+        Set<Period> periods = new HashSet<Period>();
+        PeriodFormatter periodParser = ISOPeriodFormat.standard();
+        for (String p : periodOptions) {
+            periods.add(periodParser.parsePeriod(p));
+        }
 
         AggregationListener httpListener = new HttpPostListener(metricsUri);
         AggregationListener listener = new BufferingListener(httpListener, 50);
 
         HashMap<String, TSData> aggregations = new HashMap<String, TSData>();
-        try {
-            FileReader fileReader = new FileReader(fileName);
-            BufferedReader reader = new BufferedReader(fileReader);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                //System.out.println(line);
-                LineData data = new LineData();
-                data.parseLogLine(line);
-                for (Map.Entry<String, ArrayList<Double>> entry : data.getVariables().entrySet()) {
-                    TSData tsdata = aggregations.get(entry.getKey());
-                    if (tsdata == null) {
-                        tsdata = new TSData(entry.getKey(), defaultPeriods, listener, hostName, serviceName);
-                        aggregations.put(entry.getKey(), tsdata);
+        
+        ArrayList<String> files = new ArrayList<String>();
+        File file = new File(fileName);
+        if (file.isFile()) {
+            files.add(fileName);
+        } else if (file.isDirectory()) {
+            _Logger.info("File given is a directory, will recursively process");
+            findFilesRecursive(file, files);
+        }
+        for (String f : files) {
+            try {
+                _Logger.info("Reading file " + f);
+                FileReader fileReader = new FileReader(f);
+                BufferedReader reader = new BufferedReader(fileReader);
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    //System.out.println(line);
+                    LogLine data = null;
+                    try {
+                        data = (LogLine)parserClass.newInstance();
+                    } catch (InstantiationException ex) {
+                        _Logger.error("Could not instantiate LogLine parser", ex);
+                        return;
+                    } catch (IllegalAccessException ex) {
+                        _Logger.error("Could not instantiate LogLine parser", ex);
+                        return;
                     }
-                    tsdata.addMetric(entry.getValue(), data.getTime());
-                }
-            }
 
-            //close all aggregations
-            for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
-                entry.getValue().close();
+                    data.parseLogLine(line);
+                    for (Map.Entry<String, ArrayList<Double>> entry : data.getVariables().entrySet()) {
+                        TSData tsdata = aggregations.get(entry.getKey());
+                        if (tsdata == null) {
+                            tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName);
+                            aggregations.put(entry.getKey(), tsdata);
+                        }
+                        tsdata.addMetric(entry.getValue(), data.getTime());
+                    }
+                }
+
+                //close all aggregations
+                for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
+                    entry.getValue().close();
+                }
+                listener.close();
+            } catch (FileNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
-            listener.close();
-        } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        }
+    }
+    
+    private static void findFilesRecursive(File dir, ArrayList<String> files) {
+        String[] list = dir.list();
+        Arrays.sort(list);
+        for (String f : list) {
+            File entry = new File(dir, f);
+            if (entry.isFile()) {
+                files.add(entry.getAbsolutePath());
+            } else if (entry.isDirectory()) {
+                findFilesRecursive(entry, files);
+            }
         }
     }
 
