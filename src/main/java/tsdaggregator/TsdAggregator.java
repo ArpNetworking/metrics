@@ -185,7 +185,9 @@ public class TsdAggregator {
                 FileReader fileReader = new FileReader(f);
                 BufferedReader reader = new BufferedReader(fileReader);
                 String line;
+                Integer lineNum = 0;
                 while ((line = reader.readLine()) != null) {
+                    lineNum++;
                     //System.out.println(line);
                     LogLine data = null;
                     try {
