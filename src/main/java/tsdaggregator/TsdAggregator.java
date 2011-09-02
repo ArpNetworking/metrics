@@ -7,8 +7,6 @@ package tsdaggregator;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
-
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.cli.*;
@@ -115,6 +113,17 @@ public class TsdAggregator {
                 try {
                     _Logger.info("Looking up statistic " + statString);
                     Class statClass = ClassLoader.getSystemClassLoader().loadClass(statString);
+                    Statistic stat = null;
+                    try {
+                        stat = (Statistic)statClass.newInstance();
+                        statisticsClasses.add(stat);
+                    } catch (InstantiationException ex) {
+                        _Logger.error("Could not instantiate statistic [" + statString + "]", ex);
+                        return;
+                    } catch (IllegalAccessException ex) {
+                        _Logger.error("Could not instantiate statistic [" + statString + "]", ex);
+                        return;
+                    }
                     if (!Statistic.class.isAssignableFrom(statClass)) {
                         _Logger.error("Statistic class [" + statString + "] does not implement requried Statistic interface");
                         return;
@@ -214,7 +223,7 @@ public class TsdAggregator {
                     for (Map.Entry<String, ArrayList<Double>> entry : data.getVariables().entrySet()) {
                         TSData tsdata = aggregations.get(entry.getKey());
                         if (tsdata == null) {
-                            tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName);
+                            tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName, statisticsClasses);
                             aggregations.put(entry.getKey(), tsdata);
                         }
                         tsdata.addMetric(entry.getValue(), data.getTime());
