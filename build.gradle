@@ -44,7 +44,7 @@ buildscript {
 }
 mainClassName = 'tsdaggregator.TsdAggregator'
 sourceCompatibility = 1.7
-version = '0.1.0'
+version = '0.2-SNAPSHOT'
 group = 'com.arpnetworking'
 jar {
 
