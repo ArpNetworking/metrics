@@ -43,7 +43,7 @@ public class FileListener implements AggregationListener {
                         .append("\",\"period\":\"").append(d.getPeriod())
                         .append("\",\"periodStart\":\"").append(d.getPeriodStart())
                         .append("\",\"statistic\":\"").append(d.getStatistic().getName())
-                        .append("\"}");
+                        .append("\"}\n");
             }
         }
         try {
