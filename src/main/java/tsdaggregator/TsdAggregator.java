@@ -5,6 +5,7 @@
 package tsdaggregator;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import java.util.logging.Level;
@@ -182,7 +183,16 @@ public class TsdAggregator {
         for (String f : files) {
             try {
                 _Logger.info("Reading file " + f);
-                FileReader fileReader = new FileReader(f);
+                //check the first 4 bytes of the file for utf markers
+                FileInputStream fis = new FileInputStream(f);
+                byte[] header = new byte[4];
+                fis.read(header);
+                String encoding = "UTF-8";
+                if (header[0] == -1 && header[1] == -2) {
+                    _Logger.info("Detected UTF-16 encoding");
+                    encoding = "UTF-16";
+                }
+                InputStreamReader fileReader = new InputStreamReader(new FileInputStream(f), Charset.forName(encoding));
                 BufferedReader reader = new BufferedReader(fileReader);
                 String line;
                 Integer lineNum = 0;
