@@ -19,19 +19,21 @@ public class FileListener implements AggregationListener {
     String _FileName = "";
     FileWriter _Writer;
     static final Logger _Logger = Logger.getLogger(FileListener.class);
+    long _LinesWritten = 0;
 
     public FileListener(String file) {
         _FileName = file;
-    }
-
-    @Override
-    public void recordAggregation(AggregatedData[] data) {
         try {
             _Writer = new FileWriter(_FileName, true);
         } catch (IOException ex) {
             _Logger.error("Could not open output file for writing: " + _FileName, ex);
             return;
         }
+    }
+
+    @Override
+    public void recordAggregation(AggregatedData[] data) {
+        
         StringBuilder sb = new StringBuilder();
         if (data.length > 0) {
             for (AggregatedData d : data) {
@@ -44,6 +46,7 @@ public class FileListener implements AggregationListener {
                         .append("\",\"periodStart\":\"").append(d.getPeriodStart())
                         .append("\",\"statistic\":\"").append(d.getStatistic().getName())
                         .append("\"}\n");
+                _LinesWritten++;
             }
         }
         try {
@@ -56,6 +59,7 @@ public class FileListener implements AggregationListener {
     @Override
     public void close() {
         try {
+            _Logger.info("Closing after " + _LinesWritten + " lines written.");
             _Writer.flush();
             _Writer.close();
         } catch (IOException ex) {
