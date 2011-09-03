@@ -234,7 +234,6 @@ public class TsdAggregator {
                 for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
                     entry.getValue().close();
                 }
-                listener.close();
             } catch (FileNotFoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -243,6 +242,7 @@ public class TsdAggregator {
                 e.printStackTrace();
             }
         }
+        listener.close();
     }
 
     private static void findFilesRecursive(File dir, ArrayList<String> files, Pattern filter) {
