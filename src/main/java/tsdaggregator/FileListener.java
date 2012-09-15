@@ -4,10 +4,10 @@
  */
 package tsdaggregator;
 
+import org.apache.log4j.Logger;
+
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.logging.Level;
-import org.apache.log4j.Logger;
 
 
 /**
@@ -33,6 +33,7 @@ public class FileListener implements AggregationListener {
 
     @Override
     public void recordAggregation(AggregatedData[] data) {
+        _Logger.debug("Writing aggregation data to FileListener, " + data.length + " records to file " + _FileName);
         
         StringBuilder sb = new StringBuilder();
         if (data.length > 0) {
@@ -51,6 +52,7 @@ public class FileListener implements AggregationListener {
         }
         try {
             _Writer.append(sb.toString());
+            _Writer.flush();
         } catch (IOException ex) {
             _Logger.error("Error writing to output file", ex);
         }

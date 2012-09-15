@@ -1,11 +1,11 @@
 import junit.framework.Assert;
-import java.util.*;
-
 import org.joda.time.DateTime;
 import org.joda.time.chrono.ISOChronology;
 import org.junit.Test;
-
 import tsdaggregator.QueryLogLineData;
+
+import java.util.ArrayList;
+import java.util.Map;
 
 
 public class LineDataTests {
@@ -39,17 +39,29 @@ public class LineDataTests {
 		Assert.assertEquals(new DateTime((long)(1300976164.85d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
 	}
         
-        @Test
-        public void Parse2aVersionentry() {
-            QueryLogLineData data = new QueryLogLineData();
-            data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
-            Map<String, ArrayList<Double>> map = data.getVariables();
-            Assert.assertEquals(1, map.size());
-            ArrayList<Double> vals = map.get("qmanager/index");
-            Assert.assertEquals(99496.126174927d, vals.get(0));
-            Assert.assertEquals(106616.37284927d, vals.get(1));
-            DateTime timestamp = data.getTime();
-            Assert.assertEquals(new DateTime((long)(1311574570.3563d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
-        }
+    @Test
+    public void Parse2aVersionEntry() {
+        QueryLogLineData data = new QueryLogLineData();
+        data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
+        Map<String, ArrayList<Double>> map = data.getVariables();
+        Assert.assertEquals(1, map.size());
+        ArrayList<Double> vals = map.get("qmanager/index");
+        Assert.assertEquals(99496.126174927d, vals.get(0));
+        Assert.assertEquals(106616.37284927d, vals.get(1));
+        DateTime timestamp = data.getTime();
+        Assert.assertEquals(new DateTime((long)(1311574570.3563d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+    }
+
+    @Test
+    public void Parse2bVersionEntry() {
+        QueryLogLineData data = new QueryLogLineData();
+        data.parseLogLine("{\"version\":\"2b\",\"counters\":{},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+        Map<String, ArrayList<Double>> map = data.getVariables();
+        Assert.assertEquals(1, map.size());
+        ArrayList<Double> vals = map.get("/incentive/bestfor");
+        Assert.assertEquals(2070, vals.get(0));
+        DateTime timestamp = data.getTime();
+        Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+    }
 
 }

@@ -1,9 +1,14 @@
 package tsdaggregator;
 
-import java.util.*;
-
 import org.apache.log4j.Logger;
-import org.joda.time.*;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.joda.time.Period;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class TSAggregation {
 
@@ -63,17 +68,25 @@ public class TSAggregation {
         rotateAggregation(time);
         _Samples.add(value);
         _NumberOfSamples++;
+        _Logger.debug("Added sample to aggregation: time = " + time.toString());
+    }
+
+    public void checkRotate() {
+        rotateAggregation(new DateTime().minus(Duration.standardSeconds(60)));
     }
 
     private void rotateAggregation(DateTime time) {
+        _Logger.debug("Checking roll. Period is " + _Period + ", Roll time is " + _PeriodStart.plus(_Period));
         if (time.isAfter(_PeriodStart.plus(_Period))) {
             //Calculate the start of the new aggregation
+            _Logger.debug("We're rolling");
             DateTime hour = time.hourOfDay().roundFloorCopy();
             DateTime startPeriod = hour;
             while (!(startPeriod.isBefore(time) && startPeriod.plus(_Period).isAfter(time)) 
                     && (!startPeriod.equals(time))) {
                 startPeriod = startPeriod.plus(_Period);
             }
+            _Logger.debug("New start period is " + startPeriod);
             emitAggregations();
             _PeriodStart = startPeriod;
             _NumberOfSamples = 0;
@@ -94,6 +107,7 @@ public class TSAggregation {
     }
 
     private void emitAggregations() {
+        _Logger.debug("Emitting aggregations; " + _Samples.size() + " samples");
         Double[] dsamples = _Samples.toArray(new Double[0]);
         if (dsamples.length == 0) {
             return;
@@ -131,6 +145,7 @@ public class TSAggregation {
                 }
             }
         }
+        _Logger.debug("Writing " + aggregates.size() + " aggregation records");
         _Listener.recordAggregation(aggregates.toArray(new AggregatedData[0]));
     }
 }

@@ -1,12 +1,14 @@
 package tsdaggregator;
 
-import java.io.IOException;
-import java.util.*;
-
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.ISOChronology;
-import org.codehaus.jackson.map.*;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class QueryLogLineData implements LogLine {
 
@@ -62,7 +64,6 @@ public class QueryLogLineData implements LogLine {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
 
-
             _Variables.put(entry.getKey().toString(), counter);
         }
 
@@ -81,6 +82,35 @@ public class QueryLogLineData implements LogLine {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public void parseV2bLogLine(Map<String, Object> line) {
+        Map<String, Double> counters = (Map<String, Double>) line.get("counters");
+        for (Map.Entry<String, Double> entry : counters.entrySet()) {
+            ArrayList<Double> counter = new ArrayList<Double>();
+            counter.add(Double.parseDouble(entry.getValue().toString()));
+
+            _Variables.put(entry.getKey().toString(), counter);
+        }
+
+        Map<String, ArrayList<Object>> timers = (Map<String, ArrayList<Object>>) line.get("timers");
+        for (Map.Entry<String, ArrayList<Object>> entry : timers.entrySet()) {
+            ArrayList<Object> vals = entry.getValue();
+            ArrayList<Double> newVals = new ArrayList<Double>();
+            for (Object val : vals) {
+                newVals.add(Double.valueOf(val.toString()));
+            }
+            _Variables.put(entry.getKey().toString(), newVals);
+        }
+
+        Map<String, String> annotations = (Map<String, String>)line.get("annotations");
+        if (annotations.containsKey("finalTimestamp")) {
+            Double time = Double.parseDouble(annotations.get("finalTimestamp"));
+            //double with whole number unix time, and fractional seconds
+            Long ticks = Math.round(time * 1000);
+            _Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
+        }
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public void parseLogLine(String line) {
@@ -91,10 +121,18 @@ public class QueryLogLineData implements LogLine {
             if (version.equals("2a")) {
                 parseV2aLogLine(jsonLine);
             }
+            else if (version.equals("2b")) {
+                parseV2bLogLine(jsonLine);
+            }
        
         } catch (IOException ex) {
-            _Logger.warn("Legacy, non-json tsd line found: ", ex);
-            parseLegacyLogLine(line);
+            _Logger.warn("Possible legacy, non-json tsd line found: ", ex);
+            try {
+                parseLegacyLogLine(line);
+            }
+            catch (Exception e) {
+                _Logger.warn("Discarding line: Unparsable.\nLine was:\n" + line, e);
+            }
         }
     }
 

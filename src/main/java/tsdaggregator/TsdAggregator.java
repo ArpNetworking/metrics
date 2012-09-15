@@ -4,16 +4,18 @@
  */
 package tsdaggregator;
 
+import org.apache.commons.cli.*;
+import org.apache.commons.io.input.Tailer;
+import org.apache.log4j.Logger;
+import org.joda.time.Period;
+import org.joda.time.format.ISOPeriodFormat;
+import org.joda.time.format.PeriodFormatter;
+
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.cli.*;
-import org.apache.log4j.Logger;
-import org.joda.time.Period;
-import org.joda.time.format.ISOPeriodFormat;
-import org.joda.time.format.PeriodFormatter;
 
 /**
  *
@@ -38,6 +40,7 @@ public class TsdAggregator {
         options.addOption("d", "period", true, "aggregation time period in ISO 8601 standard notation (multiple allowed)");
         options.addOption("t", "statistic", true, "statistic of aggregation to record (multiple allowed)");
         options.addOption("e", "extension", true, "extension of files to parse - uses a union of arguments as a regex (multiple allowed)");
+        options.addOption("", "tail", false, "\"tail\" or follow the file and do not terminate");
         CommandLineParser parser = new PosixParser();
         CommandLine cl;
         try {
@@ -77,7 +80,7 @@ public class TsdAggregator {
             try {
                 parserClass = Class.forName(lineParser);
                 if (!LogLine.class.isAssignableFrom(parserClass)) {
-                    _Logger.error("parser class [" + lineParser + "] does not implement requried LogLine interface");
+                    _Logger.error("parser class [" + lineParser + "] does not implement required LogLine interface");
                     return;
                 }
             } catch (ClassNotFoundException ex) {
@@ -106,6 +109,8 @@ public class TsdAggregator {
             filter = Pattern.compile(builder.toString(), Pattern.CASE_INSENSITIVE);
         }
 
+        Boolean tailFile = cl.hasOption("tail");
+
         Set<Statistic> statisticsClasses = new HashSet<Statistic>();
         if (cl.hasOption("t")) {
             String[] statisticsStrings = cl.getOptionValues("t");
@@ -113,7 +118,7 @@ public class TsdAggregator {
                 try {
                     _Logger.info("Looking up statistic " + statString);
                     Class statClass = ClassLoader.getSystemClassLoader().loadClass(statString);
-                    Statistic stat = null;
+                    Statistic stat;
                     try {
                         stat = (Statistic)statClass.newInstance();
                         statisticsClasses.add(stat);
@@ -125,7 +130,7 @@ public class TsdAggregator {
                         return;
                     }
                     if (!Statistic.class.isAssignableFrom(statClass)) {
-                        _Logger.error("Statistic class [" + statString + "] does not implement requried Statistic interface");
+                        _Logger.error("Statistic class [" + statString + "] does not implement required Statistic interface");
                         return;
                     }
                 } catch (ClassNotFoundException ex) {
@@ -176,7 +181,8 @@ public class TsdAggregator {
             listener = new BufferingListener(httpListener, 50);
         } else if (!outputFile.equals("")) {
             AggregationListener fileListener = new FileListener(outputFile);
-            listener = new BufferingListener(fileListener, 500);
+            //listener = new BufferingListener(fileListener, 500);
+            listener = fileListener;
         }
 
         HashMap<String, TSData> aggregations = new HashMap<String, TSData>();
@@ -192,41 +198,33 @@ public class TsdAggregator {
         for (String f : files) {
             try {
                 _Logger.info("Reading file " + f);
-                //check the first 4 bytes of the file for utf markers
-                FileInputStream fis = new FileInputStream(f);
-                byte[] header = new byte[4];
-                fis.read(header);
-                String encoding = "UTF-8";
-                if (header[0] == -1 && header[1] == -2) {
-                    _Logger.info("Detected UTF-16 encoding");
-                    encoding = "UTF-16";
+
+                LineProcessor processor = new LineProcessor(parserClass, statisticsClasses, hostName, serviceName, periods, listener, aggregations);
+                if (tailFile) {
+                    File fileHandle = new File(f);
+                    LogTailerListener tailListener = new LogTailerListener(processor);
+                    Tailer t = Tailer.create(fileHandle, tailListener, 1000l, false);
                 }
-                InputStreamReader fileReader = new InputStreamReader(new FileInputStream(f), Charset.forName(encoding));
-                BufferedReader reader = new BufferedReader(fileReader);
-                String line;
-                Integer lineNum = 0;
-                while ((line = reader.readLine()) != null) {
-                    lineNum++;
-                    //System.out.println(line);
-                    LogLine data = null;
-                    try {
-                        data = (LogLine)parserClass.newInstance();
-                    } catch (InstantiationException ex) {
-                        _Logger.error("Could not instantiate LogLine parser", ex);
-                        return;
-                    } catch (IllegalAccessException ex) {
-                        _Logger.error("Could not instantiate LogLine parser", ex);
-                        return;
+                else {
+                    //check the first 4 bytes of the file for utf markers
+                    FileInputStream fis = new FileInputStream(f);
+                    byte[] header = new byte[4];
+                    if (fis.read(header) < 4) {
+                        //If there are less than 4 bytes, we should move on
+                        continue;
+                    }
+                    String encoding = "UTF-8";
+                    if (header[0] == -1 && header[1] == -2) {
+                        _Logger.info("Detected UTF-16 encoding");
+                        encoding = "UTF-16";
                     }
 
-                    data.parseLogLine(line);
-                    for (Map.Entry<String, ArrayList<Double>> entry : data.getVariables().entrySet()) {
-                        TSData tsdata = aggregations.get(entry.getKey());
-                        if (tsdata == null) {
-                            tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName, statisticsClasses);
-                            aggregations.put(entry.getKey(), tsdata);
-                        }
-                        tsdata.addMetric(entry.getValue(), data.getTime());
+                    InputStreamReader fileReader = new InputStreamReader(new FileInputStream(f), Charset.forName(encoding));
+                    BufferedReader reader = new BufferedReader(fileReader);
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (processor.invoke(line))
+                            return;
                     }
                 }
 
@@ -240,6 +238,20 @@ public class TsdAggregator {
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
+            }
+        }
+        if (tailFile) {
+            while (true) {
+                try {
+                    Thread.sleep(30000l);
+                    _Logger.info("Checking rotations on " + aggregations.size() + " TSData objects");
+                    for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
+                        _Logger.info("Check rotate on " + entry.getKey());
+                        entry.getValue().checkRotate();
+                    }
+                } catch (InterruptedException e) {
+                    _Logger.error("Interrupted!", e);
+                }
             }
         }
         listener.close();
@@ -266,4 +278,6 @@ public class TsdAggregator {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp("tsdaggregator", options, true);
     }
+
+
 }

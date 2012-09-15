@@ -1,8 +1,11 @@
 package tsdaggregator;
 
-import java.util.*;
+import org.joda.time.DateTime;
+import org.joda.time.Period;
 
-import org.joda.time.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class TSData {
 	private String _MetricName;
@@ -18,11 +21,17 @@ public class TSData {
 	
 	public void addMetric(ArrayList<Double> data, DateTime time) {
 		for (TSAggregation aggregation : _Aggregations) {
-                    for (Double val : data) {
-			aggregation.addSample(val, time);
-                    }
+            for (Double val : data) {
+                aggregation.addSample(val, time);
+            }
 		}
 	}
+
+    public void checkRotate() {
+        for (TSAggregation agg : _Aggregations) {
+            agg.checkRotate();
+        }
+    }
 	
 	public void close() {
 		for (TSAggregation aggregation : _Aggregations) {

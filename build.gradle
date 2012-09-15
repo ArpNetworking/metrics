@@ -4,7 +4,9 @@ apply plugin: 'application'
 apply plugin: 'maven'
 
 repositories {
-    mavenRepo urls: "http://artifactory.arpnetworking.com:8081/artifactory/repo/"
+    maven {
+        url "http://artifactory.arpnetworking.com:8081/artifactory/repo/"
+    }
 }
 configurations {
     deployJars
@@ -14,6 +16,7 @@ configurations {
 dependencies {
     compile group: 'commons-collections', name: 'commons-collections', version: '3.2'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.2'
+    compile group: 'commons-io', name: 'commons-io', version: '2.4'
     compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     compile group: 'joda-time', name: 'joda-time', version: '1.6.2'
     compile group: 'log4j', name: 'log4j', version: '1.2.9'
@@ -43,7 +46,7 @@ buildscript {
     }
 }
 mainClassName = 'tsdaggregator.TsdAggregator'
-sourceCompatibility = 1.7
+sourceCompatibility = 1.6
 version = '0.2.1-SNAPSHOT'
 group = 'com.arpnetworking'
 jar {
