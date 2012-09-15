@@ -8,6 +8,8 @@ import org.apache.log4j.Logger;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.Format;
 
 
 /**
@@ -20,6 +22,7 @@ public class FileListener implements AggregationListener {
     FileWriter _Writer;
     static final Logger _Logger = Logger.getLogger(FileListener.class);
     long _LinesWritten = 0;
+    Format doubleFormat = new DecimalFormat("#.##");
 
     public FileListener(String file) {
         _FileName = file;
@@ -39,7 +42,7 @@ public class FileListener implements AggregationListener {
         if (data.length > 0) {
             for (AggregatedData d : data) {
 
-                sb.append("{\"value\":\"").append(d.getValue().toString())
+                sb.append("{\"value\":\"").append(doubleFormat.format(d.getValue()))
                         .append("\",\"counter\":\"").append(d.getMetric())
                         .append("\",\"service\":\"").append(d.getService())
                         .append("\",\"host\":\"").append(d.getHost())

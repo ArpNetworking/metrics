@@ -109,6 +109,12 @@ public class QueryLogLineData implements LogLine {
             Long ticks = Math.round(time * 1000);
             _Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
         }
+        else if (annotations.containsKey("initTimestamp")) {
+            Double time = Double.parseDouble(annotations.get("initTimestamp"));
+            //double with whole number unix time, and fractional seconds
+            Long ticks = Math.round(time * 1000);
+            _Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
+        }
     }
 
     @Override

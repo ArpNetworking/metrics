@@ -41,6 +41,7 @@ public class TsdAggregator {
         options.addOption("t", "statistic", true, "statistic of aggregation to record (multiple allowed)");
         options.addOption("e", "extension", true, "extension of files to parse - uses a union of arguments as a regex (multiple allowed)");
         options.addOption("", "tail", false, "\"tail\" or follow the file and do not terminate");
+        options.addOption("", "rrd", false, "create or write to rrd databases");
         CommandLineParser parser = new PosixParser();
         CommandLine cl;
         try {
@@ -154,6 +155,7 @@ public class TsdAggregator {
         String serviceName = cl.getOptionValue("s");
         String metricsUri = "";
         String outputFile = "";
+        Boolean outputRRD = false;
         if (cl.hasOption("u")) {
             metricsUri = cl.getOptionValue("u");
         }
@@ -162,12 +164,19 @@ public class TsdAggregator {
             outputFile = cl.getOptionValue("o");
         }
 
+        if (cl.hasOption("rrd")) {
+            outputRRD = true;
+        }
+
         _Logger.info("using file " + fileName);
         _Logger.info("using hostname " + hostName);
         _Logger.info("using servicename " + serviceName);
         _Logger.info("using uri " + metricsUri);
         _Logger.info("using output file " + outputFile);
         _Logger.info("using filter (" + filter.pattern() + ")");
+        if (outputRRD) {
+            _Logger.info("outputting rrd files");
+        }
 
         Set<Period> periods = new HashSet<Period>();
         PeriodFormatter periodParser = ISOPeriodFormat.standard();
@@ -175,14 +184,20 @@ public class TsdAggregator {
             periods.add(periodParser.parsePeriod(p));
         }
 
-        AggregationListener listener = null;
+        MultiListener listener = new MultiListener();
         if (!metricsUri.equals("")) {
             AggregationListener httpListener = new HttpPostListener(metricsUri);
-            listener = new BufferingListener(httpListener, 50);
-        } else if (!outputFile.equals("")) {
+            listener.addListener(new BufferingListener(httpListener, 50));
+        }
+
+        if (!outputFile.equals("")) {
             AggregationListener fileListener = new FileListener(outputFile);
             //listener = new BufferingListener(fileListener, 500);
-            listener = fileListener;
+            listener.addListener(fileListener);
+        }
+
+        if (outputRRD) {
+            listener.addListener(new RRDClusterListener());
         }
 
         HashMap<String, TSData> aggregations = new HashMap<String, TSData>();
