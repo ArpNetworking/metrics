@@ -41,7 +41,7 @@ public class RRDSingleListener {
         _Logger.info("Creating rrd file " + rrdName);
         String[] argsList = new String [] {"rrdtool", "create", rrdName, "-b", startTime.toString(), "-s", Integer.toString(period.toStandardSeconds().getSeconds()),
                 "DS:" + "metric" + ":ABSOLUTE:" + Integer.toString(period.toStandardSeconds().getSeconds() * 3) + ":U:U",
-                "RRA:LAST:0.5:1:1000"};
+                "RRA:AVERAGE:0.5:1:1000"};
         executeProcess(argsList);
     }
 
