@@ -12,12 +12,12 @@ import java.util.Map;
 
 public class QueryLogLineData implements LogLine {
 
-    Map<String, ArrayList<Double>> _Variables = new HashMap<String, ArrayList<Double>>();
+    Map<String, CounterVariable> _Variables = new HashMap<String, CounterVariable>();
     DateTime _Time = new DateTime(0);
     static final Logger _Logger = Logger.getLogger(QueryLogLineData.class);
 
     private void parseLegacyLogLine(String line) {
-        HashMap<String, ArrayList<Double>> vals = new HashMap<String, ArrayList<Double>>();
+        HashMap<String, CounterVariable> vals = new HashMap<String, CounterVariable>();
         line.trim();
         line = line.replace("[", "");
         line = line.replace("]", "");
@@ -35,19 +35,20 @@ public class QueryLogLineData implements LogLine {
                 } else {
                     ArrayList<Double> values = new ArrayList<Double>();
                     values.add(value);
-                    vals.put(key, values);
+                    CounterVariable cv = new CounterVariable(false, values);
+                    vals.put(key, cv);
                 }
             }
         }
 
         for (String remove : removalCandidates) {
-            if (vals.containsKey(remove) && vals.get(remove).get(0) == 0.0d) {
+            if (vals.containsKey(remove) && vals.get(remove).getValues().get(0) == 0.0d) {
                 vals.remove(remove);
                 _Logger.warn("removing unfinished timer [" + remove + "] from timing set");
             }
         }
         if (vals.containsKey("initTimestamp")) {
-            Double time = vals.get("initTimestamp").get(0);
+            Double time = vals.get("initTimestamp").getValues().get(0);
             //double with whole number unix time, and fractional seconds
             Long ticks = Math.round(time * 1000);
             _Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
@@ -63,18 +64,18 @@ public class QueryLogLineData implements LogLine {
         for (Map.Entry<String, Double> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
-
-            _Variables.put(entry.getKey().toString(), counter);
+            CounterVariable cv = new CounterVariable(true, counter);
+            _Variables.put(entry.getKey().toString(), cv);
         }
 
         Map<String, ArrayList<Double>> timers = (Map<String, ArrayList<Double>>) line.get("timers");
         for (Map.Entry<String, ArrayList<Double>> entry : timers.entrySet()) {
-
-            _Variables.put(entry.getKey().toString(), entry.getValue());
+            CounterVariable cv = new CounterVariable(false, entry.getValue());
+            _Variables.put(entry.getKey().toString(), cv);
         }
 
         if (_Variables.containsKey("initTimestamp")) {
-            Double time = _Variables.get("initTimestamp").get(0);
+            Double time = _Variables.get("initTimestamp").getValues().get(0);
             //double with whole number unix time, and fractional seconds
             Long ticks = Math.round(time * 1000);
             _Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
@@ -88,8 +89,8 @@ public class QueryLogLineData implements LogLine {
         for (Map.Entry<String, Double> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
-
-            _Variables.put(entry.getKey().toString(), counter);
+            CounterVariable cv = new CounterVariable(true, counter);
+            _Variables.put(entry.getKey().toString(), cv);
         }
 
         Map<String, ArrayList<Object>> timers = (Map<String, ArrayList<Object>>) line.get("timers");
@@ -99,7 +100,8 @@ public class QueryLogLineData implements LogLine {
             for (Object val : vals) {
                 newVals.add(Double.valueOf(val.toString()));
             }
-            _Variables.put(entry.getKey().toString(), newVals);
+            CounterVariable cv = new CounterVariable(false, newVals);
+            _Variables.put(entry.getKey().toString(), cv);
         }
 
         Map<String, String> annotations = (Map<String, String>)line.get("annotations");
@@ -148,7 +150,7 @@ public class QueryLogLineData implements LogLine {
     }
 
     @Override
-    public Map<String, ArrayList<Double>> getVariables() {
+    public Map<String, CounterVariable> getVariables() {
         return _Variables;
     }
 }

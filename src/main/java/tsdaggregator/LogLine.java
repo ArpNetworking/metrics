@@ -4,9 +4,9 @@
  */
 package tsdaggregator;
 
-import java.util.ArrayList;
-import java.util.Map;
 import org.joda.time.DateTime;
+
+import java.util.Map;
 
 /**
  *
@@ -16,7 +16,7 @@ public interface LogLine {
 
     DateTime getTime();
 
-    Map<String, ArrayList<Double>> getVariables();
+    Map<String, CounterVariable> getVariables();
 
     void parseLogLine(String line);
     

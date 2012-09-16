@@ -3,7 +3,6 @@ package tsdaggregator;
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -48,13 +47,13 @@ public class LineProcessor {
         }
 
         data.parseLogLine(line);
-        for (Map.Entry<String, ArrayList<Double>> entry : data.getVariables().entrySet()) {
+        for (Map.Entry<String, CounterVariable> entry : data.getVariables().entrySet()) {
             TSData tsdata = aggregations.get(entry.getKey());
             if (tsdata == null) {
                 tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName, statisticsClasses);
                 aggregations.put(entry.getKey(), tsdata);
             }
-            tsdata.addMetric(entry.getValue(), data.getTime());
+            tsdata.addMetric(entry.getValue().getValues(), data.getTime());
         }
         return false;
     }
