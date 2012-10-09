@@ -42,6 +42,7 @@ public class TsdAggregator {
         options.addOption("e", "extension", true, "extension of files to parse - uses a union of arguments as a regex (multiple allowed)");
         options.addOption("", "tail", false, "\"tail\" or follow the file and do not terminate");
         options.addOption("", "rrd", false, "create or write to rrd databases");
+        options.addOption("", "remet", false, "send data to a local remet server");
         CommandLineParser parser = new PosixParser();
         CommandLine cl;
         try {
@@ -69,7 +70,7 @@ public class TsdAggregator {
             return;
         }
 
-        if (!cl.hasOption("u") && !cl.hasOption("o")) {
+        if (!cl.hasOption("u") && !cl.hasOption("o") && !cl.hasOption("remet")) {
             System.err.println("metrics server uri or output file not specified");
             printUsage(options);
             return;
@@ -91,6 +92,9 @@ public class TsdAggregator {
         }
 
         String[] periodOptions = {"PT1M", "PT5M", "PT1H"};
+        if (cl.hasOption("remet")) {
+            periodOptions = new String[] {"PT2S"};
+        }
         if (cl.hasOption("d")) {
             periodOptions = cl.getOptionValues("d");
         }
@@ -110,7 +114,7 @@ public class TsdAggregator {
             filter = Pattern.compile(builder.toString(), Pattern.CASE_INSENSITIVE);
         }
 
-        Boolean tailFile = cl.hasOption("tail");
+        Boolean tailFile = cl.hasOption("tail") || cl.hasOption("remet");
 
         Set<Statistic> statisticsClasses = new HashSet<Statistic>();
         if (cl.hasOption("t")) {
@@ -139,6 +143,9 @@ public class TsdAggregator {
                     return;
                 }
             }
+        } else if (cl.hasOption("remet")) {
+            statisticsClasses.add(new NStatistic());
+            statisticsClasses.add(new MeanStatistic());
         } else {
             statisticsClasses.add(new TP0());
             statisticsClasses.add(new TP50());
@@ -158,6 +165,8 @@ public class TsdAggregator {
         Boolean outputRRD = false;
         if (cl.hasOption("u")) {
             metricsUri = cl.getOptionValue("u");
+        } else if (cl.hasOption("remet")) {
+            metricsUri = "http://localhost:9000/report";
         }
 
         if (cl.hasOption("o")) {
@@ -185,7 +194,7 @@ public class TsdAggregator {
         }
 
         MultiListener listener = new MultiListener();
-        if (!metricsUri.equals("")) {
+        if (!metricsUri.equals("") && !options.hasOption("remet")) {
             AggregationListener httpListener = new HttpPostListener(metricsUri);
             listener.addListener(new BufferingListener(httpListener, 50));
         }

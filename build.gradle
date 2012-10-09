@@ -32,8 +32,6 @@ dependencies {
     testCompile group: 'org.jmock', name: 'jmock-junit4', version: '2.5.1'
 
     deployJars group: 'org.apache.maven.wagon', name: 'wagon-http', version: '1.0-beta-2'
-
-
 }
 
 buildscript {

@@ -60,7 +60,7 @@ public class LineDataTests {
         Map<String, CounterVariable> map = data.getVariables();
         Assert.assertEquals(1, map.size());
         ArrayList<Double> vals = map.get("/incentive/bestfor").getValues();
-        Assert.assertEquals(2070, vals.get(0));
+        Assert.assertEquals(2070d, vals.get(0));
         DateTime timestamp = data.getTime();
         Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
     }
