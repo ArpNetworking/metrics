@@ -40,9 +40,9 @@ public class TsdAggregator {
         options.addOption("d", "period", true, "aggregation time period in ISO 8601 standard notation (multiple allowed)");
         options.addOption("t", "statistic", true, "statistic of aggregation to record (multiple allowed)");
         options.addOption("e", "extension", true, "extension of files to parse - uses a union of arguments as a regex (multiple allowed)");
-        options.addOption("", "tail", false, "\"tail\" or follow the file and do not terminate");
-        options.addOption("", "rrd", false, "create or write to rrd databases");
-        options.addOption("", "remet", false, "send data to a local remet server");
+        options.addOption("l", "tail", false, "\"tail\" or follow the file and do not terminate");
+        options.addOption("d", "rrd", false, "create or write to rrd databases");
+        options.addOption("m", "remet", false, "send data to a local remet server");
         CommandLineParser parser = new PosixParser();
         CommandLine cl;
         try {
@@ -93,7 +93,7 @@ public class TsdAggregator {
 
         String[] periodOptions = {"PT1M", "PT5M", "PT1H"};
         if (cl.hasOption("remet")) {
-            periodOptions = new String[] {"PT2S"};
+            periodOptions = new String[] {"PT1S"};
         }
         if (cl.hasOption("d")) {
             periodOptions = cl.getOptionValues("d");
@@ -145,6 +145,9 @@ public class TsdAggregator {
             }
         } else if (cl.hasOption("remet")) {
             statisticsClasses.add(new NStatistic());
+            statisticsClasses.add(new TP100());
+            statisticsClasses.add(new TP99());
+            statisticsClasses.add(new TP90());
             statisticsClasses.add(new MeanStatistic());
         } else {
             statisticsClasses.add(new TP0());
@@ -166,7 +169,7 @@ public class TsdAggregator {
         if (cl.hasOption("u")) {
             metricsUri = cl.getOptionValue("u");
         } else if (cl.hasOption("remet")) {
-            metricsUri = "http://localhost:9000/report";
+            metricsUri = "http://localhost:7090/report";
         }
 
         if (cl.hasOption("o")) {
@@ -199,6 +202,11 @@ public class TsdAggregator {
             listener.addListener(new BufferingListener(httpListener, 50));
         }
 
+        if (!metricsUri.equals("") && options.hasOption("remet")) {
+            AggregationListener httpListener = new HttpPostListener(metricsUri);
+            listener.addListener(httpListener);
+        }
+
         if (!outputFile.equals("")) {
             AggregationListener fileListener = new FileListener(outputFile);
             //listener = new BufferingListener(fileListener, 500);
@@ -227,7 +235,7 @@ public class TsdAggregator {
                 if (tailFile) {
                     File fileHandle = new File(f);
                     LogTailerListener tailListener = new LogTailerListener(processor);
-                    Tailer t = Tailer.create(fileHandle, tailListener, 1000l, false);
+                    Tailer t = Tailer.create(fileHandle, tailListener, 500l, false);
                 }
                 else {
                     //check the first 4 bytes of the file for utf markers
@@ -264,14 +272,23 @@ public class TsdAggregator {
                 e.printStackTrace();
             }
         }
+
+        long rotationCheck = 30000;
+        long rotateOn = 60000;
+        if (options.hasOption("remet")) {
+            rotationCheck = 500;
+            rotateOn = 1000;
+        }
+
+
         if (tailFile) {
             while (true) {
                 try {
-                    Thread.sleep(30000l);
-                    _Logger.info("Checking rotations on " + aggregations.size() + " TSData objects");
+                    Thread.sleep(rotationCheck);
+                    //_Logger.info("Checking rotations on " + aggregations.size() + " TSData objects");
                     for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
-                        _Logger.info("Check rotate on " + entry.getKey());
-                        entry.getValue().checkRotate();
+                        //_Logger.info("Check rotate on " + entry.getKey());
+                        entry.getValue().checkRotate(rotateOn);
                     }
                 } catch (InterruptedException e) {
                     _Logger.error("Interrupted!", e);

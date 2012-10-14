@@ -75,6 +75,10 @@ public class TSAggregation {
         rotateAggregation(new DateTime().minus(Duration.standardSeconds(60)));
     }
 
+    public void checkRotate(long rotateMillis) {
+        rotateAggregation(new DateTime().minus(new Duration(rotateMillis)));
+    }
+
     private void rotateAggregation(DateTime time) {
         _Logger.debug("Checking roll. Period is " + _Period + ", Roll time is " + _PeriodStart.plus(_Period));
         if (time.isAfter(_PeriodStart.plus(_Period))) {

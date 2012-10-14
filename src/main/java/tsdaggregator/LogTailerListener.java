@@ -22,6 +22,7 @@ public class LogTailerListener extends TailerListenerAdapter {
     @Override
     public void handle(String line) {
         _Logger.debug("Line read by LogTailerListener");
+        _Logger.debug(line);
         _processor.invoke(line);
     }
 }

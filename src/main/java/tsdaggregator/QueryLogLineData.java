@@ -85,8 +85,8 @@ public class QueryLogLineData implements LogLine {
 
     @SuppressWarnings("unchecked")
     public void parseV2bLogLine(Map<String, Object> line) {
-        Map<String, Double> counters = (Map<String, Double>) line.get("counters");
-        for (Map.Entry<String, Double> entry : counters.entrySet()) {
+        Map<String, Object> counters = (Map<String, Object>) line.get("counters");
+        for (Map.Entry<String, Object> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
             CounterVariable cv = new CounterVariable(true, counter);

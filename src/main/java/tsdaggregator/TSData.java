@@ -32,6 +32,12 @@ public class TSData {
             agg.checkRotate();
         }
     }
+
+    public void checkRotate(long rotateMillis) {
+        for (TSAggregation agg : _Aggregations) {
+            agg.checkRotate(rotateMillis);
+        }
+    }
 	
 	public void close() {
 		for (TSAggregation aggregation : _Aggregations) {
