@@ -30,6 +30,14 @@ public class TsdAggregator {
      */
     public static void main(String[] args) {
 
+
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable throwable) {
+                _Logger.error("Unhandled exception!", throwable);
+            }
+        });
+
         Options options = new Options();
         options.addOption("f", "file", true, "file to be parsed");
         options.addOption("s", "service", true, "service name");
@@ -204,6 +212,7 @@ public class TsdAggregator {
 
         if (!metricsUri.equals("") && options.hasOption("remet")) {
             AggregationListener httpListener = new HttpPostListener(metricsUri);
+            //we don't want to buffer remet responses
             listener.addListener(httpListener);
         }
 
