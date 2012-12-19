@@ -53,6 +53,14 @@
                     <div data-bind="slider: {range: true, values: [570000, 600000], min: 15000, max: 600000, step: 500, slide: sliderChanged, rangeDrag: true}" id="durationSlider"></div>
                 </div>
             </div>
+            <div class="row-fluid">
+                <ul class="inline" data-bind="foreach: connections">
+                    <li>
+                        <canvas style="vertical-align: middle;" width="30" height="20" data-bind="legendBlock: color"></canvas>
+                        <span data-bind="text: server"></span>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>

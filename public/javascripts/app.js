@@ -1,3 +1,4 @@
+var getConnectionNode = null;
 function GraphVM(id, name) {
     var self = this;
     self.id = id;
@@ -27,12 +28,12 @@ function GraphVM(id, name) {
         return id.replace(/:/g, " ");
     };
 
-    self.postData = function(server, timestamp, dataValue) {
+    self.postData = function(server, timestamp, dataValue, cvm) {
         var index = self.dataStreams[server];
         if (index == undefined) {
-            index = self.data.length
+            index = self.data.length;
             self.dataStreams[server] = index;
-            self.data.push({data: [], label: server, points: {show: true}, lines: {show: true}});
+            self.data.push({data: [], label: server, points: {show: true}, lines: {show: true}, color: cvm.color});
         }
 
         if (self.data[index].data.length == 0 || self.data[index].data[self.data[index].data.length - 1][0] < timestamp) {
@@ -46,9 +47,6 @@ function GraphVM(id, name) {
         }
         self.started = true;
         self.container = document.getElementById(self.id);
-
-
-        var MAX_INT = Math.pow(2, 53);
 
         function animate () {
             var tickTime = 50;
@@ -141,7 +139,7 @@ function GraphVM(id, name) {
                     radius: 15
                 },
                 legend: {
-                    position: 'ne'
+                    show: false
                 }
             });
 
@@ -182,6 +180,7 @@ function ConnectionVM(name) {
     self.hasConnected = false;
     self.connectedAt = 0;
     self.abortReconnect = false;
+    self.color = "#000000";
     self.reconnectString = ko.computed(function() {
         if (self.status() != "connected") {
             if (self.hasConnected) {
@@ -204,8 +203,11 @@ var AppViewModel = function() {
     self.metricsList = ko.observableArray();
     self.sockets = ko.observableArray();
     self.connections = ko.observableArray();
-    self.viewDuration = [585000, 600000];
+    self.connectionIndex = {};
+    self.viewDuration = [570000, 600000];
     self.paused = ko.observable(false);
+    self.colors = ['#1F78B4', '#33A02C', '#E31A1C', '#FF7F00', '#6A3D9A', '#A6CEE3', '#B2DF8A', '#FB9A99', '#FDBF6F', '#CAB2D6', '#FFFF99'];
+    self.colorId = 0;
 
     self.togglePause = function() {
         self.paused(!self.paused());
@@ -294,7 +296,7 @@ var AppViewModel = function() {
         self.sortCategories(self.metricsList);
     };
 
-    self.loadMetricsList = function(newMetrics) {
+    self.loadMetricsList = function(newMetrics, cvm) {
         for (var i = 0; i < newMetrics.metrics.length; i++) {
             var svc = newMetrics.metrics[i];
             for (var j = 0; j < svc.children.length; j++) {
@@ -338,27 +340,27 @@ var AppViewModel = function() {
         return undefined;
     };
 
-    self.addNewMetric = function(newMetric) {
+    self.addNewMetric = function(newMetric, cvm) {
         self.createMetric(newMetric.service, newMetric.metric, newMetric.statistic);
     };
 
-    self.reportData = function(metric) {
+    self.reportData = function(metric, cvm) {
         var graphName = self.getGraphName(metric.service, metric.metric, metric.statistic);
         var graph = self.graphsById[graphName];
         if (graph != undefined) {
-            graph.postData(metric.server, metric.timestamp, metric.data);
+            graph.postData(metric.server, metric.timestamp, metric.data, cvm);
         }
     };
 
-    self.processMessage = function(data) {
+    self.processMessage = function(data, cvm) {
         if (data.command == "metricsList") {
-            self.loadMetricsList(data.data);
+            self.loadMetricsList(data.data, cvm);
         }
         else if (data.command == "newMetric") {
-            self.addNewMetric(data.data);
+            self.addNewMetric(data.data, cvm);
         }
         else if (data.command == "report") {
-            self.reportData(data.data);
+            self.reportData(data.data, cvm);
         }
         else if (data.response == "ok") {
 
@@ -386,7 +388,7 @@ var AppViewModel = function() {
 
         var receiveEvent = function(event) {
             var data = JSON.parse(event.data);
-            self.processMessage(data);
+            self.processMessage(data, cvm);
         };
 
         var errored = function(event) {
@@ -458,6 +460,12 @@ var AppViewModel = function() {
         cvm.socket = metricsSocket;
     };
 
+    self.getColor = function() {
+        var color = self.colors[self.colorId];
+        self.colorId++;
+        return color;
+    };
+
     self.connect = function() {
         var server = $("#connectTo").val();
         $("#connectTo").val("");
@@ -470,7 +478,11 @@ var AppViewModel = function() {
             }
         }
 
+
+
         var connectionNode = new ConnectionVM(server);
+        connectionNode.color = self.getColor();
+        self.connectionIndex[server] = connectionNode;
         self.doConnect(server, connectionNode);
 
         self.connections.push(connectionNode);
@@ -498,5 +510,30 @@ ko.bindingHandlers.slider = {
     }
 };
 
+ko.bindingHandlers.legendBlock = {
+    init: function(element, valueAccessor) {
+        // First get the latest data that we're bound to
+        var value = valueAccessor();
+
+        // Next, whether or not the supplied model property is observable, get its current value
+        var valueUnwrapped = ko.utils.unwrapObservable(value);
+
+        var context = element.getContext('2d');
+
+        context.beginPath();
+        context.rect(3, 3, element.width - 6, element.height - 6);
+        context.fillStyle = valueUnwrapped;
+        context.fill();
+        context.lineWidth = 2;
+        context.strokeStyle = 'black';
+        context.stroke();
+    }
+};
+
 var appModel = new AppViewModel();
+
+getConnectionNode = function(server) {
+    return appModel.connectionIndex[server];
+};
+
 ko.applyBindings(appModel);
