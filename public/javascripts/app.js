@@ -15,17 +15,17 @@ function GraphVM(id, name) {
 
     self.shutdown = function () {
         self.stop = true;
-    }
+    };
 
     self.setViewDuration = function (window) {
         var endTime = self.dataLength - window[1];
         self.duration = window[1] - window[0];
         self.endAt = endTime;
-    }
+    };
 
     self.niceName = function(id) {
         return id.replace(/:/g, " ");
-    }
+    };
 
     self.postData = function(server, timestamp, dataValue) {
         var index = self.dataStreams[server];
@@ -38,7 +38,7 @@ function GraphVM(id, name) {
         if (self.data[index].data.length == 0 || self.data[index].data[self.data[index].data.length - 1][0] < timestamp) {
             self.data[index].data.push([timestamp, dataValue]);
         }
-    }
+    };
 
     self.startGraph = function() {
         if (self.started == true) {
@@ -151,7 +151,7 @@ function GraphVM(id, name) {
             }, tickTime);
         }
         animate();
-    }
+    };
 }
 
 function BrowseNodeVM(name, id, children, isMetric, parent) {
@@ -170,7 +170,7 @@ function BrowseNodeVM(name, id, children, isMetric, parent) {
         else {
             self.parent.addGraph(self.id(), self.name());
         }
-    }
+    };
     self.display = ko.computed(function() { return self.name();});
 }
 
@@ -194,7 +194,7 @@ function ConnectionVM(name) {
         else {
             return "";
         }
-    })
+    });
 }
 
 var AppViewModel = function() {
@@ -212,7 +212,7 @@ var AppViewModel = function() {
         for (var i = 0; i < self.graphs().length; i++) {
             self.graphs()[i].paused = self.paused();
         }
-    }
+    };
 
     self.addGraph = function(id, name) {
         var existing = self.graphsById[id];
@@ -223,11 +223,11 @@ var AppViewModel = function() {
         graph.setViewDuration(self.viewDuration);
         self.graphsById[id] = graph;
         self.graphs.push(graph);
-    }
+    };
 
     self.startGraph = function (graphElement, index, element) {
         element.startGraph();
-    }
+    };
 
     self.removeGraph = function(gvm) {
         var id = gvm.id;
@@ -237,33 +237,33 @@ var AppViewModel = function() {
             self.graphs.remove(graph)
             delete self.graphsById[id];
         }
-    }
+    };
 
     self.removeConnection = function(cvm) {
         cvm.abortReconnect = true;
         var ws = cvm.socket;
         ws.close();
         self.connections.remove(cvm);
-    }
+    };
 
     self.setViewDuration = function(window) {
         self.viewDuration = window;
         for (var i = 0; i < self.graphs().length; i++) {
             self.graphs()[i].setViewDuration(window);
         }
-    }
+    };
 
     self.sliderChanged = function(event, ui) {
         self.setViewDuration(ui.values);
-    }
+    };
 
     self.idify = function(value) {
         return value.replace(/ /g, "_").toLowerCase();
-    }
+    };
 
     self.getGraphName = function(service, metric, statistic) {
         return self.idify(service) + ":" + self.idify(metric) + ":" + self.idify(statistic);
-    }
+    };
 
     self.sortCategories = function(obsArray) {
         for (var i = 0; i < obsArray().length; i++) {
@@ -273,7 +273,7 @@ var AppViewModel = function() {
         obsArray.sort(function(left, right) {
             return left.name() == right.name() ? 0 : (left.name() < right.name() ? -1 : 1)
         });
-    }
+    };
 
     self.createMetric = function(service, metric, statistic) {
         var serviceNode = self.getServiceVMNode(service);
@@ -292,7 +292,7 @@ var AppViewModel = function() {
             metricNode.children.push(stat);
         }
         self.sortCategories(self.metricsList);
-    }
+    };
 
     self.loadMetricsList = function(newMetrics) {
         for (var i = 0; i < newMetrics.metrics.length; i++) {
@@ -305,7 +305,7 @@ var AppViewModel = function() {
                 }
             }
         }
-    }
+    };
 
 
     self.getServiceVMNode = function(name) {
@@ -316,7 +316,7 @@ var AppViewModel = function() {
             }
         }
         return undefined;
-    }
+    };
 
     self.getMetricVMNode = function(name, svcNode) {
         for (var i = 0; i < svcNode.children().length; i++) {
@@ -326,7 +326,7 @@ var AppViewModel = function() {
             }
         }
         return undefined;
-    }
+    };
 
     self.getStatVMNode = function(name, metricNode) {
         for (var i = 0; i < metricNode.children().length; i++) {
@@ -336,11 +336,11 @@ var AppViewModel = function() {
             }
         }
         return undefined;
-    }
+    };
 
     self.addNewMetric = function(newMetric) {
         self.createMetric(newMetric.service, newMetric.metric, newMetric.statistic);
-    }
+    };
 
     self.reportData = function(metric) {
         var graphName = self.getGraphName(metric.service, metric.metric, metric.statistic);
@@ -348,7 +348,7 @@ var AppViewModel = function() {
         if (graph != undefined) {
             graph.postData(metric.server, metric.timestamp, metric.data);
         }
-    }
+    };
 
     self.processMessage = function(data) {
         if (data.command == "metricsList") {
@@ -367,39 +367,39 @@ var AppViewModel = function() {
             console.log("unhandled message: ");
             console.log(data);
         }
-    }
+    };
 
     self.reconnect = function(cvm) {
         var server = cvm.server;
         self.doConnect(server, cvm);
-    }
+    };
 
     self.doConnect = function(server, cvm) {
         console.log("connecting to " + server);
-        var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket
+        var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket;
         var metricsSocket = new WS("ws://" + server + ":7090/stream");
 
 
         var getMetricsList = function() {
             metricsSocket.send(JSON.stringify({command: "getMetrics"}));
-        }
+        };
 
         var receiveEvent = function(event) {
             var data = JSON.parse(event.data);
             self.processMessage(data);
-        }
+        };
 
         var errored = function(event) {
             console.log("error on socket to " + server + ": " + event);
-        }
+        };
 
-        var opened = function(event) {
+        var opened = function() {
             cvm.status("connected");
             cvm.hasConnected = true;
             cvm.connectedAt = (new Date).getTime();
             getMetricsList();
             console.log("connection established to " + server);
-        }
+        };
 
         var retryLoop = function(cvm) {
             console.log("retry loop, attempt: " + cvm.attempt + ", waitTime: " + cvm.time);
@@ -428,7 +428,7 @@ var AppViewModel = function() {
                     retryLoop(cvm);
                 }, cvm.time);
             }
-        }
+        };
 
         var closed = function(event) {
             cvm.status("disconnected");
@@ -446,7 +446,7 @@ var AppViewModel = function() {
                 console.log("connection had never completed successfully");
             }
             console.log(event);
-        }
+        };
 
 
 
@@ -456,7 +456,7 @@ var AppViewModel = function() {
         metricsSocket.onclose = closed;
 
         cvm.socket = metricsSocket;
-    }
+    };
 
     self.connect = function() {
         var server = $("#connectTo").val();
@@ -483,20 +483,20 @@ var AppViewModel = function() {
             setTimeout(function () {
                 heartbeat(node);
             }, 5000);
-        }
+        };
 
         heartbeat(connectionNode);
     }
-}
+};
 
 ko.bindingHandlers.slider = {
-    init: function(element, valueAccessor, allBindingsAccessor) {
+    init: function(element, valueAccessor) {
         // First get the latest data that we're bound to
-        var value = valueAccessor(), allBindings = allBindingsAccessor();
+        var value = valueAccessor();
 
         $(element).dragslider(value);
     }
 };
 
-var appm = new AppViewModel();
-ko.applyBindings(appm);
+var appModel = new AppViewModel();
+ko.applyBindings(appModel);
