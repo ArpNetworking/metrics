@@ -14,6 +14,7 @@ import org.joda.time.format.PeriodFormatter;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -226,7 +227,7 @@ public class TsdAggregator {
             listener.addListener(new RRDClusterListener());
         }
 
-        HashMap<String, TSData> aggregations = new HashMap<String, TSData>();
+        Map<String, TSData> aggregations = new ConcurrentHashMap<String, TSData>();
 
         ArrayList<String> files = new ArrayList<String>();
         File file = new File(fileName);

@@ -3,9 +3,7 @@ package tsdaggregator;
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,10 +19,10 @@ public class LineProcessor {
     private String serviceName;
     private Set<Period> periods;
     private AggregationListener listener;
-    private HashMap<String, TSData> aggregations;
+    private Map<String, TSData> aggregations;
     static final Logger _Logger = Logger.getLogger(LineProcessor.class);
 
-    public LineProcessor(Class parserClass, Set<Statistic> statisticsClasses, String hostName, String serviceName, Set<Period> periods, AggregationListener listener, HashMap<String, TSData> aggregations) {
+    public LineProcessor(Class parserClass, Set<Statistic> statisticsClasses, String hostName, String serviceName, Set<Period> periods, AggregationListener listener, Map<String, TSData> aggregations) {
         this.parserClass = parserClass;
         this.statisticsClasses = statisticsClasses;
         this.hostName = hostName;
