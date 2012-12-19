@@ -47,7 +47,7 @@
                     <i class="icon-play" data-bind="visible: paused, click: togglePause"></i>
                 </div>
                 <div class="span11">
-                    <div id="durationSlider"></div>
+                    <div data-bind="slider: {range: true, values: [570000, 600000], min: 15000, max: 600000, step: 500, slide: sliderChanged, rangeDrag: true}" id="durationSlider"></div>
                 </div>
             </div>
         </div>

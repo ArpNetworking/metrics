@@ -9,7 +9,7 @@ function GraphVM(id, name) {
     self.graph = null;
     self.stop = false;
     self.paused = false;
-    self.duration = 15000;
+    self.duration = 30000;
     self.endAt = 0;
     self.dataLength = 600000;
 
@@ -253,6 +253,10 @@ var AppViewModel = function() {
         }
     }
 
+    self.sliderChanged = function(event, ui) {
+        self.setViewDuration(ui.values);
+    }
+
     self.idify = function(value) {
         return value.replace(/ /g, "_").toLowerCase();
     }
@@ -474,7 +478,6 @@ var AppViewModel = function() {
         var heartbeat = function(node) {
             var metricsSocket = node.socket;
             if (metricsSocket.readyState == 1) {
-                //console.log("heartbeating, readyState: " + metricsSocket.readyState);
                 metricsSocket.send(JSON.stringify({command: "heartbeat"}));
             }
             setTimeout(function () {
@@ -486,11 +489,14 @@ var AppViewModel = function() {
     }
 }
 
+ko.bindingHandlers.slider = {
+    init: function(element, valueAccessor, allBindingsAccessor) {
+        // First get the latest data that we're bound to
+        var value = valueAccessor(), allBindings = allBindingsAccessor();
+
+        $(element).dragslider(value);
+    }
+};
 
 var appm = new AppViewModel();
 ko.applyBindings(appm);
-
-$("#durationSlider").slider({range: true, values: [585000, 600000], min: 15000, max: 600000, step: 500, slide: function(event, ui) {
-    appm.setViewDuration(ui.values);
-}});
-
