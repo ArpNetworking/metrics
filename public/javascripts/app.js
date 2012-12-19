@@ -1,4 +1,5 @@
 var getConnectionNode = null;
+var shouldShade = null;
 function GraphVM(id, name) {
     var self = this;
     self.id = id;
@@ -28,13 +29,23 @@ function GraphVM(id, name) {
         return id.replace(/:/g, " ");
     };
 
+    self.updateColor = function(cvm) {
+        var index = self.dataStreams[cvm.server];
+        self.data[index].color = cvm.color();
+
+    };
+
     self.postData = function(server, timestamp, dataValue, cvm) {
-        var index = self.dataStreams[server];
+        var index = self.dataStreams[cvm.server];
         if (index == undefined) {
             index = self.data.length;
-            self.dataStreams[server] = index;
-            self.data.push({data: [], label: server, points: {show: true}, lines: {show: true}, color: cvm.color});
+            self.dataStreams[cvm.server] = index;
+            cvm.color.subscribe(function(color){
+                self.updateColor(cvm, color);
+            });
+            self.data.push({data: [], label: cvm.server, points: {show: true}, lines: {show: true}, color: cvm.color()});
         }
+
 
         if (self.data[index].data.length == 0 || self.data[index].data[self.data[index].data.length - 1][0] < timestamp) {
             self.data[index].data.push([timestamp, dataValue]);
@@ -180,7 +191,22 @@ function ConnectionVM(name) {
     self.hasConnected = false;
     self.connectedAt = 0;
     self.abortReconnect = false;
-    self.color = "#000000";
+    self.selected = ko.observable(false);
+    self.colorBase = ko.observableArray([]);
+    self.shade = function() {
+        self.selected(!self.selected());
+    };
+    self.color = ko.computed(function() {
+        if (shouldShade() && !self.selected()) {
+            //shaded color
+            var colArray = self.colorBase();
+            return 'rgba(' + colArray[0] + ',' + colArray[1] + ',' + colArray[2] + ',0.3)';
+        } else {
+            //base color
+            var colArray = self.colorBase();
+            return 'rgba(' + colArray[0] + ',' + colArray[1] + ',' + colArray[2] + ',1.0)';
+        }
+    }, self);
     self.reconnectString = ko.computed(function() {
         if (self.status() != "connected") {
             if (self.hasConnected) {
@@ -206,8 +232,13 @@ var AppViewModel = function() {
     self.connectionIndex = {};
     self.viewDuration = [570000, 600000];
     self.paused = ko.observable(false);
-    self.colors = ['#1F78B4', '#33A02C', '#E31A1C', '#FF7F00', '#6A3D9A', '#A6CEE3', '#B2DF8A', '#FB9A99', '#FDBF6F', '#CAB2D6', '#FFFF99'];
+    self.colors = [[31,120,180], [51,160,44], [227,26,28], [255,127,0], [106,61,154], [166,206,227], [178,223,138], [251,154,153], [253,191,111], [202,178,214], [255,255,153]];
     self.colorId = 0;
+    self.doShade = ko.computed(function() {
+        return self.connections().some(function(element) {
+            return element.selected();
+        })
+    },self);
 
     self.togglePause = function() {
         self.paused(!self.paused());
@@ -236,7 +267,7 @@ var AppViewModel = function() {
         var graph = self.graphsById[id];
         if (graph != undefined) {
             graph.shutdown();
-            self.graphs.remove(graph)
+            self.graphs.remove(graph);
             delete self.graphsById[id];
         }
     };
@@ -450,8 +481,6 @@ var AppViewModel = function() {
             console.log(event);
         };
 
-
-
         metricsSocket.onopen = opened;
         metricsSocket.onerror = errored;
         metricsSocket.onmessage = receiveEvent;
@@ -478,10 +507,8 @@ var AppViewModel = function() {
             }
         }
 
-
-
         var connectionNode = new ConnectionVM(server);
-        connectionNode.color = self.getColor();
+        connectionNode.colorBase(self.getColor());
         self.connectionIndex[server] = connectionNode;
         self.doConnect(server, connectionNode);
 
@@ -527,6 +554,23 @@ ko.bindingHandlers.legendBlock = {
         context.lineWidth = 2;
         context.strokeStyle = 'black';
         context.stroke();
+    },
+    update: function(element, valueAccessor) {
+        // First get the latest data that we're bound to
+        var value = valueAccessor();
+
+        // Next, whether or not the supplied model property is observable, get its current value
+        var valueUnwrapped = ko.utils.unwrapObservable(value);
+
+        var context = element.getContext('2d');
+        context.clearRect(0, 0, element.width, element.height);
+        context.beginPath();
+        context.rect(3, 3, element.width - 6, element.height - 6);
+        context.fillStyle = valueUnwrapped;
+        context.fill();
+        context.lineWidth = 2;
+        context.strokeStyle = 'black';
+        context.stroke();
     }
 };
 
@@ -535,5 +579,10 @@ var appModel = new AppViewModel();
 getConnectionNode = function(server) {
     return appModel.connectionIndex[server];
 };
+
+shouldShade = ko.computed(function() {
+    return appModel.doShade()
+}, appModel);
+
 
 ko.applyBindings(appModel);
