@@ -1,11 +1,15 @@
 package tsdaggregator;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.CoreConnectionPNames;
+import org.apache.http.params.HttpParams;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -14,6 +18,11 @@ import java.io.UnsupportedEncodingException;
 public class HttpPostListener implements AggregationListener {
 	String _Uri;
 	static Logger _Logger = Logger.getLogger(HttpPostListener.class);
+    static HttpClient client = new DefaultHttpClient();
+    static {
+        HttpParams params = client.getParams();
+        params.setLongParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 3000l);
+    }
 	public HttpPostListener(String uri) {
 		_Uri = uri;
 		
@@ -21,10 +30,6 @@ public class HttpPostListener implements AggregationListener {
 	
 	@Override
 	public void recordAggregation(AggregatedData[] data) {
-		HttpClient client = new HttpClient();
-		HttpClientParams params = new HttpClientParams();
-		params.setConnectionManagerTimeout(3000);
-		client.setParams(params);
 		if (data.length > 0) {
 			String aggregateJson = "[";
 			for (AggregatedData d : data) {
@@ -42,26 +47,25 @@ public class HttpPostListener implements AggregationListener {
 			//Strip off the trailing comma
 			aggregateJson = aggregateJson.substring(0, aggregateJson.length() - 1);
 			aggregateJson += "]";
-			
-			PostMethod method = new PostMethod(_Uri);
-            StringRequestEntity entity = null;
+
+			HttpPost method = new HttpPost(_Uri);
+            StringEntity entity = null;
             try {
-                entity = new StringRequestEntity(aggregateJson, "application/json", "utf8");
+                entity = new StringEntity(aggregateJson, "application/json", "utf8");
             } catch (UnsupportedEncodingException e) {
                 _Logger.error("Error on creating POST body", e);
             }
-            method.setRequestEntity(entity);
+            method.setEntity(entity);
 			try {
 				_Logger.info("Posting to " + _Uri + " value '" + aggregateJson + "'");
-				int result = client.executeMethod(method);
-				if (result == HttpStatus.SC_OK) {
-					String response = method.getResponseBodyAsString();
+				HttpResponse result = client.execute(method);
+				if (result.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 					_Logger.info("Post response ok");
 				}
                 else {
-                    _Logger.warn("post was not accepted, status: " + result + ", body: " + method.getResponseBodyAsString());
+                    _Logger.warn("post was not accepted, status: " + result + ", body: " + IOUtils.toString(result.getEntity().getContent(), "UTF-8"));
                 }
-			} catch (HttpException e) {
+			} catch (ClientProtocolException e) {
 				_Logger.error("Error on reporting", e);
 			} catch (IOException e) {
 				_Logger.error("Error on reporting", e);
