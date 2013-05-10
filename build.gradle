@@ -17,7 +17,7 @@ dependencies {
     compile group: 'commons-collections', name: 'commons-collections', version: '3.2'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.2'
     compile group: 'commons-io', name: 'commons-io', version: '2.4'
-    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.1.1'
+    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.2.5'
     compile group: 'joda-time', name: 'joda-time', version: '1.6.2'
     compile group: 'log4j', name: 'log4j', version: '1.2.9'
     compile group: 'org.hibernate', name: 'hibernate-core', version: '3.3.1.GA'
