@@ -12,6 +12,7 @@ import org.joda.time.format.ISOPeriodFormat;
 import org.joda.time.format.PeriodFormatter;
 
 import java.io.*;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +26,8 @@ import java.util.regex.Pattern;
 public class TsdAggregator {
 
     static final Logger _Logger = Logger.getLogger(TsdAggregator.class);
+    private static final String REMET_DEFAULT_URI = "http://localhost:7090/report";
+    private static final String MONITORD_DEFAULT_URI = "http://monitord:8080/results";
 
     /**
      * @param args the command line arguments
@@ -39,24 +42,28 @@ public class TsdAggregator {
             }
         });
 
+
         Options options = new Options();
-        options.addOption("f", "file", true, "file to be parsed");
-        options.addOption("s", "service", true, "service name");
-        options.addOption("h", "host", true, "host the metrics were generated on");
-        options.addOption("u", "uri", true, "metrics server uri");
-        options.addOption("o", "output", true, "output file");
-        options.addOption("p", "parser", true, "parser to use to parse log lines");
-        options.addOption("d", "period", true, "aggregation time period in ISO 8601 standard notation (multiple allowed)");
-        options.addOption("t", "statistic", true, "statistic of aggregation to record (multiple allowed)");
-        options.addOption("e", "extension", true, "extension of files to parse - uses a union of arguments as a regex (multiple allowed)");
-        options.addOption("l", "tail", false, "\"tail\" or follow the file and do not terminate");
-        options.addOption("d", "rrd", false, "create or write to rrd databases");
-        options.addOption("m", "remet", false, "send data to a local remet server");
+        options.addOption(OptionBuilder.withArgName("input_file").withLongOpt("file").hasArg().withDescription("file to be parsed").create("f"));
+        options.addOption(OptionBuilder.withArgName("service").withLongOpt("service").hasArg().withDescription("service name").create("s"));
+        options.addOption(OptionBuilder.withArgName("host").withLongOpt("host").hasArg().withDescription("host the metrics were generated on").create("h"));
+        options.addOption(OptionBuilder.withArgName("cluster").withLongOpt("cluster").hasArg().withDescription("name of the cluster the host is in").create("c"));
+        options.addOption(OptionBuilder.withArgName("uri").withLongOpt("uri").hasArg().withDescription("metrics server uri").create("u"));
+        options.addOption(OptionBuilder.withArgName("output_file").withLongOpt("output").hasArg().withDescription("output file").create("o"));
+        options.addOption(OptionBuilder.withArgName("parser").withLongOpt("parser").hasArg().withDescription("parser to use to parse log lines").create("p"));
+        options.addOption(OptionBuilder.withArgName("period").withLongOpt("period").hasArgs().withDescription("aggregation time period in ISO 8601 standard notation (multiple allowed)").create("d"));
+        options.addOption(OptionBuilder.withArgName("stat").withLongOpt("statistic").hasArgs().withDescription("statistic of aggregation to record (multiple allowed)").create("t"));
+        options.addOption(OptionBuilder.withArgName("extension").withLongOpt("extension").hasArgs().withDescription("extension of files to parse - uses a union of arguments as a regex (multiple allowed)").create("e"));
+        options.addOption(OptionBuilder.withLongOpt("tail").hasArg(false).withDescription("\"tail\" or follow the file and do not terminate").create("l"));
+        options.addOption(OptionBuilder.withLongOpt("rrd").hasArg(false).withDescription("create or write to rrd databases").create());
+        options.addOption(OptionBuilder.withLongOpt("remet").hasArg(false).withDescription("send data to a local remet server").create());
+        options.addOption(OptionBuilder.withLongOpt("monitord").hasArg(false).withDescription("send data to a monitord server").create());
         CommandLineParser parser = new PosixParser();
         CommandLine cl;
         try {
             cl = parser.parse(options, args);
         } catch (ParseException e1) {
+            System.err.println("error parsing options: " + e1.getMessage());
             printUsage(options);
             return;
         }
@@ -73,13 +80,7 @@ public class TsdAggregator {
             return;
         }
 
-        if (!cl.hasOption("h")) {
-            System.err.println("host name must be specified");
-            printUsage(options);
-            return;
-        }
-
-        if (!cl.hasOption("u") && !cl.hasOption("o") && !cl.hasOption("remet")) {
+        if (!cl.hasOption("u") && !cl.hasOption("o") && !cl.hasOption("remet") && !cl.hasOption("monitord")) {
             System.err.println("metrics server uri or output file not specified");
             printUsage(options);
             return;
@@ -104,6 +105,7 @@ public class TsdAggregator {
         if (cl.hasOption("remet")) {
             periodOptions = new String[] {"PT1S"};
         }
+
         if (cl.hasOption("d")) {
             periodOptions = cl.getOptionValues("d");
         }
@@ -171,6 +173,18 @@ public class TsdAggregator {
 
         String fileName = cl.getOptionValue("f");
         String hostName = cl.getOptionValue("h");
+        if (!cl.hasOption("h")) {
+            try {
+                hostName = java.net.InetAddress.getLocalHost().getHostName();
+            } catch (UnknownHostException e) {
+                _Logger.error("could not lookup hostname of local machine", e);
+                System.err.println("host name not specified and could not determine hostname automatically, please specify explicitly");
+                printUsage(options);
+                return;
+            }
+        }
+
+        String cluster = cl.getOptionValue("c");
         String serviceName = cl.getOptionValue("s");
         String metricsUri = "";
         String outputFile = "";
@@ -178,7 +192,9 @@ public class TsdAggregator {
         if (cl.hasOption("u")) {
             metricsUri = cl.getOptionValue("u");
         } else if (cl.hasOption("remet")) {
-            metricsUri = "http://localhost:7090/report";
+            metricsUri = REMET_DEFAULT_URI;
+        } else if (cl.hasOption("monitord")) {
+            metricsUri = MONITORD_DEFAULT_URI;
         }
 
         if (cl.hasOption("o")) {
@@ -190,6 +206,7 @@ public class TsdAggregator {
         }
 
         _Logger.info("using file " + fileName);
+        _Logger.info("using cluster " + cluster);
         _Logger.info("using hostname " + hostName);
         _Logger.info("using servicename " + serviceName);
         _Logger.info("using uri " + metricsUri);
@@ -206,7 +223,7 @@ public class TsdAggregator {
         }
 
         MultiListener listener = new MultiListener();
-        if (!metricsUri.equals("") && !options.hasOption("remet")) {
+        if (!metricsUri.equals("") && (!options.hasOption("remet") && !options.hasOption("monitord"))) {
             AggregationListener httpListener = new HttpPostListener(metricsUri);
             listener.addListener(new BufferingListener(httpListener, 50));
         }
@@ -215,6 +232,11 @@ public class TsdAggregator {
             AggregationListener httpListener = new HttpPostListener(metricsUri);
             //we don't want to buffer remet responses
             listener.addListener(httpListener);
+        }
+
+        if (!metricsUri.equals("") && options.hasOption("monitord")) {
+            AggregationListener monitordListener = new MonitordListener(metricsUri, cluster, hostName);
+            listener.addListener(monitordListener);
         }
 
         if (!outputFile.equals("")) {
@@ -227,9 +249,9 @@ public class TsdAggregator {
             listener.addListener(new RRDClusterListener());
         }
 
-        Map<String, TSData> aggregations = new ConcurrentHashMap<String, TSData>();
+        Map<String, TSData> aggregations = new ConcurrentHashMap<>();
 
-        ArrayList<String> files = new ArrayList<String>();
+        ArrayList<String> files = new ArrayList<>();
         File file = new File(fileName);
         if (file.isFile()) {
             files.add(fileName);
@@ -301,6 +323,7 @@ public class TsdAggregator {
                         entry.getValue().checkRotate(rotateOn);
                     }
                 } catch (InterruptedException e) {
+                    Thread.interrupted();
                     _Logger.error("Interrupted!", e);
                 }
             }
@@ -329,6 +352,4 @@ public class TsdAggregator {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp("tsdaggregator", options, true);
     }
-
-
 }

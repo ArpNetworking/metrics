@@ -1,12 +1,14 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
+apply plugin: 'idea'
 apply plugin: 'application'
 apply plugin: 'maven'
 
 repositories {
     maven {
-        url "http://artifactory.arpnetworking.com:8081/artifactory/repo/"
+	url "http://artifactory.arpnetworking.com:8081/nexus/content/groups/public/"
     }
+    mavenCentral()
 }
 configurations {
     deployJars
@@ -19,7 +21,8 @@ dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.4'
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.2.5'
     compile group: 'joda-time', name: 'joda-time', version: '1.6.2'
-    compile group: 'log4j', name: 'log4j', version: '1.2.9'
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.5'
+    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.5'
     compile group: 'org.hibernate', name: 'hibernate-core', version: '3.3.1.GA'
     compile group: 'org.hibernate', name: 'hibernate-annotations', version: '3.4.0.GA'
     compile group: 'org.hibernate', name: 'hibernate-commons-annotations', version: '3.3.0.ga'
@@ -44,7 +47,7 @@ buildscript {
     }
 }
 mainClassName = 'tsdaggregator.TsdAggregator'
-sourceCompatibility = 1.6
+sourceCompatibility = 1.7
 version = '0.2.1-SNAPSHOT'
 group = 'com.arpnetworking'
 jar {
