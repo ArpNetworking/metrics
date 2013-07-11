@@ -64,10 +64,13 @@ public class MonitordListener implements AggregationListener {
                 AggregatedData d = entry.getValue().get(0);
 
                 StringBuilder postValue = new StringBuilder();
+                String combinedMetricName = new StringBuilder().append(d.getService()).append("_")
+                        .append(d.getPeriod().toString(ISOPeriodFormat.standard())).append("_")
+                        .append(d.getMetric()).toString();
                 postValue.append("run_every=").append(d.getPeriod().toStandardSeconds().getSeconds())
                         .append("&path=").append(_Cluster).append("/").append(_Host).append("&monitor=")
-                        .append(d.getPeriod().toString(ISOPeriodFormat.standard())).append("_").append(d.getMetric())
-                        .append("&status=0&output=");
+                        .append(combinedMetricName)
+                        .append("&status=0&output=").append(combinedMetricName).append("%7C");
 
                 for (AggregatedData dataVal : entry.getValue()) {
                     postValue.append(dataVal.getStatistic().getName()).append("%3D").append(dataVal.getValue()).append("%3B");
@@ -76,7 +79,7 @@ public class MonitordListener implements AggregationListener {
                 postValue.setLength(postValue.length() - 3);
 
                 HttpPost method = new HttpPost(_Uri);
-                StringEntity entity = new StringEntity(postValue.toString(), ContentType.APPLICATION_JSON);
+                StringEntity entity = new StringEntity(postValue.toString(), ContentType.APPLICATION_FORM_URLENCODED);
                 method.setEntity(entity);
                 HttpEntity responseEntity = null;
                 try {
