@@ -201,6 +201,8 @@ public class TsdAggregator {
         String metricsUri = "";
         String outputFile = "";
         Boolean outputRRD = false;
+        Boolean outputRemet = false;
+        Boolean outputMonitord = false;
         if (cl.hasOption(uriOption.getLongOpt())) {
             metricsUri = cl.getOptionValue(uriOption.getLongOpt());
         } else if (cl.hasOption(remetOption.getLongOpt())) {
@@ -215,6 +217,14 @@ public class TsdAggregator {
 
         if (cl.hasOption(rrdOption.getLongOpt())) {
             outputRRD = true;
+        }
+
+        if (cl.hasOption(remetOption.getLongOpt())) {
+            outputRemet = true;
+        }
+
+        if (cl.hasOption(monitordOption.getLongOpt())) {
+            outputMonitord = true;
         }
 
         _Logger.info("using file " + fileName);
@@ -235,29 +245,34 @@ public class TsdAggregator {
         }
 
         MultiListener listener = new MultiListener();
-        if (!metricsUri.equals("") && (!options.hasOption(remetOption.getLongOpt()) && !options.hasOption(monitordOption.getLongOpt()))) {
+        if (!metricsUri.equals("") && (!outputRemet && !outputMonitord)) {
+            _Logger.info("Adding buffered HTTP POST listener");
             AggregationListener httpListener = new HttpPostListener(metricsUri);
             listener.addListener(new BufferingListener(httpListener, 50));
         }
 
-        if (!metricsUri.equals("") && options.hasOption(remetOption.getLongOpt())) {
+        if (!metricsUri.equals("") && outputRemet) {
+            _Logger.info("Adding unbuffered HTTP POST listener");
             AggregationListener httpListener = new HttpPostListener(metricsUri);
             //we don't want to buffer remet responses
             listener.addListener(httpListener);
         }
 
-        if (!metricsUri.equals("") && options.hasOption(monitordOption.getLongOpt())) {
+        if (!metricsUri.equals("") && outputMonitord) {
+            _Logger.info("Adding monitord listener");
             AggregationListener monitordListener = new MonitordListener(metricsUri, cluster, hostName);
             listener.addListener(monitordListener);
         }
 
         if (!outputFile.equals("")) {
+            _Logger.info("Adding file listener");
             AggregationListener fileListener = new FileListener(outputFile);
             //listener = new BufferingListener(fileListener, 500);
             listener.addListener(fileListener);
         }
 
         if (outputRRD) {
+            _Logger.info("Adding RRD listener");
             listener.addListener(new RRDClusterListener());
         }
 
@@ -319,7 +334,7 @@ public class TsdAggregator {
 
         long rotationCheck = 30000;
         long rotateOn = 60000;
-        if (options.hasOption(remetOption.getLongOpt())) {
+        if (outputRemet) {
             rotationCheck = 500;
             rotateOn = 1000;
         }
