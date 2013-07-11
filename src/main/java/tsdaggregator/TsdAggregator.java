@@ -43,21 +43,35 @@ public class TsdAggregator {
         });
 
 
-        Options options = new Options();
-        options.addOption(OptionBuilder.withArgName("input_file").withLongOpt("file").hasArg().withDescription("file to be parsed").create("f"));
-        options.addOption(OptionBuilder.withArgName("service").withLongOpt("service").hasArg().withDescription("service name").create("s"));
-        options.addOption(OptionBuilder.withArgName("host").withLongOpt("host").hasArg().withDescription("host the metrics were generated on").create("h"));
-        options.addOption(OptionBuilder.withArgName("cluster").withLongOpt("cluster").hasArg().withDescription("name of the cluster the host is in").create("c"));
-        options.addOption(OptionBuilder.withArgName("uri").withLongOpt("uri").hasArg().withDescription("metrics server uri").create("u"));
-        options.addOption(OptionBuilder.withArgName("output_file").withLongOpt("output").hasArg().withDescription("output file").create("o"));
-        options.addOption(OptionBuilder.withArgName("parser").withLongOpt("parser").hasArg().withDescription("parser to use to parse log lines").create("p"));
-        options.addOption(OptionBuilder.withArgName("period").withLongOpt("period").hasArgs().withDescription("aggregation time period in ISO 8601 standard notation (multiple allowed)").create("d"));
-        options.addOption(OptionBuilder.withArgName("stat").withLongOpt("statistic").hasArgs().withDescription("statistic of aggregation to record (multiple allowed)").create("t"));
-        options.addOption(OptionBuilder.withArgName("extension").withLongOpt("extension").hasArgs().withDescription("extension of files to parse - uses a union of arguments as a regex (multiple allowed)").create("e"));
-        options.addOption(OptionBuilder.withLongOpt("tail").hasArg(false).withDescription("\"tail\" or follow the file and do not terminate").create("l"));
-        options.addOption(OptionBuilder.withLongOpt("rrd").hasArg(false).withDescription("create or write to rrd databases").create());
-        options.addOption(OptionBuilder.withLongOpt("remet").hasArg(false).withDescription("send data to a local remet server").create());
-        options.addOption(OptionBuilder.withLongOpt("monitord").hasArg(false).withDescription("send data to a monitord server").create());
+        final Options options = new Options();
+        final Option inputFileOption = OptionBuilder.withArgName("input_file").withLongOpt("file").hasArg().withDescription("file to be parsed").create("f");
+        final Option serviceOption = OptionBuilder.withArgName("service").withLongOpt("service").hasArg().withDescription("service name").create("s");
+        final Option hostOption = OptionBuilder.withArgName("host").withLongOpt("host").hasArg().withDescription("host the metrics were generated on").create("h");
+        final Option clusterOption = OptionBuilder.withArgName("cluster").withLongOpt("cluster").hasArg().withDescription("name of the cluster the host is in").create("c");
+        final Option uriOption = OptionBuilder.withArgName("uri").withLongOpt("uri").hasArg().withDescription("metrics server uri").create("u");
+        final Option outputFileOption = OptionBuilder.withArgName("output_file").withLongOpt("output").hasArg().withDescription("output file").create("o");
+        final Option parserOption = OptionBuilder.withArgName("parser").withLongOpt("parser").hasArg().withDescription("parser to use to parse log lines").create("p");
+        final Option periodOption = OptionBuilder.withArgName("period").withLongOpt("period").hasArgs().withDescription("aggregation time period in ISO 8601 standard notation (multiple allowed)").create("d");
+        final Option statisticOption = OptionBuilder.withArgName("stat").withLongOpt("statistic").hasArgs().withDescription("statistic of aggregation to record (multiple allowed)").create("t");
+        final Option extensionOption = OptionBuilder.withArgName("extension").withLongOpt("extension").hasArgs().withDescription("extension of files to parse - uses a union of arguments as a regex (multiple allowed)").create("e");
+        final Option tailOption = OptionBuilder.withLongOpt("tail").hasArg(false).withDescription("\"tail\" or follow the file and do not terminate").create("l");
+        final Option rrdOption = OptionBuilder.withLongOpt("rrd").hasArg(false).withDescription("create or write to rrd databases").create();
+        final Option remetOption = OptionBuilder.withLongOpt("remet").hasArg(false).withDescription("send data to a local remet server").create();
+        final Option monitordOption = OptionBuilder.withLongOpt("monitord").hasArg(false).withDescription("send data to a monitord server").create();
+        options.addOption(inputFileOption );
+        options.addOption(serviceOption);
+        options.addOption(hostOption);
+        options.addOption(clusterOption);
+        options.addOption(uriOption);
+        options.addOption(outputFileOption);
+        options.addOption(parserOption);
+        options.addOption(periodOption);
+        options.addOption(statisticOption);
+        options.addOption(extensionOption);
+        options.addOption(tailOption);
+        options.addOption(rrdOption);
+        options.addOption(remetOption);
+        options.addOption(monitordOption);
         CommandLineParser parser = new PosixParser();
         CommandLine cl;
         try {
@@ -68,27 +82,28 @@ public class TsdAggregator {
             return;
         }
 
-        if (!cl.hasOption("f")) {
+        if (!cl.hasOption(inputFileOption.getLongOpt())) {
             System.err.println("no file found, must specify file on the command line");
             printUsage(options);
             return;
         }
 
-        if (!cl.hasOption("s")) {
+        if (!cl.hasOption(serviceOption.getLongOpt())) {
             System.err.println("service name must be specified");
             printUsage(options);
             return;
         }
 
-        if (!cl.hasOption("u") && !cl.hasOption("o") && !cl.hasOption("remet") && !cl.hasOption("monitord")) {
+        if (!cl.hasOption(uriOption.getLongOpt()) && !cl.hasOption(outputFileOption.getLongOpt()) &&
+                !cl.hasOption(remetOption.getLongOpt()) && !cl.hasOption(monitordOption.getLongOpt())) {
             System.err.println("metrics server uri or output file not specified");
             printUsage(options);
             return;
         }
 
         Class parserClass = QueryLogLineData.class;
-        if (cl.hasOption("p")) {
-            String lineParser = cl.getOptionValue("p");
+        if (cl.hasOption(parserOption.getLongOpt())) {
+            String lineParser = cl.getOptionValue(parserOption.getLongOpt());
             try {
                 parserClass = Class.forName(lineParser);
                 if (!LogLine.class.isAssignableFrom(parserClass)) {
@@ -102,18 +117,18 @@ public class TsdAggregator {
         }
 
         String[] periodOptions = {"PT1M", "PT5M", "PT1H"};
-        if (cl.hasOption("remet")) {
+        if (cl.hasOption(remetOption.getLongOpt())) {
             periodOptions = new String[] {"PT1S"};
         }
 
-        if (cl.hasOption("d")) {
-            periodOptions = cl.getOptionValues("d");
+        if (cl.hasOption(periodOption.getLongOpt())) {
+            periodOptions = cl.getOptionValues(periodOption.getLongOpt());
         }
 
 
         Pattern filter = Pattern.compile(".*");
-        if (cl.hasOption("e")) {
-            String[] filters = cl.getOptionValues("e");
+        if (cl.hasOption(extensionOption.getLongOpt())) {
+            String[] filters = cl.getOptionValues(extensionOption.getLongOpt());
             StringBuilder builder = new StringBuilder();
             int x = 0;
             for (String f : filters) {
@@ -125,11 +140,11 @@ public class TsdAggregator {
             filter = Pattern.compile(builder.toString(), Pattern.CASE_INSENSITIVE);
         }
 
-        Boolean tailFile = cl.hasOption("tail") || cl.hasOption("remet");
+        Boolean tailFile = cl.hasOption(tailOption.getLongOpt()) || cl.hasOption(remetOption.getLongOpt());
 
-        Set<Statistic> statisticsClasses = new HashSet<Statistic>();
-        if (cl.hasOption("t")) {
-            String[] statisticsStrings = cl.getOptionValues("t");
+        Set<Statistic> statisticsClasses = new HashSet<>();
+        if (cl.hasOption(statisticOption.getLongOpt())) {
+            String[] statisticsStrings = cl.getOptionValues(statisticOption.getLongOpt());
             for (String statString : statisticsStrings) {
                 try {
                     _Logger.info("Looking up statistic " + statString);
@@ -138,10 +153,7 @@ public class TsdAggregator {
                     try {
                         stat = (Statistic)statClass.newInstance();
                         statisticsClasses.add(stat);
-                    } catch (InstantiationException ex) {
-                        _Logger.error("Could not instantiate statistic [" + statString + "]", ex);
-                        return;
-                    } catch (IllegalAccessException ex) {
+                    } catch (InstantiationException | IllegalAccessException ex) {
                         _Logger.error("Could not instantiate statistic [" + statString + "]", ex);
                         return;
                     }
@@ -154,7 +166,7 @@ public class TsdAggregator {
                     return;
                 }
             }
-        } else if (cl.hasOption("remet")) {
+        } else if (cl.hasOption(remetOption.getLongOpt())) {
             statisticsClasses.add(new NStatistic());
             statisticsClasses.add(new TP100());
             statisticsClasses.add(new TP99());
@@ -171,9 +183,9 @@ public class TsdAggregator {
             statisticsClasses.add(new NStatistic());
         }
 
-        String fileName = cl.getOptionValue("f");
-        String hostName = cl.getOptionValue("h");
-        if (!cl.hasOption("h")) {
+        String fileName = cl.getOptionValue(inputFileOption.getLongOpt());
+        String hostName = cl.getOptionValue(hostOption.getLongOpt());
+        if (!cl.hasOption(hostOption.getLongOpt())) {
             try {
                 hostName = java.net.InetAddress.getLocalHost().getHostName();
             } catch (UnknownHostException e) {
@@ -184,24 +196,24 @@ public class TsdAggregator {
             }
         }
 
-        String cluster = cl.getOptionValue("c");
-        String serviceName = cl.getOptionValue("s");
+        String cluster = cl.getOptionValue(clusterOption.getLongOpt());
+        String serviceName = cl.getOptionValue(serviceOption.getLongOpt());
         String metricsUri = "";
         String outputFile = "";
         Boolean outputRRD = false;
-        if (cl.hasOption("u")) {
-            metricsUri = cl.getOptionValue("u");
-        } else if (cl.hasOption("remet")) {
+        if (cl.hasOption(uriOption.getLongOpt())) {
+            metricsUri = cl.getOptionValue(uriOption.getLongOpt());
+        } else if (cl.hasOption(remetOption.getLongOpt())) {
             metricsUri = REMET_DEFAULT_URI;
-        } else if (cl.hasOption("monitord")) {
+        } else if (cl.hasOption(monitordOption.getLongOpt())) {
             metricsUri = MONITORD_DEFAULT_URI;
         }
 
-        if (cl.hasOption("o")) {
-            outputFile = cl.getOptionValue("o");
+        if (cl.hasOption(outputFileOption.getLongOpt())) {
+            outputFile = cl.getOptionValue(outputFileOption.getLongOpt());
         }
 
-        if (cl.hasOption("rrd")) {
+        if (cl.hasOption(rrdOption.getLongOpt())) {
             outputRRD = true;
         }
 
@@ -216,25 +228,25 @@ public class TsdAggregator {
             _Logger.info("outputting rrd files");
         }
 
-        Set<Period> periods = new HashSet<Period>();
+        Set<Period> periods = new HashSet<>();
         PeriodFormatter periodParser = ISOPeriodFormat.standard();
         for (String p : periodOptions) {
             periods.add(periodParser.parsePeriod(p));
         }
 
         MultiListener listener = new MultiListener();
-        if (!metricsUri.equals("") && (!options.hasOption("remet") && !options.hasOption("monitord"))) {
+        if (!metricsUri.equals("") && (!options.hasOption(remetOption.getLongOpt()) && !options.hasOption(monitordOption.getLongOpt()))) {
             AggregationListener httpListener = new HttpPostListener(metricsUri);
             listener.addListener(new BufferingListener(httpListener, 50));
         }
 
-        if (!metricsUri.equals("") && options.hasOption("remet")) {
+        if (!metricsUri.equals("") && options.hasOption(remetOption.getLongOpt())) {
             AggregationListener httpListener = new HttpPostListener(metricsUri);
             //we don't want to buffer remet responses
             listener.addListener(httpListener);
         }
 
-        if (!metricsUri.equals("") && options.hasOption("monitord")) {
+        if (!metricsUri.equals("") && options.hasOption(monitordOption.getLongOpt())) {
             AggregationListener monitordListener = new MonitordListener(metricsUri, cluster, hostName);
             listener.addListener(monitordListener);
         }
@@ -267,7 +279,7 @@ public class TsdAggregator {
                 if (tailFile) {
                     File fileHandle = new File(f);
                     LogTailerListener tailListener = new LogTailerListener(processor);
-                    Tailer t = Tailer.create(fileHandle, tailListener, 500l, false);
+                    Tailer.create(fileHandle, tailListener, 500l, false);
                 }
                 else {
                     //check the first 4 bytes of the file for utf markers
@@ -307,7 +319,7 @@ public class TsdAggregator {
 
         long rotationCheck = 30000;
         long rotateOn = 60000;
-        if (options.hasOption("remet")) {
+        if (options.hasOption(remetOption.getLongOpt())) {
             rotationCheck = 500;
             rotateOn = 1000;
         }
@@ -340,7 +352,6 @@ public class TsdAggregator {
                 Matcher m = filter.matcher(entry.getPath());
                 if (m.find()) {
                     files.add(entry.getAbsolutePath());
-                } else {
                 }
             } else if (entry.isDirectory()) {
                 findFilesRecursive(entry, files, filter);
