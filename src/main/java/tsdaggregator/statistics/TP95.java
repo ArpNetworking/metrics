@@ -1,4 +1,4 @@
-package tsdaggregator;
+package tsdaggregator.statistics;
 
 /**
  * Description goes here

@@ -1,4 +1,4 @@
-package tsdaggregator;
+package tsdaggregator.publishing;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -15,12 +15,13 @@ import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpParams;
 import org.apache.log4j.Logger;
+import tsdaggregator.AggregatedData;
 
 import java.io.IOException;
 
-public class HttpPostListener implements AggregationListener {
+public class HttpPostPublisher implements AggregationPublisher {
 	String _Uri;
-	static Logger _Logger = Logger.getLogger(HttpPostListener.class);
+	static Logger _Logger = Logger.getLogger(HttpPostPublisher.class);
     static HttpClient _client;
     static ClientConnectionManager _connectionManager;
     static {
@@ -29,7 +30,7 @@ public class HttpPostListener implements AggregationListener {
         HttpParams params = _client.getParams();
         params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 3000);
     }
-	public HttpPostListener(String uri) {
+	public HttpPostPublisher(String uri) {
 		_Uri = uri;
 		
 	}

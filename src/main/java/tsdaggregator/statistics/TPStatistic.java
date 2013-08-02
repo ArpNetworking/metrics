@@ -1,10 +1,10 @@
-package tsdaggregator;
-
-import java.text.DecimalFormat;
+package tsdaggregator.statistics;
 
 import org.apache.log4j.Logger;
 
-public class TPStatistic implements OrderedStatistic {
+import java.text.DecimalFormat;
+
+public class TPStatistic extends BaseStatistic implements OrderedStatistic {
 	static final Logger _Logger = Logger.getLogger(TPStatistic.class);
 	static final DecimalFormat FORMAT = new DecimalFormat("##0.#");
 	Double _TStat = 0.0;
@@ -29,4 +29,9 @@ public class TPStatistic implements OrderedStatistic {
 		}
 		return false;
 	}
+
+    @Override
+    public int hashCode() {
+        return _TStat.hashCode();
+    }
 }

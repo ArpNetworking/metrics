@@ -2,6 +2,8 @@ package tsdaggregator;
 
 import org.joda.time.DateTime;
 import org.joda.time.Period;
+import tsdaggregator.publishing.AggregationPublisher;
+import tsdaggregator.statistics.Statistic;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,7 +13,7 @@ public class TSData {
 	private String _MetricName;
 	private Set<TSAggregation> _Aggregations = new HashSet<TSAggregation>();
 	
-	public TSData(String metricName, Set<Period> aggregations, AggregationListener listener, String hostName, String serviceName, Set<Statistic> statistics)
+	public TSData(String metricName, Set<Period> aggregations, AggregationPublisher listener, String hostName, String serviceName, Set<Statistic> statistics)
 	{
 		_MetricName = metricName;
 		for (Period period : aggregations) {

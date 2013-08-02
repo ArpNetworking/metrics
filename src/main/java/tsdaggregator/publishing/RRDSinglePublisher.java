@@ -1,7 +1,8 @@
-package tsdaggregator;
+package tsdaggregator.publishing;
 
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
+import tsdaggregator.AggregatedData;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,12 +17,12 @@ import java.text.DecimalFormat;
  * Time: 2:57 AM
  * To change this template use File | Settings | File Templates.
  */
-public class RRDSingleListener {
-    static final Logger _Logger = Logger.getLogger(RRDSingleListener.class);
+public class RRDSinglePublisher {
+    static final Logger _Logger = Logger.getLogger(RRDSinglePublisher.class);
     private String _FileName;
     private DecimalFormat doubleFormat = new DecimalFormat("#.####");
 
-    public RRDSingleListener(AggregatedData data) {
+    public RRDSinglePublisher(AggregatedData data) {
         String rrdName = data.getHost() + "." + data.getMetric() + "." + data.getPeriod().toString() + data.getStatistic().getName() + ".rrd";
         rrdName = rrdName.replace("/", "-");
         String before = rrdName;

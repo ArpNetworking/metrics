@@ -1,16 +1,16 @@
-import java.util.*;
-
-import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.integration.junit4.JMock;
 import org.jmock.integration.junit4.JUnit4Mockery;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Period;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 import org.junit.runner.RunWith;
+import tsdaggregator.TSAggregation;
+import tsdaggregator.publishing.ConsolePublisher;
+import tsdaggregator.statistics.Statistic;
 
-import tsdaggregator.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @RunWith(JMock.class)
 public class TSAggregationTests {
@@ -19,14 +19,15 @@ public class TSAggregationTests {
 	@Test
 	public void TestContruct() {
 		Period period = new Period(0, 5, 0, 0);
-		TSAggregation agg = new TSAggregation("test metric", period, ConsoleListener.getInstance(), "testHost", "testService");
+        Set<Statistic> stats = new HashSet<>();
+		TSAggregation agg = new TSAggregation("test metric", period, ConsolePublisher.getInstance(), "testHost", "testService", stats);
 		Assert.assertNotNull(agg);
 	}
 	
 //	@Test
 //	public void TestSimpleAggregation() {
 //		final Period period = new Period(0, 5, 0, 0);
-//		final AggregationListener listener = context.mock(AggregationListener.class);
+//		final AggregationPublisher listener = context.mock(AggregationPublisher.class);
 //		Set<Statistic> stats = new HashSet<Statistic>();
 //		stats.add(new TPStatistic(100d));
 //		stats.add(new TPStatistic(50d));

@@ -2,22 +2,21 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package tsdaggregator;
+package tsdaggregator.statistics;
 
 /**
  *
  * @author brandarp
  */
-public class FirstStatistic implements Statistic {
+public class LastStatistic extends BaseStatistic {
 
     @Override
     public Double calculate(Double[] values) {
-        return values[0];
+        return values[values.length - 1];
     }
 
     @Override
     public String getName() {
-        return "first";
-    }
-    
+        return "last";
+    }    
 }

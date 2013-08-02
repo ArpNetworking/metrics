@@ -1,17 +1,19 @@
-package tsdaggregator;
+package tsdaggregator.publishing;
+
+import tsdaggregator.AggregatedData;
 
 import java.util.ArrayList;
 
-public class BufferingListener implements AggregationListener {
+public class BufferingPublisher implements AggregationPublisher {
 	ArrayList<AggregatedData> _Data = new ArrayList<AggregatedData>();
-	AggregationListener _Wrapped;
+	AggregationPublisher _Wrapped;
 	Integer _Buffer = 15;
 	
-	public BufferingListener(AggregationListener wrapped) {
+	public BufferingPublisher(AggregationPublisher wrapped) {
 		this(wrapped, 15);
 	}
 	
-	public BufferingListener(AggregationListener wrapped, int buffer) {
+	public BufferingPublisher(AggregationPublisher wrapped, int buffer) {
 		_Buffer = buffer;
 		_Wrapped = wrapped;
 	}

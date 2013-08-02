@@ -10,6 +10,8 @@ import org.apache.log4j.Logger;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
 import org.joda.time.format.PeriodFormatter;
+import tsdaggregator.publishing.*;
+import tsdaggregator.statistics.*;
 
 import java.io.*;
 import java.net.UnknownHostException;
@@ -28,6 +30,25 @@ public class TsdAggregator {
     static final Logger _Logger = Logger.getLogger(TsdAggregator.class);
     private static final String REMET_DEFAULT_URI = "http://localhost:7090/report";
     private static final String MONITORD_DEFAULT_URI = "http://monitord:8080/results";
+    private static final Map<String, Class<? extends Statistic>> STATISTIC_MAP;
+    static {
+        STATISTIC_MAP = new HashMap<>();
+        STATISTIC_MAP.put("n", NStatistic.class);
+        STATISTIC_MAP.put("mean", MeanStatistic.class);
+        STATISTIC_MAP.put("sum", SumStatistic.class);
+        STATISTIC_MAP.put("p0", TP0.class);
+        STATISTIC_MAP.put("min", TP0.class);
+        STATISTIC_MAP.put("p100", TP100.class);
+        STATISTIC_MAP.put("max", TP100.class);
+        STATISTIC_MAP.put("p50", TP50.class);
+        STATISTIC_MAP.put("median", TP50.class);
+        STATISTIC_MAP.put("p90", TP90.class);
+        STATISTIC_MAP.put("p99", TP99.class);
+        STATISTIC_MAP.put("p99.9", TP99p9.class);
+        STATISTIC_MAP.put("p999", TP99p9.class);
+        STATISTIC_MAP.put("first", FirstStatistic.class);
+        STATISTIC_MAP.put("last", LastStatistic.class);
+    }
 
     /**
      * @param args the command line arguments
@@ -52,7 +73,8 @@ public class TsdAggregator {
         final Option outputFileOption = OptionBuilder.withArgName("output_file").withLongOpt("output").hasArg().withDescription("output file").create("o");
         final Option parserOption = OptionBuilder.withArgName("parser").withLongOpt("parser").hasArg().withDescription("parser to use to parse log lines").create("p");
         final Option periodOption = OptionBuilder.withArgName("period").withLongOpt("period").hasArgs().withDescription("aggregation time period in ISO 8601 standard notation (multiple allowed)").create("d");
-        final Option statisticOption = OptionBuilder.withArgName("stat").withLongOpt("statistic").hasArgs().withDescription("statistic of aggregation to record (multiple allowed)").create("t");
+        final Option counterStatisticOption = OptionBuilder.withArgName("stat").withLongOpt("counterstat").hasArgs().withDescription("statistics of aggregation to record for counters (multiple allowed)").create("cs");
+        final Option timerStatisticOption = OptionBuilder.withArgName("stat").withLongOpt("timerstat").hasArgs().withDescription("statistics of aggregation to record for timers (multiple allowed)").create("ts");
         final Option extensionOption = OptionBuilder.withArgName("extension").withLongOpt("extension").hasArgs().withDescription("extension of files to parse - uses a union of arguments as a regex (multiple allowed)").create("e");
         final Option tailOption = OptionBuilder.withLongOpt("tail").hasArg(false).withDescription("\"tail\" or follow the file and do not terminate").create("l");
         final Option rrdOption = OptionBuilder.withLongOpt("rrd").hasArg(false).withDescription("create or write to rrd databases").create();
@@ -66,7 +88,8 @@ public class TsdAggregator {
         options.addOption(outputFileOption);
         options.addOption(parserOption);
         options.addOption(periodOption);
-        options.addOption(statisticOption);
+        options.addOption(timerStatisticOption);
+        options.addOption(counterStatisticOption);
         options.addOption(extensionOption);
         options.addOption(tailOption);
         options.addOption(rrdOption);
@@ -116,7 +139,7 @@ public class TsdAggregator {
             }
         }
 
-        String[] periodOptions = {"PT1M", "PT5M", "PT1H"};
+        String[] periodOptions = {"PT5M"};
         if (cl.hasOption(remetOption.getLongOpt())) {
             periodOptions = new String[] {"PT1S"};
         }
@@ -142,45 +165,25 @@ public class TsdAggregator {
 
         Boolean tailFile = cl.hasOption(tailOption.getLongOpt()) || cl.hasOption(remetOption.getLongOpt());
 
-        Set<Statistic> statisticsClasses = new HashSet<>();
-        if (cl.hasOption(statisticOption.getLongOpt())) {
-            String[] statisticsStrings = cl.getOptionValues(statisticOption.getLongOpt());
-            for (String statString : statisticsStrings) {
-                try {
-                    _Logger.info("Looking up statistic " + statString);
-                    Class statClass = ClassLoader.getSystemClassLoader().loadClass(statString);
-                    Statistic stat;
-                    try {
-                        stat = (Statistic)statClass.newInstance();
-                        statisticsClasses.add(stat);
-                    } catch (InstantiationException | IllegalAccessException ex) {
-                        _Logger.error("Could not instantiate statistic [" + statString + "]", ex);
-                        return;
-                    }
-                    if (!Statistic.class.isAssignableFrom(statClass)) {
-                        _Logger.error("Statistic class [" + statString + "] does not implement required Statistic interface");
-                        return;
-                    }
-                } catch (ClassNotFoundException ex) {
-                    _Logger.error("could not find statistic class [" + statString + "] on classpath");
-                    return;
-                }
-            }
-        } else if (cl.hasOption(remetOption.getLongOpt())) {
-            statisticsClasses.add(new NStatistic());
-            statisticsClasses.add(new TP100());
-            statisticsClasses.add(new TP99());
-            statisticsClasses.add(new TP90());
-            statisticsClasses.add(new MeanStatistic());
+        Set<Statistic> timerStatsClasses = new HashSet<>();
+        Set<Statistic> counterStatsClasses = new HashSet<>();
+        if (cl.hasOption(counterStatisticOption.getLongOpt())) {
+            String[] statisticsStrings = cl.getOptionValues(counterStatisticOption.getLongOpt());
+            buildStats(counterStatsClasses, statisticsStrings);
         } else {
-            statisticsClasses.add(new TP0());
-            statisticsClasses.add(new TP50());
-            statisticsClasses.add(new TP100());
-            statisticsClasses.add(new TP90());
-            statisticsClasses.add(new TP99());
-            statisticsClasses.add(new TP99p9());
-            statisticsClasses.add(new MeanStatistic());
-            statisticsClasses.add(new NStatistic());
+            counterStatsClasses.add(new MeanStatistic());
+            counterStatsClasses.add(new SumStatistic());
+            counterStatsClasses.add(new NStatistic());
+        }
+
+        if (cl.hasOption(timerStatisticOption.getLongOpt())) {
+            String[] statisticsStrings = cl.getOptionValues(timerStatisticOption.getLongOpt());
+            buildStats(timerStatsClasses, statisticsStrings);
+        } else {
+            timerStatsClasses.add(new TP50());
+            timerStatsClasses.add(new TP99());
+            timerStatsClasses.add(new MeanStatistic());
+            timerStatsClasses.add(new NStatistic());
         }
 
         String fileName = cl.getOptionValue(inputFileOption.getLongOpt());
@@ -234,6 +237,8 @@ public class TsdAggregator {
         _Logger.info("using uri " + metricsUri);
         _Logger.info("using output file " + outputFile);
         _Logger.info("using filter (" + filter.pattern() + ")");
+        _Logger.info("using counter stats " + counterStatsClasses.toString());
+        _Logger.info("using timer stats " + timerStatsClasses.toString());
         if (outputRRD) {
             _Logger.info("outputting rrd files");
         }
@@ -244,36 +249,36 @@ public class TsdAggregator {
             periods.add(periodParser.parsePeriod(p));
         }
 
-        MultiListener listener = new MultiListener();
+        MultiPublisher listener = new MultiPublisher();
         if (!metricsUri.equals("") && (!outputRemet && !outputMonitord)) {
             _Logger.info("Adding buffered HTTP POST listener");
-            AggregationListener httpListener = new HttpPostListener(metricsUri);
-            listener.addListener(new BufferingListener(httpListener, 50));
+            AggregationPublisher httpListener = new HttpPostPublisher(metricsUri);
+            listener.addListener(new BufferingPublisher(httpListener, 50));
         }
 
         if (!metricsUri.equals("") && outputRemet) {
             _Logger.info("Adding unbuffered HTTP POST listener");
-            AggregationListener httpListener = new HttpPostListener(metricsUri);
+            AggregationPublisher httpListener = new HttpPostPublisher(metricsUri);
             //we don't want to buffer remet responses
             listener.addListener(httpListener);
         }
 
         if (!metricsUri.equals("") && outputMonitord) {
             _Logger.info("Adding monitord listener");
-            AggregationListener monitordListener = new MonitordListener(metricsUri, cluster, hostName);
+            AggregationPublisher monitordListener = new MonitordPublisher(metricsUri, cluster, hostName);
             listener.addListener(monitordListener);
         }
 
         if (!outputFile.equals("")) {
             _Logger.info("Adding file listener");
-            AggregationListener fileListener = new FileListener(outputFile);
-            //listener = new BufferingListener(fileListener, 500);
+            AggregationPublisher fileListener = new FilePublisher(outputFile);
+            //listener = new BufferingPublisher(fileListener, 500);
             listener.addListener(fileListener);
         }
 
         if (outputRRD) {
             _Logger.info("Adding RRD listener");
-            listener.addListener(new RRDClusterListener());
+            listener.addListener(new RRDClusterPublisher());
         }
 
         Map<String, TSData> aggregations = new ConcurrentHashMap<>();
@@ -290,7 +295,7 @@ public class TsdAggregator {
             try {
                 _Logger.info("Reading file " + f);
 
-                LineProcessor processor = new LineProcessor(parserClass, statisticsClasses, hostName, serviceName, periods, listener, aggregations);
+                LineProcessor processor = new LineProcessor(parserClass, timerStatsClasses, counterStatsClasses, hostName, serviceName, periods, listener, aggregations);
                 if (tailFile) {
                     File fileHandle = new File(f);
                     LogTailerListener tailListener = new LogTailerListener(processor);
@@ -356,6 +361,38 @@ public class TsdAggregator {
             }
         }
         listener.close();
+    }
+
+    private static void buildStats(Set<Statistic> statsClasses, String[] statisticsStrings) {
+        for (String statString : statisticsStrings) {
+            try {
+                _Logger.info("Looking up statistic " + statString);
+                Class statClass;
+                if (STATISTIC_MAP.containsKey(statString)) {
+                    statClass = STATISTIC_MAP.get(statString);
+                } else {
+                    statClass = ClassLoader.getSystemClassLoader().loadClass(statString);
+                }
+                Statistic stat;
+                try {
+                    stat = (Statistic)statClass.newInstance();
+                    statsClasses.add(stat);
+                } catch (InstantiationException | IllegalAccessException ex) {
+                    final String error = "Could not instantiate statistic [" + statString + "]";
+                    _Logger.error(error, ex);
+                    throw new IllegalArgumentException(error, ex);
+                }
+                if (!Statistic.class.isAssignableFrom(statClass)) {
+                    final String error = "Statistic class [" + statString + "] does not implement required Statistic interface";
+                    _Logger.error(error);
+                    throw new IllegalArgumentException(error);
+                }
+            } catch (ClassNotFoundException ex) {
+                final String error = "could not find statistic class [" + statString + "] on classpath";
+                _Logger.error(error);
+                throw new IllegalArgumentException(error, ex);
+            }
+        }
     }
 
     private static void findFilesRecursive(File dir, ArrayList<String> files, Pattern filter) {

@@ -2,9 +2,10 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package tsdaggregator;
+package tsdaggregator.publishing;
 
 import org.apache.log4j.Logger;
+import tsdaggregator.AggregatedData;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,15 +17,15 @@ import java.text.Format;
  *
  * @author brandarp
  */
-public class FileListener implements AggregationListener {
+public class FilePublisher implements AggregationPublisher {
 
     String _FileName = "";
     FileWriter _Writer;
-    static final Logger _Logger = Logger.getLogger(FileListener.class);
+    static final Logger _Logger = Logger.getLogger(FilePublisher.class);
     long _LinesWritten = 0;
     Format doubleFormat = new DecimalFormat("#.##");
 
-    public FileListener(String file) {
+    public FilePublisher(String file) {
         _FileName = file;
         try {
             _Writer = new FileWriter(_FileName, true);
@@ -36,7 +37,7 @@ public class FileListener implements AggregationListener {
 
     @Override
     public void recordAggregation(AggregatedData[] data) {
-        _Logger.debug("Writing aggregation data to FileListener, " + data.length + " records to file " + _FileName);
+        _Logger.debug("Writing aggregation data to FilePublisher, " + data.length + " records to file " + _FileName);
         
         StringBuilder sb = new StringBuilder();
         if (data.length > 0) {

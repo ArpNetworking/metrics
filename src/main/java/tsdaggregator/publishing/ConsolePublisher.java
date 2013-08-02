@@ -1,10 +1,12 @@
-package tsdaggregator;
+package tsdaggregator.publishing;
 
-public class ConsoleListener implements AggregationListener {
-	private static ConsoleListener _Instance;
-	public synchronized static ConsoleListener getInstance() {
+import tsdaggregator.AggregatedData;
+
+public class ConsolePublisher implements AggregationPublisher {
+	private static ConsolePublisher _Instance;
+	public synchronized static ConsolePublisher getInstance() {
 		if (_Instance == null) {
-			_Instance = new ConsoleListener();
+			_Instance = new ConsolePublisher();
 		}
 		return _Instance;
 	}

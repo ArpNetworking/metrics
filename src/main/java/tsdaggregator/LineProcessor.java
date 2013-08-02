@@ -2,6 +2,8 @@ package tsdaggregator;
 
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
+import tsdaggregator.publishing.AggregationPublisher;
+import tsdaggregator.statistics.Statistic;
 
 import java.util.*;
 
@@ -14,17 +16,20 @@ import java.util.*;
  */
 public class LineProcessor {
     private Class parserClass;
-    private Set<Statistic> statisticsClasses;
+    private Set<Statistic> timerStatisticsClasses;
+    private Set<Statistic> counterStatisticsClasses;
     private String hostName;
     private String serviceName;
     private Set<Period> periods;
-    private AggregationListener listener;
+    private AggregationPublisher listener;
     private Map<String, TSData> aggregations;
     static final Logger _Logger = Logger.getLogger(LineProcessor.class);
 
-    public LineProcessor(Class parserClass, Set<Statistic> statisticsClasses, String hostName, String serviceName, Set<Period> periods, AggregationListener listener, Map<String, TSData> aggregations) {
+    public LineProcessor(Class parserClass, Set<Statistic> timerStatisticsClasses, Set<Statistic> counterStatisticsClasses,
+                         String hostName, String serviceName, Set<Period> periods, AggregationPublisher listener, Map<String, TSData> aggregations) {
         this.parserClass = parserClass;
-        this.statisticsClasses = statisticsClasses;
+        this.timerStatisticsClasses = timerStatisticsClasses;
+        this.counterStatisticsClasses = counterStatisticsClasses;
         this.hostName = hostName;
         this.serviceName = serviceName;
         this.periods = periods;
@@ -48,7 +53,11 @@ public class LineProcessor {
         for (Map.Entry<String, CounterVariable> entry : data.getVariables().entrySet()) {
             TSData tsdata = aggregations.get(entry.getKey());
             if (tsdata == null) {
-                tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName, statisticsClasses);
+                if (entry.getValue().isCounter()) {
+                    tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName, counterStatisticsClasses);
+                } else {
+                    tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName, timerStatisticsClasses);
+                }
                 aggregations.put(entry.getKey(), tsdata);
             }
             tsdata.addMetric(entry.getValue().getValues(), data.getTime());

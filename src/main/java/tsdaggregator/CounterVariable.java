@@ -18,7 +18,7 @@ public class CounterVariable {
         this.isCounter= isCounter;
     }
 
-    public Boolean getCounter() {
+    public Boolean isCounter() {
         return isCounter;
     }
 

@@ -1,4 +1,6 @@
-package tsdaggregator;
+package tsdaggregator.publishing;
+
+import tsdaggregator.AggregatedData;
 
 import java.util.ArrayList;
 
@@ -9,23 +11,23 @@ import java.util.ArrayList;
  * Time: 11:14 AM
  * To change this template use File | Settings | File Templates.
  */
-public class MultiListener implements AggregationListener {
-    private ArrayList<AggregationListener> _Listeners = new ArrayList<AggregationListener>();
+public class MultiPublisher implements AggregationPublisher {
+    private ArrayList<AggregationPublisher> _Listeners = new ArrayList<AggregationPublisher>();
 
-    public void addListener(AggregationListener listener) {
+    public void addListener(AggregationPublisher listener) {
         _Listeners.add(listener);
     }
 
     @Override
     public void recordAggregation(AggregatedData[] data) {
-        for (AggregationListener listener : _Listeners) {
+        for (AggregationPublisher listener : _Listeners) {
             listener.recordAggregation(data);
         }
     }
 
     @Override
     public void close() {
-        for (AggregationListener listener : _Listeners) {
+        for (AggregationPublisher listener : _Listeners) {
             listener.close();
         }
     }

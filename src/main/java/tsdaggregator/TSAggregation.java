@@ -4,6 +4,8 @@ import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Period;
+import tsdaggregator.publishing.AggregationPublisher;
+import tsdaggregator.statistics.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,51 +18,34 @@ public class TSAggregation {
     Integer _NumberOfSamples = 0;
     ArrayList<Double> _Samples = new ArrayList<Double>();
     DateTime _PeriodStart = new DateTime(0);
-    Set<Statistic> _OrderedStatistics = new HashSet<Statistic>();
-    Set<Statistic> _UnorderedStatistics = new HashSet<Statistic>();
+    Set<Statistic> _OrderedStatistics = new HashSet<>();
+    Set<Statistic> _UnorderedStatistics = new HashSet<>();
     String _Metric;
     String _HostName;
     String _ServiceName;
-    AggregationListener _Listener;
+    AggregationPublisher _Listener;
     static Logger _Logger = Logger.getLogger(TSAggregation.class);
-    private static final Set<Statistic> DEFAULT_STATS = BuildDefaultStats();
 
-    private static Set<Statistic> BuildDefaultStats() {
-        Set<Statistic> stats = new HashSet<Statistic>();
-        stats.add(new TP100());
-        stats.add(new TP99());
-        stats.add(new TP99p9());
-        stats.add(new TP50());
-        stats.add(new TP0());
-        stats.add(new NStatistic());
-        stats.add(new MeanStatistic());
-        return stats;
-    }
-
-    public TSAggregation(String metric, Period period, AggregationListener listener, String hostName, String serviceName) {
-        this(metric, period, listener, hostName, serviceName, DEFAULT_STATS);
-    }
-
-    public TSAggregation(String metric, Period period, AggregationListener listener, String hostName, String serviceName, Set<Statistic> stats) {
+    public TSAggregation(String metric, Period period, AggregationPublisher listener, String hostName, String serviceName, Set<Statistic> statistics) {
         _Metric = metric;
         _Period = period;
-        addStatistics(stats);
+        addStatistics(statistics, _OrderedStatistics, _UnorderedStatistics);
         _HostName = hostName;
         _ServiceName = serviceName;
         _Listener = listener;
     }
 
-    private void addStatistics(Set<Statistic> stats) {
+    private void addStatistics(Set<Statistic> stats, Set<Statistic> orderedStatsSet, Set<Statistic> unorderedStatsSet) {
         for (Statistic s : stats) {
-            addStatistic(s);
+            addStatistic(s, orderedStatsSet, unorderedStatsSet);
         }
     }
 
-    private void addStatistic(Statistic s) {
+    private void addStatistic(Statistic s, Set<Statistic> orderedStatsSet, Set<Statistic> unorderedStatsSet) {
         if (s instanceof OrderedStatistic) {
-            _OrderedStatistics.add(s);
+            orderedStatsSet.add(s);
         } else {
-            _UnorderedStatistics.add(s);
+            unorderedStatsSet.add(s);
         }
     }
 
@@ -102,11 +87,11 @@ public class TSAggregation {
         emitAggregations();
     }
 
-    public AggregationListener getListener() {
+    public AggregationPublisher getListener() {
         return _Listener;
     }
 
-    public void setListener(AggregationListener listener) {
+    public void setListener(AggregationPublisher listener) {
         _Listener = listener;
     }
 

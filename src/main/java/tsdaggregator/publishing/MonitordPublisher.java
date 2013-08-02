@@ -1,4 +1,4 @@
-package tsdaggregator;
+package tsdaggregator.publishing;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -16,17 +16,18 @@ import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpParams;
 import org.apache.log4j.Logger;
 import org.joda.time.format.ISOPeriodFormat;
+import tsdaggregator.AggregatedData;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MonitordListener implements AggregationListener {
+public class MonitordPublisher implements AggregationPublisher {
 	String _Uri;
     String _Cluster;
     String _Host;
-	static Logger _Logger = Logger.getLogger(MonitordListener.class);
+	static Logger _Logger = Logger.getLogger(MonitordPublisher.class);
     static HttpClient _client;
     static ClientConnectionManager _connectionManager;
     static {
@@ -35,7 +36,7 @@ public class MonitordListener implements AggregationListener {
         HttpParams params = _client.getParams();
         params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 3000);
     }
-	public MonitordListener(String uri, String cluster, String host) {
+	public MonitordPublisher(String uri, String cluster, String host) {
 		_Uri = uri;
         _Cluster = cluster;
         _Host = host;

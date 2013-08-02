@@ -1,4 +1,6 @@
-package tsdaggregator;
+package tsdaggregator.publishing;
+
+import tsdaggregator.AggregatedData;
 
 import java.util.HashMap;
 
@@ -9,16 +11,16 @@ import java.util.HashMap;
  * Time: 2:36 AM
  * To change this template use File | Settings | File Templates.
  */
-public class RRDClusterListener implements AggregationListener {
-    HashMap<String, RRDSingleListener> _Listeners = new HashMap<String, RRDSingleListener>();
+public class RRDClusterPublisher implements AggregationPublisher {
+    HashMap<String, RRDSinglePublisher> _Listeners = new HashMap<String, RRDSinglePublisher>();
     @Override
     public void recordAggregation(AggregatedData[] data) {
         for (AggregatedData d : data) {
             String rrdName = d.getHost() + "." + d.getMetric() + "." + d.getPeriod().toString() + d.getStatistic().getName() + ".rrd";
             if (!_Listeners.containsKey(rrdName)) {
-                _Listeners.put(rrdName, new RRDSingleListener(d));
+                _Listeners.put(rrdName, new RRDSinglePublisher(d));
             }
-            RRDSingleListener listener = _Listeners.get(rrdName);
+            RRDSinglePublisher listener = _Listeners.get(rrdName);
             listener.storeData(d);
         }
     }

@@ -2,6 +2,7 @@ package tsdaggregator;
 
 import org.joda.time.DateTime;
 import org.joda.time.Period;
+import tsdaggregator.statistics.Statistic;
 
 public class AggregatedData {
 	Statistic _Statistic;

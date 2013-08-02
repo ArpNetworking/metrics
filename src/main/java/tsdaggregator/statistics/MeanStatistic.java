@@ -1,6 +1,6 @@
-package tsdaggregator;
+package tsdaggregator.statistics;
 
-public class MeanStatistic implements Statistic {
+public class MeanStatistic extends BaseStatistic {
 
 	@Override
 	public Double calculate(Double[] orderedValues) {

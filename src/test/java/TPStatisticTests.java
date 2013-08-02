@@ -2,7 +2,7 @@ import java.util.*;
 import org.hamcrest.CoreMatchers;
 import org.junit.*;
 
-import tsdaggregator.TPStatistic;
+import tsdaggregator.statistics.TPStatistic;
 
 public class TPStatisticTests {
 
