@@ -3,8 +3,6 @@ package models;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import akka.dispatch.Await;
-import akka.util.Duration;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
@@ -16,6 +14,8 @@ import play.libs.F.Callback;
 import play.libs.F.Callback0;
 import play.libs.Json;
 import play.mvc.WebSocket;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,7 +40,7 @@ public class StreamContext extends UntypedActor {
     public static void connect(WebSocket.In<JsonNode> in, final WebSocket.Out<JsonNode> out) throws Exception{
 
         // Send the Join message to the room
-        String result = (String)Await.result(ask(defaultContext,new Connect(out), 1000), Duration.create(1, SECONDS));
+        String result = (String) Await.result(ask(defaultContext, new Connect(out), 1000), Duration.apply(1, SECONDS));
 
         if("OK".equals(result)) {
 
