@@ -78,8 +78,8 @@ public class TsdAggregator {
         final Option extensionOption = OptionBuilder.withArgName("extension").withLongOpt("extension").hasArgs().withDescription("extension of files to parse - uses a union of arguments as a regex (multiple allowed)").create("e");
         final Option tailOption = OptionBuilder.withLongOpt("tail").hasArg(false).withDescription("\"tail\" or follow the file and do not terminate").create("l");
         final Option rrdOption = OptionBuilder.withLongOpt("rrd").hasArg(false).withDescription("create or write to rrd databases").create();
-        final Option remetOption = OptionBuilder.withLongOpt("remet").hasArg(false).withDescription("send data to a local remet server").create();
-        final Option monitordOption = OptionBuilder.withLongOpt("monitord").hasArg(false).withDescription("send data to a monitord server").create();
+        final Option remetOption = OptionBuilder.withLongOpt("remet").hasOptionalArg().withArgName("uri").withDescription("send data to a local remet server").create();
+        final Option monitordOption = OptionBuilder.withLongOpt("monitord").hasOptionalArg().withArgName("uri").withDescription("send data to a monitord server").create();
         options.addOption(inputFileOption );
         options.addOption(serviceOption);
         options.addOption(hostOption);
@@ -202,16 +202,31 @@ public class TsdAggregator {
         String cluster = cl.getOptionValue(clusterOption.getLongOpt());
         String serviceName = cl.getOptionValue(serviceOption.getLongOpt());
         String metricsUri = "";
+        String remetUri = "";
+        String monitordUri = "";
         String outputFile = "";
         Boolean outputRRD = false;
         Boolean outputRemet = false;
         Boolean outputMonitord = false;
         if (cl.hasOption(uriOption.getLongOpt())) {
             metricsUri = cl.getOptionValue(uriOption.getLongOpt());
-        } else if (cl.hasOption(remetOption.getLongOpt())) {
-            metricsUri = REMET_DEFAULT_URI;
-        } else if (cl.hasOption(monitordOption.getLongOpt())) {
-            metricsUri = MONITORD_DEFAULT_URI;
+        }
+
+        if (cl.hasOption(remetOption.getLongOpt())) {
+            outputRemet = true;
+            remetUri = cl.getOptionValue(remetOption.getLongOpt());
+            if (remetUri == null) {
+                remetUri = REMET_DEFAULT_URI;
+            }
+
+        }
+
+        if (cl.hasOption(monitordOption.getLongOpt())) {
+            outputMonitord = true;
+            monitordUri = cl.getOptionValue(monitordOption.getLongOpt());
+            if (monitordUri == null) {
+                monitordUri = MONITORD_DEFAULT_URI;
+            }
         }
 
         if (cl.hasOption(outputFileOption.getLongOpt())) {
@@ -222,19 +237,13 @@ public class TsdAggregator {
             outputRRD = true;
         }
 
-        if (cl.hasOption(remetOption.getLongOpt())) {
-            outputRemet = true;
-        }
-
-        if (cl.hasOption(monitordOption.getLongOpt())) {
-            outputMonitord = true;
-        }
-
         _Logger.info("using file " + fileName);
         _Logger.info("using cluster " + cluster);
         _Logger.info("using hostname " + hostName);
         _Logger.info("using servicename " + serviceName);
         _Logger.info("using uri " + metricsUri);
+        _Logger.info("using remetURI uri " + remetUri);
+        _Logger.info("using monitord uri " + monitordUri);
         _Logger.info("using output file " + outputFile);
         _Logger.info("using filter (" + filter.pattern() + ")");
         _Logger.info("using counter stats " + counterStatsClasses.toString());
@@ -250,29 +259,28 @@ public class TsdAggregator {
         }
 
         MultiPublisher listener = new MultiPublisher();
-        if (!metricsUri.equals("") && (!outputRemet && !outputMonitord)) {
+        if (!metricsUri.equals("")) {
             _Logger.info("Adding buffered HTTP POST listener");
             AggregationPublisher httpListener = new HttpPostPublisher(metricsUri);
             listener.addListener(new BufferingPublisher(httpListener, 50));
         }
 
-        if (!metricsUri.equals("") && outputRemet) {
-            _Logger.info("Adding unbuffered HTTP POST listener");
-            AggregationPublisher httpListener = new HttpPostPublisher(metricsUri);
+        if (outputRemet) {
+            _Logger.info("Adding remet listener");
+            AggregationPublisher httpListener = new HttpPostPublisher(remetUri);
             //we don't want to buffer remet responses
             listener.addListener(httpListener);
         }
 
-        if (!metricsUri.equals("") && outputMonitord) {
+        if (outputMonitord) {
             _Logger.info("Adding monitord listener");
-            AggregationPublisher monitordListener = new MonitordPublisher(metricsUri, cluster, hostName);
+            AggregationPublisher monitordListener = new MonitordPublisher(monitordUri, cluster, hostName);
             listener.addListener(monitordListener);
         }
 
         if (!outputFile.equals("")) {
             _Logger.info("Adding file listener");
             AggregationPublisher fileListener = new FilePublisher(outputFile);
-            //listener = new BufferingPublisher(fileListener, 500);
             listener.addListener(fileListener);
         }
 
