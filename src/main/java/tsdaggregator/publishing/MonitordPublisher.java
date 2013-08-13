@@ -64,6 +64,11 @@ public class MonitordPublisher implements AggregationPublisher {
                 //All aggregated data values for a metric should have the same metric metadata
                 AggregatedData d = entry.getValue().get(0);
 
+                //Skip periods < 60 seconds
+                if (d.getPeriod().toStandardSeconds().getSeconds() < 60) {
+                    continue;
+                }
+
                 StringBuilder postValue = new StringBuilder();
                 String combinedMetricName = new StringBuilder().append(d.getService()).append("_")
                         .append(d.getPeriod().toString(ISOPeriodFormat.standard())).append("_")
