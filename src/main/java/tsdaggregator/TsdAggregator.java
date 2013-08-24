@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  */
 public class TsdAggregator {
 
-    static final Logger _Logger = Logger.getLogger(TsdAggregator.class);
+    private static final Logger _Logger = Logger.getLogger(TsdAggregator.class);
     private static final String REMET_DEFAULT_URI = "http://localhost:7090/report";
     private static final String MONITORD_DEFAULT_URI = "http://monitord:8080/results";
     private static final Map<String, Class<? extends Statistic>> STATISTIC_MAP;
@@ -349,11 +349,7 @@ public class TsdAggregator {
                 for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
                     entry.getValue().close();
                 }
-            } catch (FileNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -432,7 +428,7 @@ public class TsdAggregator {
         }
     }
 
-    public static void printUsage(Options options) {
+    private static void printUsage(Options options) {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp("tsdaggregator", options, true);
     }
