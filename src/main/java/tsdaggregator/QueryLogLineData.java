@@ -35,7 +35,7 @@ public class QueryLogLineData implements LogLine {
                 } else {
                     ArrayList<Double> values = new ArrayList<Double>();
                     values.add(value);
-                    CounterVariable cv = new CounterVariable(false, values);
+                    CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, values);
                     vals.put(key, cv);
                 }
             }
@@ -64,13 +64,13 @@ public class QueryLogLineData implements LogLine {
         for (Map.Entry<String, Double> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
-            CounterVariable cv = new CounterVariable(true, counter);
+            CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
             _Variables.put(entry.getKey().toString(), cv);
         }
 
         Map<String, ArrayList<Double>> timers = (Map<String, ArrayList<Double>>) line.get("timers");
         for (Map.Entry<String, ArrayList<Double>> entry : timers.entrySet()) {
-            CounterVariable cv = new CounterVariable(false, entry.getValue());
+            CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, entry.getValue());
             _Variables.put(entry.getKey().toString(), cv);
         }
 
@@ -89,7 +89,7 @@ public class QueryLogLineData implements LogLine {
         for (Map.Entry<String, Object> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
-            CounterVariable cv = new CounterVariable(true, counter);
+            CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
             _Variables.put(entry.getKey().toString(), cv);
         }
 
@@ -100,7 +100,7 @@ public class QueryLogLineData implements LogLine {
             for (Object val : vals) {
                 newVals.add(Double.valueOf(val.toString()));
             }
-            CounterVariable cv = new CounterVariable(false, newVals);
+            CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, newVals);
             _Variables.put(entry.getKey().toString(), cv);
         }
 
@@ -132,6 +132,9 @@ public class QueryLogLineData implements LogLine {
             else if (version.equals("2b")) {
                 parseV2bLogLine(jsonLine);
             }
+			else if (version.equals("2c")) {
+				parseV2cLogLine(jsonLine);
+			}
        
         } catch (IOException ex) {
             _Logger.warn("Possible legacy, non-json tsd line found: ", ex);
@@ -144,7 +147,42 @@ public class QueryLogLineData implements LogLine {
         }
     }
 
-    @Override
+	private void parseV2cLogLine(Map<String,Object> line) {
+		parseChunk(line, "timers", CounterVariable.MetricKind.Timer);
+		parseChunk(line, "counters", CounterVariable.MetricKind.Counter);
+		parseChunk(line, "gauges", CounterVariable.MetricKind.Gauge);
+
+		@SuppressWarnings("unchecked")
+		Map<String, String> annotations = (Map<String, String>)line.get("annotations");
+		if (annotations.containsKey("finalTimestamp")) {
+			Double time = Double.parseDouble(annotations.get("finalTimestamp"));
+			//double with whole number unix time, and fractional seconds
+			Long ticks = Math.round(time * 1000);
+			_Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
+		}
+		else if (annotations.containsKey("initTimestamp")) {
+			Double time = Double.parseDouble(annotations.get("initTimestamp"));
+			//double with whole number unix time, and fractional seconds
+			Long ticks = Math.round(time * 1000);
+			_Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
+		}
+	}
+
+	private void parseChunk(Map<String, Object> lineData, String element, CounterVariable.MetricKind kind) {
+		@SuppressWarnings("unchecked")
+		Map<String, ArrayList<Object>> elements = (Map<String, ArrayList<Object>>) lineData.get(element);
+		for (Map.Entry<String, ArrayList<Object>> entry : elements.entrySet()) {
+			ArrayList<Object> lineValues = entry.getValue();
+			ArrayList<Double> parsedValues = new ArrayList<Double>();
+			for (Object val : lineValues) {
+				parsedValues.add(Double.valueOf(val.toString()));
+			}
+			CounterVariable cv = new CounterVariable(kind, parsedValues);
+			_Variables.put(entry.getKey().toString(), cv);
+		}
+	}
+
+	@Override
     public DateTime getTime() {
         return _Time;
     }

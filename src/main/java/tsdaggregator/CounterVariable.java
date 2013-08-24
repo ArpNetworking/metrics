@@ -10,19 +10,25 @@ import java.util.ArrayList;
  * To change this template use File | Settings | File Templates.
  */
 public class CounterVariable {
-    private Boolean isCounter = false;
+	public enum MetricKind {
+		Counter,
+		Timer,
+		Gauge
+	}
+
+    private MetricKind metricKind = MetricKind.Counter;
     private ArrayList<Double> values;
 
-    public CounterVariable(Boolean isCounter, ArrayList<Double> values) {
+    public CounterVariable(MetricKind kind, ArrayList<Double> values) {
         this.values = values;
-        this.isCounter= isCounter;
+        this.metricKind = kind;
     }
 
-    public Boolean isCounter() {
-        return isCounter;
-    }
+	public MetricKind getMetricKind() {
+		return metricKind;
+	}
 
-    public ArrayList<Double> getValues() {
+	public ArrayList<Double> getValues() {
         return values;
     }
 }

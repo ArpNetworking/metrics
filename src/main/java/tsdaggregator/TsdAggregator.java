@@ -75,6 +75,7 @@ public class TsdAggregator {
         final Option periodOption = OptionBuilder.withArgName("period").withLongOpt("period").hasArgs().withDescription("aggregation time period in ISO 8601 standard notation (multiple allowed)").create("d");
         final Option counterStatisticOption = OptionBuilder.withArgName("stat").withLongOpt("counterstat").hasArgs().withDescription("statistics of aggregation to record for counters (multiple allowed)").create("cs");
         final Option timerStatisticOption = OptionBuilder.withArgName("stat").withLongOpt("timerstat").hasArgs().withDescription("statistics of aggregation to record for timers (multiple allowed)").create("ts");
+		final Option gaugeStatisticOption = OptionBuilder.withArgName("stat").withLongOpt("gaugestat").hasArgs().withDescription("statistics of aggregation to record for gauge (multiple allowed)").create("gs");
         final Option extensionOption = OptionBuilder.withArgName("extension").withLongOpt("extension").hasArgs().withDescription("extension of files to parse - uses a union of arguments as a regex (multiple allowed)").create("e");
         final Option tailOption = OptionBuilder.withLongOpt("tail").hasArg(false).withDescription("\"tail\" or follow the file and do not terminate").create("l");
         final Option rrdOption = OptionBuilder.withLongOpt("rrd").hasArg(false).withDescription("create or write to rrd databases").create();
@@ -139,13 +140,14 @@ public class TsdAggregator {
             }
         }
 
-        String[] periodOptions = {"PT5M"};
+        List<String> periodOptions = new ArrayList<>();
+        periodOptions.add("PT5M");
         if (cl.hasOption(remetOption.getLongOpt())) {
-            periodOptions = new String[] {"PT1S"};
+            periodOptions.add("PT1S");
         }
 
         if (cl.hasOption(periodOption.getLongOpt())) {
-            periodOptions = cl.getOptionValues(periodOption.getLongOpt());
+            periodOptions = Arrays.asList(cl.getOptionValues(periodOption.getLongOpt()));
         }
 
 
@@ -167,6 +169,7 @@ public class TsdAggregator {
 
         Set<Statistic> timerStatsClasses = new HashSet<>();
         Set<Statistic> counterStatsClasses = new HashSet<>();
+		Set<Statistic> gaugeStatsClasses = new HashSet<>();
         if (cl.hasOption(counterStatisticOption.getLongOpt())) {
             String[] statisticsStrings = cl.getOptionValues(counterStatisticOption.getLongOpt());
             buildStats(counterStatsClasses, statisticsStrings);
@@ -185,6 +188,15 @@ public class TsdAggregator {
             timerStatsClasses.add(new MeanStatistic());
             timerStatsClasses.add(new NStatistic());
         }
+
+		if (cl.hasOption(gaugeStatisticOption.getLongOpt())) {
+			String[] statisticsStrings = cl.getOptionValues(gaugeStatisticOption.getLongOpt());
+			buildStats(gaugeStatsClasses, statisticsStrings);
+		} else {
+			timerStatsClasses.add(new TP0());
+			timerStatsClasses.add(new TP100());
+			timerStatsClasses.add(new MeanStatistic());
+		}
 
         String fileName = cl.getOptionValue(inputFileOption.getLongOpt());
         String hostName = cl.getOptionValue(hostOption.getLongOpt());
@@ -248,6 +260,7 @@ public class TsdAggregator {
         _Logger.info("using filter (" + filter.pattern() + ")");
         _Logger.info("using counter stats " + counterStatsClasses.toString());
         _Logger.info("using timer stats " + timerStatsClasses.toString());
+		_Logger.info("using gauge stats " + gaugeStatsClasses.toString());
         if (outputRRD) {
             _Logger.info("outputting rrd files");
         }
@@ -303,7 +316,7 @@ public class TsdAggregator {
             try {
                 _Logger.info("Reading file " + f);
 
-                LineProcessor processor = new LineProcessor(parserClass, timerStatsClasses, counterStatsClasses, hostName, serviceName, periods, listener, aggregations);
+                LineProcessor processor = new LineProcessor(parserClass, timerStatsClasses, counterStatsClasses, gaugeStatsClasses, hostName, serviceName, periods, listener, aggregations);
                 if (tailFile) {
                     File fileHandle = new File(f);
                     LogTailerListener tailListener = new LogTailerListener(processor);

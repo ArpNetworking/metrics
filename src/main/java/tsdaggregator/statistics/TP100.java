@@ -12,4 +12,9 @@ public class TP100 extends TPStatistic {
     public TP100() {
         super(100d);
     }
+
+	@Override
+	public String getName() {
+		return "max";
+	}
 }

@@ -9,7 +9,12 @@ package tsdaggregator.statistics;
  * @author brandarp
  */
 public class TP0 extends TPStatistic {
-    public TP0() {
+	@Override
+	public String getName() {
+		return "min";
+	}
+
+	public TP0() {
         super(0d);
     }
 }
