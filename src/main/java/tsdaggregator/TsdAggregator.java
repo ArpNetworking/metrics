@@ -65,22 +65,22 @@ public class TsdAggregator {
 
 
         final Options options = new Options();
-        final Option inputFileOption = OptionBuilder.withArgName("input_file").withLongOpt("file").hasArg().withDescription("file to be parsed").create("f");
-        final Option serviceOption = OptionBuilder.withArgName("service").withLongOpt("service").hasArg().withDescription("service name").create("s");
-        final Option hostOption = OptionBuilder.withArgName("host").withLongOpt("host").hasArg().withDescription("host the metrics were generated on").create("h");
-        final Option clusterOption = OptionBuilder.withArgName("cluster").withLongOpt("cluster").hasArg().withDescription("name of the cluster the host is in").create("c");
-        final Option uriOption = OptionBuilder.withArgName("uri").withLongOpt("uri").hasArg().withDescription("metrics server uri").create("u");
-        final Option outputFileOption = OptionBuilder.withArgName("output_file").withLongOpt("output").hasArg().withDescription("output file").create("o");
-        final Option parserOption = OptionBuilder.withArgName("parser").withLongOpt("parser").hasArg().withDescription("parser to use to parse log lines").create("p");
-        final Option periodOption = OptionBuilder.withArgName("period").withLongOpt("period").hasArgs().withDescription("aggregation time period in ISO 8601 standard notation (multiple allowed)").create("d");
-        final Option counterStatisticOption = OptionBuilder.withArgName("stat").withLongOpt("counterstat").hasArgs().withDescription("statistics of aggregation to record for counters (multiple allowed)").create("cs");
-        final Option timerStatisticOption = OptionBuilder.withArgName("stat").withLongOpt("timerstat").hasArgs().withDescription("statistics of aggregation to record for timers (multiple allowed)").create("ts");
-		final Option gaugeStatisticOption = OptionBuilder.withArgName("stat").withLongOpt("gaugestat").hasArgs().withDescription("statistics of aggregation to record for gauge (multiple allowed)").create("gs");
-        final Option extensionOption = OptionBuilder.withArgName("extension").withLongOpt("extension").hasArgs().withDescription("extension of files to parse - uses a union of arguments as a regex (multiple allowed)").create("e");
-        final Option tailOption = OptionBuilder.withLongOpt("tail").hasArg(false).withDescription("\"tail\" or follow the file and do not terminate").create("l");
-        final Option rrdOption = OptionBuilder.withLongOpt("rrd").hasArg(false).withDescription("create or write to rrd databases").create();
-        final Option remetOption = OptionBuilder.withLongOpt("remet").hasOptionalArg().withArgName("uri").withDescription("send data to a local remet server").create();
-        final Option monitordOption = OptionBuilder.withLongOpt("monitord").hasOptionalArg().withArgName("uri").withDescription("send data to a monitord server").create();
+        final Option inputFileOption = Option.builder("f").argName("input_file").longOpt("file").hasArg().desc("file to be parsed").build();
+        final Option serviceOption = Option.builder("s").argName("service").longOpt("service").hasArg().desc("service name").build();
+        final Option hostOption = Option.builder("h").argName("host").longOpt("host").hasArg().desc("host the metrics were generated on").build();
+        final Option clusterOption = Option.builder("c").argName("cluster").longOpt("cluster").hasArg().desc("name of the cluster the host is in").build();
+        final Option uriOption = Option.builder("u").argName("uri").longOpt("uri").hasArg().desc("metrics server uri").build();
+        final Option outputFileOption = Option.builder("o").argName("output_file").longOpt("output").hasArg().desc("output file").build();
+        final Option parserOption = Option.builder("p").argName("parser").longOpt("parser").hasArg().desc("parser to use to parse log lines").build();
+        final Option periodOption = Option.builder("d").argName("period").longOpt("period").hasArgs().desc("aggregation time period in ISO 8601 standard notation (multiple allowed)").build();
+        final Option counterStatisticOption = Option.builder("cs").argName("stat").longOpt("counterstat").hasArgs().desc("statistics of aggregation to record for counters (multiple allowed)").build();
+        final Option timerStatisticOption = Option.builder("ts").argName("stat").longOpt("timerstat").hasArgs().desc("statistics of aggregation to record for timers (multiple allowed)").build();
+		final Option gaugeStatisticOption = Option.builder("gs").argName("stat").longOpt("gaugestat").hasArgs().desc("statistics of aggregation to record for gauge (multiple allowed)").build();
+        final Option extensionOption = Option.builder("e").argName("extension").longOpt("extension").hasArgs().desc("extension of files to parse - uses a union of arguments as a regex (multiple allowed)").build();
+        final Option tailOption = Option.builder("l").longOpt("tail").hasArg(false).desc("\"tail\" or follow the file and do not terminate").build();
+        final Option rrdOption = Option.builder().longOpt("rrd").hasArg(false).desc("build or write to rrd databases").build();
+        final Option remetOption = Option.builder().longOpt("remet").optionalArg(true).argName("uri").desc("send data to a local remet server").build();
+        final Option monitordOption = Option.builder().longOpt("monitord").optionalArg(true).argName("uri").desc("send data to a monitord server").build();
         options.addOption(inputFileOption );
         options.addOption(serviceOption);
         options.addOption(hostOption);
@@ -96,7 +96,7 @@ public class TsdAggregator {
         options.addOption(rrdOption);
         options.addOption(remetOption);
         options.addOption(monitordOption);
-        CommandLineParser parser = new PosixParser();
+        CommandLineParser parser = new DefaultParser();
         CommandLine cl;
         try {
             cl = parser.parse(options, args);
