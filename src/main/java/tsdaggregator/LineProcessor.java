@@ -5,7 +5,8 @@ import org.joda.time.Period;
 import tsdaggregator.publishing.AggregationPublisher;
 import tsdaggregator.statistics.Statistic;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,7 +16,7 @@ import java.util.*;
  * To change this template use File | Settings | File Templates.
  */
 public class LineProcessor {
-    private Class parserClass;
+    private LogParser parser;
     private Set<Statistic> timerStatisticsClasses;
     private Set<Statistic> counterStatisticsClasses;
 	private Set<Statistic> gaugeStatisticsClasses;
@@ -26,9 +27,9 @@ public class LineProcessor {
     private Map<String, TSData> aggregations;
     static final Logger _Logger = Logger.getLogger(LineProcessor.class);
 
-    public LineProcessor(Class parserClass, Set<Statistic> timerStatisticsClasses, Set<Statistic> counterStatisticsClasses, Set<Statistic> gaugeStatisticsClasses,
+    public LineProcessor(LogParser parser, Set<Statistic> timerStatisticsClasses, Set<Statistic> counterStatisticsClasses, Set<Statistic> gaugeStatisticsClasses,
                          String hostName, String serviceName, Set<Period> periods, AggregationPublisher listener, Map<String, TSData> aggregations) {
-        this.parserClass = parserClass;
+        this.parser = parser;
         this.timerStatisticsClasses = timerStatisticsClasses;
         this.counterStatisticsClasses = counterStatisticsClasses;
 		this.gaugeStatisticsClasses = gaugeStatisticsClasses;
@@ -40,18 +41,11 @@ public class LineProcessor {
     }
 
     public boolean invoke(String line) {
-        LogLine data = null;
-        try {
-            data = (LogLine) parserClass.newInstance();
-        } catch (InstantiationException ex) {
-            _Logger.error("Could not instantiate LogLine parser", ex);
-            return true;
-        } catch (IllegalAccessException ex) {
-            _Logger.error("Could not instantiate LogLine parser", ex);
-            return true;
-        }
+        LogLine data = parser.parseLogLine(line);
+		if (data == null) {
+			return false;
+		}
 
-        data.parseLogLine(line);
         for (Map.Entry<String, CounterVariable> entry : data.getVariables().entrySet()) {
             TSData tsdata = aggregations.get(entry.getKey());
             if (tsdata == null) {

@@ -50,6 +50,23 @@ public class TsdAggregator {
         STATISTIC_MAP.put("last", LastStatistic.class);
     }
 
+	private static final Set<Statistic> DEFAULT_COUNTER_STATS = new TreeSet<Statistic>() {{
+		add(new MeanStatistic());
+		add(new SumStatistic());
+		add(new NStatistic());
+	}};
+	private static final Set<Statistic> DEFAULT_TIMER_STATS = new TreeSet<Statistic>() {{
+		add(new TP50());
+		add(new TP99());
+		add(new MeanStatistic());
+		add(new NStatistic());
+	}};
+
+	private static final Set<Statistic> DEFAULT_GAGE_STATS = new TreeSet<Statistic>() {{
+		add(new TP0());
+		add(new TP100());
+		add(new MeanStatistic());
+	}};
     /**
      * @param args the command line arguments
      */
@@ -125,13 +142,13 @@ public class TsdAggregator {
             return;
         }
 
-        Class parserClass = QueryLogLineData.class;
+        Class parserClass = QueryLogParser.class;
         if (cl.hasOption(parserOption.getLongOpt())) {
             String lineParser = cl.getOptionValue(parserOption.getLongOpt());
             try {
                 parserClass = Class.forName(lineParser);
-                if (!LogLine.class.isAssignableFrom(parserClass)) {
-                    _Logger.error("parser class [" + lineParser + "] does not implement required LogLine interface");
+                if (!LogParser.class.isAssignableFrom(parserClass)) {
+                    _Logger.error("parser class [" + lineParser + "] does not implement required LogParser interface");
                     return;
                 }
             } catch (ClassNotFoundException ex) {
@@ -139,8 +156,15 @@ public class TsdAggregator {
                 return;
             }
         }
+		LogParser logParser;
+		try {
+			logParser = (LogParser)parserClass.newInstance();
+		} catch (InstantiationException | IllegalAccessException e) {
+			_Logger.error("Could not instantiate parser class", e);
+			return;
+		}
 
-        List<String> periodOptions = new ArrayList<>();
+		List<String> periodOptions = new ArrayList<>();
         periodOptions.add("PT5M");
         if (cl.hasOption(remetOption.getLongOpt())) {
             periodOptions.add("PT1S");
@@ -174,28 +198,21 @@ public class TsdAggregator {
             String[] statisticsStrings = cl.getOptionValues(counterStatisticOption.getLongOpt());
             buildStats(counterStatsClasses, statisticsStrings);
         } else {
-            counterStatsClasses.add(new MeanStatistic());
-            counterStatsClasses.add(new SumStatistic());
-            counterStatsClasses.add(new NStatistic());
+			counterStatsClasses = DEFAULT_COUNTER_STATS;
         }
 
         if (cl.hasOption(timerStatisticOption.getLongOpt())) {
             String[] statisticsStrings = cl.getOptionValues(timerStatisticOption.getLongOpt());
             buildStats(timerStatsClasses, statisticsStrings);
         } else {
-            timerStatsClasses.add(new TP50());
-            timerStatsClasses.add(new TP99());
-            timerStatsClasses.add(new MeanStatistic());
-            timerStatsClasses.add(new NStatistic());
+			timerStatsClasses = DEFAULT_TIMER_STATS;
         }
 
 		if (cl.hasOption(gaugeStatisticOption.getLongOpt())) {
 			String[] statisticsStrings = cl.getOptionValues(gaugeStatisticOption.getLongOpt());
 			buildStats(gaugeStatsClasses, statisticsStrings);
 		} else {
-			timerStatsClasses.add(new TP0());
-			timerStatsClasses.add(new TP100());
-			timerStatsClasses.add(new MeanStatistic());
+			gaugeStatsClasses = DEFAULT_GAGE_STATS;
 		}
 
         String fileName = cl.getOptionValue(inputFileOption.getLongOpt());
@@ -316,7 +333,7 @@ public class TsdAggregator {
             try {
                 _Logger.info("Reading file " + f);
 
-                LineProcessor processor = new LineProcessor(parserClass, timerStatsClasses, counterStatsClasses, gaugeStatsClasses, hostName, serviceName, periods, listener, aggregations);
+                LineProcessor processor = new LineProcessor(logParser, timerStatsClasses, counterStatsClasses, gaugeStatsClasses, hostName, serviceName, periods, listener, aggregations);
                 if (tailFile) {
                     File fileHandle = new File(f);
                     LogTailerListener tailListener = new LogTailerListener(processor);

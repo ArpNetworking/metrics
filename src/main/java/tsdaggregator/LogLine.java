@@ -18,6 +18,4 @@ public interface LogLine {
 
     Map<String, CounterVariable> getVariables();
 
-    void parseLogLine(String line);
-    
 }

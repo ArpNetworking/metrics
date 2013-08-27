@@ -9,14 +9,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
-public class QueryLogLineData implements LogLine {
+public class QueryLogParser implements LogParser {
+    static final Logger _Logger = Logger.getLogger(QueryLogParser.class);
+	private  static final ObjectMapper MAPPER = new ObjectMapper();
 
-    Map<String, CounterVariable> _Variables = new HashMap<String, CounterVariable>();
-    DateTime _Time = new DateTime(0);
-    static final Logger _Logger = Logger.getLogger(QueryLogLineData.class);
-
-    private void parseLegacyLogLine(String line) {
+    private LogLine parseLegacyLogLine(String line) {
         HashMap<String, CounterVariable> vals = new HashMap<String, CounterVariable>();
         line.trim();
         line = line.replace("[", "");
@@ -47,50 +46,59 @@ public class QueryLogLineData implements LogLine {
                 _Logger.warn("removing unfinished timer [" + remove + "] from timing set");
             }
         }
+		DateTime timestamp;
         if (vals.containsKey("initTimestamp")) {
             Double time = vals.get("initTimestamp").getValues().get(0);
             //double with whole number unix time, and fractional seconds
             Long ticks = Math.round(time * 1000);
-            _Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
+            timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
             vals.remove("initTimestamp");
-        }
+        } else {
+			timestamp = new DateTime(0);
+		}
 
-        _Variables = vals;
+		return new StandardLogLine(vals, timestamp);
     }
 
     @SuppressWarnings("unchecked")
-    public void parseV2aLogLine(Map<String, Object> line) {
+    public LogLine parseV2aLogLine(Map<String, Object> line) {
+		TreeMap<String, CounterVariable> variables = new TreeMap<>();
         Map<String, Double> counters = (Map<String, Double>) line.get("counters");
         for (Map.Entry<String, Double> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
             CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
-            _Variables.put(entry.getKey().toString(), cv);
+            variables.put(entry.getKey().toString(), cv);
         }
 
         Map<String, ArrayList<Double>> timers = (Map<String, ArrayList<Double>>) line.get("timers");
         for (Map.Entry<String, ArrayList<Double>> entry : timers.entrySet()) {
             CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, entry.getValue());
-            _Variables.put(entry.getKey().toString(), cv);
+            variables.put(entry.getKey().toString(), cv);
         }
 
-        if (_Variables.containsKey("initTimestamp")) {
-            Double time = _Variables.get("initTimestamp").getValues().get(0);
+		DateTime timestamp;
+        if (variables.containsKey("initTimestamp")) {
+            Double time = variables.get("initTimestamp").getValues().get(0);
             //double with whole number unix time, and fractional seconds
             Long ticks = Math.round(time * 1000);
-            _Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
-            _Variables.remove("initTimestamp");
-        }
+            timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
+            variables.remove("initTimestamp");
+        } else {
+			timestamp = new DateTime(0);
+		}
+		return new StandardLogLine(variables, timestamp);
     }
 
     @SuppressWarnings("unchecked")
-    public void parseV2bLogLine(Map<String, Object> line) {
+    public LogLine parseV2bLogLine(Map<String, Object> line) {
+		TreeMap<String, CounterVariable> variables = new TreeMap<>();
         Map<String, Object> counters = (Map<String, Object>) line.get("counters");
         for (Map.Entry<String, Object> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
             CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
-            _Variables.put(entry.getKey().toString(), cv);
+            variables.put(entry.getKey().toString(), cv);
         }
 
         Map<String, ArrayList<Object>> timers = (Map<String, ArrayList<Object>>) line.get("timers");
@@ -101,74 +109,87 @@ public class QueryLogLineData implements LogLine {
                 newVals.add(Double.valueOf(val.toString()));
             }
             CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, newVals);
-            _Variables.put(entry.getKey().toString(), cv);
+            variables.put(entry.getKey().toString(), cv);
         }
 
+		DateTime timestamp;
         Map<String, String> annotations = (Map<String, String>)line.get("annotations");
         if (annotations.containsKey("finalTimestamp")) {
             Double time = Double.parseDouble(annotations.get("finalTimestamp"));
             //double with whole number unix time, and fractional seconds
             Long ticks = Math.round(time * 1000);
-            _Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
+            timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
         }
         else if (annotations.containsKey("initTimestamp")) {
             Double time = Double.parseDouble(annotations.get("initTimestamp"));
             //double with whole number unix time, and fractional seconds
             Long ticks = Math.round(time * 1000);
-            _Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
-        }
+            timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
+        } else {
+			timestamp = new DateTime(0);
+		}
+		return new StandardLogLine(variables, timestamp);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public void parseLogLine(String line) {
-        ObjectMapper mapper = new ObjectMapper();
+    public LogLine parseLogLine(String line) {
+		LogLine logLine;
         try {
-            Map<String, Object> jsonLine = mapper.readValue(line, Map.class);
+            Map<String, Object> jsonLine = MAPPER.readValue(line, Map.class);
             String version = (String) jsonLine.get("version");
             if (version.equals("2a")) {
-                parseV2aLogLine(jsonLine);
+                logLine = parseV2aLogLine(jsonLine);
             }
             else if (version.equals("2b")) {
-                parseV2bLogLine(jsonLine);
+                logLine = parseV2bLogLine(jsonLine);
             }
 			else if (version.equals("2c")) {
-				parseV2cLogLine(jsonLine);
+				logLine = parseV2cLogLine(jsonLine);
 			}
-       
+			else {
+				logLine = null;
+			}
         } catch (IOException ex) {
             _Logger.warn("Possible legacy, non-json tsd line found: ", ex);
             try {
-                parseLegacyLogLine(line);
+                logLine = parseLegacyLogLine(line);
             }
             catch (Exception e) {
                 _Logger.warn("Discarding line: Unparsable.\nLine was:\n" + line, e);
+				logLine = null;
             }
         }
+		return logLine;
     }
 
-	private void parseV2cLogLine(Map<String,Object> line) {
-		parseChunk(line, "timers", CounterVariable.MetricKind.Timer);
-		parseChunk(line, "counters", CounterVariable.MetricKind.Counter);
-		parseChunk(line, "gauges", CounterVariable.MetricKind.Gauge);
+	private LogLine parseV2cLogLine(Map<String,Object> line) {
+		TreeMap<String, CounterVariable> variables = new TreeMap<>();
+		parseChunk(line, "timers", CounterVariable.MetricKind.Timer, variables);
+		parseChunk(line, "counters", CounterVariable.MetricKind.Counter, variables);
+		parseChunk(line, "gauges", CounterVariable.MetricKind.Gauge, variables);
 
+		DateTime timestamp;
 		@SuppressWarnings("unchecked")
 		Map<String, String> annotations = (Map<String, String>)line.get("annotations");
 		if (annotations.containsKey("finalTimestamp")) {
 			Double time = Double.parseDouble(annotations.get("finalTimestamp"));
 			//double with whole number unix time, and fractional seconds
 			Long ticks = Math.round(time * 1000);
-			_Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
+			timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
 		}
 		else if (annotations.containsKey("initTimestamp")) {
 			Double time = Double.parseDouble(annotations.get("initTimestamp"));
 			//double with whole number unix time, and fractional seconds
 			Long ticks = Math.round(time * 1000);
-			_Time = new DateTime(ticks, ISOChronology.getInstanceUTC());
+			timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
+		} else {
+			timestamp = new DateTime(0);
 		}
+		return new StandardLogLine(variables, timestamp);
 	}
 
-	private void parseChunk(Map<String, Object> lineData, String element, CounterVariable.MetricKind kind) {
+	private void parseChunk(Map<String, Object> lineData, String element, CounterVariable.MetricKind kind, Map<String, CounterVariable> variables) {
 		@SuppressWarnings("unchecked")
 		Map<String, ArrayList<Object>> elements = (Map<String, ArrayList<Object>>) lineData.get(element);
 		for (Map.Entry<String, ArrayList<Object>> entry : elements.entrySet()) {
@@ -178,17 +199,7 @@ public class QueryLogLineData implements LogLine {
 				parsedValues.add(Double.valueOf(val.toString()));
 			}
 			CounterVariable cv = new CounterVariable(kind, parsedValues);
-			_Variables.put(entry.getKey().toString(), cv);
+			variables.put(entry.getKey().toString(), cv);
 		}
 	}
-
-	@Override
-    public DateTime getTime() {
-        return _Time;
-    }
-
-    @Override
-    public Map<String, CounterVariable> getVariables() {
-        return _Variables;
-    }
 }
