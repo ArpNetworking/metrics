@@ -81,6 +81,7 @@ function GraphVM(id, name) {
             var graphEnd = now - self.endAt;
             var graphStart = graphEnd - self.duration;
             for (var series = 0; series < self.data.length; series++) {
+                //shift the data off the array that is too old
                 while (self.data[series].data[1] != undefined && self.data[series].data[1][0] < graphEnd - self.dataLength) {
                     self.data[series].data.shift();
                 }
