@@ -319,6 +319,7 @@ public class TsdAggregator {
             listener.addListener(new RRDClusterPublisher());
         }
 
+		//Shared map of metric -> TSData
         Map<String, TSData> aggregations = new ConcurrentHashMap<>();
 
         ArrayList<String> files = new ArrayList<>();
@@ -357,8 +358,7 @@ public class TsdAggregator {
                     BufferedReader reader = new BufferedReader(fileReader);
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        if (processor.invoke(line))
-                            return;
+                        processor.invoke(line);
                     }
                 }
 

@@ -40,14 +40,17 @@ public class LineProcessor {
         this.aggregations = aggregations;
     }
 
-    public boolean invoke(String line) {
+    public void invoke(String line) {
         LogLine data = parser.parseLogLine(line);
 		if (data == null) {
-			return false;
+			return;
 		}
 
+		//Loop over all metrics
         for (Map.Entry<String, CounterVariable> entry : data.getVariables().entrySet()) {
+			//Find the TSData associated with a metric
             TSData tsdata = aggregations.get(entry.getKey());
+			//If the metric isn't already listed, create a new TSData for it
             if (tsdata == null) {
 				switch (entry.getValue().getMetricKind()) {
 					case Counter:
@@ -64,6 +67,5 @@ public class LineProcessor {
             }
             tsdata.addMetric(entry.getValue().getValues(), data.getTime());
         }
-        return false;
     }
 }
