@@ -29,6 +29,7 @@ class Color
 
 interface MetricView {
     id: string;
+    paused: boolean;
     start();
     postData(server: string, timestamp: number, dataValue, cvm: ConnectionVM);
     shutdown();
@@ -43,6 +44,7 @@ class GaugeVM implements MetricView {
     started: boolean = false;
     gauge: Gauge = null;
     name: string;
+    paused: boolean;
     constructor(id: string, name: string) {
         this.id = id;
         this.name = name;
@@ -77,6 +79,9 @@ class GaugeVM implements MetricView {
     }
 
     postData(server: string, timestamp: number, dataValue, cvm: ConnectionVM) {
+        if (this.paused) {
+            return;
+        }
         var val = dataValue;
         this.gauge.redraw(val, 2000);
     }
@@ -355,7 +360,7 @@ class ViewDuration
 
 class AppViewModel
 {
-    graphs = ko.observableArray();
+    graphs: KnockoutObservableArray<MetricView> = ko.observableArray();
     graphsById: {[id: string]:MetricView} = {};
     metricsList = ko.observableArray();
     sockets = ko.observableArray();

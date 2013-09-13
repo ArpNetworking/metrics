@@ -41,11 +41,43 @@ function Gauge(placeholderName, configuration) {
             .attr("width", this.config.controlSize)
             .attr("height", this.config.controlSize);
 
+        var defs = this.body.append("svg:defs");
+        var gradient = defs.append("svg:radialGradient")
+            .attr("id", "bggradient");
+
+        gradient.append("svg:stop")
+            .attr("offset", "92%")
+            .attr("stop-color", "#000")
+            .attr("stop-opacity", 1);
+
+        gradient.append("svg:stop")
+            .attr("offset", "96%")
+            .attr("stop-color", "#ccc")
+            .attr("stop-opacity", 1);
+
+        gradient.append("svg:stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "#111")
+            .attr("stop-opacity", 1);
+
+        var needleGradient = defs.append("svg:radialGradient")
+            .attr("id", "needleGradient");
+
+        needleGradient.append("svg:stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "#666")
+            .attr("stop-opacity", 1);
+
+        needleGradient.append("svg:stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "#333")
+            .attr("stop-opacity", 1);
+
         this.body.append("svg:circle")
             .attr("cx", this.config.cx)
             .attr("cy", this.config.cy)
             .attr("r", this.config.raduis)
-            .style("fill", "#ccc")
+            .style("fill", "url(#bggradient)")
             .style("stroke", "#000")
             .style("stroke-width", "0.5px");
 
@@ -108,7 +140,7 @@ function Gauge(placeholderName, configuration) {
                 .attr("x2", point2.x)
                 .attr("y2", point2.y)
                 .style("stroke", "#333")
-                .style("stroke-width", "2px");
+                .style("stroke-width", "3px");
 
             if (major == this.config.min || major == this.config.max) {
                 var point = this.valueToPoint(major, 0.63);
@@ -153,7 +185,7 @@ function Gauge(placeholderName, configuration) {
             .attr("cx", this.config.cx)
             .attr("cy", this.config.cy)
             .attr("r", 0.12 * this.config.raduis)
-            .style("fill", "#4684EE")
+            .style("fill", "url(#needleGradient)")
             .style("stroke", "#666")
             .style("opacity", 1);
 
