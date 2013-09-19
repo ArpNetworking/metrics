@@ -4,40 +4,48 @@
 
 <div class="container-fluid">
     <div class="row-fluid">
-        <div class="span1"></div>
-        <div class="span3">
+        <div class="span1">
+        </div>
+        <div data-bind="css: {span3: metricsWidth, span1: !metricsWidth()}">
             <div class="row-fluid">
-                <h1>Metrics</h1>
-                <div class="alert alert-block" data-bind="visible: metricsList().length == 0">
-                    Connect to a server to see metrics
+                <div class="span1">
+					<i class="icon-double-angle-left icon-large" data-bind="click: toggleMetricsVisible, visible: metricsVisible"></i>
+					<i class="icon-double-angle-right icon-large" data-bind="click: toggleMetricsVisible, visible: !metricsVisible()"></i>
                 </div>
-                <div class="well" data-bind="visible: metricsList().length > 0">
-                    <ul data-bind="template: {name: 'categories_template', foreach: metricsList}">
-                    </ul>
-                </div>
-                <div class="well" data-bind="visible: connections().length > 0">
-                    <h3>Connections</h3>
-                    <ul data-bind="foreach: {data: connections}">
-                        <li><span data-bind="text: server"></span>
-                            <span class="label-info" data-bind="visible: status() != 'connected', text: status"></span>
-                            <a href="#" data-bind="click: $root.removeConnection">x</a>
-                            <a href="#" data-bind="click: $root.reconnect, text: reconnectString"></a>
-                        </li>
-
-                    </ul>
-                </div>
-                <div class="row-fluid">
-                    <div class="span12">
-                        <form class="form-inline" data-bind="submit: connect">
-                            <input class="input-medium" type="text" id="connectTo" placeholder="Host">
-                            <button class="btn-info btn" type="submit">Connect</button>
-                        </form>
-                    </div>
+            	<div class="span10" data-bind="slide: metricsVisible, duration: 2000, direction: 'left', after: setMetricsWidth">
+	                <h1>Metrics</h1>
+	                <div class="alert alert-block" data-bind="visible: metricsList().length == 0">
+	                    Connect to a server to see metrics
+	                </div>
+	                <div class="well" data-bind="visible: metricsList().length > 0">
+	                    <ul data-bind="template: {name: 'categories_template', foreach: metricsList}">
+	                    </ul>
+	                </div>
+	                <div class="well" data-bind="visible: connections().length > 0">
+	                    <h3>Connections</h3>
+	                    <ul data-bind="foreach: {data: connections}">
+	                        <li><span data-bind="text: server"></span>
+	                            <span class="label-info" data-bind="visible: status() != 'connected', text: status"></span>
+	                            <a href="#" data-bind="click: $root.removeConnection">x</a>
+	                            <a href="#" data-bind="click: $root.reconnect, text: reconnectString"></a>
+	                        </li>
+	
+	                    </ul>
+	                </div>
+	                <div class="row-fluid">
+	                    <div class="span12">
+	                        <form class="form-inline" data-bind="submit: connect">
+	                            <input class="input-medium" type="text" id="connectTo" placeholder="Host">
+	                            <button class="btn-info btn" type="submit">Connect</button>
+	                        </form>
+	                    </div>
+	                </div>
                 </div>
             </div>
         </div>
+<!--        <div data-bind="css: {span8: metricsWidth, span10: !metricsWidth()}"> -->
         <div class="span8">
-            <h1>Data</h1>
+            <h1>&nbsp;</h1>
             <div data-bind="foreach: {data: graphs, afterAdd: startGraph}" class="row-fluid">
                 <div class="span4">
                     <div data-bind="attr: {'id': id}" class="graph"></div>
