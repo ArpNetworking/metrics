@@ -1,179 +1,139 @@
-/// <reference path="libs/knockout/knockout.d.ts"/>
-/// <reference path="libs/jquery/jquery.d.ts"/>
-/// <reference path="libs/jqueryui/jqueryui.d.ts"/>
-/// <reference path="libs/jqueryui/dragslider.d.ts"/>
-/// <reference path="libs/d3/d3gauge.d.ts"/>
-/// <reference path="libs/sammyjs/sammyjs.d.ts"/>
-/// <reference path="libs/jqueryjson/jqueryjson.d.ts"/>
-declare var Flotr;
-declare var MozWebSocket;
-
-class Color
-{
-    r: number;
-    g: number;
-    b: number;
-    a: number = 1;
-
-    constructor(r: number, g: number, b: number, a: number = 1)
-    {
+var Color = (function () {
+    function Color(r, g, b, a) {
+        if (typeof a === "undefined") { a = 1; }
+        this.a = 1;
         this.r = r;
         this.g = g;
         this.b = b;
         this.a = a;
     }
-
-    rgb(): number[]
-    {
+    Color.prototype.rgb = function () {
         return [this.r, this.g, this.b];
-    }
-}
+    };
+    return Color;
+})();
 
-interface MetricView {
-    id: string;
-    paused: boolean;
-    start();
-    postData(server: string, timestamp: number, dataValue, cvm: ConnectionVM);
-    shutdown();
-    setViewDuration(duration: ViewDuration);
-    updateColor(cvm: ConnectionVM);
-    disconnectConnection(cvm: ConnectionVM);
-}
-
-class GaugeVM implements MetricView {
-    id: string;
-    container = null;
-    started: boolean = false;
-    gauge: Gauge = null;
-    name: string;
-    paused: boolean;
-    constructor(id: string, name: string) {
+var GaugeVM = (function () {
+    function GaugeVM(id, name) {
+        this.container = null;
+        this.started = false;
+        this.gauge = null;
         this.id = id;
         this.name = name;
     }
-
-    start() {
+    GaugeVM.prototype.start = function () {
         if (this.started == true) {
             return;
         }
         this.started = true;
         this.container = document.getElementById(this.id);
 
-        var config: any =
-        {
+        var config = {
             size: 250,
             label: this.name,
             min: 0,
             max: 100,
             minorTicks: 5
-        }
+        };
 
         this.gauge = new Gauge(this.id, config);
         this.gauge.render();
-    }
+    };
 
-    postData(server: string, timestamp: number, dataValue, cvm: ConnectionVM) {
+    GaugeVM.prototype.postData = function (server, timestamp, dataValue, cvm) {
         if (this.paused) {
             return;
         }
         var val = dataValue;
         this.gauge.redraw(val, 2000);
-    }
+    };
 
-    setViewDuration(duration: ViewDuration){
+    GaugeVM.prototype.setViewDuration = function (duration) {
+    };
 
-    }
+    GaugeVM.prototype.updateColor = function (cvm) {
+    };
 
-    updateColor(cvm: ConnectionVM) {
+    GaugeVM.prototype.disconnectConnection = function (cvm) {
+    };
 
-    }
+    GaugeVM.prototype.shutdown = function () {
+    };
+    return GaugeVM;
+})();
 
-    disconnectConnection(cvm: ConnectionVM) {
-
-    }
-
-    shutdown() {
-
-    }
-}
-
-class GraphVM implements MetricView {
-    id: string;
-    name: string;
-    started: boolean = false;
-    container = null;
-    data = [];
-    dataStreams: { [key: string]: number} = {};
-    graph = null;
-    stop: boolean = false;
-    paused: boolean = false;
-    duration: number = 30000;
-    endAt: number = 0;
-    dataLength: number = 600000;
-
-    constructor(id: string, name: string) {
+var GraphVM = (function () {
+    function GraphVM(id, name) {
+        this.started = false;
+        this.container = null;
+        this.data = [];
+        this.dataStreams = {};
+        this.graph = null;
+        this.stop = false;
+        this.paused = false;
+        this.duration = 30000;
+        this.endAt = 0;
+        this.dataLength = 600000;
         this.id = id;
         this.name = name;
-
     }
+    GraphVM.prototype.disconnectConnection = function (cvm) {
+    };
 
-    disconnectConnection(cvm: ConnectionVM) {
-
-    }
-
-    shutdown() {
+    GraphVM.prototype.shutdown = function () {
         this.stop = true;
-    }
+    };
 
-    setViewDuration(window: ViewDuration) {
+    GraphVM.prototype.setViewDuration = function (window) {
         var endTime = this.dataLength - window.end;
         this.duration = window.end - window.start;
         this.endAt = endTime;
-    }
+    };
 
-    niceName(id: string): string {
+    GraphVM.prototype.niceName = function (id) {
         return id.replace(/:/g, " ");
-    }
+    };
 
-    updateColor(cvm: ConnectionVM): void {
-        console.log("updating color of " + cvm.server)
+    GraphVM.prototype.updateColor = function (cvm) {
+        console.log("updating color of " + cvm.server);
         var index = this.dataStreams[cvm.server];
         this.data[index].color = cvm.color();
         console.log("new color is");
         console.log(cvm.color());
-    }
+    };
 
-    postData(server: string, timestamp: number, dataValue, cvm: ConnectionVM) {
+    GraphVM.prototype.postData = function (server, timestamp, dataValue, cvm) {
+        var _this = this;
         var index = this.dataStreams[cvm.server];
         if (index == undefined) {
             index = this.data.length;
             this.dataStreams[cvm.server] = index;
-            cvm.color.subscribe((color) => {
-                this.updateColor(cvm);
+            cvm.color.subscribe(function (color) {
+                _this.updateColor(cvm);
             });
-            this.data.push({data: [], label: cvm.server, points: {show: true}, lines: {show: true}, color: cvm.color()});
+            this.data.push({ data: [], label: cvm.server, points: { show: true }, lines: { show: true }, color: cvm.color() });
         }
-
 
         if (this.data[index].data.length == 0 || this.data[index].data[this.data[index].data.length - 1][0] < timestamp) {
             this.data[index].data.push([timestamp, dataValue]);
         }
-    }
+    };
 
-    start() {
+    GraphVM.prototype.start = function () {
+        var _this = this;
         if (this.started == true) {
             return;
         }
         this.started = true;
         this.container = document.getElementById(this.id);
 
-        var animate = () => {
+        var animate = function () {
             var tickTime = 50;
-            if (this.stop) {
+            if (_this.stop) {
                 return;
             }
 
-            if (this.paused) {
+            if (_this.paused) {
                 // Animate
                 setTimeout(function () {
                     animate();
@@ -182,23 +142,22 @@ class GraphVM implements MetricView {
             }
 
             //set min and max
-            var graphMin =  1000000000;
+            var graphMin = 1000000000;
             var graphMax = -1000000000;
 
             var now = new Date().getTime();
-            var graphEnd = now - this.endAt;
-            var graphStart = graphEnd - this.duration;
-            for (var series = 0; series < this.data.length; series++) {
-                //shift the data off the array that is too old
-                while (this.data[series].data[1] != undefined && this.data[series].data[1][0] < graphEnd - this.dataLength) {
-                    this.data[series].data.shift();
+            var graphEnd = now - _this.endAt;
+            var graphStart = graphEnd - _this.duration;
+            for (var series = 0; series < _this.data.length; series++) {
+                while (_this.data[series].data[1] != undefined && _this.data[series].data[1][0] < graphEnd - _this.dataLength) {
+                    _this.data[series].data.shift();
                 }
 
                 //find the indexes in the window
-                var lower = this.data[series].data.length;
+                var lower = _this.data[series].data.length;
                 var upper = 0;
-                for (var iter = this.data[series].data.length - 1; iter >=0; iter--) {
-                    var timestamp = this.data[series].data[iter][0];
+                for (var iter = _this.data[series].data.length - 1; iter >= 0; iter--) {
+                    var timestamp = _this.data[series].data[iter][0];
                     if (timestamp >= graphStart && timestamp <= graphEnd) {
                         if (iter < lower) {
                             lower = iter;
@@ -212,13 +171,13 @@ class GraphVM implements MetricView {
                 if (lower > 0) {
                     lower--;
                 }
-                if (upper < this.data[series].data.length - 1) {
+                if (upper < _this.data[series].data.length - 1) {
                     upper++;
                 }
 
                 for (var back = lower; back <= upper; back++) {
                     //it's in our view window
-                    var dataVal = this.data[series].data[back][1];
+                    var dataVal = _this.data[series].data[back][1];
                     if (dataVal > graphMax) {
                         graphMax = dataVal;
                     }
@@ -230,8 +189,7 @@ class GraphVM implements MetricView {
             if (graphMax == graphMin) {
                 graphMin--;
                 graphMax++;
-            }
-            else {
+            } else {
                 var spread = graphMax - graphMin;
                 var buffer = spread / 10;
                 graphMin -= buffer;
@@ -239,20 +197,19 @@ class GraphVM implements MetricView {
             }
 
             // Draw Graph
-            this.graph = Flotr.draw(this.container, this.data, {
-                yaxis : {
-                    max : graphMax,
-                    min : graphMin
+            _this.graph = Flotr.draw(_this.container, _this.data, {
+                yaxis: {
+                    max: graphMax,
+                    min: graphMin
                 },
                 xaxis: {
-                    mode : 'time',
-                    noTicks : 3,
-                    min : graphStart,
-                    max : graphEnd,
+                    mode: 'time',
+                    noTicks: 3,
+                    min: graphStart,
+                    max: graphEnd,
                     timeMode: "local"
-
                 },
-                title: this.niceName(this.id),
+                title: _this.niceName(_this.id),
                 mouse: {
                     track: true,
                     sensibility: 8,
@@ -267,170 +224,169 @@ class GraphVM implements MetricView {
             setTimeout(function () {
                 animate();
             }, tickTime);
-        }
+        };
         animate();
-    }
-}
+    };
+    return GraphVM;
+})();
 
-class BrowseNodeVM {
-    name: KnockoutObservable<string>;
-    children: KnockoutObservableArray<BrowseNodeVM>;
-    id: KnockoutObservable<string>;
-    expanded: KnockoutObservable<boolean>;
-    isMetric: boolean;
-    parent: AppViewModel;
-    display: KnockoutComputed<string>
-
-    constructor(name: string, id: string, children: BrowseNodeVM[], isMetric: boolean, parent: AppViewModel) {
+var BrowseNodeVM = (function () {
+    function BrowseNodeVM(name, id, children, isMetric, parent) {
+        var _this = this;
         this.name = ko.observable(name);
         this.children = ko.observableArray(children);
         this.id = ko.observable(id);
         this.expanded = ko.observable(false);
         this.isMetric = isMetric;
         this.parent = parent;
-        this.display = ko.computed<string>(() => { return this.name();});
+        this.display = ko.computed(function () {
+            return _this.name();
+        });
     }
-
-    expandMe() {
+    BrowseNodeVM.prototype.expandMe = function () {
         if (!this.isMetric) {
             this.expanded(this.expanded() == false);
-        }
-        else {
+        } else {
             this.parent.addGraph(this.id(), this.name());
         }
-    }
-}
+    };
+    return BrowseNodeVM;
+})();
 
-class ConnectionVM {
-    constructor(name: string) {
+var ConnectionVM = (function () {
+    function ConnectionVM(name) {
+        var _this = this;
+        this.socket = null;
+        this.status = ko.observable("connecting");
+        this.hasConnected = false;
+        this.connectedAt = 0;
+        this.abortReconnect = false;
+        this.selected = ko.observable(false);
+        this.colorBase = ko.observable(new Color(0, 0, 0));
+        this.time = 2000;
+        this.attempt = 0;
+        this.color = ko.computed(function () {
+            var colArray = _this.colorBase().rgb();
+            if (shouldShade() && !_this.selected()) {
+                //shaded color
+                return 'rgba(' + colArray[0] + ',' + colArray[1] + ',' + colArray[2] + ',0.3)';
+            } else {
+                //base color
+                return 'rgba(' + colArray[0] + ',' + colArray[1] + ',' + colArray[2] + ',1.0)';
+            }
+        }, this);
+        this.reconnectString = ko.computed(function () {
+            if (_this.status() != "connected") {
+                if (_this.hasConnected) {
+                    return "reconnect";
+                } else {
+                    return "retry";
+                }
+            } else {
+                return "";
+            }
+        });
         this.server = name;
     }
-    server: string;
-    socket = null;
-    status: KnockoutObservable<string> = ko.observable<string>("connecting");
-    hasConnected = false;
-    connectedAt = 0;
-    abortReconnect = false;
-    selected = ko.observable<boolean>(false);
-    colorBase: KnockoutObservable<Color> = ko.observable(new Color(0, 0, 0));
-    time: number = 2000;
-    attempt: number = 0;
-
-    shade() {
+    ConnectionVM.prototype.shade = function () {
         this.selected(!this.selected());
+    };
+    return ConnectionVM;
+})();
+
+var ViewDuration = (function () {
+    function ViewDuration() {
+        this.start = 570000;
+        this.end = 600000;
     }
+    return ViewDuration;
+})();
 
-    color = ko.computed(() => {
-        var colArray = this.colorBase().rgb();
-        if (shouldShade() && !this.selected()) {
-            //shaded color
-            return 'rgba(' + colArray[0] + ',' + colArray[1] + ',' + colArray[2] + ',0.3)';
-        } else {
-            //base color
-            return 'rgba(' + colArray[0] + ',' + colArray[1] + ',' + colArray[2] + ',1.0)';
-        }
-    }, this);
-
-    reconnectString = ko.computed(() => {
-        if (this.status() != "connected") {
-            if (this.hasConnected) {
-                return "reconnect";
-            }
-            else {
-                return "retry";
-            }
-        }
-        else {
-            return "";
-        }
-    });
-}
-
-class ViewDuration
-{
-    start: number = 570000;
-    end: number = 600000;
-}
-
-class AppViewModel
-{
-    graphs: KnockoutObservableArray<MetricView> = ko.observableArray();
-    graphsById: {[id: string]:MetricView} = {};
-    metricsList = ko.observableArray();
-    sockets = ko.observableArray();
-    connections: KnockoutObservableArray<ConnectionVM> = ko.observableArray();
-    connectionIndex: { [id:string] : ConnectionVM;} = {};
-    viewDuration: ViewDuration = new ViewDuration();
-    paused = ko.observable<boolean>(false);
-    metricsVisible = ko.observable<boolean>(true);
-    metricsWidth = ko.observable<boolean>(true);
-    mode: KnockoutObservable<string> = ko.observable("graph");
-    private colors: Color[] = [new Color(31,120,180), new Color(51,160,44), new Color(227,26,28), new Color(255,127,0),
-        new Color(106,61,154), new Color(166,206,227), new Color(178,223,138), new Color(251,154,153),
-        new Color(253,191,111), new Color(202,178,214), new Color(255,255,153)];
-    private colorId = 0;
-    sliderChanged: (event: Event, ui) => void;
-    removeGraph: (vm: MetricView) => void;
-    removeConnection: (ConnectionVM) => void;
-    fragment = ko.computed(function() {
-        var servers = jQuery.map(this.connections(), function(element) { return element.server });
-        var graphs = jQuery.map(this.graphs(), function(element) {return {id: element.id, name: element.name};});
-        var obj = { connections: servers, graphs: graphs, showMetrics: this.metricsVisible(), mode: this.mode() };
-        return "#" + jQuery.toJSON(obj);
-    },this);
-
-    doShade = ko.computed(function() {
-        return this.connections().some(function(element) {
-            return element.selected();
-        })
-    },this);
-
-    constructor() {
-        this.sliderChanged = (event, ui) => {
-            this.setViewDuration(ui.values);
+var AppViewModel = (function () {
+    function AppViewModel() {
+        var _this = this;
+        this.graphs = ko.observableArray();
+        this.graphsById = {};
+        this.metricsList = ko.observableArray();
+        this.sockets = ko.observableArray();
+        this.connections = ko.observableArray();
+        this.connectionIndex = {};
+        this.viewDuration = new ViewDuration();
+        this.paused = ko.observable(false);
+        this.metricsVisible = ko.observable(true);
+        this.metricsWidth = ko.observable(true);
+        this.mode = ko.observable("graph");
+        this.colors = [
+            new Color(31, 120, 180),
+            new Color(51, 160, 44),
+            new Color(227, 26, 28),
+            new Color(255, 127, 0),
+            new Color(106, 61, 154),
+            new Color(166, 206, 227),
+            new Color(178, 223, 138),
+            new Color(251, 154, 153),
+            new Color(253, 191, 111),
+            new Color(202, 178, 214),
+            new Color(255, 255, 153)
+        ];
+        this.colorId = 0;
+        this.fragment = ko.computed(function () {
+            var servers = jQuery.map(this.connections(), function (element) {
+                return element.server;
+            });
+            var graphs = jQuery.map(this.graphs(), function (element) {
+                return { id: element.id, name: element.name };
+            });
+            var obj = { connections: servers, graphs: graphs, showMetrics: this.metricsVisible(), mode: this.mode() };
+            return "#" + jQuery.toJSON(obj);
+        }, this);
+        this.doShade = ko.computed(function () {
+            return this.connections().some(function (element) {
+                return element.selected();
+            });
+        }, this);
+        this.sliderChanged = function (event, ui) {
+            _this.setViewDuration(ui.values);
         };
 
-        this.removeGraph = (gvm: MetricView) => {
+        this.removeGraph = function (gvm) {
             var id = gvm.id;
-            var graph = this.graphsById[id];
+            var graph = _this.graphsById[id];
             if (graph != undefined) {
                 graph.shutdown();
-                this.graphs.remove(graph);
-                delete this.graphsById[id];
+                _this.graphs.remove(graph);
+                delete _this.graphsById[id];
             }
-        }
+        };
 
-        this.removeConnection = (cvm: ConnectionVM) => {
+        this.removeConnection = function (cvm) {
             cvm.abortReconnect = true;
             var ws = cvm.socket;
             ws.close();
-            this.connections.remove(cvm);
-            delete this.connectionIndex[cvm.server]
-        }
-        this.setMetricsWidth = () => {
-            this.metricsWidth(this.metricsVisible());
-        }
+            _this.connections.remove(cvm);
+            delete _this.connectionIndex[cvm.server];
+        };
+        this.setMetricsWidth = function () {
+            _this.metricsWidth(_this.metricsVisible());
+        };
     }
-
-    toggleMetricsVisible() {
+    AppViewModel.prototype.toggleMetricsVisible = function () {
         this.metricsVisible(!this.metricsVisible());
-    }
-    
-    setMetricsWidth: () => void;
+    };
 
-    togglePause() {
+    AppViewModel.prototype.togglePause = function () {
         this.paused(!this.paused());
         for (var i = 0; i < this.graphs().length; i++) {
             this.graphs()[i].paused = this.paused();
         }
-    }
+    };
 
-    addGraph(id: string, name: string) {
+    AppViewModel.prototype.addGraph = function (id, name) {
         var existing = this.graphsById[id];
         if (existing != undefined) {
             return;
         }
-        var graph: MetricView;
+        var graph;
         if (this.mode() == "graph") {
             graph = new GraphVM(id, name);
         } else if (this.mode() == "gauge") {
@@ -439,22 +395,21 @@ class AppViewModel
         graph.setViewDuration(this.viewDuration);
         this.graphsById[id] = graph;
         this.graphs.push(graph);
-    }
+    };
 
-    startGraph(graphElement, index, gvm: MetricView) {
+    AppViewModel.prototype.startGraph = function (graphElement, index, gvm) {
         gvm.start();
-    }
+    };
 
-
-    setViewDuration(window) {
+    AppViewModel.prototype.setViewDuration = function (window) {
         this.viewDuration = window;
         for (var i = 0; i < this.graphs().length; i++) {
             this.graphs()[i].setViewDuration(window);
         }
-    }
-    
-    parseFragment(fragment: string) {
-        var obj = jQuery.parseJSON(fragment.substring(1));    
+    };
+
+    AppViewModel.prototype.parseFragment = function (fragment) {
+        var obj = jQuery.parseJSON(fragment.substring(1));
         var servers = obj.connections;
         var graphs = obj.graphs;
         var self = this;
@@ -465,37 +420,35 @@ class AppViewModel
         }
         this.metricsVisible(showMetrics);
 
-        jQuery.each(servers, function(index, server) {
+        jQuery.each(servers, function (index, server) {
             self.connectToServer(server);
         });
-        
-        jQuery.each(graphs, function(index, graph) {
+
+        jQuery.each(graphs, function (index, graph) {
             self.addGraph(graph.id, graph.name);
         });
-        
-    }
+    };
 
-
-    idify(value: string) : string {
+    AppViewModel.prototype.idify = function (value) {
         value = value.replace(/ /g, "_").toLowerCase();
         return value.replace(/\//g, "_");
-    }
+    };
 
-    getGraphName(service: string, metric: string, statistic: string) {
+    AppViewModel.prototype.getGraphName = function (service, metric, statistic) {
         return this.idify(service) + "_" + this.idify(metric) + "_" + this.idify(statistic);
-    }
+    };
 
-    sortCategories(obsArray) {
+    AppViewModel.prototype.sortCategories = function (obsArray) {
         for (var i = 0; i < obsArray().length; i++) {
             var children = obsArray()[i].children;
             this.sortCategories(children);
         }
-        obsArray.sort(function(left, right) {
-            return left.name() == right.name() ? 0 : (left.name() < right.name() ? -1 : 1)
+        obsArray.sort(function (left, right) {
+            return left.name() == right.name() ? 0 : (left.name() < right.name() ? -1 : 1);
         });
-    }
+    };
 
-    createMetric(service: string, metric: string, statistic: string) {
+    AppViewModel.prototype.createMetric = function (service, metric, statistic) {
         var serviceNode = this.getServiceVMNode(service);
         if (serviceNode == undefined) {
             serviceNode = new BrowseNodeVM(service, this.idify(service), [], false, this);
@@ -512,9 +465,9 @@ class AppViewModel
             metricNode.children.push(stat);
         }
         this.sortCategories(this.metricsList);
-    }
+    };
 
-    loadMetricsList(newMetrics) {
+    AppViewModel.prototype.loadMetricsList = function (newMetrics) {
         for (var i = 0; i < newMetrics.metrics.length; i++) {
             var svc = newMetrics.metrics[i];
             for (var j = 0; j < svc.children.length; j++) {
@@ -525,10 +478,9 @@ class AppViewModel
                 }
             }
         }
-    }
+    };
 
-
-    getServiceVMNode(name) : BrowseNodeVM{
+    AppViewModel.prototype.getServiceVMNode = function (name) {
         for (var i = 0; i < this.metricsList().length; i++) {
             var svc = this.metricsList()[i];
             if (svc.name() == name) {
@@ -536,9 +488,9 @@ class AppViewModel
             }
         }
         return undefined;
-    }
+    };
 
-    getMetricVMNode(name, svcNode) : BrowseNodeVM {
+    AppViewModel.prototype.getMetricVMNode = function (name, svcNode) {
         for (var i = 0; i < svcNode.children().length; i++) {
             var metric = svcNode.children()[i];
             if (metric.name() == name) {
@@ -546,9 +498,9 @@ class AppViewModel
             }
         }
         return undefined;
-    }
+    };
 
-    getStatVMNode(name, metricNode) : BrowseNodeVM {
+    AppViewModel.prototype.getStatVMNode = function (name, metricNode) {
         for (var i = 0; i < metricNode.children().length; i++) {
             var stat = metricNode.children()[i];
             if (stat.name() == name) {
@@ -556,72 +508,67 @@ class AppViewModel
             }
         }
         return undefined;
-    }
+    };
 
-    addNewMetric(newMetric) {
+    AppViewModel.prototype.addNewMetric = function (newMetric) {
         this.createMetric(newMetric.service, newMetric.metric, newMetric.statistic);
-    }
+    };
 
-    reportData(metric, cvm) {
+    AppViewModel.prototype.reportData = function (metric, cvm) {
         var graphName = this.getGraphName(metric.service, metric.metric, metric.statistic);
         var graph = this.graphsById[graphName];
         if (graph != undefined) {
             graph.postData(metric.server, metric.timestamp, metric.data, cvm);
         }
-    }
+    };
 
-    processMessage(data, cvm) {
+    AppViewModel.prototype.processMessage = function (data, cvm) {
         if (data.command == "metricsList") {
             this.loadMetricsList(data.data);
-        }
-        else if (data.command == "newMetric") {
+        } else if (data.command == "newMetric") {
             this.addNewMetric(data.data);
-        }
-        else if (data.command == "report") {
+        } else if (data.command == "report") {
             this.reportData(data.data, cvm);
-        }
-        else if (data.response == "ok") {
-
-        }
-        else {
+        } else if (data.response == "ok") {
+        } else {
             console.log("unhandled message: ");
             console.log(data);
         }
-    }
+    };
 
-    reconnect(cvm: ConnectionVM) {
+    AppViewModel.prototype.reconnect = function (cvm) {
         var server = cvm.server;
         this.doConnect(server, cvm);
-    }
+    };
 
-    doConnect(server: string, cvm: ConnectionVM) {
+    AppViewModel.prototype.doConnect = function (server, cvm) {
+        var _this = this;
         console.log("connecting to " + server);
         var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket;
-        var metricsSocket: WebSocket = new WS("ws://" + server + ":7090/stream");
+        var metricsSocket = new WS("ws://" + server + ":7090/stream");
 
-
-        var getMetricsList = () => {
-            metricsSocket.send(JSON.stringify({command: "getMetrics"}));
+        var getMetricsList = function () {
+            metricsSocket.send(JSON.stringify({ command: "getMetrics" }));
         };
 
-        var receiveEvent = (event) => {
+        var receiveEvent = function (event) {
             var data = JSON.parse(event.data);
-            this.processMessage(data, cvm);
+            _this.processMessage(data, cvm);
         };
 
-        var errored = (event) => {
+        var errored = function (event) {
             console.log("error on socket to " + server + ": " + event);
         };
 
-        var opened = () => {
+        var opened = function () {
             cvm.status("connected");
             cvm.hasConnected = true;
-            cvm.connectedAt = (new Date).getTime();
+            cvm.connectedAt = (new Date()).getTime();
             getMetricsList();
             console.log("connection established to " + server);
         };
 
-        var retryLoop = (cvm: ConnectionVM) => {
+        var retryLoop = function (cvm) {
             console.log("retry loop, attempt: " + cvm.attempt + ", waitTime: " + cvm.time);
             if (cvm.socket.readyState == 1) {
                 console.log("connection has been restored");
@@ -638,22 +585,22 @@ class AppViewModel
             }
             cvm.time = doubled;
             cvm.attempt = cvm.attempt + 1;
-            if (cvm.attempt > 10 ) {
+            if (cvm.attempt > 10) {
                 cvm.status("disconnected");
                 return;
             }
             if (cvm.socket.readyState == 3) {
-                this.doConnect(cvm.server, cvm);
-                setTimeout(function() {
+                _this.doConnect(cvm.server, cvm);
+                setTimeout(function () {
                     retryLoop(cvm);
                 }, cvm.time);
             }
         };
 
-        var closed = (event) => {
+        var closed = function (event) {
             cvm.status("disconnected");
             console.log("connection closed to " + server);
-            var now = (new Date).getTime();
+            var now = (new Date()).getTime();
             if (cvm.connectedAt > 0) {
                 console.log("connection had opened at " + cvm.connectedAt + ", duration = " + (now - cvm.connectedAt));
                 console.log("trying to reconnect in 2 seconds");
@@ -674,63 +621,57 @@ class AppViewModel
         metricsSocket.onclose = closed;
 
         cvm.socket = metricsSocket;
-    }
+    };
 
-    getColor() : Color {
+    AppViewModel.prototype.getColor = function () {
         var color = this.colors[this.colorId];
         this.colorId++;
         return color;
-    }
+    };
 
-    connect() {
+    AppViewModel.prototype.connect = function () {
         var serverBox = $("#connectTo");
         var server = serverBox.val();
         serverBox.val("");
         this.connectToServer(server);
-    }
+    };
 
-    connectToServer(server: string) {
-        //check to make sure the server is not already in the connect list
-        for(var i = 0; i < this.connections().length; i++) {
+    AppViewModel.prototype.connectToServer = function (server) {
+        for (var i = 0; i < this.connections().length; i++) {
             var c = this.connections()[i];
             if (c.server == server) {
                 return;
             }
         }
 
-        var connectionNode: ConnectionVM = new ConnectionVM(server);
+        var connectionNode = new ConnectionVM(server);
         connectionNode.colorBase(this.getColor());
         this.connectionIndex[server] = connectionNode;
         this.doConnect(server, connectionNode);
 
         for (var i = 0; i < this.graphs().length; i++) {
-            var graph: MetricView = this.graphs()[i];
+            var graph = this.graphs()[i];
             graph.updateColor(connectionNode);
         }
         this.connections.push(connectionNode);
 
-        var heartbeat = (node) => {
+        var heartbeat = function (node) {
             var metricsSocket = node.socket;
             if (metricsSocket.readyState == 1) {
-                metricsSocket.send(JSON.stringify({command: "heartbeat"}));
+                metricsSocket.send(JSON.stringify({ command: "heartbeat" }));
             }
-            setTimeout(() => {
+            setTimeout(function () {
                 heartbeat(node);
             }, 5000);
         };
 
         heartbeat(connectionNode);
-    }
-}
-
-interface KnockoutBindingHandlers {
-    slider: KnockoutBindingHandler;
-    legendBlock: KnockoutBindingHandler;
-    slide: KnockoutBindingHandler;
-}
+    };
+    return AppViewModel;
+})();
 
 ko.bindingHandlers.slider = {
-    init: function(element, valueAccessor) {
+    init: function (element, valueAccessor) {
         // First get the latest data that we're bound to
         var value = valueAccessor();
 
@@ -739,7 +680,7 @@ ko.bindingHandlers.slider = {
 };
 
 ko.bindingHandlers.slide = {
-    update: function(element, valueAccessor, allBindingsAccessor) {
+    update: function (element, valueAccessor, allBindingsAccessor) {
         var shouldShow = ko.utils.unwrapObservable(valueAccessor());
         var bindings = allBindingsAccessor();
         var direction = ko.utils.unwrapObservable(bindings.direction);
@@ -747,20 +688,18 @@ ko.bindingHandlers.slide = {
         var after = ko.utils.unwrapObservable(bindings.after);
 
         var effectOptions = { "direction": direction };
-        
+
         if (shouldShow) {
             after();
             $(element).show("slide", effectOptions, duration);
         } else {
             $(element).hide("slide", effectOptions, duration, after);
         }
-        
-        
     }
-}
+};
 
 ko.bindingHandlers.legendBlock = {
-    init: function(element, valueAccessor) {
+    init: function (element, valueAccessor) {
         // First get the latest data that we're bound to
         var value = valueAccessor();
 
@@ -777,7 +716,7 @@ ko.bindingHandlers.legendBlock = {
         context.strokeStyle = 'black';
         context.stroke();
     },
-    update: function(element, valueAccessor) {
+    update: function (element, valueAccessor) {
         // First get the latest data that we're bound to
         var value = valueAccessor();
 
@@ -798,12 +737,13 @@ ko.bindingHandlers.legendBlock = {
 
 var appModel = new AppViewModel();
 
-function getConnectionNode(server: string) {
+function getConnectionNode(server) {
     return appModel.connectionIndex[server];
-};
+}
+;
 
-var shouldShade = ko.computed(function() {
-    return appModel.doShade()
+var shouldShade = ko.computed(function () {
+    return appModel.doShade();
 }, appModel);
 
 ko.applyBindings(appModel);
