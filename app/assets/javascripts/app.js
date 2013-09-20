@@ -30,7 +30,7 @@ var GaugeVM = (function () {
 
         var config = {
             size: 250,
-            label: this.name,
+            label: "",
             min: 0,
             max: 100,
             minorTicks: 5
@@ -62,6 +62,19 @@ var GaugeVM = (function () {
     return GaugeVM;
 })();
 
+var Series = (function () {
+    function Series(label, color) {
+        //This is really an array of elements of [timestamp, data value]
+        this.data = [];
+        this.label = "";
+        this.points = { show: true };
+        this.lines = { show: true };
+        this.color = "black";
+        this.color = color;
+        this.label = label;
+    }
+    return Series;
+})();
 var GraphVM = (function () {
     function GraphVM(id, name) {
         this.started = false;
@@ -85,6 +98,8 @@ var GraphVM = (function () {
     };
 
     GraphVM.prototype.setViewDuration = function (window) {
+        console.log("setting view duration");
+        console.log(window);
         var endTime = this.dataLength - window.end;
         this.duration = window.end - window.start;
         this.endAt = endTime;
@@ -111,7 +126,7 @@ var GraphVM = (function () {
             cvm.color.subscribe(function (color) {
                 _this.updateColor(cvm);
             });
-            this.data.push({ data: [], label: cvm.server, points: { show: true }, lines: { show: true }, color: cvm.color() });
+            this.data.push(new Series(cvm.server, cvm.color()));
         }
 
         if (this.data[index].data.length == 0 || this.data[index].data[this.data[index].data.length - 1][0] < timestamp) {
@@ -209,7 +224,7 @@ var GraphVM = (function () {
                     max: graphEnd,
                     timeMode: "local"
                 },
-                title: _this.niceName(_this.id),
+                title: _this.name,
                 mouse: {
                     track: true,
                     sensibility: 8,
@@ -230,27 +245,62 @@ var GraphVM = (function () {
     return GraphVM;
 })();
 
-var BrowseNodeVM = (function () {
-    function BrowseNodeVM(name, id, children, isMetric, parent) {
+var StatisticNodeVM = (function () {
+    function StatisticNodeVM(serviceName, metricName, statisticName, id, parent) {
+        var _this = this;
+        this.serviceName = ko.observable(serviceName);
+        this.metricName = ko.observable(metricName);
+        this.statisticName = ko.observable(statisticName);
+        this.id = ko.observable(id);
+        this.parent = parent;
+        this.children = ko.observableArray();
+        this.expanded = ko.observable(false);
+        this.name = this.statisticName;
+
+        this.expandMe = function () {
+            _this.parent.addGraph(_this.id(), _this.metricName() + " (" + _this.statisticName() + ")");
+        };
+        this.display = ko.computed(function () {
+            return _this.statisticName();
+        });
+    }
+    return StatisticNodeVM;
+})();
+
+var MetricNodeVM = (function () {
+    function MetricNodeVM(name, id, parent) {
         var _this = this;
         this.name = ko.observable(name);
-        this.children = ko.observableArray(children);
+        this.children = ko.observableArray();
         this.id = ko.observable(id);
         this.expanded = ko.observable(false);
-        this.isMetric = isMetric;
         this.parent = parent;
         this.display = ko.computed(function () {
             return _this.name();
         });
     }
-    BrowseNodeVM.prototype.expandMe = function () {
-        if (!this.isMetric) {
-            this.expanded(this.expanded() == false);
-        } else {
-            this.parent.addGraph(this.id(), this.name());
-        }
+    MetricNodeVM.prototype.expandMe = function () {
+        this.expanded(this.expanded() == false);
     };
-    return BrowseNodeVM;
+    return MetricNodeVM;
+})();
+
+var ServiceNodeVM = (function () {
+    function ServiceNodeVM(name, id, parent) {
+        var _this = this;
+        this.name = ko.observable(name);
+        this.children = ko.observableArray();
+        this.id = ko.observable(id);
+        this.expanded = ko.observable(false);
+        this.parent = parent;
+        this.display = ko.computed(function () {
+            return _this.name();
+        });
+    }
+    ServiceNodeVM.prototype.expandMe = function () {
+        this.expanded(this.expanded() == false);
+    };
+    return ServiceNodeVM;
 })();
 
 var ConnectionVM = (function () {
@@ -295,9 +345,20 @@ var ConnectionVM = (function () {
 })();
 
 var ViewDuration = (function () {
-    function ViewDuration() {
+    function ViewDuration(start, end) {
         this.start = 570000;
         this.end = 600000;
+        if (start === undefined) {
+            this.start = 570000;
+        } else {
+            this.start = start;
+        }
+
+        if (end === undefined) {
+            this.end = 600000;
+        } else {
+            this.end = end;
+        }
     }
     return ViewDuration;
 })();
@@ -369,6 +430,11 @@ var AppViewModel = (function () {
         this.setMetricsWidth = function () {
             _this.metricsWidth(_this.metricsVisible());
         };
+
+        this.reconnect = function (cvm) {
+            var server = cvm.server;
+            _this.doConnect(server, cvm);
+        };
     }
     AppViewModel.prototype.toggleMetricsVisible = function () {
         this.metricsVisible(!this.metricsVisible());
@@ -381,12 +447,16 @@ var AppViewModel = (function () {
         }
     };
 
-    AppViewModel.prototype.addGraph = function (id, name) {
+    //    addGraph(id: string, metric: string, statistic: string) {
+    AppViewModel.prototype.addGraph = function (id, metric) {
         var existing = this.graphsById[id];
         if (existing != undefined) {
             return;
         }
         var graph;
+
+        //        var name: string = metric + " (" + statistic + ")";
+        var name = metric;
         if (this.mode() == "graph") {
             graph = new GraphVM(id, name);
         } else if (this.mode() == "gauge") {
@@ -402,9 +472,10 @@ var AppViewModel = (function () {
     };
 
     AppViewModel.prototype.setViewDuration = function (window) {
-        this.viewDuration = window;
+        var viewDuration = new ViewDuration(window[0], window[1]);
+        this.viewDuration = viewDuration;
         for (var i = 0; i < this.graphs().length; i++) {
-            this.graphs()[i].setViewDuration(window);
+            this.graphs()[i].setViewDuration(viewDuration);
         }
     };
 
@@ -450,18 +521,18 @@ var AppViewModel = (function () {
 
     AppViewModel.prototype.createMetric = function (service, metric, statistic) {
         var serviceNode = this.getServiceVMNode(service);
-        if (serviceNode == undefined) {
-            serviceNode = new BrowseNodeVM(service, this.idify(service), [], false, this);
+        if (serviceNode === undefined) {
+            serviceNode = new ServiceNodeVM(service, this.idify(service), this);
             this.metricsList.push(serviceNode);
         }
         var metricNode = this.getMetricVMNode(metric, serviceNode);
-        if (metricNode == undefined) {
-            metricNode = new BrowseNodeVM(metric, this.idify(metric), [], false, this);
+        if (metricNode === undefined) {
+            metricNode = new MetricNodeVM(metric, this.idify(metric), this);
             serviceNode.children.push(metricNode);
         }
-        var stat = this.getStatVMNode(statistic, metricNode);
-        if (stat == undefined) {
-            stat = new BrowseNodeVM(statistic, this.getGraphName(service, metric, statistic), [], true, this);
+        var stat = this.getStatVMNode(service, metric, statistic, metricNode);
+        if (stat === undefined) {
+            stat = new StatisticNodeVM(service, metric, statistic, this.getGraphName(service, metric, statistic), this);
             metricNode.children.push(stat);
         }
         this.sortCategories(this.metricsList);
@@ -500,10 +571,10 @@ var AppViewModel = (function () {
         return undefined;
     };
 
-    AppViewModel.prototype.getStatVMNode = function (name, metricNode) {
+    AppViewModel.prototype.getStatVMNode = function (service, metric, statistic, metricNode) {
         for (var i = 0; i < metricNode.children().length; i++) {
             var stat = metricNode.children()[i];
-            if (stat.name() == name) {
+            if (stat.serviceName() == service && stat.metricName() == metric && stat.statisticName() == statistic) {
                 return stat;
             }
         }
@@ -534,11 +605,6 @@ var AppViewModel = (function () {
             console.log("unhandled message: ");
             console.log(data);
         }
-    };
-
-    AppViewModel.prototype.reconnect = function (cvm) {
-        var server = cvm.server;
-        this.doConnect(server, cvm);
     };
 
     AppViewModel.prototype.doConnect = function (server, cvm) {
@@ -695,6 +761,17 @@ ko.bindingHandlers.slide = {
         } else {
             $(element).hide("slide", effectOptions, duration, after);
         }
+    }
+};
+
+ko.bindingHandlers.stackdrag = {
+    init: function (element) {
+        var thisLevel = $(element).parent().children();
+
+        //            console.log(thisLevel);
+        jQuery.each(thisLevel, function (index, e) {
+            $(e).draggable();
+        });
     }
 };
 

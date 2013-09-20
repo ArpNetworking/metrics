@@ -29,7 +29,7 @@ class Color
     }
 }
 
-interface MetricView {
+interface StatisticView {
     id: string;
     paused: boolean;
     start();
@@ -40,7 +40,7 @@ interface MetricView {
     disconnectConnection(cvm: ConnectionVM);
 }
 
-class GaugeVM implements MetricView {
+class GaugeVM implements StatisticView {
     id: string;
     container = null;
     started: boolean = false;
@@ -62,7 +62,7 @@ class GaugeVM implements MetricView {
         var config: any =
         {
             size: 250,
-            label: this.name,
+            label: "",
             min: 0,
             max: 100,
             minorTicks: 5
@@ -97,12 +97,26 @@ class GaugeVM implements MetricView {
     }
 }
 
-class GraphVM implements MetricView {
+
+class Series {
+    //This is really an array of elements of [timestamp, data value]
+    data: number[][] = [];
+    label: string = "";
+    points: any = { show: true};
+    lines: any = {show: true};
+    color: string = "black";
+    
+    constructor(label: string, color: string) {
+        this.color = color;
+        this.label = label;
+    }
+}
+class GraphVM implements StatisticView {
     id: string;
     name: string;
     started: boolean = false;
-    container = null;
-    data = [];
+    container: HTMLElement = null;
+    data: Series[] = [];
     dataStreams: { [key: string]: number} = {};
     graph = null;
     stop: boolean = false;
@@ -126,6 +140,8 @@ class GraphVM implements MetricView {
     }
 
     setViewDuration(window: ViewDuration) {
+        console.log("setting view duration");
+        console.log(window);
         var endTime = this.dataLength - window.end;
         this.duration = window.end - window.start;
         this.endAt = endTime;
@@ -151,7 +167,7 @@ class GraphVM implements MetricView {
             cvm.color.subscribe((color) => {
                 this.updateColor(cvm);
             });
-            this.data.push({data: [], label: cvm.server, points: {show: true}, lines: {show: true}, color: cvm.color()});
+            this.data.push(new Series(cvm.server, cvm.color()));
         }
 
 
@@ -252,7 +268,7 @@ class GraphVM implements MetricView {
                     timeMode: "local"
 
                 },
-                title: this.niceName(this.id),
+                title: this.name,
                 mouse: {
                     track: true,
                     sensibility: 8,
@@ -272,32 +288,83 @@ class GraphVM implements MetricView {
     }
 }
 
-class BrowseNodeVM {
+interface BrowseNode {
+    expandMe(): void;
+    display: KnockoutComputed<string>;
+    children: KnockoutObservableArray<BrowseNode>;
+    expanded: KnockoutObservable<boolean>;
     name: KnockoutObservable<string>;
-    children: KnockoutObservableArray<BrowseNodeVM>;
+}
+
+class StatisticNodeVM implements BrowseNode {
+    serviceName: KnockoutObservable<string>;
+    metricName: KnockoutObservable<string>;
+    statisticName: KnockoutObservable<string>;
+    id: KnockoutObservable<string>;
+    parent: AppViewModel;
+    display: KnockoutComputed<string>
+    children: KnockoutObservableArray<BrowseNode>;
+    expanded: KnockoutObservable<boolean>;
+    name: KnockoutObservable<string>;
+
+    constructor(serviceName: string, metricName: string, statisticName: string, id: string, parent: AppViewModel) {
+        this.serviceName = ko.observable(serviceName);
+        this.metricName = ko.observable(metricName);
+        this.statisticName = ko.observable(statisticName);
+        this.id = ko.observable(id);
+        this.parent = parent;
+        this.children = ko.observableArray();
+        this.expanded = ko.observable(false);
+        this.name = this.statisticName;
+        
+        this.expandMe = () => { this.parent.addGraph(this.id(), this.metricName() + " (" + this.statisticName() + ")"); }
+        this.display = ko.computed<string>(() => { return this.statisticName();});
+    } 
+    
+    expandMe: () => void;
+}
+
+class MetricNodeVM implements BrowseNode {
+    name: KnockoutObservable<string>;
+    children: KnockoutObservableArray<StatisticNodeVM>;
     id: KnockoutObservable<string>;
     expanded: KnockoutObservable<boolean>;
-    isMetric: boolean;
     parent: AppViewModel;
     display: KnockoutComputed<string>
 
-    constructor(name: string, id: string, children: BrowseNodeVM[], isMetric: boolean, parent: AppViewModel) {
+    constructor(name: string, id: string, parent: AppViewModel) {
         this.name = ko.observable(name);
-        this.children = ko.observableArray(children);
+        this.children = ko.observableArray();
         this.id = ko.observable(id);
         this.expanded = ko.observable(false);
-        this.isMetric = isMetric;
         this.parent = parent;
         this.display = ko.computed<string>(() => { return this.name();});
     }
 
     expandMe() {
-        if (!this.isMetric) {
-            this.expanded(this.expanded() == false);
-        }
-        else {
-            this.parent.addGraph(this.id(), this.name());
-        }
+        this.expanded(this.expanded() == false);
+    }
+}
+
+class ServiceNodeVM implements BrowseNode {
+    name: KnockoutObservable<string>;
+    children: KnockoutObservableArray<MetricNodeVM>;
+    id: KnockoutObservable<string>;
+    expanded: KnockoutObservable<boolean>;
+    parent: AppViewModel;
+    display: KnockoutComputed<string>
+
+    constructor(name: string, id: string, parent: AppViewModel) {
+        this.name = ko.observable(name);
+        this.children = ko.observableArray();
+        this.id = ko.observable(id);
+        this.expanded = ko.observable(false);
+        this.parent = parent;
+        this.display = ko.computed<string>(() => { return this.name();});
+    }
+
+    expandMe() {
+        this.expanded(this.expanded() == false);
     }
 }
 
@@ -350,12 +417,26 @@ class ViewDuration
 {
     start: number = 570000;
     end: number = 600000;
+    
+    constructor(start?: number, end?: number) {
+        if (start === undefined) {
+            this.start = 570000;
+        } else {
+            this.start = start;
+        }
+
+        if (end === undefined) {
+            this.end = 600000;
+        } else {
+            this.end = end;
+        }
+    }
 }
 
 class AppViewModel
 {
-    graphs: KnockoutObservableArray<MetricView> = ko.observableArray();
-    graphsById: {[id: string]:MetricView} = {};
+    graphs: KnockoutObservableArray<StatisticView> = ko.observableArray();
+    graphsById: {[id: string]:StatisticView} = {};
     metricsList = ko.observableArray();
     sockets = ko.observableArray();
     connections: KnockoutObservableArray<ConnectionVM> = ko.observableArray();
@@ -370,7 +451,7 @@ class AppViewModel
         new Color(253,191,111), new Color(202,178,214), new Color(255,255,153)];
     private colorId = 0;
     sliderChanged: (event: Event, ui) => void;
-    removeGraph: (vm: MetricView) => void;
+    removeGraph: (vm: StatisticView) => void;
     removeConnection: (ConnectionVM) => void;
     fragment = ko.computed(function() {
         var servers = jQuery.map(this.connections(), function(element) { return element.server });
@@ -390,7 +471,7 @@ class AppViewModel
             this.setViewDuration(ui.values);
         };
 
-        this.removeGraph = (gvm: MetricView) => {
+        this.removeGraph = (gvm: StatisticView) => {
             var id = gvm.id;
             var graph = this.graphsById[id];
             if (graph != undefined) {
@@ -410,6 +491,11 @@ class AppViewModel
         this.setMetricsWidth = () => {
             this.metricsWidth(this.metricsVisible());
         }
+        
+        this.reconnect = (cvm: ConnectionVM) => {
+            var server = cvm.server;
+            this.doConnect(server, cvm);
+        }
     }
 
     toggleMetricsVisible() {
@@ -425,12 +511,15 @@ class AppViewModel
         }
     }
 
-    addGraph(id: string, name: string) {
+//    addGraph(id: string, metric: string, statistic: string) {
+    addGraph(id: string, metric: string) {
         var existing = this.graphsById[id];
         if (existing != undefined) {
             return;
         }
-        var graph: MetricView;
+        var graph: StatisticView;
+//        var name: string = metric + " (" + statistic + ")";
+        var name: string = metric;
         if (this.mode() == "graph") {
             graph = new GraphVM(id, name);
         } else if (this.mode() == "gauge") {
@@ -441,15 +530,16 @@ class AppViewModel
         this.graphs.push(graph);
     }
 
-    startGraph(graphElement, index, gvm: MetricView) {
+    startGraph(graphElement, index, gvm: StatisticView) {
         gvm.start();
     }
 
 
-    setViewDuration(window) {
-        this.viewDuration = window;
+    setViewDuration(window: number[]) {
+        var viewDuration = new ViewDuration(window[0], window[1]);
+        this.viewDuration = viewDuration;
         for (var i = 0; i < this.graphs().length; i++) {
-            this.graphs()[i].setViewDuration(window);
+            this.graphs()[i].setViewDuration(viewDuration);
         }
     }
     
@@ -496,19 +586,19 @@ class AppViewModel
     }
 
     createMetric(service: string, metric: string, statistic: string) {
-        var serviceNode = this.getServiceVMNode(service);
-        if (serviceNode == undefined) {
-            serviceNode = new BrowseNodeVM(service, this.idify(service), [], false, this);
+        var serviceNode: ServiceNodeVM = this.getServiceVMNode(service);
+        if (serviceNode === undefined) {
+            serviceNode = new ServiceNodeVM(service, this.idify(service), this);
             this.metricsList.push(serviceNode);
         }
-        var metricNode = this.getMetricVMNode(metric, serviceNode);
-        if (metricNode == undefined) {
-            metricNode = new BrowseNodeVM(metric, this.idify(metric), [], false, this);
+        var metricNode: MetricNodeVM = this.getMetricVMNode(metric, serviceNode);
+        if (metricNode === undefined) {
+            metricNode = new MetricNodeVM(metric, this.idify(metric), this);
             serviceNode.children.push(metricNode);
         }
-        var stat = this.getStatVMNode(statistic, metricNode);
-        if (stat == undefined) {
-            stat = new BrowseNodeVM(statistic, this.getGraphName(service, metric, statistic), [], true, this);
+        var stat: StatisticNodeVM = this.getStatVMNode(service, metric, statistic, metricNode);
+        if (stat === undefined) {
+            stat = new StatisticNodeVM(service, metric, statistic, this.getGraphName(service, metric, statistic), this);
             metricNode.children.push(stat);
         }
         this.sortCategories(this.metricsList);
@@ -528,7 +618,7 @@ class AppViewModel
     }
 
 
-    getServiceVMNode(name) : BrowseNodeVM{
+    getServiceVMNode(name: string) : ServiceNodeVM{
         for (var i = 0; i < this.metricsList().length; i++) {
             var svc = this.metricsList()[i];
             if (svc.name() == name) {
@@ -538,7 +628,7 @@ class AppViewModel
         return undefined;
     }
 
-    getMetricVMNode(name, svcNode) : BrowseNodeVM {
+    getMetricVMNode(name: string, svcNode: ServiceNodeVM) : MetricNodeVM {
         for (var i = 0; i < svcNode.children().length; i++) {
             var metric = svcNode.children()[i];
             if (metric.name() == name) {
@@ -548,10 +638,10 @@ class AppViewModel
         return undefined;
     }
 
-    getStatVMNode(name, metricNode) : BrowseNodeVM {
+    getStatVMNode(service: string, metric: string, statistic: string, metricNode: MetricNodeVM) : StatisticNodeVM {
         for (var i = 0; i < metricNode.children().length; i++) {
-            var stat = metricNode.children()[i];
-            if (stat.name() == name) {
+            var stat: StatisticNodeVM = metricNode.children()[i];
+            if (stat.serviceName() == service && stat.metricName() == metric && stat.statisticName() == statistic) {
                 return stat;
             }
         }
@@ -589,10 +679,7 @@ class AppViewModel
         }
     }
 
-    reconnect(cvm: ConnectionVM) {
-        var server = cvm.server;
-        this.doConnect(server, cvm);
-    }
+    reconnect: (cvm: ConnectionVM) => void;
 
     doConnect(server: string, cvm: ConnectionVM) {
         console.log("connecting to " + server);
@@ -704,7 +791,7 @@ class AppViewModel
         this.doConnect(server, connectionNode);
 
         for (var i = 0; i < this.graphs().length; i++) {
-            var graph: MetricView = this.graphs()[i];
+            var graph: StatisticView = this.graphs()[i];
             graph.updateColor(connectionNode);
         }
         this.connections.push(connectionNode);
@@ -727,6 +814,7 @@ interface KnockoutBindingHandlers {
     slider: KnockoutBindingHandler;
     legendBlock: KnockoutBindingHandler;
     slide: KnockoutBindingHandler;
+    stackdrag: KnockoutBindingHandler;
 }
 
 ko.bindingHandlers.slider = {
@@ -758,6 +846,14 @@ ko.bindingHandlers.slide = {
         
     }
 }
+
+ko.bindingHandlers.stackdrag = {
+        init: function(element) {
+            var thisLevel = $(element).parent().children();
+//            console.log(thisLevel);
+            jQuery.each(thisLevel, function(index, e) { $(e).draggable();});
+        }
+    }
 
 ko.bindingHandlers.legendBlock = {
     init: function(element, valueAccessor) {
