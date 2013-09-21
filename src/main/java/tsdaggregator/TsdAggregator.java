@@ -41,7 +41,7 @@ public class TsdAggregator {
         });
 
 
-        CommandLineParser parser = new CommandLineParser();
+        CommandLineParser parser = new CommandLineParser(new DefaultHostResolver());
 		Configuration config;
         try {
 			config = parser.parse(args);
@@ -83,7 +83,10 @@ public class TsdAggregator {
 		String remetUri = config.getRemetAddress();
 
 
-        _Logger.info("using files " + fileNames);
+        _Logger.info("using files ");
+		for (String file: fileNames) {
+			_Logger.info("    " + file);
+		}
         _Logger.info("using cluster " + cluster);
         _Logger.info("using hostname " + hostName);
         _Logger.info("using servicename " + serviceName);

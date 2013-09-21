@@ -129,18 +129,18 @@ public class Configuration {
 	}
 
 	public static class Builder {
-		public static final Set<Statistic> DEFAULT_COUNTER_STATS = Collections.unmodifiableSet(new TreeSet<Statistic>() {{
+		public static final Set<Statistic> DEFAULT_COUNTER_STATS = Collections.unmodifiableSet(new HashSet<Statistic>() {{
 			add(new MeanStatistic());
 			add(new SumStatistic());
 			add(new NStatistic());
 		}});
-		public static final Set<Statistic> DEFAULT_TIMER_STATS = Collections.unmodifiableSet(new TreeSet<Statistic>() {{
+		public static final Set<Statistic> DEFAULT_TIMER_STATS = Collections.unmodifiableSet(new HashSet<Statistic>() {{
 			add(new TP50());
 			add(new TP99());
 			add(new MeanStatistic());
 			add(new NStatistic());
 		}});
-		public static final Set<Statistic> DEFAULT_GAGE_STATS = Collections.unmodifiableSet(new TreeSet<Statistic>() {{
+		public static final Set<Statistic> DEFAULT_GAGE_STATS = Collections.unmodifiableSet(new HashSet<Statistic>() {{
 			add(new TP0());
 			add(new TP100());
 			add(new MeanStatistic());
@@ -168,7 +168,7 @@ public class Configuration {
 		private String remetAddress = REMET_DEFAULT_URI;
 		private boolean useMonitord = false;
 		private String monitordAddress = MONITORD_DEFAULT_URI;
-		private String[] files;
+		private ArrayList<String> files = new ArrayList<>();
 		private Class<? extends LogParser> parserClass = QueryLogParser.class;
 		private Set<Period> periods = new TreeSet<>();
 		private Pattern filterPattern = Pattern.compile(".*");
@@ -176,12 +176,15 @@ public class Configuration {
 		private Set<Statistic> timerStatistics;
 		private Set<Statistic> counterStatistics;
 		private Set<Statistic> gaugeStatistics;
-		private String clusterName;
-		private String serviceName;
-		private String hostName;
+		private String clusterName = "";
+		private String serviceName = "";
+		private String hostName = "";
 		private boolean useRRD = false;
-		private String metricsUri;
-		private String outputFile;
+		private String metricsUri = "";
+		private String outputFile = "";
+
+		private Builder() {
+		}
 
 		public String getMonitordAddress() {
 			return monitordAddress;
@@ -220,7 +223,7 @@ public class Configuration {
 		}
 
 		public String[] getFiles() {
-			return files;
+			return files.toArray(new String[0]);
 		}
 
 		public Class<? extends LogParser> getParserClass() {
@@ -275,7 +278,10 @@ public class Configuration {
 		}
 
 		public Builder files(String[] files) {
-			this.files = files;
+			this.files = new ArrayList<>();
+			for (String file : files) {
+				this.files.add(file);
+			}
 			return this;
 		}
 

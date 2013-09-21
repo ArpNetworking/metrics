@@ -3,6 +3,7 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'application'
 apply plugin: 'maven'
+apply plugin: 'jacoco'
 
 repositories {
     maven {
@@ -35,15 +36,6 @@ dependencies {
     deployJars group: 'org.apache.maven.wagon', name: 'wagon-http', version: '1.0-beta-2'
 }
 
-buildscript {
-    // using a variable to make wiki look cleaner
-    def githubBase = 'https://github.com/valkolovos/gradle_cobertura/raw/master/ivy'
-    try {
-        //apply from: "${githubBase}/gradle_cobertura/gradle_cobertura/1.0-rc4/coberturainit.gradle"
-    } catch (all) { 
-        println "Could not load cobertura plugin from github"
-    }
-}
 mainClassName = 'tsdaggregator.TsdAggregator'
 sourceCompatibility = 1.7
 version = '0.2.1-SNAPSHOT'
@@ -70,3 +62,8 @@ uploadArchives {
     }
 }
 
+jacocoTestReport {
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports after running tests."
+    additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+}

@@ -32,12 +32,13 @@ public class CommandLineParser {
 	private final Option extensionOption = Option.builder("e").argName("extension").longOpt("extension").hasArgs().desc("extension of files to parse - uses a union of arguments as a regex (multiple allowed)").build();
 	private final Option tailOption = Option.builder("l").longOpt("tail").hasArg(false).desc("\"tail\" or follow the file and do not terminate").build();
 	private final Option rrdOption = Option.builder().longOpt("rrd").hasArg(false).desc("build or write to rrd databases").build();
-	private final Option remetOption = Option.builder().longOpt("remet").optionalArg(true).argName("uri").desc("send data to a local remet server").build();
-	private final Option monitordOption = Option.builder().longOpt("monitord").optionalArg(true).argName("uri").desc("send data to a monitord server").build();
+	private final Option remetOption = Option.builder().longOpt("remet").optionalArg(true).numberOfArgs(1).argName("uri").desc("send data to a local remet server").build();
+	private final Option monitordOption = Option.builder().longOpt("monitord").optionalArg(true).numberOfArgs(1).argName("uri").desc("send data to a monitord server").build();
 	private final Options options = new Options();
 
+	private final HostResolver hostResolver;
 
-	public CommandLineParser() {
+	public CommandLineParser(HostResolver hostResolver) {
 		options.addOption(inputFileOption);
 		options.addOption(serviceOption);
 		options.addOption(hostOption);
@@ -54,12 +55,13 @@ public class CommandLineParser {
 		options.addOption(rrdOption);
 		options.addOption(remetOption);
 		options.addOption(monitordOption);
+		this.hostResolver = hostResolver;
 	}
 
 	public Configuration parse(String[] args) throws ConfigException {
 		org.apache.commons.cli.CommandLineParser parser = new DefaultParser();
 		CommandLine cl;
-		Configuration.Builder builder = new Configuration.Builder();
+		Configuration.Builder builder = Configuration.builder();
 		try {
 			cl = parser.parse(options, args);
 		} catch (ParseException e) {
@@ -75,8 +77,9 @@ public class CommandLineParser {
 		}
 
 		if (!cl.hasOption(uriOption.getLongOpt()) && !cl.hasOption(outputFileOption.getLongOpt()) &&
-				!cl.hasOption(remetOption.getLongOpt()) && !cl.hasOption(monitordOption.getLongOpt())) {
-			throw new ConfigException("metrics server uri or output file not specified");
+				!cl.hasOption(remetOption.getLongOpt()) && !cl.hasOption(monitordOption.getLongOpt()) &&
+				!cl.hasOption(rrdOption.getLongOpt())) {
+			throw new ConfigException("no output mode specified");
 		}
 
 		if (cl.hasOption(parserOption.getLongOpt())) {
@@ -126,6 +129,13 @@ public class CommandLineParser {
 			builder.outputFile(cl.getOptionValue(outputFileOption.getLongOpt()));
 		}
 
+		if (cl.hasOption(tailOption.getLongOpt())) {
+			builder.tail();
+		}
+
+		String[] files = cl.getOptionValues(inputFileOption.getLongOpt());
+		builder.files(files);
+
 		builder.periods(getPeriods(cl));
 		builder.filterPattern(getPattern(cl));
 
@@ -144,7 +154,7 @@ public class CommandLineParser {
 		String hostName = cl.getOptionValue(hostOption.getLongOpt());
 		if (!cl.hasOption(hostOption.getLongOpt())) {
 			try {
-				hostName = java.net.InetAddress.getLocalHost().getHostName();
+				hostName = hostResolver.getLocalHostName();
 			} catch (UnknownHostException e) {
 				throw new ConfigException("host name not specified and could not determine hostname automatically, please specify explicitly");
 			}
@@ -153,7 +163,7 @@ public class CommandLineParser {
 	}
 
 	private Set<Statistic> getStatistics(CommandLine cl, Option statisticOption, Set<Statistic> defaultStats) throws ConfigException {
-		Set<Statistic> statsClasses = new TreeSet<>();
+		Set<Statistic> statsClasses = new HashSet<>();
 		if (cl.hasOption(statisticOption.getLongOpt())) {
 			String[] statisticsStrings = cl.getOptionValues(statisticOption.getLongOpt());
 			buildStats(statsClasses, statisticsStrings);
@@ -170,15 +180,34 @@ public class CommandLineParser {
 			StringBuilder builder = new StringBuilder();
 			int x = 0;
 			for (String f : filters) {
+				String filterPart = buildFilter(f);
 				if (x > 0) {
-					builder.append(" || ");
+					builder.append("||");
 				}
-				builder.append("(").append(f).append(")");
+				builder.append("(").append(filterPart).append(")");
 				x++;
 			}
 			filter = Pattern.compile(builder.toString(), Pattern.CASE_INSENSITIVE);
 		}
 		return filter;
+	}
+
+	private String buildFilter(String filter) {
+		final String regexTrigger = "*+[]{}$^()|";
+		boolean treatAsRegex = false;
+		for (char c : regexTrigger.toCharArray()) {
+			if (filter.indexOf(c) >= 0) {
+				treatAsRegex = true;
+				break;
+			}
+		}
+
+		if (!treatAsRegex) {
+			return ".*" + filter.replace(".", "\\.") + ".*";
+		} else {
+			return filter;
+		}
+
 	}
 
 	private static void buildStats(Set<Statistic> statsClasses, String[] statisticsStrings) throws ConfigException {
@@ -191,16 +220,16 @@ public class CommandLineParser {
 					statClass = ClassLoader.getSystemClassLoader().loadClass(statString);
 				}
 				Statistic stat;
+				if (!Statistic.class.isAssignableFrom(statClass)) {
+					final String error = "Statistic class [" + statString + "] does not implement required Statistic interface";
+					throw new ConfigException(error);
+				}
 				try {
 					stat = (Statistic)statClass.newInstance();
 					statsClasses.add(stat);
 				} catch (InstantiationException | IllegalAccessException ex) {
 					final String error = "Could not instantiate statistic [" + statString + "]";
 					throw new ConfigException(error, ex);
-				}
-				if (!Statistic.class.isAssignableFrom(statClass)) {
-					final String error = "Statistic class [" + statString + "] does not implement required Statistic interface";
-					throw new ConfigException(error);
 				}
 			} catch (ClassNotFoundException ex) {
 				final String error = "could not find statistic class [" + statString + "] on classpath";
@@ -230,7 +259,9 @@ public class CommandLineParser {
 
 	public void printUsage(OutputStream stream) {
 		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(new PrintWriter(stream), HelpFormatter.DEFAULT_WIDTH, "tsdaggregator", null,
+		PrintWriter pw = new PrintWriter(stream);
+		formatter.printHelp(pw, HelpFormatter.DEFAULT_WIDTH, "tsdaggregator", null,
 				options, HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD, null, true);
+		pw.flush();
 	}
 }

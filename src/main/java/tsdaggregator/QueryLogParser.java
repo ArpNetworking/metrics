@@ -160,14 +160,22 @@ public class QueryLogParser implements LogParser {
 				logLine = null;
             }
         }
+		catch (Exception e) {
+			_Logger.warn("Discarding line: Unparsable.\nLine was:\n" + line, e);
+			logLine = null;
+		}
 		return logLine;
     }
 
 	private LogLine parseV2cLogLine(Map<String,Object> line) {
-		TreeMap<String, CounterVariable> variables = new TreeMap<>();
+		_Logger.info("Trying to parse V2c log line");
+		TreeMap <String, CounterVariable> variables = new TreeMap<>();
 		parseChunk(line, "timers", CounterVariable.MetricKind.Timer, variables);
+		_Logger.info("Timers parsed");
 		parseChunk(line, "counters", CounterVariable.MetricKind.Counter, variables);
+		_Logger.info("Counters parsed");
 		parseChunk(line, "gauges", CounterVariable.MetricKind.Gauge, variables);
+		_Logger.info("All chunks parsed");
 
 		DateTime timestamp;
 		@SuppressWarnings("unchecked")
