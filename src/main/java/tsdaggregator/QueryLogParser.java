@@ -60,10 +60,16 @@ public class QueryLogParser implements LogParser {
 		return new StandardLogLine(vals, timestamp);
     }
 
-    @SuppressWarnings("unchecked")
-    public LogLine parseV2aLogLine(Map<String, Object> line) {
+    public LogLine parseV2aLogLine(Map<String, Object> line) throws ParseException {
 		TreeMap<String, CounterVariable> variables = new TreeMap<>();
-        Map<String, Double> counters = (Map<String, Double>) line.get("counters");
+        final Map<String, Double> counters;
+		try {
+			@SuppressWarnings("unchecked")
+			Map<String, Double> parsedCounters = (Map<String, Double>) line.get("counters");
+			counters = parsedCounters;
+		} catch (Exception e) {
+			throw new ParseException("could not cast element counters", e);
+		}
         for (Map.Entry<String, Double> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
@@ -71,7 +77,14 @@ public class QueryLogParser implements LogParser {
             variables.put(entry.getKey().toString(), cv);
         }
 
-        Map<String, ArrayList<Double>> timers = (Map<String, ArrayList<Double>>) line.get("timers");
+        final Map<String, ArrayList<Double>> timers;
+		try {
+			@SuppressWarnings("unchecked")
+			Map<String, ArrayList<Double>> parsedTimers = (Map<String, ArrayList<Double>>) line.get("timers");
+			timers = parsedTimers;
+		} catch (Exception e) {
+			throw new ParseException("could not cast element timers", e);
+		}
         for (Map.Entry<String, ArrayList<Double>> entry : timers.entrySet()) {
             CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, entry.getValue());
             variables.put(entry.getKey().toString(), cv);
@@ -90,10 +103,17 @@ public class QueryLogParser implements LogParser {
 		return new StandardLogLine(variables, timestamp);
     }
 
-    @SuppressWarnings("unchecked")
-    public LogLine parseV2bLogLine(Map<String, Object> line) {
+    public LogLine parseV2bLogLine(Map<String, Object> line) throws ParseException {
 		TreeMap<String, CounterVariable> variables = new TreeMap<>();
-        Map<String, Object> counters = (Map<String, Object>) line.get("counters");
+
+		final Map<String, Object> counters;
+		try {
+			@SuppressWarnings("unchecked")
+			Map<String, Object> parsedCounters = (Map<String, Object>) line.get("counters");
+			counters = parsedCounters;
+		} catch (Exception e) {
+			throw new ParseException("could not cast element counters", e);
+		}
         for (Map.Entry<String, Object> entry : counters.entrySet()) {
             ArrayList<Double> counter = new ArrayList<Double>();
             counter.add(Double.parseDouble(entry.getValue().toString()));
@@ -101,7 +121,14 @@ public class QueryLogParser implements LogParser {
             variables.put(entry.getKey().toString(), cv);
         }
 
-        Map<String, ArrayList<Object>> timers = (Map<String, ArrayList<Object>>) line.get("timers");
+        final Map<String, ArrayList<Object>> timers;
+		try {
+			@SuppressWarnings("unchecked")
+			Map<String, ArrayList<Object>> parsedTimers = (Map<String, ArrayList<Object>>) line.get("timers");
+			timers = parsedTimers;
+		} catch (Exception e) {
+			throw new ParseException("could not cast element timers", e);
+		}
         for (Map.Entry<String, ArrayList<Object>> entry : timers.entrySet()) {
             ArrayList<Object> vals = entry.getValue();
             ArrayList<Double> newVals = new ArrayList<Double>();
@@ -113,7 +140,14 @@ public class QueryLogParser implements LogParser {
         }
 
 		DateTime timestamp;
-        Map<String, String> annotations = (Map<String, String>)line.get("annotations");
+        final Map<String, String> annotations;
+		try {
+			@SuppressWarnings("unchecked")
+			Map<String, String> parsedAnnotations = (Map<String, String>)line.get("annotations");
+			annotations = parsedAnnotations;
+		} catch (Exception e) {
+			throw new ParseException("could not cast element annotations");
+		}
         if (annotations.containsKey("finalTimestamp")) {
             Double time = Double.parseDouble(annotations.get("finalTimestamp"));
             //double with whole number unix time, and fractional seconds
@@ -132,24 +166,14 @@ public class QueryLogParser implements LogParser {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public LogLine parseLogLine(String line) {
 		LogLine logLine;
+
+		final Map<String, Object> jsonLine;
         try {
-            Map<String, Object> jsonLine = MAPPER.readValue(line, Map.class);
-            String version = (String) jsonLine.get("version");
-            if (version.equals("2a")) {
-                logLine = parseV2aLogLine(jsonLine);
-            }
-            else if (version.equals("2b")) {
-                logLine = parseV2bLogLine(jsonLine);
-            }
-			else if (version.equals("2c")) {
-				logLine = parseV2cLogLine(jsonLine);
-			}
-			else {
-				logLine = null;
-			}
+			@SuppressWarnings("unchecked")
+			final Map<String, Object> parsedJson = MAPPER.readValue(line, Map.class);
+            jsonLine = parsedJson;
         } catch (IOException ex) {
             _Logger.warn("Possible legacy, non-json tsd line found: ", ex);
             try {
@@ -159,15 +183,31 @@ public class QueryLogParser implements LogParser {
                 _Logger.warn("Discarding line: Unparsable.\nLine was:\n" + line, e);
 				logLine = null;
             }
-        }
-		catch (Exception e) {
+			return logLine;
+		}
+		try {
+			String version = (String) jsonLine.get("version");
+			if (version.equals("2a")) {
+				logLine = parseV2aLogLine(jsonLine);
+			}
+			else if (version.equals("2b")) {
+				logLine = parseV2bLogLine(jsonLine);
+			}
+			else if (version.equals("2c")) {
+				logLine = parseV2cLogLine(jsonLine);
+			}
+		    else {
+				throw new ParseException("unknown line version");
+			}
+		}
+		catch (ParseException e) {
 			_Logger.warn("Discarding line: Unparsable.\nLine was:\n" + line, e);
 			logLine = null;
 		}
 		return logLine;
     }
 
-	private LogLine parseV2cLogLine(Map<String,Object> line) {
+	private LogLine parseV2cLogLine(Map<String,Object> line) throws ParseException {
 		_Logger.info("Trying to parse V2c log line");
 		TreeMap <String, CounterVariable> variables = new TreeMap<>();
 		parseChunk(line, "timers", CounterVariable.MetricKind.Timer, variables);
@@ -178,8 +218,15 @@ public class QueryLogParser implements LogParser {
 		_Logger.info("All chunks parsed");
 
 		DateTime timestamp;
-		@SuppressWarnings("unchecked")
-		Map<String, String> annotations = (Map<String, String>)line.get("annotations");
+		final Map<String, String> annotations;
+		try {
+			@SuppressWarnings("unchecked")
+			Map<String, String> parsedAnnotations = (Map<String, String>)line.get("annotations");
+			annotations = parsedAnnotations;
+		} catch (Exception e) {
+			throw new ParseException("could not cast annotations to look for timestamp", e);
+		}
+
 		if (annotations.containsKey("finalTimestamp")) {
 			Double time = Double.parseDouble(annotations.get("finalTimestamp"));
 			//double with whole number unix time, and fractional seconds
@@ -192,14 +239,21 @@ public class QueryLogParser implements LogParser {
 			Long ticks = Math.round(time * 1000);
 			timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
 		} else {
-			timestamp = new DateTime(0);
+			throw new ParseException("no timestamp found in log line");
 		}
 		return new StandardLogLine(variables, timestamp);
 	}
 
-	private void parseChunk(Map<String, Object> lineData, String element, CounterVariable.MetricKind kind, Map<String, CounterVariable> variables) {
-		@SuppressWarnings("unchecked")
-		Map<String, ArrayList<Object>> elements = (Map<String, ArrayList<Object>>) lineData.get(element);
+	private void parseChunk(Map<String, Object> lineData, String element, CounterVariable.MetricKind kind, Map<String, CounterVariable> variables) throws ParseException {
+		final Map<String, ArrayList<Object>> elements;
+		try {
+			@SuppressWarnings("unchecked")
+			Map<String, ArrayList<Object>> parsedElements = (Map<String, ArrayList<Object>>) lineData.get(element);
+			elements = parsedElements;
+		}
+		catch (Exception e) {
+			throw new ParseException("could not cast element " + element, e);
+		}
 		for (Map.Entry<String, ArrayList<Object>> entry : elements.entrySet()) {
 			ArrayList<Object> lineValues = entry.getValue();
 			ArrayList<Double> parsedValues = new ArrayList<Double>();

@@ -285,7 +285,12 @@ public class Configuration {
 			return this;
 		}
 
-		public Builder parser(Class<LogParser> parserClass) {
+		public Builder addFile(String file) {
+			this.files.add(file);
+			return this;
+		}
+
+		public Builder parser(Class<? extends LogParser> parserClass) {
 			this.parserClass = parserClass;
 			return this;
 		}

@@ -1,6 +1,7 @@
 package tsdaggregator;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.cli.ParseException;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
 import org.joda.time.format.PeriodFormatter;
