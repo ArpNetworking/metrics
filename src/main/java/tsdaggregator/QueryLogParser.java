@@ -139,7 +139,11 @@ public class QueryLogParser implements LogParser {
 		if (counters != null) {
 			for (Map.Entry<String, Object> entry : counters.entrySet()) {
 				ArrayList<Double> counter = new ArrayList<Double>();
+				try {
 				counter.add(Double.parseDouble(entry.getValue().toString()));
+				} catch (NumberFormatException e) {
+					_Logger.warn("skipping value due to not being able to parse as double: " + entry.getValue(), e);
+				}
 				CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
 				variables.put(entry.getKey().toString(), cv);
 			}
@@ -169,7 +173,6 @@ public class QueryLogParser implements LogParser {
 			}
 		}
 
-		DateTime timestamp;
         final Map<String, String> annotations;
 		try {
 			@SuppressWarnings("unchecked")
@@ -181,24 +184,51 @@ public class QueryLogParser implements LogParser {
 		if (annotations == null) {
 			throw new ParseException("no timestamp found in log line");
 		}
-		if (annotations.containsKey("finalTimestamp")) {
-			Double time = Double.parseDouble(annotations.get("finalTimestamp"));
-			//double with whole number unix time, and fractional seconds
-			Long ticks = Math.round(time * 1000);
-			timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
-		}
-		else if (annotations.containsKey("initTimestamp")) {
-			Double time = Double.parseDouble(annotations.get("initTimestamp"));
-			//double with whole number unix time, and fractional seconds
-			Long ticks = Math.round(time * 1000);
-			timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
-		} else {
-			throw new ParseException("no timestamp found in log line");
-		}
+		DateTime timestamp = getTimestamp(annotations);
+
 		return new StandardLogLine(variables, timestamp);
     }
 
-    @Override
+	private DateTime getTimestamp(Map<String, String> annotations) throws ParseException {
+		DateTime timestamp = null;
+		if (annotations.containsKey("finalTimestamp")) {
+			Double time;
+			try {
+				time = Double.parseDouble(annotations.get("finalTimestamp"));
+			} catch (NumberFormatException e) {
+				_Logger.warn("finalTimestamp value is not parsable, falling back to initTimestamp, value: " + annotations.get("finalTimestamp"), e);
+				time = null;
+			}
+			if (time != null) {
+				//double with whole number unix time, and fractional seconds
+				Long ticks = Math.round(time * 1000);
+				timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
+			}
+		}
+
+		if (timestamp == null && annotations.containsKey("initTimestamp")) {
+			Double time;
+			try {
+				time = Double.parseDouble(annotations.get("initTimestamp"));
+			} catch (NumberFormatException e) {
+				_Logger.warn("initTimestamp value is not parsable, falling back to initTimestamp, value: " + annotations.get("initTimestamp"), e);
+				time = null;
+
+			}
+			if (time != null) {
+				//double with whole number unix time, and fractional seconds
+				Long ticks = Math.round(time * 1000);
+				timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
+			}
+		}
+
+		if (timestamp == null) {
+			throw new ParseException("no timestamp found in log line");
+		}
+		return timestamp;
+	}
+
+	@Override
     public LogLine parseLogLine(String line) {
 		LogLine logLine;
 
@@ -246,7 +276,6 @@ public class QueryLogParser implements LogParser {
 		parseChunk(line, "counters", CounterVariable.MetricKind.Counter, variables);
 		parseChunk(line, "gauges", CounterVariable.MetricKind.Gauge, variables);
 
-		DateTime timestamp;
 		final Map<String, String> annotations;
 		try {
 			@SuppressWarnings("unchecked")
@@ -260,20 +289,8 @@ public class QueryLogParser implements LogParser {
 			throw new ParseException("no timestamp found in log line");
 		}
 
-		if (annotations.containsKey("finalTimestamp")) {
-			Double time = Double.parseDouble(annotations.get("finalTimestamp"));
-			//double with whole number unix time, and fractional seconds
-			Long ticks = Math.round(time * 1000);
-			timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
-		}
-		else if (annotations.containsKey("initTimestamp")) {
-			Double time = Double.parseDouble(annotations.get("initTimestamp"));
-			//double with whole number unix time, and fractional seconds
-			Long ticks = Math.round(time * 1000);
-			timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
-		} else {
-			throw new ParseException("no timestamp found in log line");
-		}
+		DateTime timestamp = getTimestamp(annotations);
+
 		return new StandardLogLine(variables, timestamp);
 	}
 
