@@ -9,6 +9,10 @@ import tsdaggregator.QueryLogParser;
 import java.util.ArrayList;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+
 
 public class LineDataTests {
 	@Test
@@ -16,20 +20,87 @@ public class LineDataTests {
 		QueryLogParser parser = new QueryLogParser();
 		Assert.assertNotNull(parser);
 	}
-	
+
 	@Test
 	public void ParseSingleEntry() {
 		QueryLogParser data = new QueryLogParser();
 		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005,]");
 		Map<String, CounterVariable> map = line.getVariables();
-		Assert.assertEquals(1, map.size());
-                ArrayList setView = map.get("set/view").getValues();
-                Assert.assertEquals(1, setView.size());
-		Assert.assertEquals(26383.8768005, setView.get(0));
+		assertThat(map.size(), equalTo(1));
+		ArrayList<Double> setView = map.get("set/view").getValues();
+		assertThat(setView.size(), equalTo(1));
+		assertThat(setView.get(0), equalTo(26383.8768005));
 		DateTime timestamp = line.getTime();
-		Assert.assertEquals(new DateTime((long)(1300976184.02d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+		assertThat(timestamp, equalTo(new DateTime((long)(1300976184.02d * 1000d), ISOChronology.getInstanceUTC())));
 	}
-	
+
+	@Test
+	public void ParseLegacyBadTimestamp() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("[initTimestamp=13q00976184.02,set/view=26383.8768005,]");
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void ParseLegacyBadMetric() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768q005,set/set=12817.1234]");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(1));
+		ArrayList<Double> setSet = map.get("set/set").getValues();
+		assertThat(setSet.size(), equalTo(1));
+		assertThat(setSet.get(0), equalTo(12817.1234));
+		DateTime timestamp = line.getTime();
+		assertThat(timestamp, equalTo(new DateTime((long)(1300976184.02d * 1000d), ISOChronology.getInstanceUTC())));
+	}
+
+	@Test
+	public void ParseSingleEntryWithExtraCommas() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005,,,]");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(1));
+		ArrayList<Double> setView = map.get("set/view").getValues();
+		assertThat(setView.size(), equalTo(1));
+		assertThat(setView.get(0), equalTo(26383.8768005));
+		DateTime timestamp = line.getTime();
+		assertThat(timestamp, equalTo(new DateTime((long)(1300976184.02d * 1000d), ISOChronology.getInstanceUTC())));
+	}
+
+	@Test
+	public void ParseSingleEntryWithExtraCommasAndWhitespace() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005, ,,]");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(1));
+		ArrayList<Double> setView = map.get("set/view").getValues();
+		assertThat(setView.size(), equalTo(1));
+		assertThat(setView.get(0), equalTo(26383.8768005));
+		DateTime timestamp = line.getTime();
+		assertThat(timestamp, equalTo(new DateTime((long)(1300976184.02d * 1000d), ISOChronology.getInstanceUTC())));
+	}
+
+	@Test
+	public void ParseSingleEntryNotEnded() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view-start=0,]");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(0));
+	}
+
+	@Test
+	public void ParseSingleEntryWithStartedSuffix() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view-start=26383.8768005,]");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(1));
+		ArrayList<Double> setView = map.get("set/view").getValues();
+		assertThat(setView.size(), equalTo(1));
+		assertThat(setView.get(0), equalTo(26383.8768005));
+		DateTime timestamp = line.getTime();
+		assertThat(timestamp, equalTo(new DateTime((long)(1300976184.02d * 1000d), ISOChronology.getInstanceUTC())));
+	}
+
 	@Test
 	public void ParseMultipleEntries() {
 		QueryLogParser data = new QueryLogParser();
@@ -39,6 +110,13 @@ public class LineDataTests {
 		Assert.assertEquals(1d, map.get("passport/signinValid").getValues().get(0));
 		DateTime timestamp = line.getTime();
 		Assert.assertEquals(new DateTime((long)(1300976164.85d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void ParseNoTimestamp() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("[passport/signin=395539.999008,passport/_signinValidatePassword=390913.009644,passport/signinValid=1,]");
+		assertThat(line, nullValue());
 	}
         
     @Test
@@ -54,16 +132,400 @@ public class LineDataTests {
         Assert.assertEquals(new DateTime((long)(1311574570.3563d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
     }
 
+	@Test
+	public void Parse2aVersionEntryBadTimerValue() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563,\"counter1\":15},\"timers\":{\"qmanager\\/index\":[\"99496.1261w74927\",106616.37284927]},\"annotations\":[]}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(2));
+		ArrayList<Double> vals = map.get("qmanager/index").getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(106616.37284927d));
+		vals = map.get("counter1").getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(15d));
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1311574570.3563d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2aVersionEntryBadCounterValue() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563,\"counter1\":\"1w5\",\"counter2\":8},\"timers\":{\"qmanager\\/index\":[\"99496.126174927\",106616.37284927]},\"annotations\":[]}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(3));
+		ArrayList<Double> vals = map.get("qmanager/index").getValues();
+		assertThat(vals.size(), equalTo(2));
+		assertThat(vals.get(0), equalTo(99496.126174927d));
+		assertThat(vals.get(1), equalTo(106616.37284927d));
+		vals = map.get("counter1").getValues();
+		assertThat(vals.size(), equalTo(0));
+		vals = map.get("counter2").getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(8d));
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1311574570.3563d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2aVersionEntryBadTimestampValue() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":131157q570.3563},\"timers\":{\"qmanager\\/index\":[99496.1261w74927,106616.37284927]},\"annotations\":[]}");
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void Parse2aVersionEntryNoTimers() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"annotations\":[]}");
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1311574570.3563d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2aVersionEntryNoCounters() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
+		//null due to no timestamp data
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void Parse2aVersionEntryNoAnnotations() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]}}");
+		Map<String, CounterVariable> map = line.getVariables();
+		Assert.assertEquals(1, map.size());
+		ArrayList<Double> vals = map.get("qmanager/index").getValues();
+		Assert.assertEquals(99496.126174927d, vals.get(0));
+		Assert.assertEquals(106616.37284927d, vals.get(1));
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1311574570.3563d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2aEntryBadCounters() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":[\"initTimestamp\",1311574570.3563, \"something\",1281.128],\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void Parse2aEntryBadTimers() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563,\"something\":1281.128},\"timers\":[\"qmanager\\/index\",[99496.126174927,106616.37284927]],\"annotations\":[]}");
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void Parse2aNoTimestamp() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
+		assertThat(line, nullValue());
+	}
+
     @Test
     public void Parse2bVersionEntry() {
         QueryLogParser data = new QueryLogParser();
-        LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+        LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
         Map<String, CounterVariable> map = line.getVariables();
-        Assert.assertEquals(1, map.size());
-        ArrayList<Double> vals = map.get("/incentive/bestfor").getValues();
-        Assert.assertEquals(2070d, vals.get(0));
+        assertThat(map.size(), equalTo(3));
+		CounterVariable bestForTimer = map.get("/incentive/bestfor");
+        ArrayList <Double> vals = bestForTimer.getValues();
+		assertThat(vals.size(), equalTo(1));
+        assertThat(vals.get(0), equalTo(2070d));
+		assertThat(bestForTimer.getMetricKind(), equalTo(CounterVariable.MetricKind.Timer));
+
+		CounterVariable counter1Var = map.get("counter1");
+		vals = counter1Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(7d));
+		assertThat(counter1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		CounterVariable counter2Var = map.get("counter2");
+		vals = counter2Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(counter2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
         DateTime timestamp = line.getTime();
         Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
     }
 
+	@Test
+	public void Parse2bVersionMultipleTimers() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(3));
+		CounterVariable bestForTimer = map.get("/incentive/bestfor");
+		ArrayList <Double> vals = bestForTimer.getValues();
+		assertThat(vals.size(), equalTo(2));
+		assertThat(vals.get(0), equalTo(2070d));
+		assertThat(vals.get(1), equalTo(1844d));
+		assertThat(bestForTimer.getMetricKind(), equalTo(CounterVariable.MetricKind.Timer));
+
+		CounterVariable counter1Var = map.get("counter1");
+		vals = counter1Var.getValues();
+		assertThat(vals.get(0), equalTo(7d));
+		assertThat(counter1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		CounterVariable counter2Var = map.get("counter2");
+		vals = counter2Var.getValues();
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(counter2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2bVersionNoCounters() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(1));
+		CounterVariable bestForTimer = map.get("/incentive/bestfor");
+		ArrayList <Double> vals = bestForTimer.getValues();
+		assertThat(vals.size(), equalTo(2));
+		assertThat(vals.get(0), equalTo(2070d));
+		assertThat(vals.get(1), equalTo(1844d));
+		assertThat(bestForTimer.getMetricKind(), equalTo(CounterVariable.MetricKind.Timer));
+
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2bVersionNoTimers() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(2));
+
+		CounterVariable counter1Var = map.get("counter1");
+		ArrayList<Double> vals = counter1Var.getValues();
+		assertThat(vals.get(0), equalTo(7d));
+		assertThat(counter1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		CounterVariable counter2Var = map.get("counter2");
+		vals = counter2Var.getValues();
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(counter2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2bVersionNoAnnotations() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]}}");
+		//no annotations means no timestamp => error
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void Parse2bUsesInitTimestampAsBackup() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\"}}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(3));
+		CounterVariable bestForTimer = map.get("/incentive/bestfor");
+		ArrayList <Double> vals = bestForTimer.getValues();
+		assertThat(vals.get(0), equalTo(2070d));
+		assertThat(bestForTimer.getMetricKind(), equalTo(CounterVariable.MetricKind.Timer));
+
+		CounterVariable counter1Var = map.get("counter1");
+		vals = counter1Var.getValues();
+		assertThat(vals.get(0), equalTo(7d));
+		assertThat(counter1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		CounterVariable counter2Var = map.get("counter2");
+		vals = counter2Var.getValues();
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(counter2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1347527687.486 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2bBadCounters() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":[\"some_counter\",8],\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void Parse2bBadTimers() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"some_counter\":8},\"timers\":[\"/incentive/bestfor\",[2070]],\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void Parse2bBadAnnotations() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"some_counter\":8},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":[\"initTimestamp\",\"1347527687.486\",\"finalTimestamp\",\"1347527687.686\"]}");
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void Parse2bNoTimestamp() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"some_counter\":8},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{}}");
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void Parse2cVersionMultiple() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(5));
+		CounterVariable bestForTimer = map.get("/incentive/bestfor");
+		ArrayList <Double> vals = bestForTimer.getValues();
+		assertThat(vals.size(), equalTo(2));
+		assertThat(vals.get(0), equalTo(2070d));
+		assertThat(vals.get(1), equalTo(1844d));
+		assertThat(bestForTimer.getMetricKind(), equalTo(CounterVariable.MetricKind.Timer));
+
+		CounterVariable counter1Var = map.get("counter1");
+		vals = counter1Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(7d));
+		assertThat(counter1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		CounterVariable counter2Var = map.get("counter2");
+		vals = counter2Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(counter2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		CounterVariable gauge1Var = map.get("gauge1");
+		vals = gauge1Var.getValues();
+		assertThat(vals.size(), equalTo(2));
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(vals.get(1), equalTo(2d));
+		assertThat(gauge1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Gauge));
+
+		CounterVariable gauge2Var = map.get("gauge2");
+		vals = gauge2Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(15d));
+		assertThat(gauge2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Gauge));
+
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2cVersionMissingCounters() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(3));
+		CounterVariable bestForTimer = map.get("/incentive/bestfor");
+		ArrayList <Double> vals = bestForTimer.getValues();
+		assertThat(vals.size(), equalTo(2));
+		assertThat(vals.get(0), equalTo(2070d));
+		assertThat(vals.get(1), equalTo(1844d));
+		assertThat(bestForTimer.getMetricKind(), equalTo(CounterVariable.MetricKind.Timer));
+
+		CounterVariable gauge1Var = map.get("gauge1");
+		vals = gauge1Var.getValues();
+		assertThat(vals.size(), equalTo(2));
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(vals.get(1), equalTo(2d));
+		assertThat(gauge1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Gauge));
+
+		CounterVariable gauge2Var = map.get("gauge2");
+		vals = gauge2Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(15d));
+		assertThat(gauge2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Gauge));
+
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2cVersionMissingTimers() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(4));
+
+		CounterVariable counter1Var = map.get("counter1");
+		ArrayList<Double> vals = counter1Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(7d));
+		assertThat(counter1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		CounterVariable counter2Var = map.get("counter2");
+		vals = counter2Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(counter2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		CounterVariable gauge1Var = map.get("gauge1");
+		vals = gauge1Var.getValues();
+		assertThat(vals.size(), equalTo(2));
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(vals.get(1), equalTo(2d));
+		assertThat(gauge1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Gauge));
+
+		CounterVariable gauge2Var = map.get("gauge2");
+		vals = gauge2Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(15d));
+		assertThat(gauge2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Gauge));
+
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2cVersionMissingGauge() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Map<String, CounterVariable> map = line.getVariables();
+		assertThat(map.size(), equalTo(3));
+		CounterVariable bestForTimer = map.get("/incentive/bestfor");
+		ArrayList <Double> vals = bestForTimer.getValues();
+		assertThat(vals.size(), equalTo(2));
+		assertThat(vals.get(0), equalTo(2070d));
+		assertThat(vals.get(1), equalTo(1844d));
+		assertThat(bestForTimer.getMetricKind(), equalTo(CounterVariable.MetricKind.Timer));
+
+		CounterVariable counter1Var = map.get("counter1");
+		vals = counter1Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(7d));
+		assertThat(counter1Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		CounterVariable counter2Var = map.get("counter2");
+		vals = counter2Var.getValues();
+		assertThat(vals.size(), equalTo(1));
+		assertThat(vals.get(0), equalTo(1d));
+		assertThat(counter2Var.getMetricKind(), equalTo(CounterVariable.MetricKind.Counter));
+
+		DateTime timestamp = line.getTime();
+		Assert.assertEquals(new DateTime((long)(1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), timestamp);
+	}
+
+	@Test
+	public void Parse2cVersionMissingAnnotations() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]}}");
+		assertThat(line, nullValue());
+	}
+
+	@Test
+	public void ParseUnknownVersion() {
+		QueryLogParser data = new QueryLogParser();
+		LogLine line = data.parseLogLine("{\"version\":\"86x\",\"counters\":{\"some_counter\":8},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{}}");
+		assertThat(line, nullValue());
+	}
 }

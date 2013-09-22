@@ -15,7 +15,7 @@ public class QueryLogParser implements LogParser {
     static final Logger _Logger = Logger.getLogger(QueryLogParser.class);
 	private  static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private LogLine parseLegacyLogLine(String line) {
+    private LogLine parseLegacyLogLine(String line) throws ParseException {
         HashMap<String, CounterVariable> vals = new HashMap<String, CounterVariable>();
         line.trim();
         line = line.replace("[", "");
@@ -24,24 +24,30 @@ public class QueryLogParser implements LogParser {
 
         String[] vars = line.split(",");
         for (String var : vars) {
-            if (var.length() > 0) {
+            if (var.trim().length() > 0) {
                 String[] splits = var.split("=");
-                Double value = Double.parseDouble(splits[1]);
-                String key = splits[0].trim();
+                Double value;
+				try {
+					value = Double.parseDouble(splits[1]);
+				} catch (NumberFormatException e) {
+					_Logger.warn("skipping value due to not being able to parse as double: " + splits[1], e);
+					continue;
+				}
+				String key = splits[0].trim();
 
                 if (key.endsWith("-start")) {
-                    removalCandidates.add(key.replaceFirst("-start$", ""));
-                } else {
-                    ArrayList<Double> values = new ArrayList<Double>();
-                    values.add(value);
-                    CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, values);
-                    vals.put(key, cv);
+					key = key.replaceFirst("-start$", "");
+                    removalCandidates.add(key);
                 }
+				ArrayList<Double> values = new ArrayList<Double>();
+				values.add(value);
+				CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, values);
+				vals.put(key, cv);
             }
         }
 
         for (String remove : removalCandidates) {
-            if (vals.containsKey(remove) && vals.get(remove).getValues().get(0) == 0.0d) {
+            if (vals.get(remove).getValues().get(0).equals(0.0d)) {
                 vals.remove(remove);
                 _Logger.warn("removing unfinished timer [" + remove + "] from timing set");
             }
@@ -54,7 +60,7 @@ public class QueryLogParser implements LogParser {
             timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
             vals.remove("initTimestamp");
         } else {
-			timestamp = new DateTime(0);
+			throw new ParseException("no timestamp found in log line");
 		}
 
 		return new StandardLogLine(vals, timestamp);
@@ -62,33 +68,49 @@ public class QueryLogParser implements LogParser {
 
     public LogLine parseV2aLogLine(Map<String, Object> line) throws ParseException {
 		TreeMap<String, CounterVariable> variables = new TreeMap<>();
-        final Map<String, Double> counters;
+        final Map<String, Object> counters;
 		try {
 			@SuppressWarnings("unchecked")
-			Map<String, Double> parsedCounters = (Map<String, Double>) line.get("counters");
+			Map<String, Object> parsedCounters = (Map<String, Object>) line.get("counters");
 			counters = parsedCounters;
 		} catch (Exception e) {
 			throw new ParseException("could not cast element counters", e);
 		}
-        for (Map.Entry<String, Double> entry : counters.entrySet()) {
-            ArrayList<Double> counter = new ArrayList<Double>();
-            counter.add(Double.parseDouble(entry.getValue().toString()));
-            CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
-            variables.put(entry.getKey().toString(), cv);
-        }
+		if (counters != null) {
+			for (Map.Entry<String, Object> entry : counters.entrySet()) {
+				ArrayList<Double> counter = new ArrayList<Double>();
+				try {
+					counter.add(Double.valueOf(entry.getValue().toString()));
+				} catch (NumberFormatException e) {
+					_Logger.warn("skipping value due to not being able to parse as double: " + entry.getValue().toString(), e);
+				}
+				CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
+				variables.put(entry.getKey().toString(), cv);
+			}
+		}
 
-        final Map<String, ArrayList<Double>> timers;
+        final Map<String, ArrayList<Object>> timers;
 		try {
 			@SuppressWarnings("unchecked")
-			Map<String, ArrayList<Double>> parsedTimers = (Map<String, ArrayList<Double>>) line.get("timers");
+			Map<String, ArrayList<Object>> parsedTimers = (Map<String, ArrayList<Object>>) line.get("timers");
 			timers = parsedTimers;
 		} catch (Exception e) {
 			throw new ParseException("could not cast element timers", e);
 		}
-        for (Map.Entry<String, ArrayList<Double>> entry : timers.entrySet()) {
-            CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, entry.getValue());
-            variables.put(entry.getKey().toString(), cv);
-        }
+		if (timers != null) {
+			for (Map.Entry<String, ArrayList<Object>> entryArray : timers.entrySet()) {
+				ArrayList<Double> counter = new ArrayList<Double>();
+				for (Object entry : entryArray.getValue()) {
+					try {
+						counter.add(Double.valueOf(entry.toString()));
+					} catch (NumberFormatException e) {
+						_Logger.warn("skipping value due to not being able to parse as double: " + entry.toString(), e);
+					}
+				}
+				CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, counter);
+				variables.put(entryArray.getKey().toString(), cv);
+			}
+		}
 
 		DateTime timestamp;
         if (variables.containsKey("initTimestamp")) {
@@ -98,7 +120,7 @@ public class QueryLogParser implements LogParser {
             timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
             variables.remove("initTimestamp");
         } else {
-			timestamp = new DateTime(0);
+			throw new ParseException("no timestamp found in log line");
 		}
 		return new StandardLogLine(variables, timestamp);
     }
@@ -114,12 +136,14 @@ public class QueryLogParser implements LogParser {
 		} catch (Exception e) {
 			throw new ParseException("could not cast element counters", e);
 		}
-        for (Map.Entry<String, Object> entry : counters.entrySet()) {
-            ArrayList<Double> counter = new ArrayList<Double>();
-            counter.add(Double.parseDouble(entry.getValue().toString()));
-            CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
-            variables.put(entry.getKey().toString(), cv);
-        }
+		if (counters != null) {
+			for (Map.Entry<String, Object> entry : counters.entrySet()) {
+				ArrayList<Double> counter = new ArrayList<Double>();
+				counter.add(Double.parseDouble(entry.getValue().toString()));
+				CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
+				variables.put(entry.getKey().toString(), cv);
+			}
+		}
 
         final Map<String, ArrayList<Object>> timers;
 		try {
@@ -129,15 +153,21 @@ public class QueryLogParser implements LogParser {
 		} catch (Exception e) {
 			throw new ParseException("could not cast element timers", e);
 		}
-        for (Map.Entry<String, ArrayList<Object>> entry : timers.entrySet()) {
-            ArrayList<Object> vals = entry.getValue();
-            ArrayList<Double> newVals = new ArrayList<Double>();
-            for (Object val : vals) {
-                newVals.add(Double.valueOf(val.toString()));
-            }
-            CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, newVals);
-            variables.put(entry.getKey().toString(), cv);
-        }
+		if (timers != null) {
+			for (Map.Entry<String, ArrayList<Object>> entry : timers.entrySet()) {
+				ArrayList<Object> vals = entry.getValue();
+				ArrayList<Double> newVals = new ArrayList<Double>();
+				for (Object val : vals) {
+					try {
+						newVals.add(Double.valueOf(val.toString()));
+					} catch (NumberFormatException e) {
+						_Logger.warn("skipping value due to not being able to parse as double: " + val, e);
+					}
+				}
+				CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, newVals);
+				variables.put(entry.getKey().toString(), cv);
+			}
+		}
 
 		DateTime timestamp;
         final Map<String, String> annotations;
@@ -148,19 +178,22 @@ public class QueryLogParser implements LogParser {
 		} catch (Exception e) {
 			throw new ParseException("could not cast element annotations");
 		}
-        if (annotations.containsKey("finalTimestamp")) {
-            Double time = Double.parseDouble(annotations.get("finalTimestamp"));
-            //double with whole number unix time, and fractional seconds
-            Long ticks = Math.round(time * 1000);
-            timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
-        }
-        else if (annotations.containsKey("initTimestamp")) {
-            Double time = Double.parseDouble(annotations.get("initTimestamp"));
-            //double with whole number unix time, and fractional seconds
-            Long ticks = Math.round(time * 1000);
-            timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
-        } else {
-			timestamp = new DateTime(0);
+		if (annotations == null) {
+			throw new ParseException("no timestamp found in log line");
+		}
+		if (annotations.containsKey("finalTimestamp")) {
+			Double time = Double.parseDouble(annotations.get("finalTimestamp"));
+			//double with whole number unix time, and fractional seconds
+			Long ticks = Math.round(time * 1000);
+			timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
+		}
+		else if (annotations.containsKey("initTimestamp")) {
+			Double time = Double.parseDouble(annotations.get("initTimestamp"));
+			//double with whole number unix time, and fractional seconds
+			Long ticks = Math.round(time * 1000);
+			timestamp = new DateTime(ticks, ISOChronology.getInstanceUTC());
+		} else {
+			throw new ParseException("no timestamp found in log line");
 		}
 		return new StandardLogLine(variables, timestamp);
     }
@@ -208,14 +241,10 @@ public class QueryLogParser implements LogParser {
     }
 
 	private LogLine parseV2cLogLine(Map<String,Object> line) throws ParseException {
-		_Logger.info("Trying to parse V2c log line");
 		TreeMap <String, CounterVariable> variables = new TreeMap<>();
 		parseChunk(line, "timers", CounterVariable.MetricKind.Timer, variables);
-		_Logger.info("Timers parsed");
 		parseChunk(line, "counters", CounterVariable.MetricKind.Counter, variables);
-		_Logger.info("Counters parsed");
 		parseChunk(line, "gauges", CounterVariable.MetricKind.Gauge, variables);
-		_Logger.info("All chunks parsed");
 
 		DateTime timestamp;
 		final Map<String, String> annotations;
@@ -225,6 +254,10 @@ public class QueryLogParser implements LogParser {
 			annotations = parsedAnnotations;
 		} catch (Exception e) {
 			throw new ParseException("could not cast annotations to look for timestamp", e);
+		}
+
+		if (annotations == null) {
+			throw new ParseException("no timestamp found in log line");
 		}
 
 		if (annotations.containsKey("finalTimestamp")) {
@@ -254,14 +287,20 @@ public class QueryLogParser implements LogParser {
 		catch (Exception e) {
 			throw new ParseException("could not cast element " + element, e);
 		}
-		for (Map.Entry<String, ArrayList<Object>> entry : elements.entrySet()) {
-			ArrayList<Object> lineValues = entry.getValue();
-			ArrayList<Double> parsedValues = new ArrayList<Double>();
-			for (Object val : lineValues) {
-				parsedValues.add(Double.valueOf(val.toString()));
+		if (elements != null) {
+			for (Map.Entry<String, ArrayList<Object>> entry : elements.entrySet()) {
+				ArrayList<Object> lineValues = entry.getValue();
+				ArrayList<Double> parsedValues = new ArrayList<Double>();
+				for (Object val : lineValues) {
+					try {
+						parsedValues.add(Double.valueOf(val.toString()));
+					} catch (NumberFormatException e) {
+						_Logger.warn("skipping value due to not being able to parse as double: " + val, e);
+					}
+				}
+				CounterVariable cv = new CounterVariable(kind, parsedValues);
+				variables.put(entry.getKey().toString(), cv);
 			}
-			CounterVariable cv = new CounterVariable(kind, parsedValues);
-			variables.put(entry.getKey().toString(), cv);
 		}
 	}
 }
