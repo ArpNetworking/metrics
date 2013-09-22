@@ -1,10 +1,12 @@
 package tsdaggregator;
 
+import com.google.common.base.Optional;
+
 /**
  * Description goes here
  *
  * @author barp
  */
 public interface LogParser {
-	LogLine parseLogLine(String line);
+	Optional<LogLine> parseLogLine(String line);
 }

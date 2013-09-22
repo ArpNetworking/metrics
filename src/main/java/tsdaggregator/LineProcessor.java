@@ -1,5 +1,6 @@
 package tsdaggregator;
 
+import com.google.common.base.Optional;
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
 import tsdaggregator.publishing.AggregationPublisher;
@@ -41,10 +42,12 @@ public class LineProcessor {
     }
 
     public void invoke(String line) {
-        LogLine data = parser.parseLogLine(line);
-		if (data == null) {
+		Optional<LogLine> optionalData = parser.parseLogLine(line);
+		if (!optionalData.isPresent()) {
 			return;
 		}
+
+		LogLine data = optionalData.get();
 
 		//Loop over all metrics
         for (Map.Entry<String, CounterVariable> entry : data.getVariables().entrySet()) {

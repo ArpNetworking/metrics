@@ -1,3 +1,4 @@
+import com.google.common.base.Optional;
 import junit.framework.Assert;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.ISOChronology;
@@ -10,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 
@@ -24,7 +24,9 @@ public class LineDataTests {
 	@Test
 	public void ParseSingleEntry() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005,]");
+		Optional<LogLine> optionalLine = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005,]");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(1));
 		ArrayList<Double> setView = map.get("set/view").getValues();
@@ -37,14 +39,16 @@ public class LineDataTests {
 	@Test
 	public void ParseLegacyBadTimestamp() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("[initTimestamp=13q00976184.02,set/view=26383.8768005,]");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("[initTimestamp=13q00976184.02,set/view=26383.8768005,]");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void ParseLegacyBadMetric() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768q005,set/set=12817.1234]");
+		Optional<LogLine> optionalLine = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768q005,set/set=12817.1234]");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(1));
 		ArrayList<Double> setSet = map.get("set/set").getValues();
@@ -57,7 +61,9 @@ public class LineDataTests {
 	@Test
 	public void ParseSingleEntryWithExtraCommas() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005,,,]");
+		Optional<LogLine> optionalLine = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005,,,]");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(1));
 		ArrayList<Double> setView = map.get("set/view").getValues();
@@ -70,7 +76,9 @@ public class LineDataTests {
 	@Test
 	public void ParseSingleEntryWithExtraCommasAndWhitespace() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005, ,,]");
+		Optional<LogLine> optionalLine = data.parseLogLine("[initTimestamp=1300976184.02,set/view=26383.8768005, ,,]");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(1));
 		ArrayList<Double> setView = map.get("set/view").getValues();
@@ -83,7 +91,9 @@ public class LineDataTests {
 	@Test
 	public void ParseSingleEntryNotEnded() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view-start=0,]");
+		Optional<LogLine> optionalLine = data.parseLogLine("[initTimestamp=1300976184.02,set/view-start=0,]");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(0));
 	}
@@ -91,7 +101,9 @@ public class LineDataTests {
 	@Test
 	public void ParseSingleEntryWithStartedSuffix() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("[initTimestamp=1300976184.02,set/view-start=26383.8768005,]");
+		Optional<LogLine> optionalLine = data.parseLogLine("[initTimestamp=1300976184.02,set/view-start=26383.8768005,]");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(1));
 		ArrayList<Double> setView = map.get("set/view").getValues();
@@ -104,7 +116,9 @@ public class LineDataTests {
 	@Test
 	public void ParseMultipleEntries() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("[initTimestamp=1300976164.85,passport/signin=395539.999008,passport/_signinValidatePassword=390913.009644,passport/signinValid=1,]");
+		Optional<LogLine> optionalLine = data.parseLogLine("[initTimestamp=1300976164.85,passport/signin=395539.999008,passport/_signinValidatePassword=390913.009644,passport/signinValid=1,]");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		Assert.assertEquals(3, map.size());
 		Assert.assertEquals(1d, map.get("passport/signinValid").getValues().get(0));
@@ -115,14 +129,16 @@ public class LineDataTests {
 	@Test
 	public void ParseNoTimestamp() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("[passport/signin=395539.999008,passport/_signinValidatePassword=390913.009644,passport/signinValid=1,]");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("[passport/signin=395539.999008,passport/_signinValidatePassword=390913.009644,passport/signinValid=1,]");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
         
     @Test
     public void Parse2aVersionEntry() {
         QueryLogParser data = new QueryLogParser();
-        LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
+        Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
         Map<String, CounterVariable> map = line.getVariables();
         Assert.assertEquals(1, map.size());
         ArrayList<Double> vals = map.get("qmanager/index").getValues();
@@ -135,7 +151,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2aVersionEntryBadTimerValue() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563,\"counter1\":15},\"timers\":{\"qmanager\\/index\":[\"99496.1261w74927\",106616.37284927]},\"annotations\":[]}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563,\"counter1\":15},\"timers\":{\"qmanager\\/index\":[\"99496.1261w74927\",106616.37284927]},\"annotations\":[]}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(2));
 		ArrayList<Double> vals = map.get("qmanager/index").getValues();
@@ -151,7 +169,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2aVersionEntryBadCounterValue() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563,\"counter1\":\"1w5\",\"counter2\":8},\"timers\":{\"qmanager\\/index\":[\"99496.126174927\",106616.37284927]},\"annotations\":[]}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563,\"counter1\":\"1w5\",\"counter2\":8},\"timers\":{\"qmanager\\/index\":[\"99496.126174927\",106616.37284927]},\"annotations\":[]}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(3));
 		ArrayList<Double> vals = map.get("qmanager/index").getValues();
@@ -170,14 +190,16 @@ public class LineDataTests {
 	@Test
 	public void Parse2aVersionEntryBadTimestampValue() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":131157q570.3563},\"timers\":{\"qmanager\\/index\":[99496.1261w74927,106616.37284927]},\"annotations\":[]}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":131157q570.3563},\"timers\":{\"qmanager\\/index\":[99496.1261w74927,106616.37284927]},\"annotations\":[]}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2aVersionEntryNoTimers() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"annotations\":[]}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"annotations\":[]}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		DateTime timestamp = line.getTime();
 		Assert.assertEquals(new DateTime((long)(1311574570.3563d * 1000d), ISOChronology.getInstanceUTC()), timestamp);
 	}
@@ -185,15 +207,17 @@ public class LineDataTests {
 	@Test
 	public void Parse2aVersionEntryNoCounters() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
 		//null due to no timestamp data
-		assertThat(line, nullValue());
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2aVersionEntryNoAnnotations() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		Assert.assertEquals(1, map.size());
 		ArrayList<Double> vals = map.get("qmanager/index").getValues();
@@ -206,28 +230,30 @@ public class LineDataTests {
 	@Test
 	public void Parse2aEntryBadCounters() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":[\"initTimestamp\",1311574570.3563, \"something\",1281.128],\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"counters\":[\"initTimestamp\",1311574570.3563, \"something\",1281.128],\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2aEntryBadTimers() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563,\"something\":1281.128},\"timers\":[\"qmanager\\/index\",[99496.126174927,106616.37284927]],\"annotations\":[]}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"counters\":{\"initTimestamp\":1311574570.3563,\"something\":1281.128},\"timers\":[\"qmanager\\/index\",[99496.126174927,106616.37284927]],\"annotations\":[]}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2aNoTimestamp() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2a\",\"counters\":{},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2a\",\"counters\":{},\"timers\":{\"qmanager\\/index\":[99496.126174927,106616.37284927]},\"annotations\":[]}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
     @Test
     public void Parse2bVersionEntry() {
         QueryLogParser data = new QueryLogParser();
-        LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+        Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
         Map<String, CounterVariable> map = line.getVariables();
         assertThat(map.size(), equalTo(3));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -255,7 +281,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2bVersionMultipleTimers() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(3));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -282,7 +310,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2bVersionBadFinalTimestamp() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"13w47527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"13w47527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(3));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -310,14 +340,16 @@ public class LineDataTests {
 	@Test
 	public void Parse2bVersionBadBothTimestamp() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"134752768q7.486\",\"finalTimestamp\":\"13475276w87.686\"}}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"134752768q7.486\",\"finalTimestamp\":\"13475276w87.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2bVersionBadCounter() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":\"w7\",\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":\"w7\",\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(3));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -344,7 +376,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2bVersionBadTimer() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,\"1w844\"]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,\"1w844\"]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(3));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -370,7 +404,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2bVersionNoCounters() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(1));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -387,7 +423,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2bVersionNoTimers() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(2));
 
@@ -408,15 +446,17 @@ public class LineDataTests {
 	@Test
 	public void Parse2bVersionNoAnnotations() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070,1844]}}");
 		//no annotations means no timestamp => error
-		assertThat(line, nullValue());
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2bUsesInitTimestampAsBackup() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"counter1\":7,\"counter2\":1},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(3));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -441,35 +481,37 @@ public class LineDataTests {
 	@Test
 	public void Parse2bBadCounters() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":[\"some_counter\",8],\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":[\"some_counter\",8],\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2bBadTimers() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"some_counter\":8},\"timers\":[\"/incentive/bestfor\",[2070]],\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"some_counter\":8},\"timers\":[\"/incentive/bestfor\",[2070]],\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2bBadAnnotations() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"some_counter\":8},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":[\"initTimestamp\",\"1347527687.486\",\"finalTimestamp\",\"1347527687.686\"]}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"some_counter\":8},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":[\"initTimestamp\",\"1347527687.486\",\"finalTimestamp\",\"1347527687.686\"]}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2bNoTimestamp() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"some_counter\":8},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{}}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2b\",\"counters\":{\"some_counter\":8},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{}}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2cVersionMultiple() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(5));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -511,7 +553,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2cMissingTimestampFallback() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(5));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -553,7 +597,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2cBadTimestampFallback() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"134q7527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"134q7527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(5));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -595,28 +641,30 @@ public class LineDataTests {
 	@Test
 	public void Parse2cBothBadTimestamp() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527w687.486\",\"finalTimestamp\":\"134q7527687.686\"}}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527w687.486\",\"finalTimestamp\":\"134q7527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2cBadCounters() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":[\"counter1\",[7],\"counter2\",[1]],\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":[\"counter1\",[7],\"counter2\",[1]],\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2cBadAnnotations() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":[\"initTimestamp\",\"1347527687.486\",\"finalTimestamp\",\"1347527687.686\"]}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":[\"initTimestamp\",\"1347527687.486\",\"finalTimestamp\",\"1347527687.686\"]}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void Parse2cBadValues() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,\"2w3\"],\"gauge2\":[15]},\"counters\":{\"counter1\":[\"7w\"],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,\"18q44\"]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,\"2w3\"],\"gauge2\":[15]},\"counters\":{\"counter1\":[\"7w\"],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,\"18q44\"]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(5));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -655,7 +703,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2cVersionMissingCounters() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(3));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -685,7 +735,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2cVersionMissingTimers() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"gauges\":{\"gauge1\":[1,2],\"gauge2\":[15]},\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(4));
 
@@ -721,7 +773,9 @@ public class LineDataTests {
 	@Test
 	public void Parse2cVersionMissingGauge() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]},\"annotations\":{\"initTimestamp\":\"1347527687.486\",\"finalTimestamp\":\"1347527687.686\"}}");
+		assertThat(optionalLine.isPresent(), equalTo(true));
+		LogLine line = optionalLine.get();
 		Map<String, CounterVariable> map = line.getVariables();
 		assertThat(map.size(), equalTo(3));
 		CounterVariable bestForTimer = map.get("/incentive/bestfor");
@@ -750,14 +804,14 @@ public class LineDataTests {
 	@Test
 	public void Parse2cVersionMissingAnnotations() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"2c\",\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]}}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"2c\",\"counters\":{\"counter1\":[7],\"counter2\":[1]},\"timers\":{\"/incentive/bestfor\":[2070,1844]}}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 
 	@Test
 	public void ParseUnknownVersion() {
 		QueryLogParser data = new QueryLogParser();
-		LogLine line = data.parseLogLine("{\"version\":\"86x\",\"counters\":{\"some_counter\":8},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{}}");
-		assertThat(line, nullValue());
+		Optional<LogLine> optionalLine = data.parseLogLine("{\"version\":\"86x\",\"counters\":{\"some_counter\":8},\"timers\":{\"/incentive/bestfor\":[2070]},\"annotations\":{}}");
+		assertThat(optionalLine.isPresent(), equalTo(false));
 	}
 }

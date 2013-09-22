@@ -1,5 +1,6 @@
 package tsdaggregator;
 
+import com.google.common.base.Optional;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.joda.time.DateTime;
@@ -229,7 +230,7 @@ public class QueryLogParser implements LogParser {
 	}
 
 	@Override
-    public LogLine parseLogLine(String line) {
+    public Optional<LogLine> parseLogLine(String line) {
 		LogLine logLine;
 
 		final Map<String, Object> jsonLine;
@@ -246,7 +247,7 @@ public class QueryLogParser implements LogParser {
                 _Logger.warn("Discarding line: Unparsable.\nLine was:\n" + line, e);
 				logLine = null;
             }
-			return logLine;
+			return Optional.fromNullable(logLine);
 		}
 		try {
 			String version = (String) jsonLine.get("version");
@@ -267,7 +268,7 @@ public class QueryLogParser implements LogParser {
 			_Logger.warn("Discarding line: Unparsable.\nLine was:\n" + line, e);
 			logLine = null;
 		}
-		return logLine;
+		return Optional.fromNullable(logLine);
     }
 
 	private LogLine parseV2cLogLine(Map<String,Object> line) throws ParseException {
