@@ -1,5 +1,6 @@
 package tsdaggregator.publishing;
 
+import com.google.common.base.Charsets;
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
 import tsdaggregator.AggregatedData;
@@ -11,11 +12,9 @@ import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 
 /**
- * Created with IntelliJ IDEA.
- * User: barp
- * Date: 9/15/12
- * Time: 2:57 AM
- * To change this template use File | Settings | File Templates.
+ * A publisher that stores the data in rrdtool
+ *
+ * @author barp
  */
 public class RRDSinglePublisher {
     static final Logger _Logger = Logger.getLogger(RRDSinglePublisher.class);
@@ -32,10 +31,10 @@ public class RRDSinglePublisher {
         }
         _FileName = rrdName;
         Long startTime = data.getPeriodStart().getMillis() / 1000;
-        createRRDFile(rrdName, data.getPeriod(), data.getMetric(), startTime);
+        createRRDFile(rrdName, data.getPeriod(), startTime);
     }
 
-    private void createRRDFile(String rrdName, Period period, String dsName, Long startTime) {
+    private void createRRDFile(String rrdName, Period period, Long startTime) {
         if (new File(rrdName).exists()) {
             return;
         }
@@ -47,16 +46,17 @@ public class RRDSinglePublisher {
     }
 
     private void executeProcess(String[] args) {
+        BufferedReader stdOut = null;
         try {
             ProcessBuilder pb = new ProcessBuilder(args);
             pb.redirectErrorStream(true);
             Process p = pb.start();
-            BufferedReader stdOut = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            stdOut = new BufferedReader(new InputStreamReader(p.getInputStream(), Charsets.UTF_8));
 
             String line;
             StringBuilder procOutput = new StringBuilder();
             while ((line = stdOut.readLine()) != null) {
-                procOutput.append(line + "\n");
+                procOutput.append(line).append("\n");
             }
             try {
                 p.waitFor();
@@ -75,6 +75,13 @@ public class RRDSinglePublisher {
             }
         } catch (IOException e) {
             _Logger.error("IOException while trying to create RRD file", e);
+        } finally {
+            if (stdOut != null) {
+                try {
+                    stdOut.close();
+                } catch (IOException ignored) { }
+            }
+
         }
     }
 

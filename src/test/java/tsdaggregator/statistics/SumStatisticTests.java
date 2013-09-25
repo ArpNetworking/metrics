@@ -1,33 +1,32 @@
-package statistics;
+package tsdaggregator.statistics;
 
 import org.junit.Test;
-import tsdaggregator.statistics.NStatistic;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 /**
- * Tests for the NStatistic class
+ * Tests for the SumStatistic class
  *
  * @author barp
  */
-public class NStatisticTests {
+public class SumStatisticTests {
 	@Test
 	public void testConstruction() {
-		NStatistic stat = new NStatistic();
+		SumStatistic stat = new SumStatistic();
 	}
 
 	@Test
 	public void testGetName() {
-		NStatistic stat = new NStatistic();
-		assertThat(stat.getName(), equalTo("n"));
+		SumStatistic stat = new SumStatistic();
+		assertThat(stat.getName(), equalTo("sum"));
 	}
 
 	@Test
 	public void testCalculate() {
-		NStatistic stat = new NStatistic();
+		SumStatistic stat = new SumStatistic();
 		Double[] vals = {12d, 18d, 5d};
 		Double calculated = stat.calculate(vals);
-		assertThat(calculated, equalTo(3d));
+		assertThat(calculated, equalTo(35d));
 	}
 }

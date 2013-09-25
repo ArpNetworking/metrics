@@ -1,7 +1,6 @@
-package statistics;
+package tsdaggregator.statistics;
 
 import org.junit.Test;
-import tsdaggregator.statistics.*;
 
 import java.util.ArrayList;
 

@@ -1,33 +1,32 @@
-package statistics;
+package tsdaggregator.statistics;
 
 import org.junit.Test;
-import tsdaggregator.statistics.SumStatistic;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 /**
- * Tests for the SumStatistic class
+ * Tests for the FirstStatistic class
  *
  * @author barp
  */
-public class SumStatisticTests {
+public class FirstTests {
 	@Test
 	public void testConstruction() {
-		SumStatistic stat = new SumStatistic();
+		FirstStatistic stat = new FirstStatistic();
 	}
 
 	@Test
 	public void testGetName() {
-		SumStatistic stat = new SumStatistic();
-		assertThat(stat.getName(), equalTo("sum"));
+		FirstStatistic stat = new FirstStatistic();
+		assertThat(stat.getName(), equalTo("first"));
 	}
 
 	@Test
 	public void testCalculate() {
-		SumStatistic stat = new SumStatistic();
+		FirstStatistic stat = new FirstStatistic();
 		Double[] vals = {12d, 18d, 5d};
 		Double calculated = stat.calculate(vals);
-		assertThat(calculated, equalTo(35d));
+		assertThat(calculated, equalTo(12d));
 	}
 }

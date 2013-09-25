@@ -1,3 +1,5 @@
+package tsdaggregator;
+
 import java.util.*;
 import org.hamcrest.CoreMatchers;
 import org.junit.*;

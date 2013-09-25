@@ -65,6 +65,10 @@ public class LineProcessor {
 					case Gauge:
 						tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName, gaugeStatisticsClasses);
 						break;
+                    default:
+                        _Logger.warn("unknown metric kind, defaulting to counter statistics. metricKind = " + entry.getValue().getMetricKind().toString());
+                        tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName, counterStatisticsClasses);
+                        break;
 				}
                 aggregations.put(entry.getKey(), tsdata);
             }

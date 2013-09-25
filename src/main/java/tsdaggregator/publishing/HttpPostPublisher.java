@@ -38,25 +38,24 @@ public class HttpPostPublisher implements AggregationPublisher {
 	@Override
 	public void recordAggregation(AggregatedData[] data) {
 		if (data.length > 0) {
-			String aggregateJson = "[";
+			StringBuilder aggregateJson  = new StringBuilder();
+            aggregateJson.append("[");
 			for (AggregatedData d : data) {
 			
-				String jsonVal = "{\"value\":\"" + d.getValue().toString() + "\"," +
-	                 "\"counter\":\"" + d.getMetric() + "\"," +
-	                 "\"service\":\"" + d.getService() + "\"," +
-	                 "\"host\":\"" + d.getHost() + "\"," +
-	                 "\"period\":\"" + d.getPeriod() + "\"," +
-	                 "\"periodStart\":\"" + d.getPeriodStart() + "\"," +
-	                 "\"statistic\":\"" + d.getStatistic().getName() + "\"" +
-	                 "}";
-				aggregateJson += jsonVal + ',';
+				aggregateJson.append("{\"value\":\"").append(d.getValue().toString())
+                        .append("\",").append("\"counter\":\"").append(d.getMetric()).append("\",")
+                        .append("\"service\":\"").append(d.getService()).append("\",").append("\"host\":\"")
+                        .append(d.getHost()).append("\",").append("\"period\":\"").append(d.getPeriod())
+                        .append("\",").append("\"periodStart\":\"").append(d.getPeriodStart()).append("\",")
+                        .append("\"statistic\":\"").append(d.getStatistic().getName()).append("\"").append("}");
+				aggregateJson.append(',');
 			}
 			//Strip off the trailing comma
-			aggregateJson = aggregateJson.substring(0, aggregateJson.length() - 1);
-			aggregateJson += "]";
+            aggregateJson.delete(aggregateJson.length() - 1, aggregateJson.length());
+			aggregateJson.append("]");
 
 			HttpPost method = new HttpPost(_Uri);
-            StringEntity entity = new StringEntity(aggregateJson, ContentType.APPLICATION_JSON);
+            StringEntity entity = new StringEntity(aggregateJson.toString(), ContentType.APPLICATION_JSON);
             method.setEntity(entity);
             HttpEntity responseEntity = null;
 			try {

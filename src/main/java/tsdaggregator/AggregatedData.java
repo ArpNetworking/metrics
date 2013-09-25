@@ -1,72 +1,97 @@
 package tsdaggregator;
 
+import com.google.common.base.Objects;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import tsdaggregator.statistics.Statistic;
 
-public class AggregatedData {
-	Statistic _Statistic;
-	String _Service;
-	String _Host;
-	String _Metric;
-	Double _Value;
-	DateTime _PeriodStart;
-	Period _Period;
-	
-	public Period getPeriod() {
+public final class AggregatedData {
+	final Statistic _Statistic;
+	final String _Service;
+	final String _Host;
+	final String _Metric;
+	final Double _Value;
+	final DateTime _PeriodStart;
+	final Period _Period;
+
+    public AggregatedData(final Statistic statistic, final String service, final String host, final String metric, final Double value, final DateTime periodStart, final Period period) {
+        _Statistic = statistic;
+        _Service = service;
+        _Host = host;
+        _Metric = metric;
+        _Value = value;
+        _PeriodStart = periodStart;
+        _Period = period;
+    }
+
+    public Period getPeriod() {
 		return _Period;
 	}
-	public void setPeriod(Period period) {
-		_Period = period;
-	}
+
 	public Statistic getStatistic() {
 		return _Statistic;
 	}
-	public void setStatistic(Statistic statistic) {
-		_Statistic = statistic;
-	}
+
 	public String getService() {
 		return _Service;
 	}
-	public void setService(String service) {
-		_Service = service;
-	}
+
 	public String getHost() {
 		return _Host;
 	}
-	public void setHost(String host) {
-		_Host = host;
-	}
+
 	public Double getValue() {
 		return _Value;
 	}
-	public void setValue(Double value) {
-		_Value = value;
-	}
+
 	public DateTime getPeriodStart() {
 		return _PeriodStart;
 	}
-	public void setPeriodStart(DateTime periodStart) {
-		_PeriodStart = periodStart;
-	}
-	public void setMetric(String value) {
-		_Metric = value;
-	}
+
 	public String getMetric() {
 		return _Metric;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof AggregatedData) {
-			AggregatedData other = (AggregatedData)obj;
-			return other._Host.equals(_Host) &&
-				other._Period.equals(_Period) &&
-				other._PeriodStart.equals(_PeriodStart) &&
-				other._Service.equals(_Service) &&
-				other._Statistic.equals(_Statistic) &&
-				other._Value.equals(_Value);
-		}
-		return false;
-	}
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final AggregatedData data = (AggregatedData) o;
+
+        if (!_Host.equals(data._Host)) return false;
+        if (!_Metric.equals(data._Metric)) return false;
+        if (!_Period.equals(data._Period)) return false;
+        if (!_PeriodStart.equals(data._PeriodStart)) return false;
+        if (!_Service.equals(data._Service)) return false;
+        if (!_Statistic.equals(data._Statistic)) return false;
+        if (!_Value.equals(data._Value)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = _Statistic.hashCode();
+        result = 31 * result + _Service.hashCode();
+        result = 31 * result + _Host.hashCode();
+        result = 31 * result + _Metric.hashCode();
+        result = 31 * result + _Value.hashCode();
+        result = 31 * result + _PeriodStart.hashCode();
+        result = 31 * result + _Period.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("Statistic", _Statistic)
+                .add("Service", _Service)
+                .add("Host", _Host)
+                .add("Metric", _Metric)
+                .add("Value", _Value)
+                .add("PeriodStart", _PeriodStart)
+                .add("Period", _Period)
+                .toString();
+    }
 }

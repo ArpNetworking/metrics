@@ -108,7 +108,9 @@ public class Configuration {
 		return remetAddress;
 	}
 
-	public String[] getFiles() {
+	public List<String> getFiles() {
+        List<String> files = Arrays.asList(this.files);
+
 		return files;
 	}
 

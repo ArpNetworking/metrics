@@ -1,13 +1,15 @@
 package tsdaggregator;
 
+import com.google.common.base.Charsets;
 import org.apache.commons.cli.*;
 import org.apache.commons.cli.ParseException;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
 import org.joda.time.format.PeriodFormatter;
-import tsdaggregator.statistics.*;
+import tsdaggregator.statistics.Statistic;
 
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -260,7 +262,7 @@ public class CommandLineParser {
 
 	public void printUsage(OutputStream stream) {
 		HelpFormatter formatter = new HelpFormatter();
-		PrintWriter pw = new PrintWriter(stream);
+		PrintWriter pw = new PrintWriter(new OutputStreamWriter(stream, Charsets.UTF_8));
 		formatter.printHelp(pw, HelpFormatter.DEFAULT_WIDTH, "tsdaggregator", null,
 				options, HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD, null, true);
 		pw.flush();

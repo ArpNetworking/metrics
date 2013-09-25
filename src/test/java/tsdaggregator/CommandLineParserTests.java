@@ -1,18 +1,19 @@
+package tsdaggregator;
+
 import org.hamcrest.Matcher;
 import org.joda.time.Period;
 import org.junit.Test;
-import tsdaggregator.*;
 import tsdaggregator.statistics.Statistic;
 import tsdaggregator.statistics.TP0;
 import tsdaggregator.statistics.TP100;
-import util.InitializeExceptionStatistic;
+import tsdaggregator.util.InitializeExceptionStatistic;
 
 import java.io.ByteArrayOutputStream;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsCollectionContaining.hasItem;
 import static org.junit.Assert.assertThat;
@@ -23,7 +24,7 @@ import static org.junit.Assert.assertThat;
  * @author barp
  */
 public class CommandLineParserTests {
-	private class TestResolver implements HostResolver {
+	private static class TestResolver implements HostResolver {
 
 		@Override
 		public String getLocalHostName() throws UnknownHostException {
@@ -325,9 +326,9 @@ public class CommandLineParserTests {
 		final String inputFile = "somefile.log";
 		String[] args = new String[]{"-f", inputFile, "-o", "output.file.txt", "-s", "service"};
 		Configuration config = parser.parse(args);
-		String[] files = config.getFiles();
-		assertThat(files.length, equalTo(1));
-		assertThat(files, hasItemInArray(inputFile));
+		List<String> files = config.getFiles();
+		assertThat(files.size(), equalTo(1));
+		assertThat(files, hasItem(inputFile));
 	}
 
 	@Test
@@ -337,10 +338,10 @@ public class CommandLineParserTests {
 		final String inputFile2 = "anotherfile.log";
 		String[] args = new String[]{"-f", inputFile, inputFile2, "-o", "output.file.txt", "-s", "service"};
 		Configuration config = parser.parse(args);
-		String[] files = config.getFiles();
-		assertThat(files.length, equalTo(2));
-		assertThat(files, hasItemInArray(inputFile));
-		assertThat(files, hasItemInArray(inputFile2));
+		List<String> files = config.getFiles();
+		assertThat(files.size(), equalTo(2));
+		assertThat(files, hasItem(inputFile));
+		assertThat(files, hasItem(inputFile2));
 	}
 
 	@Test

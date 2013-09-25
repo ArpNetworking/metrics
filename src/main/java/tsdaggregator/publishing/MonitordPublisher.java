@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ClientConnectionManager;
@@ -27,19 +26,26 @@ public class MonitordPublisher implements AggregationPublisher {
 	String _Uri;
     String _Cluster;
     String _Host;
+	HttpClient _Client;
 	static Logger _Logger = Logger.getLogger(MonitordPublisher.class);
-    static HttpClient _client;
-    static ClientConnectionManager _connectionManager;
-    static {
-        _connectionManager = new PoolingClientConnectionManager();
-        _client = new DefaultHttpClient(_connectionManager);
-        HttpParams params = _client.getParams();
-        params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 3000);
-    }
+
 	public MonitordPublisher(String uri, String cluster, String host) {
+		this(uri, cluster, host, buildDefaultClient());
+	}
+
+	private static HttpClient buildDefaultClient() {
+		ClientConnectionManager connectionManager = new PoolingClientConnectionManager();
+		HttpClient client = new DefaultHttpClient(connectionManager);
+		HttpParams params = client.getParams();
+		params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 3000);
+		return client;
+	}
+
+	public MonitordPublisher(String uri, String cluster, String host, HttpClient client) {
 		_Uri = uri;
-        _Cluster = cluster;
-        _Host = host;
+		_Cluster = cluster;
+		_Host = host;
+		_Client = client;
 	}
 	
 	@Override
@@ -56,11 +62,6 @@ public class MonitordPublisher implements AggregationPublisher {
             }
 
             for (Map.Entry<String, ArrayList<AggregatedData>> entry : aggMap.entrySet()) {
-                //skip any empty aggregations
-                if (entry.getValue().size() == 0) {
-                    continue;
-                }
-
                 //All aggregated data values for a metric should have the same metric metadata
                 AggregatedData d = entry.getValue().get(0);
 
@@ -90,22 +91,27 @@ public class MonitordPublisher implements AggregationPublisher {
                 HttpEntity responseEntity = null;
                 try {
                     _Logger.info("Posting to " + _Uri + " value '" + postValue.toString() + "'");
-                    HttpResponse result = _client.execute(method);
+                    HttpResponse result = _Client.execute(method);
                     responseEntity = result.getEntity();
                     if (result.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                         _Logger.info("Post response ok");
                     }
                     else {
-                        _Logger.warn("post was not accepted, status: " + result + ", body: " + IOUtils.toString(result.getEntity().getContent(), "UTF-8"));
+                        _Logger.warn("post was not accepted, status: " + result + ", body: " + IOUtils.toString(responseEntity.getContent(), "UTF-8"));
                     }
-                } catch (ClientProtocolException e) {
-                    _Logger.error("Error on reporting", e);
                 } catch (IOException e) {
                     _Logger.error("Error on reporting", e);
                 } finally {
-                    if (responseEntity != null) {
-                        try { responseEntity.getContent().close(); } catch (Exception ignored) {}
-                    }
+					if (responseEntity != null) {
+						try {
+							responseEntity.getContent().close();
+							_Logger.debug("closed content stream");
+						} catch (Exception ignored) {
+							_Logger.warn("error closing content stream");
+						}
+					} else {
+						_Logger.debug("responseEntity is null");
+					}
                 }
             }
 		}

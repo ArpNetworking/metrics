@@ -1,3 +1,5 @@
+package tsdaggregator;
+
 import org.jmock.Mockery;
 import org.jmock.integration.junit4.JMock;
 import org.jmock.integration.junit4.JUnit4Mockery;
@@ -5,7 +7,6 @@ import org.joda.time.Period;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import tsdaggregator.TSAggregation;
 import tsdaggregator.publishing.ConsolePublisher;
 import tsdaggregator.statistics.Statistic;
 
@@ -17,10 +18,10 @@ public class TSAggregationTests {
 	Mockery context = new JUnit4Mockery();
 
 	@Test
-	public void TestContruct() {
+	public void testContruct() {
 		Period period = new Period(0, 5, 0, 0);
         Set<Statistic> stats = new HashSet<>();
-		TSAggregation agg = new TSAggregation("test metric", period, ConsolePublisher.getInstance(), "testHost", "testService", stats);
+		TSAggregation agg = new TSAggregation("test metric", period, new ConsolePublisher(), "testHost", "testService", stats);
 		Assert.assertNotNull(agg);
 	}
 	

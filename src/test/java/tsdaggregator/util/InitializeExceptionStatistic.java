@@ -1,4 +1,4 @@
-package util;
+package tsdaggregator.util;
 
 import tsdaggregator.statistics.Statistic;
 

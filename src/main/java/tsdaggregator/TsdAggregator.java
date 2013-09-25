@@ -12,10 +12,7 @@ import tsdaggregator.statistics.Statistic;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -69,7 +66,7 @@ public class TsdAggregator {
 
         Boolean tailFile = config.shouldTailFiles();
 
-        String[] fileNames = config.getFiles();
+        List<String> fileNames = config.getFiles();
         String hostName = config.getHostName();
 
         String cluster = config.getClusterName();

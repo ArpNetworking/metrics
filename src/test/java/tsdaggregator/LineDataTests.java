@@ -1,11 +1,10 @@
+package tsdaggregator;
+
 import com.google.common.base.Optional;
 import junit.framework.Assert;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.ISOChronology;
 import org.junit.Test;
-import tsdaggregator.CounterVariable;
-import tsdaggregator.LogLine;
-import tsdaggregator.QueryLogParser;
 
 import java.util.ArrayList;
 import java.util.Map;

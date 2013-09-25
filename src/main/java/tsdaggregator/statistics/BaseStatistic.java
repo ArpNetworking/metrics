@@ -10,4 +10,16 @@ public abstract class BaseStatistic implements Statistic {
     public String toString() {
         return getName();
     }
+
+	@Override
+	public int hashCode() {
+		return getClass().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        return true;
+	}
 }

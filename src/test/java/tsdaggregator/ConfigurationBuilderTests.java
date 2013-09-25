@@ -1,21 +1,20 @@
+package tsdaggregator;
+
 import org.hamcrest.Matcher;
 import org.joda.time.Period;
 import org.junit.Test;
-import tsdaggregator.Configuration;
-import tsdaggregator.LogParser;
-import tsdaggregator.QueryLogParser;
 import tsdaggregator.statistics.MeanStatistic;
 import tsdaggregator.statistics.Statistic;
 import tsdaggregator.statistics.TP100;
 import tsdaggregator.statistics.TP50;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
@@ -214,16 +213,16 @@ public class ConfigurationBuilderTests {
 		final String[] files = new String[] {"file1", "file2"};
 		builder.files(files);
 		Configuration config = builder.create();
-		String[] returnedFiles = config.getFiles();
+		List<String> returnedFiles = config.getFiles();
 
-		assertThat(returnedFiles, hasItemInArray("file1"));
-		assertThat(returnedFiles, hasItemInArray("file2"));
+		assertThat(returnedFiles, hasItem("file1"));
+		assertThat(returnedFiles, hasItem("file2"));
 
 		builder.addFile("file3");
 		config = builder.create();
 		returnedFiles = config.getFiles();
-		assertThat(returnedFiles, hasItemInArray("file1"));
-		assertThat(returnedFiles, hasItemInArray("file2"));
-		assertThat(returnedFiles, hasItemInArray("file3"));
+		assertThat(returnedFiles, hasItem("file1"));
+		assertThat(returnedFiles, hasItem("file2"));
+		assertThat(returnedFiles, hasItem("file3"));
 	}
 }

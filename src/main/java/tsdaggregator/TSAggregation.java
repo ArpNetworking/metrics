@@ -105,14 +105,7 @@ public class TSAggregation {
         for (Statistic stat : _UnorderedStatistics) {
             Double value = stat.calculate(dsamples);
             if (_Listener != null) {
-                AggregatedData data = new AggregatedData();
-                data.setPeriod(_Period);
-                data.setHost(_HostName);
-                data.setService(_ServiceName);
-                data.setStatistic(stat);
-                data.setValue(value);
-                data.setPeriodStart(_PeriodStart);
-                data.setMetric(_Metric);
+                AggregatedData data = new AggregatedData(stat, _ServiceName, _HostName, _Metric, value, _PeriodStart, _Period);
                 aggregates.add(data);
             }
         }
@@ -122,14 +115,7 @@ public class TSAggregation {
             for (Statistic stat : _OrderedStatistics) {
                 Double value = stat.calculate(dsamples);
                 if (_Listener != null) {
-                    AggregatedData data = new AggregatedData();
-                    data.setPeriod(_Period);
-                    data.setHost(_HostName);
-                    data.setService(_ServiceName);
-                    data.setStatistic(stat);
-                    data.setValue(value);
-                    data.setPeriodStart(_PeriodStart);
-                    data.setMetric(_Metric);
+					AggregatedData data = new AggregatedData(stat, _ServiceName, _HostName, _Metric, value, _PeriodStart, _Period);
                     aggregates.add(data);
                 }
             }

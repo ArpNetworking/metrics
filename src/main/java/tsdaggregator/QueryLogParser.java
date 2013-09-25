@@ -18,7 +18,7 @@ public class QueryLogParser implements LogParser {
 
     private LogLine parseLegacyLogLine(String line) throws ParseException {
         HashMap<String, CounterVariable> vals = new HashMap<String, CounterVariable>();
-        line.trim();
+        line = line.trim();
         line = line.replace("[", "");
         line = line.replace("]", "");
         ArrayList<String> removalCandidates = new ArrayList<String>();
