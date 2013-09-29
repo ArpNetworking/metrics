@@ -36,7 +36,12 @@ public class PStatTests {
 		TP0 second = new TP0();
 		TP100 third = new TP100();
 		NStatistic nStatistic = new NStatistic();
-		assertThat(first.equals(second), equalTo(true));
+        assertThat(first.equals(null), equalTo(false));
+		assertThat(first.equals(first), equalTo(true));
+        assertThat(first.equals(second), equalTo(true));
+        assertThat(nStatistic.equals(null), equalTo(false));
+        assertThat(nStatistic.equals(first), equalTo(false));
+        assertThat(nStatistic.equals(nStatistic), equalTo(true));
 		assertThat(second.equals(first), equalTo(true));
 		assertThat(first.equals(third), equalTo(false));
 		assertThat(first.equals(nStatistic), equalTo(false));
