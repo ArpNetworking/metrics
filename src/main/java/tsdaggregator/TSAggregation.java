@@ -14,16 +14,17 @@ import java.util.Set;
 
 public class TSAggregation {
 
-    Period _Period;
-    Integer _NumberOfSamples = 0;
-    ArrayList<Double> _Samples = new ArrayList<Double>();
+    final Period _Period;
+    int _NumberOfSamples = 0;
+    final ArrayList<Double> _Samples = new ArrayList<Double>();
     DateTime _PeriodStart = new DateTime(0);
-    Set<Statistic> _OrderedStatistics = new HashSet<>();
-    Set<Statistic> _UnorderedStatistics = new HashSet<>();
-    String _Metric;
-    String _HostName;
-    String _ServiceName;
+    final Set<Statistic> _OrderedStatistics = new HashSet<>();
+    final Set<Statistic> _UnorderedStatistics = new HashSet<>();
+    final String _Metric;
+    final String _HostName;
+    final String _ServiceName;
     AggregationPublisher _Listener;
+
     static Logger _Logger = Logger.getLogger(TSAggregation.class);
 
     public TSAggregation(String metric, Period period, AggregationPublisher listener, String hostName, String serviceName, Set<Statistic> statistics) {
@@ -60,8 +61,9 @@ public class TSAggregation {
         rotateAggregation(new DateTime().minus(Duration.standardSeconds(60)));
     }
 
-    public void checkRotate(long rotateMillis) {
-        rotateAggregation(new DateTime().minus(new Duration(rotateMillis)));
+    public void checkRotate(double rotateFactor) {
+        Duration rotateDuration = Duration.millis((long)(_Period.toDurationFrom(_PeriodStart).getMillis() * rotateFactor));
+        rotateAggregation(DateTime.now().minus(new Duration(rotateDuration)));
     }
 
     private void rotateAggregation(DateTime time) {

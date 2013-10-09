@@ -30,6 +30,8 @@ public class Configuration {
 	private final boolean useRRD;
 	private final String metricsUri;
 	private final String outputFile;
+    private final boolean clusterAggServer;
+    private final int clusterAggServerPort;
 
 	protected Configuration(Builder builder) {
 		useRemet = builder.shouldUseRemet();
@@ -50,6 +52,8 @@ public class Configuration {
 		useRRD = builder.shouldUseRRD();
 		metricsUri = builder.getMetricsUri();
 		outputFile = builder.getOutputFile();
+        clusterAggServer = builder.isClusterAggServer();
+        clusterAggServerPort = builder.getClusterAggPort();
 	}
 
 	public static Builder builder() {
@@ -130,7 +134,15 @@ public class Configuration {
 		return tailFiles;
 	}
 
-	public static class Builder {
+    public boolean shouldStartClusterAggServer() {
+        return clusterAggServer;
+    }
+
+    public int getClusterAggServerPort() {
+        return clusterAggServerPort;
+    }
+
+    public static class Builder {
 		public static final Set<Statistic> DEFAULT_COUNTER_STATS = Collections.unmodifiableSet(new HashSet<Statistic>() {{
 			add(new MeanStatistic());
 			add(new SumStatistic());
@@ -184,8 +196,10 @@ public class Configuration {
 		private boolean useRRD = false;
 		private String metricsUri = "";
 		private String outputFile = "";
+        private boolean clusterAggServer = false;
+        private int clusterAggPort = 7065;
 
-		private Builder() {
+        private Builder() {
 		}
 
 		public String getMonitordAddress() {
@@ -359,6 +373,24 @@ public class Configuration {
 			this.useRRD = true;
 			return this;
 		}
+
+        public Builder clusterAgg() {
+            this.clusterAggServer = true;
+            return this;
+        }
+
+        public boolean isClusterAggServer() {
+            return this.clusterAggServer;
+        }
+
+        public Builder clusterAggPort(int port) {
+            this.clusterAggPort = port;
+            return this;
+        }
+
+        public int getClusterAggPort() {
+            return this.clusterAggPort;
+        }
 
 		public Builder outputFile(String file) {
 			this.outputFile = file;

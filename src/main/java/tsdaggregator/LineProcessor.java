@@ -8,13 +8,12 @@ import tsdaggregator.statistics.Statistic;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Created with IntelliJ IDEA.
- * User: barp
- * Date: 9/14/12
- * Time: 11:38 PM
- * To change this template use File | Settings | File Templates.
+ * Processes lines of data from a log file
+ *
+ * @author barp
  */
 public class LineProcessor {
     private LogParser parser;
@@ -25,11 +24,39 @@ public class LineProcessor {
     private String serviceName;
     private Set<Period> periods;
     private AggregationPublisher listener;
-    private Map<String, TSData> aggregations;
+    private ConcurrentHashMap<String, TSData> aggregations;
     static final Logger _Logger = Logger.getLogger(LineProcessor.class);
+    private AggregationCloser _aggregationCloser;
+
+    private class AggregationCloser implements Runnable {
+        private volatile boolean run = true;
+        private final double rotationFactor = 0.5d;
+        private final int ROTATION_CHECK_MILLIS = 500;
+
+        @Override
+        public void run() {
+            while (run) {
+                try {
+                    Thread.sleep(ROTATION_CHECK_MILLIS);
+                    //_Logger.info("Checking rotations on " + aggregations.size() + " TSData objects");
+                    for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
+                        //_Logger.info("Check rotate on " + entry.getKey());
+                        entry.getValue().checkRotate(rotationFactor);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                    _Logger.error("Interrupted!", e);
+                }
+            }
+        }
+
+        public void shutdown() {
+            run = false;
+        }
+    }
 
     public LineProcessor(LogParser parser, Set<Statistic> timerStatisticsClasses, Set<Statistic> counterStatisticsClasses, Set<Statistic> gaugeStatisticsClasses,
-                         String hostName, String serviceName, Set<Period> periods, AggregationPublisher listener, Map<String, TSData> aggregations) {
+                         String hostName, String serviceName, Set<Period> periods, AggregationPublisher listener) {
         this.parser = parser;
         this.timerStatisticsClasses = timerStatisticsClasses;
         this.counterStatisticsClasses = counterStatisticsClasses;
@@ -38,7 +65,20 @@ public class LineProcessor {
         this.serviceName = serviceName;
         this.periods = periods;
         this.listener = listener;
-        this.aggregations = aggregations;
+        this.aggregations = new ConcurrentHashMap<>();
+
+        startAggregationCloser();
+    }
+
+    public void shutdown() {
+        _aggregationCloser.shutdown();
+    }
+
+    private void startAggregationCloser() {
+        _aggregationCloser = new AggregationCloser();
+        final Thread aggregationCloserThread = new Thread(_aggregationCloser);
+        aggregationCloserThread.setDaemon(true);
+        aggregationCloserThread.start();
     }
 
     public void invoke(String line) {
@@ -70,9 +110,19 @@ public class LineProcessor {
                         tsdata = new TSData(entry.getKey(), periods, listener, hostName, serviceName, counterStatisticsClasses);
                         break;
 				}
-                aggregations.put(entry.getKey(), tsdata);
+                TSData returned = aggregations.putIfAbsent(entry.getKey(), tsdata);
+                if (returned != null) {
+                    tsdata = returned;
+                }
             }
             tsdata.addMetric(entry.getValue().getValues(), data.getTime());
+        }
+    }
+
+    public void closeAggregations() {
+        //close all aggregations
+        for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
+            entry.getValue().close();
         }
     }
 }

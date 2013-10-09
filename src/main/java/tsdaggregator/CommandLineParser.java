@@ -37,6 +37,7 @@ public class CommandLineParser {
 	private final Option rrdOption = Option.builder().longOpt("rrd").hasArg(false).desc("build or write to rrd databases").build();
 	private final Option remetOption = Option.builder().longOpt("remet").optionalArg(true).numberOfArgs(1).argName("uri").desc("send data to a local remet server").build();
 	private final Option monitordOption = Option.builder().longOpt("monitord").optionalArg(true).numberOfArgs(1).argName("uri").desc("send data to a monitord server").build();
+    private final Option clusterAgg = Option.builder().longOpt("aggserver").optionalArg(true).numberOfArgs(1).argName("port").desc("starts the cluster-level aggregation server").build();
 	private final Options options = new Options();
 
 	private final HostResolver hostResolver;
@@ -58,6 +59,7 @@ public class CommandLineParser {
 		options.addOption(rrdOption);
 		options.addOption(remetOption);
 		options.addOption(monitordOption);
+        options.addOption(clusterAgg);
 		this.hostResolver = hostResolver;
 	}
 
@@ -135,6 +137,19 @@ public class CommandLineParser {
 		if (cl.hasOption(tailOption.getLongOpt())) {
 			builder.tail();
 		}
+
+        if (cl.hasOption(clusterAgg.getLongOpt())) {
+            builder.clusterAgg();
+            String portString = cl.getOptionValue(clusterAgg.getLongOpt());
+            if (portString != null) {
+                try {
+                int port = Integer.parseInt(portString);
+                    builder.clusterAggPort(port);
+                } catch (NumberFormatException e) {
+                    throw new ConfigException("cluster aggregation port not an integer as expected");
+                }
+            }
+        }
 
 		String[] files = cl.getOptionValues(inputFileOption.getLongOpt());
 		builder.files(files);

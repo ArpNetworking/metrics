@@ -12,8 +12,10 @@ import tsdaggregator.statistics.Statistic;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -131,10 +133,8 @@ public class TsdAggregator {
             listener.addListener(new RRDClusterPublisher());
         }
 
-		//Shared map of metric -> TSData
-        Map<String, TSData> aggregations = new ConcurrentHashMap<>();
-
         ArrayList<String> files = new ArrayList<>();
+        LineProcessor processor = new LineProcessor(logParser, timerStatsClasses, counterStatsClasses, gaugeStatsClasses, hostName, serviceName, periods, listener);
 		for (String fileName : fileNames) {
 			File file = new File(fileName);
 			if (file.isFile()) {
@@ -146,8 +146,6 @@ public class TsdAggregator {
 			for (String f : files) {
 				try {
 					_Logger.info("Reading file " + f);
-
-					LineProcessor processor = new LineProcessor(logParser, timerStatsClasses, counterStatsClasses, gaugeStatsClasses, hostName, serviceName, periods, listener, aggregations);
 					if (tailFile) {
 						File fileHandle = new File(f);
 						LogTailerListener tailListener = new LogTailerListener(processor);
@@ -175,39 +173,23 @@ public class TsdAggregator {
 						}
 					}
 
-					//close all aggregations
-					for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
-						entry.getValue().close();
-					}
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
+            processor.closeAggregations();
 		}
-
-		long rotationCheck = 30000;
-        long rotateOn = 60000;
-        if (outputRemet) {
-            rotationCheck = 500;
-            rotateOn = 1000;
-        }
-
 
         if (tailFile) {
             while (true) {
                 try {
-                    Thread.sleep(rotationCheck);
-                    //_Logger.info("Checking rotations on " + aggregations.size() + " TSData objects");
-                    for (Map.Entry<String, TSData> entry : aggregations.entrySet()) {
-                        //_Logger.info("Check rotate on " + entry.getKey());
-                        entry.getValue().checkRotate(rotateOn);
-                    }
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    _Logger.error("Interrupted!", e);
+                    break;
                 }
             }
         }
+
         listener.close();
     }
 

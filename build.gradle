@@ -30,6 +30,7 @@ dependencies {
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.5'
     compile group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version: '1.8.3'
     compile group: 'com.google.guava', name: 'guava', version: '14.0.1'
+    compile group: 'io.vertx', name: 'vertx-platform', version: '2.0.1-final'
 
     testCompile group: 'junit', name: 'junit', version: '4.8.2'
     testCompile group: 'org.jmock', name: 'jmock-junit4', version: '2.5.1'
