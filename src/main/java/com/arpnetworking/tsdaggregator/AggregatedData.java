@@ -5,19 +5,21 @@ import com.google.common.base.Objects;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
+import javax.annotation.Nullable;
+
 /**
  * Serves as a data class for storing data for aggregated values after computation.
  *
  * @author barp
  */
 public final class AggregatedData {
-    final Statistic _statistic;
-    final String _service;
-    final String _host;
-    final String _metric;
-    final Double _value;
-    final DateTime _periodStart;
-    final Period _period;
+    private final Statistic _statistic;
+    private final String _service;
+    private final String _host;
+    private final String _metric;
+    private final Double _value;
+    private final DateTime _periodStart;
+    private final Period _period;
 
     public AggregatedData(final Statistic statistic, final String service, final String host, final String metric,
                           final Double value, final DateTime periodStart, final Period period) {
@@ -59,7 +61,7 @@ public final class AggregatedData {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(@Nullable final Object o) {
         if (this == o) {
             return true;
         }
@@ -69,29 +71,10 @@ public final class AggregatedData {
 
         final AggregatedData data = (AggregatedData) o;
 
-        if (!_host.equals(data._host)) {
-            return false;
-        }
-        if (!_metric.equals(data._metric)) {
-            return false;
-        }
-        if (!_period.equals(data._period)) {
-            return false;
-        }
-        if (!_periodStart.equals(data._periodStart)) {
-            return false;
-        }
-        if (!_service.equals(data._service)) {
-            return false;
-        }
-        if (!_statistic.equals(data._statistic)) {
-            return false;
-        }
-        if (!_value.equals(data._value)) {
-            return false;
-        }
+        return _host.equals(data._host) && _metric.equals(data._metric) && _period.equals(data._period) &&
+                _periodStart.equals(data._periodStart) && _service.equals(data._service) &&
+                _statistic.equals(data._statistic) && _value.equals(data._value);
 
-        return true;
     }
 
     @Override

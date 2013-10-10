@@ -1,8 +1,7 @@
 package com.arpnetworking.tsdaggregator.statistics;
 
-import org.apache.log4j.Logger;
-
 import java.text.DecimalFormat;
+import javax.annotation.Nonnull;
 
 /**
  * Base statistic for percentile based statistics.
@@ -10,19 +9,19 @@ import java.text.DecimalFormat;
  * @author barp
  */
 public class TPStatistic extends BaseStatistic implements OrderedStatistic {
-    static final Logger LOGGER = Logger.getLogger(TPStatistic.class);
-    static final DecimalFormat FORMAT = new DecimalFormat("##0.#");
-    Double _tStat = 0.0;
+    private static final DecimalFormat FORMAT = new DecimalFormat("##0.#");
+    private Double _tStat = 0.0;
 
     public TPStatistic(Double tstat) {
         _tStat = tstat;
     }
 
+    @Nonnull
     public String getName() {
         return "tp" + FORMAT.format(_tStat);
     }
 
-    public Double calculate(Double[] orderedValues) {
+    public Double calculate(@Nonnull Double[] orderedValues) {
         int index = (int) (Math.ceil((_tStat / 100) * (orderedValues.length - 1)));
         return orderedValues[index];
     }

@@ -1,11 +1,12 @@
 package com.arpnetworking.tsdaggregator.statistics;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
+
 import org.junit.Test;
 
 import java.util.ArrayList;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import javax.annotation.Nonnull;
 
 /**
  * Tests for the TPStatistic classes
@@ -13,15 +14,16 @@ import static org.junit.Assert.assertThat;
  * @author barp
  */
 public class PStatTests {
-	Double[] percs = generateNumber(100);
-	Double[] thousands = generateNumber(1000);
+	private final Double[] percs = generateNumber(100);
+	private final Double[] thousands = generateNumber(1000);
 
-	private Double[] generateNumber(int number) {
+	@Nonnull
+    private Double[] generateNumber(int number) {
 		ArrayList<Double> vals = new ArrayList<>();
 		for (double x = 0; x < number; x++) {
 			vals.add(x);
 		}
-		return vals.toArray(new Double[0]);
+		return vals.toArray(new Double[vals.size()]);
 	}
 
 	@Test
@@ -36,16 +38,22 @@ public class PStatTests {
 		TP0 second = new TP0();
 		TP100 third = new TP100();
 		NStatistic nStatistic = new NStatistic();
+        //noinspection ObjectEqualsNull
         assertThat(first.equals(null), equalTo(false));
 		assertThat(first.equals(first), equalTo(true));
         assertThat(first.equals(second), equalTo(true));
+        //noinspection ObjectEqualsNull
         assertThat(nStatistic.equals(null), equalTo(false));
+        //noinspection EqualsBetweenInconvertibleTypes
         assertThat(nStatistic.equals(first), equalTo(false));
         assertThat(nStatistic.equals(nStatistic), equalTo(true));
 		assertThat(second.equals(first), equalTo(true));
-		assertThat(first.equals(third), equalTo(false));
-		assertThat(first.equals(nStatistic), equalTo(false));
-		assertThat(first.equals(null), equalTo(false));
+        //noinspection EqualsBetweenInconvertibleTypes
+        assertThat(first.equals(third), equalTo(false));
+        //noinspection EqualsBetweenInconvertibleTypes
+        assertThat(first.equals(nStatistic), equalTo(false));
+        //noinspection ObjectEqualsNull
+        assertThat(first.equals(null), equalTo(false));
 	}
 
 	@Test
@@ -64,7 +72,7 @@ public class PStatTests {
 
 	@Test
 	public void testConstructionTP50() {
-		TP50 stat = new TP50();
+		@SuppressWarnings("UnusedAssignment") TP50 stat = new TP50();
 	}
 
 	@Test
@@ -83,7 +91,7 @@ public class PStatTests {
 
 	@Test
 	public void testConstructionTP90() {
-		TP90 stat = new TP90();
+		@SuppressWarnings("UnusedAssignment") TP90 stat = new TP90();
 	}
 
 	@Test
@@ -102,7 +110,7 @@ public class PStatTests {
 
 	@Test
 	public void testConstructionTP95() {
-		TP95 stat = new TP95();
+		@SuppressWarnings("UnusedAssignment") TP95 stat = new TP95();
 	}
 
 	@Test
@@ -121,7 +129,7 @@ public class PStatTests {
 
 	@Test
 	public void testConstructionTP99() {
-		TP99 stat = new TP99();
+		@SuppressWarnings("UnusedAssignment") TP99 stat = new TP99();
 	}
 
 	@Test
@@ -140,7 +148,7 @@ public class PStatTests {
 
 	@Test
 	public void testConstructionTP99p9() {
-		TP99p9 stat = new TP99p9();
+		@SuppressWarnings("UnusedAssignment") TP99p9 stat = new TP99p9();
 	}
 
 	@Test
@@ -159,7 +167,7 @@ public class PStatTests {
 
 	@Test
 	public void testConstructionTP100() {
-		TP100 stat = new TP100();
+		@SuppressWarnings("UnusedAssignment") TP100 stat = new TP100();
 	}
 
 	@Test

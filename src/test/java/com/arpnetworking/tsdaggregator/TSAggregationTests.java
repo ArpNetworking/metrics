@@ -1,23 +1,23 @@
 package com.arpnetworking.tsdaggregator;
 
+import com.arpnetworking.tsdaggregator.publishing.ConsolePublisher;
+import com.arpnetworking.tsdaggregator.statistics.Statistic;
 import org.jmock.Mockery;
 import org.jmock.integration.junit4.JMock;
-import org.jmock.integration.junit4.JUnit4Mockery;
 import org.joda.time.Period;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import com.arpnetworking.tsdaggregator.publishing.ConsolePublisher;
-import com.arpnetworking.tsdaggregator.statistics.Statistic;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @RunWith(JMock.class)
 public class TSAggregationTests {
-	Mockery context = new JUnit4Mockery();
+    @SuppressWarnings("UnusedDeclaration")
+    Mockery context = new Mockery();
 
-	@Test
+    @Test
 	public void testContruct() {
 		Period period = new Period(0, 5, 0, 0);
         Set<Statistic> stats = new HashSet<>();

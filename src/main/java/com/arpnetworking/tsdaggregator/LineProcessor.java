@@ -9,6 +9,7 @@ import org.joda.time.Period;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Nonnull;
 
 /**
  * Processes lines of data from a log file.
@@ -16,17 +17,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author barp
  */
 public class LineProcessor {
-    private LogParser _parser;
-    private Set<Statistic> _timerStatisticsClasses;
-    private Set<Statistic> _counterStatisticsClasses;
-    private Set<Statistic> _gaugeStatisticsClasses;
-    private String _hostName;
-    private String _serviceName;
-    private Set<Period> _periods;
-    private AggregationPublisher _listener;
-    private ConcurrentHashMap<String, TSData> _aggregations;
+    private final LogParser _parser;
+    private final Set<Statistic> _timerStatisticsClasses;
+    private final Set<Statistic> _counterStatisticsClasses;
+    private final Set<Statistic> _gaugeStatisticsClasses;
+    private final String _hostName;
+    private final String _serviceName;
+    private final Set<Period> _periods;
+    private final AggregationPublisher _listener;
+    @Nonnull
+    private final ConcurrentHashMap<String, TSData> _aggregations;
     private AggregationCloser _aggregationCloser;
-    static final Logger LOGGER = Logger.getLogger(LineProcessor.class);
+    private static final Logger LOGGER = Logger.getLogger(LineProcessor.class);
 
     private class AggregationCloser implements Runnable {
         private volatile boolean _run = true;

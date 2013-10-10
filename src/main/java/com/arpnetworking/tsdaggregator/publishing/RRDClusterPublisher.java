@@ -3,6 +3,7 @@ package com.arpnetworking.tsdaggregator.publishing;
 import com.arpnetworking.tsdaggregator.AggregatedData;
 
 import java.util.HashMap;
+import javax.annotation.Nonnull;
 
 /**
  * An rrd publisher that maintains all the rrd database for a cluster.
@@ -10,10 +11,10 @@ import java.util.HashMap;
  * @author barp
  */
 public class RRDClusterPublisher implements AggregationPublisher {
-    HashMap<String, RRDSinglePublisher> _listeners = new HashMap<String, RRDSinglePublisher>();
+    private final HashMap<String, RRDSinglePublisher> _listeners = new HashMap<>();
 
     @Override
-    public void recordAggregation(AggregatedData[] data) {
+    public void recordAggregation(@Nonnull AggregatedData[] data) {
         for (AggregatedData d : data) {
             String rrdName =
                     d.getHost() + "." + d.getMetric() + "." + d.getPeriod().toString() + d.getStatistic().getName() +

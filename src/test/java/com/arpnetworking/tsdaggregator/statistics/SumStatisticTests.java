@@ -1,9 +1,9 @@
 package com.arpnetworking.tsdaggregator.statistics;
 
-import org.junit.Test;
-
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+
+import org.junit.Test;
 
 /**
  * Tests for the SumStatistic class
@@ -13,7 +13,7 @@ import static org.junit.Assert.assertThat;
 public class SumStatisticTests {
 	@Test
 	public void testConstruction() {
-		SumStatistic stat = new SumStatistic();
+		@SuppressWarnings("UnusedAssignment") SumStatistic stat = new SumStatistic();
 	}
 
 	@Test

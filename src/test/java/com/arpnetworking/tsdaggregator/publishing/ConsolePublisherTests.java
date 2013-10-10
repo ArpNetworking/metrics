@@ -1,19 +1,19 @@
 package com.arpnetworking.tsdaggregator.publishing;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
+
+import com.arpnetworking.tsdaggregator.AggregatedData;
+import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import com.arpnetworking.tsdaggregator.AggregatedData;
-import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
 
 import java.io.PrintStream;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 
 /**
  * Tests for the ConsolePublisher class
@@ -21,15 +21,14 @@ import static org.junit.Assert.assertThat;
  * @author barp
  */
 public class ConsolePublisherTests {
-	PrintStream printStream;
-	PrintStream originalOut;
-	ByteArrayOutputStream byteArrayOutputStream;
+    private PrintStream originalOut;
+	private ByteArrayOutputStream byteArrayOutputStream;
 
 	@Before
 	public void setupOutput() {
 		originalOut = System.out;
 		byteArrayOutputStream = new ByteArrayOutputStream();
-		printStream = new PrintStream(byteArrayOutputStream);
+        final PrintStream printStream = new PrintStream(byteArrayOutputStream);
 		System.setOut(printStream);
 	}
 
@@ -40,7 +39,7 @@ public class ConsolePublisherTests {
 
 	@Test
 	public void testConstruct() {
-		ConsolePublisher publisher = new ConsolePublisher();
+		@SuppressWarnings("UnusedAssignment") ConsolePublisher publisher = new ConsolePublisher();
 	}
 
 	@Test

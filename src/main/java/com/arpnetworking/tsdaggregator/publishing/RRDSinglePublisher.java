@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
+import javax.annotation.Nonnull;
 
 /**
  * A publisher that stores the data in rrdtool.
@@ -18,10 +19,10 @@ import java.text.DecimalFormat;
  */
 public class RRDSinglePublisher {
     private static final Logger LOGGER = Logger.getLogger(RRDSinglePublisher.class);
-    private String _fileName;
+    private final String _fileName;
     private static final DecimalFormat DOUBLE_FORMAT = new DecimalFormat("#.####");
 
-    public RRDSinglePublisher(AggregatedData data) {
+    public RRDSinglePublisher(@Nonnull AggregatedData data) {
         String rrdName = data.getHost() + "." + data.getMetric() + "." + data.getPeriod().toString() +
                 data.getStatistic().getName() + ".rrd";
         rrdName = rrdName.replace("/", "-");
@@ -35,7 +36,7 @@ public class RRDSinglePublisher {
         createRRDFile(rrdName, data.getPeriod(), startTime);
     }
 
-    private void createRRDFile(String rrdName, Period period, Long startTime) {
+    private void createRRDFile(String rrdName, @Nonnull Period period, @Nonnull Long startTime) {
         if (new File(rrdName).exists()) {
             return;
         }
@@ -47,7 +48,7 @@ public class RRDSinglePublisher {
         executeProcess(argsList);
     }
 
-    private void executeProcess(String[] args) {
+    private void executeProcess(@Nonnull String[] args) {
         BufferedReader stdOut = null;
         try {
             ProcessBuilder pb = new ProcessBuilder(args);
@@ -88,7 +89,7 @@ public class RRDSinglePublisher {
         }
     }
 
-    public void storeData(AggregatedData data) {
+    public void storeData(@Nonnull AggregatedData data) {
         Long unixTime = data.getPeriodStart().getMillis() / 1000;
         String value = unixTime.toString() + ":" + DOUBLE_FORMAT.format(data.getValue());
         String[] argsList = new String[]{"rrdtool", "update", _fileName, value};

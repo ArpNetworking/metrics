@@ -4,6 +4,8 @@
  */
 package com.arpnetworking.tsdaggregator.statistics;
 
+import javax.annotation.Nonnull;
+
 /**
  * Top percentile 0% statistic (min).
  *
@@ -11,6 +13,7 @@ package com.arpnetworking.tsdaggregator.statistics;
  */
 
 public class TP0 extends TPStatistic {
+    @Nonnull
     @Override
     public String getName() {
         return "min";

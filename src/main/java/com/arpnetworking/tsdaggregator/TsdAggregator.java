@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 
 /**
  * @author barp
@@ -54,7 +55,7 @@ public class TsdAggregator {
         LogParser logParser;
         try {
             logParser = parserClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (@Nonnull InstantiationException | IllegalAccessException e) {
             _Logger.error("Could not instantiate parser class", e);
             return;
         }
@@ -195,7 +196,8 @@ public class TsdAggregator {
         listener.close();
     }
 
-    private static void findFilesRecursive(File dir, ArrayList<String> files, Pattern filter) {
+    private static void findFilesRecursive(@Nonnull File dir, @Nonnull ArrayList<String> files,
+                                           @Nonnull Pattern filter) {
         String[] list = dir.list();
         Arrays.sort(list);
         for (String f : list) {

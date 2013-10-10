@@ -14,6 +14,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.text.DecimalFormat;
 import java.text.Format;
+import javax.annotation.Nonnull;
 
 
 /**
@@ -35,12 +36,11 @@ public class FilePublisher implements AggregationPublisher {
             _writer = new OutputStreamWriter(new FileOutputStream(_fileName, true), Charsets.UTF_8);
         } catch (IOException ex) {
             LOGGER.error("Could not open output file for writing: " + _fileName, ex);
-            return;
         }
     }
 
     @Override
-    public void recordAggregation(AggregatedData[] data) {
+    public void recordAggregation(@Nonnull AggregatedData[] data) {
         LOGGER.debug("Writing aggregation data to FilePublisher, " + data.length + " records to file " + _fileName);
 
         StringBuilder sb = new StringBuilder();

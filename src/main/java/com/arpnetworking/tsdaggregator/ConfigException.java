@@ -5,6 +5,7 @@ package com.arpnetworking.tsdaggregator;
  *
  * @author barp
  */
+@SuppressWarnings("WeakerAccess")
 public class ConfigException extends Exception {
     public ConfigException() {
     }

@@ -1,11 +1,16 @@
 package com.arpnetworking.tsdaggregator.statistics;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
- * Description goes here.
+ * A statistic base class.
  *
  * @author barp
  */
+@SuppressWarnings("WeakerAccess")
 public abstract class BaseStatistic implements Statistic {
+    @Nonnull
     @Override
     public String toString() {
         return getName();
@@ -17,13 +22,7 @@ public abstract class BaseStatistic implements Statistic {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        return true;
+    public boolean equals(@Nullable Object o) {
+        return this == o || !(o == null || getClass() != o.getClass());
     }
 }

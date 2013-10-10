@@ -20,7 +20,7 @@ public class CounterVariable {
     }
 
     private MetricKind _metricKind = MetricKind.Counter;
-    private ArrayList<Double> _values;
+    private final ArrayList<Double> _values;
 
     public CounterVariable(MetricKind kind, ArrayList<Double> values) {
         this._values = values;

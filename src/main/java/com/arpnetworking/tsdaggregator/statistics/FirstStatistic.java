@@ -4,6 +4,8 @@
  */
 package com.arpnetworking.tsdaggregator.statistics;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author brandarp
  */
@@ -14,6 +16,7 @@ public class FirstStatistic extends BaseStatistic {
         return values[0];
     }
 
+    @Nonnull
     @Override
     public String getName() {
         return "first";

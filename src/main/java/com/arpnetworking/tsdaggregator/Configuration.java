@@ -5,6 +5,7 @@ import org.joda.time.Period;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 
 /**
  * Configuration for a set of files.
@@ -14,6 +15,7 @@ import java.util.regex.Pattern;
 public class Configuration {
     private final boolean _useRemet;
     private final String _remetAddress;
+    @Nonnull
     private final String[] _files;
     private final Class<? extends LogParser> _parserClass;
     private final Set<Period> _periods;
@@ -33,7 +35,7 @@ public class Configuration {
     private final boolean _clusterAggServer;
     private final int _clusterAggServerPort;
 
-    protected Configuration(Builder builder) {
+    private Configuration(@Nonnull Builder builder) {
         _useRemet = builder.shouldUseRemet();
         _remetAddress = builder.getRemetAddress();
         _files = builder.getFiles();
@@ -56,6 +58,7 @@ public class Configuration {
         _clusterAggServerPort = builder.getClusterAggPort();
     }
 
+    @Nonnull
     public static Builder builder() {
         return new Builder();
     }
@@ -112,10 +115,9 @@ public class Configuration {
         return _remetAddress;
     }
 
+    @Nonnull
     public List<String> getFiles() {
-        List<String> files = Arrays.asList(this._files);
-
-        return files;
+        return Arrays.asList(this._files);
     }
 
     public Class<? extends LogParser> getParserClass() {
@@ -145,6 +147,7 @@ public class Configuration {
     /**
      * Builder for a Configuration class.
      */
+    @SuppressWarnings("UnusedReturnValue")
     public static class Builder {
         public static final Set<Statistic> DEFAULT_COUNTER_STATS = Collections.unmodifiableSet(
                 new HashSet<Statistic>() {{
@@ -189,6 +192,7 @@ public class Configuration {
         private String _remetAddress = REMET_DEFAULT_URI;
         private boolean _useMonitord = false;
         private String _monitordAddress = MONITORD_DEFAULT_URI;
+        @Nonnull
         private ArrayList<String> _files = new ArrayList<>();
         private Class<? extends LogParser> _parserClass = QueryLogParser.class;
         private Set<Period> _periods = new TreeSet<>();
@@ -245,8 +249,9 @@ public class Configuration {
             return _remetAddress;
         }
 
+        @Nonnull
         public String[] getFiles() {
-            return _files.toArray(new String[0]);
+            return _files.toArray(new String[_files.size()]);
         }
 
         public Class<? extends LogParser> getParserClass() {
@@ -273,51 +278,57 @@ public class Configuration {
             return _counterStatistics;
         }
 
+        @Nonnull
         public Configuration create() {
-            Configuration conf = new Configuration(this);
-            return conf;
+            return new Configuration(this);
         }
 
+        @Nonnull
         public Builder remet(String address) {
             _useRemet = true;
             _remetAddress = address;
             return this;
         }
 
+        @Nonnull
         public Builder useRemet(boolean use) {
             _useRemet = use;
             return this;
         }
 
+        @Nonnull
         public Builder monitord(String address) {
             _useMonitord = true;
             _monitordAddress = address;
             return this;
         }
 
+        @Nonnull
         public Builder useMonitord(boolean use) {
             _useMonitord = use;
             return this;
         }
 
+        @Nonnull
         public Builder files(String[] files) {
             this._files = new ArrayList<>();
-            for (String file : files) {
-                this._files.add(file);
-            }
+            Collections.addAll(this._files, files);
             return this;
         }
 
+        @Nonnull
         public Builder addFile(String file) {
             this._files.add(file);
             return this;
         }
 
+        @Nonnull
         public Builder parser(Class<? extends LogParser> parserClass) {
             this._parserClass = parserClass;
             return this;
         }
 
+        @Nonnull
         public Builder periods(Set<Period> periods) {
             this._periods = periods;
             return this;
@@ -327,41 +338,49 @@ public class Configuration {
             return _gaugeStatistics;
         }
 
+        @Nonnull
         public Builder filterPattern(Pattern pattern) {
             this._filterPattern = pattern;
             return this;
         }
 
+        @Nonnull
         public Builder tail() {
             tail(true);
             return this;
         }
 
+        @Nonnull
         public Builder tail(boolean shouldTail) {
             this._shouldTail = shouldTail;
             return this;
         }
 
+        @Nonnull
         public Builder timerStats(Set<Statistic> stats) {
             this._timerStatistics = stats;
             return this;
         }
 
+        @Nonnull
         public Builder counterStats(Set<Statistic> stats) {
             this._counterStatistics = stats;
             return this;
         }
 
+        @Nonnull
         public Builder gaugeStats(Set<Statistic> stats) {
             this._gaugeStatistics = stats;
             return this;
         }
 
+        @Nonnull
         public Builder serviceName(String name) {
             this._serviceName = name;
             return this;
         }
 
+        @Nonnull
         public Builder clusterName(String name) {
             this._clusterName = name;
             return this;
@@ -371,16 +390,19 @@ public class Configuration {
             return _hostName;
         }
 
+        @Nonnull
         public Builder hostName(String name) {
             this._hostName = name;
             return this;
         }
 
+        @Nonnull
         public Builder rrd() {
             this._useRRD = true;
             return this;
         }
 
+        @Nonnull
         public Builder clusterAgg() {
             this._clusterAggServer = true;
             return this;
@@ -390,6 +412,7 @@ public class Configuration {
             return this._clusterAggServer;
         }
 
+        @Nonnull
         public Builder clusterAggPort(int port) {
             this._clusterAggPort = port;
             return this;
@@ -399,11 +422,13 @@ public class Configuration {
             return this._clusterAggPort;
         }
 
+        @Nonnull
         public Builder outputFile(String file) {
             this._outputFile = file;
             return this;
         }
 
+        @Nonnull
         public Builder metricsUri(String uri) {
             this._metricsUri = uri;
             return this;

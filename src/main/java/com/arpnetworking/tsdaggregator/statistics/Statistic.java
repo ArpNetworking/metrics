@@ -1,5 +1,7 @@
 package com.arpnetworking.tsdaggregator.statistics;
 
+import javax.annotation.Nonnull;
+
 /**
  * Interface for a statistic calculator.
  *
@@ -8,5 +10,6 @@ package com.arpnetworking.tsdaggregator.statistics;
 public interface Statistic {
     public Double calculate(Double[] unorderedValues);
 
+    @Nonnull
     public String getName();
 }

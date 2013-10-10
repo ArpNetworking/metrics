@@ -4,16 +4,19 @@
  */
 package com.arpnetworking.tsdaggregator.statistics;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author brandarp
  */
 public class LastStatistic extends BaseStatistic {
 
     @Override
-    public Double calculate(Double[] values) {
+    public Double calculate(@Nonnull Double[] values) {
         return values[values.length - 1];
     }
 
+    @Nonnull
     @Override
     public String getName() {
         return "last";

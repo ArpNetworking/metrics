@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Publishes aggregations to Monitord.
@@ -28,16 +29,17 @@ import java.util.Map;
  * @author barp
  */
 public class MonitordPublisher implements AggregationPublisher {
-    String _uri;
-    String _cluster;
-    String _host;
-    HttpClient _client;
+    private final String _uri;
+    private final String _cluster;
+    private final String _host;
+    private final HttpClient _client;
     private static final Logger LOGGER = Logger.getLogger(MonitordPublisher.class);
 
     public MonitordPublisher(String uri, String cluster, String host) {
         this(uri, cluster, host, buildDefaultClient());
     }
 
+    @Nonnull
     private static HttpClient buildDefaultClient() {
         ClientConnectionManager connectionManager = new PoolingClientConnectionManager();
         HttpClient client = new DefaultHttpClient(connectionManager);
@@ -54,78 +56,82 @@ public class MonitordPublisher implements AggregationPublisher {
     }
 
     @Override
-    public void recordAggregation(AggregatedData[] data) {
-        if (data.length > 0) {
-            HashMap<String, ArrayList<AggregatedData>> aggMap = new HashMap<>();
-            for (AggregatedData d : data) {
-                ArrayList<AggregatedData> mapped = aggMap.get(d.getMetric());
-                if (mapped == null) {
-                    mapped = new ArrayList<>();
-                    aggMap.put(d.getMetric(), mapped);
-                }
-                mapped.add(d);
+    public void recordAggregation(@Nonnull AggregatedData[] data) {
+        if (data.length == 0) {
+            return;
+        }
+        HashMap<String, ArrayList<AggregatedData>> aggMap = new HashMap<>();
+        //Build the map for the aggregations
+        for (AggregatedData d : data) {
+            ArrayList<AggregatedData> mapped = aggMap.get(d.getMetric());
+            if (mapped == null) {
+                mapped = new ArrayList<>();
+                aggMap.put(d.getMetric(), mapped);
+            }
+            mapped.add(d);
+        }
+
+        for (Map.Entry<String, ArrayList<AggregatedData>> entry : aggMap.entrySet()) {
+            //All aggregated data values for a metric should have the same metric metadata
+            AggregatedData d = entry.getValue().get(0);
+
+            //Skip periods < 60 seconds
+            if (d.getPeriod().toStandardSeconds().getSeconds() < 60) {
+                continue;
             }
 
-            for (Map.Entry<String, ArrayList<AggregatedData>> entry : aggMap.entrySet()) {
-                //All aggregated data values for a metric should have the same metric metadata
-                AggregatedData d = entry.getValue().get(0);
+            StringBuilder postValue = new StringBuilder();
+            String combinedMetricName =
+                    d.getService() + "_" + d.getPeriod().toString(ISOPeriodFormat.standard()) + "_" + d.getMetric();
+            postValue.append("run_every=").append(d.getPeriod().toStandardSeconds().getSeconds())
+                    .append("&path=").append(_cluster).append("/").append(_host).append("&monitor=")
+                    .append(combinedMetricName)
+                    .append("&status=0&output=").append(combinedMetricName).append("%7C");
 
-                //Skip periods < 60 seconds
-                if (d.getPeriod().toStandardSeconds().getSeconds() < 60) {
-                    continue;
-                }
+            for (AggregatedData dataVal : entry.getValue()) {
+                postValue.append(dataVal.getStatistic().getName()).append("%3D").append(dataVal.getValue())
+                        .append("%3B");
+            }
+            //Strip off the trailing semicolon escape
+            postValue.setLength(postValue.length() - 3);
 
-                StringBuilder postValue = new StringBuilder();
-                String combinedMetricName = new StringBuilder().append(d.getService()).append("_")
-                        .append(d.getPeriod().toString(ISOPeriodFormat.standard())).append("_")
-                        .append(d.getMetric()).toString();
-                postValue.append("run_every=").append(d.getPeriod().toStandardSeconds().getSeconds())
-                        .append("&path=").append(_cluster).append("/").append(_host).append("&monitor=")
-                        .append(combinedMetricName)
-                        .append("&status=0&output=").append(combinedMetricName).append("%7C");
+            postData(postValue);
+        }
+    }
 
-                for (AggregatedData dataVal : entry.getValue()) {
-                    postValue.append(dataVal.getStatistic().getName()).append("%3D").append(dataVal.getValue())
-                            .append("%3B");
-                }
-                //Strip off the trailing semicolon escape
-                postValue.setLength(postValue.length() - 3);
-
-                HttpPost method = new HttpPost(_uri);
-                StringEntity entity = new StringEntity(postValue.toString(), ContentType.APPLICATION_FORM_URLENCODED);
-                method.setEntity(entity);
-                HttpEntity responseEntity = null;
+    private void postData(@Nonnull final StringBuilder postValue) {
+        HttpPost method = new HttpPost(_uri);
+        StringEntity entity = new StringEntity(postValue.toString(), ContentType.APPLICATION_FORM_URLENCODED);
+        method.setEntity(entity);
+        HttpEntity responseEntity = null;
+        try {
+            LOGGER.info("Posting to " + _uri + " value '" + postValue.toString() + "'");
+            HttpResponse result = _client.execute(method);
+            responseEntity = result.getEntity();
+            if (result.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                LOGGER.info("Post response ok");
+            } else {
+                LOGGER.warn("post was not accepted, status: " + result + ", body: " +
+                        IOUtils.toString(responseEntity.getContent(), "UTF-8"));
+            }
+        } catch (IOException e) {
+            LOGGER.error("Error on reporting", e);
+        } finally {
+            if (responseEntity != null) {
                 try {
-                    LOGGER.info("Posting to " + _uri + " value '" + postValue.toString() + "'");
-                    HttpResponse result = _client.execute(method);
-                    responseEntity = result.getEntity();
-                    if (result.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                        LOGGER.info("Post response ok");
-                    } else {
-                        LOGGER.warn("post was not accepted, status: " + result + ", body: " +
-                                IOUtils.toString(responseEntity.getContent(), "UTF-8"));
-                    }
-                } catch (IOException e) {
-                    LOGGER.error("Error on reporting", e);
-                } finally {
-                    if (responseEntity != null) {
-                        try {
-                            responseEntity.getContent().close();
-                            LOGGER.debug("closed content stream");
-                        } catch (Exception ignored) {
-                            LOGGER.warn("error closing content stream");
-                        }
-                    } else {
-                        LOGGER.debug("responseEntity is null");
-                    }
+                    responseEntity.getContent().close();
+                    LOGGER.debug("closed content stream");
+                } catch (Exception ignored) {
+                    LOGGER.warn("error closing content stream");
                 }
+            } else {
+                LOGGER.debug("responseEntity is null");
             }
         }
     }
 
     @Override
     public void close() {
-        return;
     }
 
 }

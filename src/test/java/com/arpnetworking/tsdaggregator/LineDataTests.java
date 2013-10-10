@@ -1,5 +1,8 @@
 package com.arpnetworking.tsdaggregator;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
+
 import com.google.common.base.Optional;
 import junit.framework.Assert;
 import org.joda.time.DateTime;
@@ -8,9 +11,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Map;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 
 
 public class LineDataTests {

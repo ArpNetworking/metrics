@@ -1,5 +1,8 @@
 package com.arpnetworking.tsdaggregator.publishing;
 
+import com.arpnetworking.tsdaggregator.AggregatedData;
+import com.arpnetworking.tsdaggregator.statistics.MeanStatistic;
+import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BrokenInputStream;
@@ -20,16 +23,13 @@ import org.jmock.Mockery;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.Test;
-import com.arpnetworking.tsdaggregator.AggregatedData;
-import com.arpnetworking.tsdaggregator.statistics.MeanStatistic;
-import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.nio.charset.Charset;
 import java.util.HashMap;
+import javax.annotation.Nonnull;
 
 /**
  * Tests for the MonitordPublisher class
@@ -39,7 +39,7 @@ import java.util.HashMap;
 public class MonitordPublisherTests {
 	@Test
 	public void testConstruct() {
-		MonitordPublisher publisher = new MonitordPublisher("uri", "cluster", "host");
+		@SuppressWarnings("UnusedAssignment") MonitordPublisher publisher = new MonitordPublisher("uri", "cluster", "host");
 	}
 
 	@Test
@@ -140,7 +140,7 @@ public class MonitordPublisherTests {
 			public boolean matches(Object item) {
 				@SuppressWarnings(value = "unchecked")
 				HttpPost request = (HttpPost)item;
-				if (request.getMethod() != "POST") {
+				if (!"POST".equals(request.getMethod())) {
 					return false;
 				}
 				URI uri = request.getURI();
@@ -200,7 +200,7 @@ public class MonitordPublisherTests {
 			}
 
 			@Override
-			public void describeTo(Description description) {
+			public void describeTo(@Nonnull Description description) {
 				description.appendText("checks for proper monitord request formatting");
 			}
 		});
@@ -275,19 +275,8 @@ public class MonitordPublisherTests {
 	}
 
 	private static class ExceptionCloseInputStream extends CharSequenceInputStream {
-		public ExceptionCloseInputStream(CharSequence s, Charset charset, int bufferSize) {
-			super(s, charset, bufferSize);
-		}
 
-		public ExceptionCloseInputStream(CharSequence s, String charset, int bufferSize) {
-			super(s, charset, bufferSize);
-		}
-
-		public ExceptionCloseInputStream(CharSequence s, Charset charset) {
-			super(s, charset);
-		}
-
-		public ExceptionCloseInputStream(CharSequence s, String charset) {
+        public ExceptionCloseInputStream(CharSequence s, String charset) {
 			super(s, charset);
 		}
 
@@ -327,7 +316,7 @@ public class MonitordPublisherTests {
 		context.assertIsSatisfied();
 	}
 
-	private void mockResponse(final Mockery context, final HttpClient client, final int statusCode,
+	private void mockResponse(@Nonnull final Mockery context, final HttpClient client, final int statusCode,
 							  final String content, final Matcher<HttpUriRequest> matcher) {
 		final HttpResponse response = context.mock(HttpResponse.class);
 		final HttpEntity responseEntity = context.mock(HttpEntity.class);

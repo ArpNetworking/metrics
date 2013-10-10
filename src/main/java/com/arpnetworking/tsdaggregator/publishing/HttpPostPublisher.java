@@ -5,7 +5,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ClientConnectionManager;
@@ -18,6 +17,7 @@ import org.apache.http.params.HttpParams;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import javax.annotation.Nonnull;
 
 /**
  * Publishes to and http endpoint.
@@ -25,9 +25,11 @@ import java.io.IOException;
  * @author barp
  */
 public class HttpPostPublisher implements AggregationPublisher {
-    String _uri;
+    private final String _uri;
     private static final Logger LOGGER = Logger.getLogger(HttpPostPublisher.class);
+    @Nonnull
     private static final HttpClient CLIENT;
+    @Nonnull
     private static final ClientConnectionManager CONNECTION_MANAGER;
 
     static {
@@ -43,7 +45,7 @@ public class HttpPostPublisher implements AggregationPublisher {
     }
 
     @Override
-    public void recordAggregation(AggregatedData[] data) {
+    public void recordAggregation(@Nonnull AggregatedData[] data) {
         if (data.length > 0) {
             StringBuilder aggregateJson = new StringBuilder();
             aggregateJson.append("[");
@@ -75,8 +77,6 @@ public class HttpPostPublisher implements AggregationPublisher {
                     LOGGER.warn("post was not accepted, status: " + result + ", body: " +
                             IOUtils.toString(result.getEntity().getContent(), "UTF-8"));
                 }
-            } catch (ClientProtocolException e) {
-                LOGGER.error("Error on reporting", e);
             } catch (IOException e) {
                 LOGGER.error("Error on reporting", e);
             } finally {
@@ -92,7 +92,6 @@ public class HttpPostPublisher implements AggregationPublisher {
 
     @Override
     public void close() {
-        return;
     }
 
 }

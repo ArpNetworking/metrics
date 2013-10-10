@@ -1,12 +1,12 @@
 package com.arpnetworking.tsdaggregator.publishing;
 
+import com.arpnetworking.tsdaggregator.AggregatedData;
+import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.Test;
-import com.arpnetworking.tsdaggregator.AggregatedData;
-import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
 
 /**
  * Tests for the MultiPublisher class
@@ -16,7 +16,7 @@ import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
 public class MultiPublisherTests {
 	@Test
 	public void testConstruction() {
-		MultiPublisher publisher = new MultiPublisher();
+		@SuppressWarnings("UnusedAssignment") MultiPublisher publisher = new MultiPublisher();
 	}
 
 	@Test

@@ -9,8 +9,8 @@ import org.apache.log4j.Logger;
  * @author barp
  */
 public class LogTailerListener extends TailerListenerAdapter {
-    final LineProcessor _processor;
-    static final Logger LOGGER = Logger.getLogger(LogTailerListener.class);
+    private final LineProcessor _processor;
+    private static final Logger LOGGER = Logger.getLogger(LogTailerListener.class);
 
     public LogTailerListener(LineProcessor processor) {
         LOGGER.debug("Created LogTailerListener");

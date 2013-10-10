@@ -1,10 +1,11 @@
 package com.arpnetworking.tsdaggregator;
 
-import java.util.*;
-import org.hamcrest.CoreMatchers;
-import org.junit.*;
-
 import com.arpnetworking.tsdaggregator.statistics.TPStatistic;
+import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.util.ArrayList;
 
 public class TPStatisticTests {
 
@@ -38,11 +39,11 @@ public class TPStatisticTests {
 	@Test
 	public void TestTP99Stat() {
 		TPStatistic tp = new TPStatistic(99d);
-		ArrayList<Double> vList = new ArrayList<Double>();
+		ArrayList<Double> vList = new ArrayList<>();
 		for (Integer x = 0; x < 100; x++) {
 			vList.add(x.doubleValue());
 		}
-		Double[] vals = vList.toArray(new Double[0]);
+		Double[] vals = vList.toArray(new Double[vList.size()]);
 		
 		Double tpstat = tp.calculate(vals);
 		Assert.assertThat(tpstat, CoreMatchers.is(99d));		
@@ -51,11 +52,11 @@ public class TPStatisticTests {
 	@Test
 	public void TestTP50Stat() {
 		TPStatistic tp = new TPStatistic(50d);
-		ArrayList<Double> vList = new ArrayList<Double>();
+		ArrayList<Double> vList = new ArrayList<>();
 		for (Integer x = 0; x < 100; x++) {
 			vList.add(x.doubleValue());
 		}
-		Double[] vals = vList.toArray(new Double[0]);
+		Double[] vals = vList.toArray(new Double[vList.size()]);
 		
 		Double tpstat = tp.calculate(vals);
 		Assert.assertThat(tpstat, CoreMatchers.is(50d));		
@@ -64,11 +65,11 @@ public class TPStatisticTests {
 	@Test
 	public void TestTP999Stat() {
 		TPStatistic tp = new TPStatistic(99.9d);
-		ArrayList<Double> vList = new ArrayList<Double>();
+		ArrayList<Double> vList = new ArrayList<>();
 		for (Integer x = 0; x < 10000; x++) {
 			vList.add(x.doubleValue());
 		}
-		Double[] vals = vList.toArray(new Double[0]);
+		Double[] vals = vList.toArray(new Double[vList.size()]);
 		
 		Double tpstat = tp.calculate(vals);
 		Assert.assertThat(tpstat, CoreMatchers.is(9990d));		

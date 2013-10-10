@@ -1,5 +1,7 @@
 package com.arpnetworking.tsdaggregator.statistics;
 
+import javax.annotation.Nonnull;
+
 /**
  * Takes the mean of the entries.
  *
@@ -7,8 +9,9 @@ package com.arpnetworking.tsdaggregator.statistics;
  */
 public class MeanStatistic extends BaseStatistic {
 
+    @Nonnull
     @Override
-    public Double calculate(Double[] orderedValues) {
+    public Double calculate(@Nonnull Double[] orderedValues) {
         if (orderedValues.length == 0) {
             return 0d;
         }
@@ -19,6 +22,7 @@ public class MeanStatistic extends BaseStatistic {
         return sum / (double) orderedValues.length;
     }
 
+    @Nonnull
     @Override
     public String getName() {
         return "mean";

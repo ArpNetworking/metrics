@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * @author barp
  */
 public class MultiPublisher implements AggregationPublisher {
-    private ArrayList<AggregationPublisher> _listeners = new ArrayList<AggregationPublisher>();
+    private final ArrayList<AggregationPublisher> _listeners = new ArrayList<>();
 
     public void addListener(AggregationPublisher listener) {
         _listeners.add(listener);

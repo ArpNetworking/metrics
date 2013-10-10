@@ -4,6 +4,8 @@
  */
 package com.arpnetworking.tsdaggregator.statistics;
 
+import javax.annotation.Nonnull;
+
 /**
  * Top percentile 100% statistic (max).
  *
@@ -14,6 +16,7 @@ public class TP100 extends TPStatistic {
         super(100d);
     }
 
+    @Nonnull
     @Override
     public String getName() {
         return "max";

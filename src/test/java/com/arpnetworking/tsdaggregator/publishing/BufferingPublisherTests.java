@@ -1,12 +1,12 @@
 package com.arpnetworking.tsdaggregator.publishing;
 
+import com.arpnetworking.tsdaggregator.AggregatedData;
+import com.arpnetworking.tsdaggregator.statistics.NStatistic;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.Test;
-import com.arpnetworking.tsdaggregator.AggregatedData;
-import com.arpnetworking.tsdaggregator.statistics.NStatistic;
 
 /**
  * Tests for the BufferingPublisher class
@@ -18,8 +18,8 @@ public class BufferingPublisherTests {
     public void testConstruct() {
         Mockery context = new Mockery();
         AggregationPublisher p1 = context.mock(AggregationPublisher.class);
-        BufferingPublisher publisher = new BufferingPublisher(p1);
-        BufferingPublisher publisher2 = new BufferingPublisher(p1, 10);
+        @SuppressWarnings("UnusedAssignment") BufferingPublisher publisher = new BufferingPublisher(p1);
+        @SuppressWarnings("UnusedAssignment") BufferingPublisher publisher2 = new BufferingPublisher(p1, 10);
     }
 
     @Test

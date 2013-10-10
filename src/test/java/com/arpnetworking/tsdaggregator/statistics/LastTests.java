@@ -1,9 +1,9 @@
 package com.arpnetworking.tsdaggregator.statistics;
 
-import org.junit.Test;
-
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+
+import org.junit.Test;
 
 /**
  * Tests for the LastStatistic class
@@ -13,7 +13,7 @@ import static org.junit.Assert.assertThat;
 public class LastTests {
 	@Test
 	public void testConstruction() {
-		LastStatistic stat = new LastStatistic();
+		@SuppressWarnings("UnusedAssignment") LastStatistic stat = new LastStatistic();
 	}
 
 	@Test

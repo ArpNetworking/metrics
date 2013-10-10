@@ -1,38 +1,41 @@
 package com.arpnetworking.tsdaggregator;
 
-import org.hamcrest.Matcher;
-import org.joda.time.Period;
-import org.junit.Test;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.collection.IsCollectionContaining.hasItem;
+import static org.junit.Assert.assertThat;
+
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
 import com.arpnetworking.tsdaggregator.statistics.TP0;
 import com.arpnetworking.tsdaggregator.statistics.TP100;
 import com.arpnetworking.tsdaggregator.util.InitializeExceptionStatistic;
+import org.hamcrest.Matcher;
+import org.joda.time.Period;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Set;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.collection.IsCollectionContaining.hasItem;
-import static org.junit.Assert.assertThat;
+import javax.annotation.Nonnull;
 
 /**
  * Tests for the command line parser
  *
  * @author barp
  */
+@SuppressWarnings(value = "unchecked")
 public class CommandLineParserTests {
 	private static class TestResolver implements HostResolver {
 
-		@Override
+		@Nonnull
+        @Override
 		public String getLocalHostName() throws UnknownHostException {
 			return "testBox";
 		}
 	}
 
-	TestResolver testResolver = new TestResolver();
+	private final TestResolver testResolver = new TestResolver();
 
 	@Test(expected = ConfigException.class)
 	public void testErrorEmptyCommandLine() throws ConfigException {
@@ -193,9 +196,11 @@ public class CommandLineParserTests {
 	@Test(expected = ConfigException.class)
 	public void testHostResolveException() throws ConfigException {
 		CommandLineParser parser = new CommandLineParser(new HostResolver() {
-			@Override
+			@Nonnull
+            @Override
 			public String getLocalHostName() throws UnknownHostException {
-				throw new UnknownHostException();
+                //noinspection NewExceptionWithoutArguments
+                throw new UnknownHostException();
 			}
 		});
 		String[] args = new String[]{"-f", "somefile.log", "--remet", "-s", "service"};

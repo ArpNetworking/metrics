@@ -12,27 +12,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import javax.annotation.Nonnull;
 
 /**
  * Holds samples, delegates calculations to statistics, and emits the calculated statistics.
  */
 public class TSAggregation {
 
-    final Period _period;
-    int _numberOfSamples = 0;
-    final ArrayList<Double> _samples = new ArrayList<Double>();
-    DateTime _periodStart = new DateTime(0);
-    final Set<Statistic> _orderedStatistics = new HashSet<>();
-    final Set<Statistic> _unorderedStatistics = new HashSet<>();
-    final String _metric;
-    final String _hostName;
-    final String _serviceName;
-    AggregationPublisher _listener;
+    private static final Logger LOGGER = Logger.getLogger(TSAggregation.class);
+    private final Period _period;
+    private final ArrayList<Double> _samples = new ArrayList<>();
+    private final Set<Statistic> _orderedStatistics = new HashSet<>();
+    private final Set<Statistic> _unorderedStatistics = new HashSet<>();
+    private final String _metric;
+    private final String _hostName;
+    private final String _serviceName;
+    private final AggregationPublisher _listener;
+    private int _numberOfSamples = 0;
+    private DateTime _periodStart = new DateTime(0);
 
-    static final Logger LOGGER = Logger.getLogger(TSAggregation.class);
-
-    public TSAggregation(String metric, Period period, AggregationPublisher listener, String hostName,
-                         String serviceName, Set<Statistic> statistics) {
+    public TSAggregation(@Nonnull String metric, @Nonnull Period period, @Nonnull AggregationPublisher listener, @Nonnull String hostName,
+                         @Nonnull String serviceName, @Nonnull Set<Statistic> statistics) {
         _metric = metric;
         _period = period;
         addStatistics(statistics, _orderedStatistics, _unorderedStatistics);
@@ -41,13 +41,15 @@ public class TSAggregation {
         _listener = listener;
     }
 
-    private void addStatistics(Set<Statistic> stats, Set<Statistic> orderedStatsSet, Set<Statistic> unorderedStatsSet) {
+    private void addStatistics(@Nonnull Set<Statistic> stats, @Nonnull Set<Statistic> orderedStatsSet,
+                               @Nonnull Set<Statistic> unorderedStatsSet) {
         for (Statistic s : stats) {
             addStatistic(s, orderedStatsSet, unorderedStatsSet);
         }
     }
 
-    private void addStatistic(Statistic s, Set<Statistic> orderedStatsSet, Set<Statistic> unorderedStatsSet) {
+    private void addStatistic(Statistic s, @Nonnull Set<Statistic> orderedStatsSet,
+                              @Nonnull Set<Statistic> unorderedStatsSet) {
         if (s instanceof OrderedStatistic) {
             orderedStatsSet.add(s);
         } else {
@@ -55,15 +57,11 @@ public class TSAggregation {
         }
     }
 
-    public void addSample(Double value, DateTime time) {
+    public void addSample(Double value, @Nonnull DateTime time) {
         rotateAggregation(time);
         _samples.add(value);
         _numberOfSamples++;
         LOGGER.debug("Added sample to aggregation: time = " + time.toString());
-    }
-
-    public void checkRotate() {
-        rotateAggregation(new DateTime().minus(Duration.standardSeconds(60)));
     }
 
     public void checkRotate(double rotateFactor) {
@@ -72,13 +70,12 @@ public class TSAggregation {
         rotateAggregation(DateTime.now().minus(new Duration(rotateDuration)));
     }
 
-    private void rotateAggregation(DateTime time) {
+    private void rotateAggregation(@Nonnull DateTime time) {
         LOGGER.debug("Checking roll. Period is " + _period + ", Roll time is " + _periodStart.plus(_period));
         if (time.isAfter(_periodStart.plus(_period))) {
             //Calculate the start of the new aggregation
             LOGGER.debug("We're rolling");
-            DateTime hour = time.hourOfDay().roundFloorCopy();
-            DateTime startPeriod = hour;
+            DateTime startPeriod = time.hourOfDay().roundFloorCopy();
             while (!(startPeriod.isBefore(time) && startPeriod.plus(_period).isAfter(time))
                     && (!startPeriod.equals(time))) {
                 startPeriod = startPeriod.plus(_period);
@@ -95,42 +92,30 @@ public class TSAggregation {
         emitAggregations();
     }
 
-    public AggregationPublisher getListener() {
-        return _listener;
-    }
-
-    public void setListener(AggregationPublisher listener) {
-        _listener = listener;
-    }
-
     private void emitAggregations() {
         LOGGER.debug("Emitting aggregations; " + _samples.size() + " samples");
-        Double[] dsamples = _samples.toArray(new Double[0]);
+        Double[] dsamples = _samples.toArray(new Double[_samples.size()]);
         if (dsamples.length == 0) {
             return;
         }
-        ArrayList<AggregatedData> aggregates = new ArrayList<AggregatedData>();
+        ArrayList<AggregatedData> aggregates = new ArrayList<>();
         for (Statistic stat : _unorderedStatistics) {
             Double value = stat.calculate(dsamples);
-            if (_listener != null) {
-                AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
-                        _periodStart, _period);
-                aggregates.add(data);
-            }
+            AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
+                    _periodStart, _period);
+            aggregates.add(data);
         }
         //only sort if there are ordered statistics
         if (_orderedStatistics.size() > 0) {
             Arrays.sort(dsamples);
             for (Statistic stat : _orderedStatistics) {
                 Double value = stat.calculate(dsamples);
-                if (_listener != null) {
-                    AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
-                            _periodStart, _period);
-                    aggregates.add(data);
-                }
+                AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
+                        _periodStart, _period);
+                aggregates.add(data);
             }
         }
         LOGGER.debug("Writing " + aggregates.size() + " aggregation records");
-        _listener.recordAggregation(aggregates.toArray(new AggregatedData[0]));
+        _listener.recordAggregation(aggregates.toArray(new AggregatedData[aggregates.size()]));
     }
 }

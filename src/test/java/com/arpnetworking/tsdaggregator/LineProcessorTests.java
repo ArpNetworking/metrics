@@ -1,11 +1,11 @@
 package com.arpnetworking.tsdaggregator;
 
 
+import com.arpnetworking.tsdaggregator.publishing.AggregationPublisher;
+import com.arpnetworking.tsdaggregator.statistics.Statistic;
 import org.jmock.Mockery;
 import org.joda.time.Period;
 import org.junit.Test;
-import com.arpnetworking.tsdaggregator.publishing.AggregationPublisher;
-import com.arpnetworking.tsdaggregator.statistics.Statistic;
 
 import java.util.HashSet;
 import java.util.Set;

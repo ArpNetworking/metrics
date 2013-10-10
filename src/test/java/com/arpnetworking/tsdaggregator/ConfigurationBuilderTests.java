@@ -1,28 +1,29 @@
 package com.arpnetworking.tsdaggregator;
 
-import org.hamcrest.Matcher;
-import org.joda.time.Period;
-import org.junit.Test;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import com.arpnetworking.tsdaggregator.statistics.MeanStatistic;
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
 import com.arpnetworking.tsdaggregator.statistics.TP100;
 import com.arpnetworking.tsdaggregator.statistics.TP50;
+import org.hamcrest.Matcher;
+import org.joda.time.Period;
+import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-
 /**
  * Tests the configuration builder
  *
  * @author barp
  */
+@SuppressWarnings(value = "unchecked")
 public class ConfigurationBuilderTests {
 	@Test
 	public void TestConstruct() {

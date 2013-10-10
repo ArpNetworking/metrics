@@ -14,13 +14,14 @@ import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 
 /**
  * Class to parse command line arguments and build a Config object from them.
  *
  * @author barp
  */
-public class CommandLineParser {
+class CommandLineParser {
     private final Option _inputFileOption = Option.builder("f").argName("input_file").longOpt("file").hasArgs()
             .desc("file to be parsed").build();
     private final Option _serviceOption = Option.builder("s").argName("service").longOpt("service").hasArg()
@@ -56,7 +57,6 @@ public class CommandLineParser {
     private final Option _clusterAgg = Option.builder().longOpt("aggserver").optionalArg(true).numberOfArgs(1)
             .argName("port").desc("starts the cluster-level aggregation server").build();
     private final Options _options = new Options();
-
     private final HostResolver _hostResolver;
 
     public CommandLineParser(HostResolver hostResolver) {
@@ -80,6 +80,37 @@ public class CommandLineParser {
         this._hostResolver = hostResolver;
     }
 
+    private static void buildStats(@Nonnull Set<Statistic> statsClasses, @Nonnull String[] statisticsStrings)
+            throws ConfigException {
+        for (String statString : statisticsStrings) {
+            try {
+                Class statClass;
+                if (Configuration.Builder.STATISTIC_MAP.containsKey(statString)) {
+                    statClass = Configuration.Builder.STATISTIC_MAP.get(statString);
+                } else {
+                    statClass = ClassLoader.getSystemClassLoader().loadClass(statString);
+                }
+                Statistic stat;
+                if (!Statistic.class.isAssignableFrom(statClass)) {
+                    final String error = "Statistic class [" + statString + "] does not implement required " +
+                            "Statistic interface";
+                    throw new ConfigException(error);
+                }
+                try {
+                    stat = (Statistic) statClass.newInstance();
+                    statsClasses.add(stat);
+                } catch (@Nonnull InstantiationException | IllegalAccessException ex) {
+                    final String error = "Could not instantiate statistic [" + statString + "]";
+                    throw new ConfigException(error, ex);
+                }
+            } catch (ClassNotFoundException ex) {
+                final String error = "could not find statistic class [" + statString + "] on classpath";
+                throw new ConfigException(error, ex);
+            }
+        }
+    }
+
+    @Nonnull
     public Configuration parse(String[] args) throws ConfigException {
         org.apache.commons.cli.CommandLineParser parser = new DefaultParser();
         CommandLine cl;
@@ -118,7 +149,7 @@ public class CommandLineParser {
                             "] does not implement required LogParser interface");
                 }
             } catch (ClassNotFoundException ex) {
-                throw new ConfigException("could not find parser class [" + lineParser + "] on classpath");
+                throw new ConfigException("could not find parser class [" + lineParser + "] on classpath", ex);
             }
         }
 
@@ -164,7 +195,7 @@ public class CommandLineParser {
                     int port = Integer.parseInt(portString);
                     builder.clusterAggPort(port);
                 } catch (NumberFormatException e) {
-                    throw new ConfigException("cluster aggregation port not an integer as expected");
+                    throw new ConfigException("cluster aggregation port not an integer as expected", e);
                 }
             }
         }
@@ -186,20 +217,21 @@ public class CommandLineParser {
         return builder.create();
     }
 
-    private String getHostName(CommandLine cl) throws ConfigException {
+    private String getHostName(@Nonnull CommandLine cl) throws ConfigException {
         String hostName = cl.getOptionValue(_hostOption.getLongOpt());
         if (!cl.hasOption(_hostOption.getLongOpt())) {
             try {
                 hostName = _hostResolver.getLocalHostName();
             } catch (UnknownHostException e) {
                 throw new ConfigException("host name not specified and could not determine hostname automatically, " +
-                        "please specify explicitly");
+                        "please specify explicitly", e);
             }
         }
         return hostName;
     }
 
-    private Set<Statistic> getStatistics(CommandLine cl, Option statisticOption, Set<Statistic> defaultStats)
+    private Set<Statistic> getStatistics(@Nonnull CommandLine cl, @Nonnull Option statisticOption,
+                                         Set<Statistic> defaultStats)
             throws ConfigException {
         Set<Statistic> statsClasses = new HashSet<>();
         if (cl.hasOption(statisticOption.getLongOpt())) {
@@ -211,7 +243,7 @@ public class CommandLineParser {
         return statsClasses;
     }
 
-    private Pattern getPattern(CommandLine cl) {
+    private Pattern getPattern(@Nonnull CommandLine cl) {
         Pattern filter = Pattern.compile(".*");
         if (cl.hasOption(_extensionOption.getLongOpt())) {
             String[] filters = cl.getOptionValues(_extensionOption.getLongOpt());
@@ -230,7 +262,8 @@ public class CommandLineParser {
         return filter;
     }
 
-    private String buildFilter(String filter) {
+    @Nonnull
+    private String buildFilter(@Nonnull String filter) {
         final String regexTrigger = "*+[]{}$^()|";
         boolean treatAsRegex = false;
         for (char c : regexTrigger.toCharArray()) {
@@ -248,36 +281,8 @@ public class CommandLineParser {
 
     }
 
-    private static void buildStats(Set<Statistic> statsClasses, String[] statisticsStrings) throws ConfigException {
-        for (String statString : statisticsStrings) {
-            try {
-                Class statClass;
-                if (Configuration.Builder.STATISTIC_MAP.containsKey(statString)) {
-                    statClass = Configuration.Builder.STATISTIC_MAP.get(statString);
-                } else {
-                    statClass = ClassLoader.getSystemClassLoader().loadClass(statString);
-                }
-                Statistic stat;
-                if (!Statistic.class.isAssignableFrom(statClass)) {
-                    final String error = "Statistic class [" + statString + "] does not implement required " +
-                            "Statistic interface";
-                    throw new ConfigException(error);
-                }
-                try {
-                    stat = (Statistic) statClass.newInstance();
-                    statsClasses.add(stat);
-                } catch (InstantiationException | IllegalAccessException ex) {
-                    final String error = "Could not instantiate statistic [" + statString + "]";
-                    throw new ConfigException(error, ex);
-                }
-            } catch (ClassNotFoundException ex) {
-                final String error = "could not find statistic class [" + statString + "] on classpath";
-                throw new ConfigException(error, ex);
-            }
-        }
-    }
-
-    private Set<Period> getPeriods(CommandLine cl) {
+    @Nonnull
+    private Set<Period> getPeriods(@Nonnull CommandLine cl) {
         List<String> periodOptions = new ArrayList<>();
         periodOptions.add("PT5M");
         if (cl.hasOption(_remetOption.getLongOpt())) {

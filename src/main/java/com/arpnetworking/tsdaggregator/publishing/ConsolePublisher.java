@@ -2,6 +2,8 @@ package com.arpnetworking.tsdaggregator.publishing;
 
 import com.arpnetworking.tsdaggregator.AggregatedData;
 
+import javax.annotation.Nonnull;
+
 /**
  * A publisher that writes to System.out.
  *
@@ -9,7 +11,7 @@ import com.arpnetworking.tsdaggregator.AggregatedData;
  */
 public class ConsolePublisher implements AggregationPublisher {
     @Override
-    public void recordAggregation(AggregatedData[] data) {
+    public void recordAggregation(@Nonnull AggregatedData[] data) {
         for (AggregatedData d : data) {
             System.out.println(d.getHost() + "::" + d.getService() + "::" + d.getMetric()
                     + " " + d.getPeriodStart() + " [" + d.getPeriod() + "] " +
@@ -21,6 +23,5 @@ public class ConsolePublisher implements AggregationPublisher {
 
     @Override
     public void close() {
-        return;
     }
 }

@@ -1,23 +1,24 @@
 package com.arpnetworking.tsdaggregator;
 
-import org.hamcrest.Matcher;
-import org.joda.time.DateTime;
-import org.joda.time.Period;
-import org.junit.Test;
-import com.arpnetworking.tsdaggregator.statistics.MeanStatistic;
-import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
-
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertThat;
 
+import com.arpnetworking.tsdaggregator.statistics.MeanStatistic;
+import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
+import org.hamcrest.Matcher;
+import org.joda.time.DateTime;
+import org.joda.time.Period;
+import org.junit.Test;
+
 /**
  * Tests for the AggregatedData class
  *
  * @author barp
  */
+@SuppressWarnings(value = "unchecked")
 public class AggregatedDataTests {
 	@Test
 	public void testConstruct() {
@@ -59,9 +60,11 @@ public class AggregatedDataTests {
 		final Period otherPeriod = Period.minutes(5);
 		AggregatedData otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, otherMetric, otherValue, otherPeriodStart, otherPeriod);
 
-		assertThat(data.equals(null), equalTo(false));
+        //noinspection ObjectEqualsNull
+        assertThat(data.equals(null), equalTo(false));
         assertThat(data.equals(data), equalTo(true));
-		assertThat(data.equals(new MeanStatistic()), equalTo(false));
+        //noinspection EqualsBetweenInconvertibleTypes
+        assertThat(data.equals(new MeanStatistic()), equalTo(false));
 		assertThat(otherData.equals(data), equalTo(true));
         assertThat(otherData.hashCode(), equalTo(data.hashCode()));
 		assertThat(otherData, not(sameInstance(data)));
