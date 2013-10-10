@@ -5,6 +5,7 @@ apply plugin: 'application'
 apply plugin: 'maven'
 apply plugin: 'jacoco'
 apply plugin: 'findbugs'
+apply plugin: 'checkstyle'
 
 repositories {
     maven {
@@ -43,6 +44,34 @@ findbugs {
     effort = 'max'
 }
 
+checkstyle {
+    showViolations = false
+    ignoreFailures = true
+}
+
+task checkstyleReport(dependsOn: checkstyleMain) << {
+    if (file("$buildDir/reports/checkstyle/main.xml").exists()) {
+        ant.xslt(in: "$buildDir/reports/checkstyle/main.xml",
+                style: "config/checkstyle/checkstyle.xsl",
+                out: "$buildDir/reports/checkstyle/checkstyle_main.html"
+        )
+    }
+}
+
+task releasePrep(dependsOn: [test,check,checkstyleReport,jacocoTestReport,javadoc]) << {
+
+}
+
+releasePrep {
+    group = "Release"
+    description = "Runs all tests and reports in preparation for release"
+}
+
+checkstyleReport {
+    group = "Reporting"
+    description = "Generate checkstyle reports"
+}
+
 tasks.withType(FindBugs) {
     reports {
         xml.enabled = false
@@ -50,7 +79,7 @@ tasks.withType(FindBugs) {
     }
 }
 
-mainClassName = 'tsdaggregator.TsdAggregator'
+mainClassName = 'com.arpnetworking.tsdaggregator.TsdAggregator'
 sourceCompatibility = 1.7
 version = '0.2.1-SNAPSHOT'
 group = 'com.arpnetworking'
@@ -60,10 +89,6 @@ jar {
         def manifestClasspath = configurations.runtime.collect { it.getName() }.join(',')
         attributes 'Implementation-Title': 'TSD Aggregator', 'Class-Path': manifestClasspath, 'Implementation-Version': version
     }
-}
-
-task lint(dependsOn: compileJava) {
-	compileJava.options.compilerArgs = ["-Xlint:unchecked"]
 }
 
 uploadArchives {
