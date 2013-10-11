@@ -31,8 +31,8 @@ public class TSAggregation {
     private int _numberOfSamples = 0;
     private DateTime _periodStart = new DateTime(0);
 
-    public TSAggregation(@Nonnull String metric, @Nonnull Period period, @Nonnull AggregationPublisher listener, @Nonnull String hostName,
-                         @Nonnull String serviceName, @Nonnull Set<Statistic> statistics) {
+    public TSAggregation(@Nonnull String metric, @Nonnull Period period, @Nonnull AggregationPublisher listener,
+                         @Nonnull String hostName, @Nonnull String serviceName, @Nonnull Set<Statistic> statistics) {
         _metric = metric;
         _period = period;
         addStatistics(statistics, _orderedStatistics, _unorderedStatistics);

@@ -121,8 +121,8 @@ class CommandLineParser {
             throw new ConfigException("Error parsing command line args", e);
         }
 
-        if (!cl.hasOption(_inputFileOption.getLongOpt())) {
-            throw new ConfigException("no file found, must specify file on the command line");
+        if (!cl.hasOption(_inputFileOption.getLongOpt()) && !cl.hasOption(_clusterAgg.getLongOpt())) {
+            throw new ConfigException("no file found, must specify file on the command line or start in cluster aggregation mode");
         }
 
         if (!cl.hasOption(_serviceOption.getLongOpt())) {
@@ -200,8 +200,10 @@ class CommandLineParser {
             }
         }
 
-        String[] files = cl.getOptionValues(_inputFileOption.getLongOpt());
-        builder.files(files);
+        if (cl.hasOption(_inputFileOption.getLongOpt())) {
+            String[] files = cl.getOptionValues(_inputFileOption.getLongOpt());
+            builder.files(files);
+        }
 
         builder.periods(getPeriods(cl));
         builder.filterPattern(getPattern(cl));

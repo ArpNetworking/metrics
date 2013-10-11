@@ -134,6 +134,14 @@ public class CommandLineParserTests {
 		assertThat(config.shouldUseRRD(), equalTo(true));
 	}
 
+    @Test
+    public void testBasicAggServer() throws ConfigException {
+        CommandLineParser parser = new CommandLineParser(testResolver);
+        String[] args = new String[]{"-monitord", "-s", "service", "--aggserver"};
+        Configuration config = parser.parse(args);
+        assertThat(config.shouldStartClusterAggServer(), equalTo(true));
+    }
+
 	@Test(expected = ConfigException.class)
 	public void testMissingOutputMethod() throws ConfigException {
 		CommandLineParser parser = new CommandLineParser(testResolver);

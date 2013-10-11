@@ -6,11 +6,19 @@ package com.arpnetworking.tsdaggregator;
 
 import com.arpnetworking.tsdaggregator.publishing.*;
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import org.apache.commons.io.input.Tailer;
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.platform.PlatformLocator;
+import org.vertx.java.platform.PlatformManager;
 
 import java.io.*;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,8 +86,6 @@ public class TsdAggregator {
         String monitordUri = config.getMonitordAddress();
         String outputFile = config.getOutputFile();
         Boolean outputRRD = config.shouldUseRRD();
-        Boolean outputMonitord = config.shouldUseMonitord();
-        Boolean outputRemet = config.useRemet();
         String remetUri = config.getRemetAddress();
 
 
@@ -102,13 +108,130 @@ public class TsdAggregator {
             _Logger.info("outputting rrd files");
         }
 
+        PlatformManager platformManager;
+        if (config.shouldStartClusterAggServer()) {
+            int port = config.getClusterAggServerPort();
+            platformManager = PlatformLocator.factory.createPlatformManager();
+            URL url = Resources.getResource("mod.json");
+            try {
+                String text = Resources.toString(url, Charsets.UTF_8);
+                JsonObject conf = new JsonObject(text);
+                conf.putNumber("port", port);
 
+                URL[] urls = new URL[1];
+                String urlString = url.toString();
+                urlString = urlString.substring(4, urlString.indexOf("!"));
+                _Logger.info(url);
+                _Logger.info(urlString);
+                urls[0] = new URL(urlString);
+
+                platformManager.deployModuleFromClasspath("com.arpnetworking~agg-server~1.0", conf, 1, urls, new AsyncResultHandler<String>() {
+                    @Override
+                    public void handle(final AsyncResult<String> event) {
+                        if (event.succeeded()) {
+                            _Logger.info("Aggregation server started, deployment id " + event.result());
+                        } else {
+                            _Logger.error("Error starting aggregation server", event.cause());
+                        }
+                    }
+                });
+            } catch (IOException e) {
+                _Logger.error("unable to read module config for aggregation server", e);
+                return;
+            }
+
+        }
+
+        AggregationPublisher publisher =
+                getPublisher(config);
+
+        LineProcessor processor =
+                new LineProcessor(logParser, timerStatsClasses, counterStatsClasses, gaugeStatsClasses, hostName,
+                        serviceName, periods, publisher);
+        List<LogTailerListener> tailers = new ArrayList<>();
+
+        ArrayList<String> files = getFileList(filter, fileNames);
+        for (String f : files) {
+            try {
+                _Logger.info("Reading file " + f);
+                if (tailFile) {
+                    File fileHandle = new File(f);
+                    LogTailerListener tailListener = new LogTailerListener(processor);
+                    Tailer.create(fileHandle, tailListener, 500L, false);
+                } else {
+                    //check the first 4 bytes of the file for utf markers
+                    FileInputStream fis = new FileInputStream(f);
+                    byte[] header = new byte[4];
+                    if (fis.read(header) < 4) {
+                        //If there are less than 4 bytes, we should move on
+                        continue;
+                    }
+                    Charset encoding = Charsets.UTF_8;
+                    if (header[0] == -1 && header[1] == -2) {
+                        _Logger.info("Detected UTF-16 encoding");
+                        encoding = Charsets.UTF_16;
+                    }
+
+                    InputStreamReader fileReader =
+                            new InputStreamReader(new FileInputStream(f), encoding);
+                    BufferedReader reader = new BufferedReader(fileReader);
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        processor.invoke(line);
+                    }
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        processor.closeAggregations();
+
+        if (tailFile) {
+            while (true) {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+
+        publisher.close();
+    }
+
+    private static ArrayList<String> getFileList(final Pattern filter, final List<String> files) {
+        ArrayList<String> fileList = new ArrayList<>();
+        for (String fileName : files) {
+            File file = new File(fileName);
+            if (file.isFile()) {
+                fileList.add(fileName);
+            } else if (file.isDirectory()) {
+                _Logger.info("File given is a directory, will recursively process");
+                findFilesRecursive(file, fileList, filter);
+            }
+        }
+        return fileList;
+    }
+
+    private static AggregationPublisher getPublisher(final Configuration config) {
         MultiPublisher listener = new MultiPublisher();
+
+        String hostName = config.getHostName();
+        String cluster = config.getClusterName();
+        String metricsUri = config.getMetricsUri();
+        String monitordUri = config.getMonitordAddress();
+        String outputFile = config.getOutputFile();
+        Boolean outputRRD = config.shouldUseRRD();
+        Boolean outputMonitord = config.shouldUseMonitord();
+        Boolean outputRemet = config.useRemet();
+        String remetUri = config.getRemetAddress();
         if (!metricsUri.equals("")) {
             _Logger.info("Adding buffered HTTP POST listener");
             AggregationPublisher httpListener = new HttpPostPublisher(metricsUri);
             listener.addListener(new BufferingPublisher(httpListener, 50));
         }
+
 
         if (outputRemet) {
             _Logger.info("Adding remet listener");
@@ -133,67 +256,7 @@ public class TsdAggregator {
             _Logger.info("Adding RRD listener");
             listener.addListener(new RRDClusterPublisher());
         }
-
-        ArrayList<String> files = new ArrayList<>();
-        LineProcessor processor =
-                new LineProcessor(logParser, timerStatsClasses, counterStatsClasses, gaugeStatsClasses, hostName,
-                        serviceName, periods, listener);
-        for (String fileName : fileNames) {
-            File file = new File(fileName);
-            if (file.isFile()) {
-                files.add(fileName);
-            } else if (file.isDirectory()) {
-                _Logger.info("File given is a directory, will recursively process");
-                findFilesRecursive(file, files, filter);
-            }
-            for (String f : files) {
-                try {
-                    _Logger.info("Reading file " + f);
-                    if (tailFile) {
-                        File fileHandle = new File(f);
-                        LogTailerListener tailListener = new LogTailerListener(processor);
-                        Tailer.create(fileHandle, tailListener, 500L, false);
-                    } else {
-                        //check the first 4 bytes of the file for utf markers
-                        FileInputStream fis = new FileInputStream(f);
-                        byte[] header = new byte[4];
-                        if (fis.read(header) < 4) {
-                            //If there are less than 4 bytes, we should move on
-                            continue;
-                        }
-                        String encoding = "UTF-8";
-                        if (header[0] == -1 && header[1] == -2) {
-                            _Logger.info("Detected UTF-16 encoding");
-                            encoding = "UTF-16";
-                        }
-
-                        InputStreamReader fileReader =
-                                new InputStreamReader(new FileInputStream(f), Charset.forName(encoding));
-                        BufferedReader reader = new BufferedReader(fileReader);
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            processor.invoke(line);
-                        }
-                    }
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            processor.closeAggregations();
-        }
-
-        if (tailFile) {
-            while (true) {
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        }
-
-        listener.close();
+        return listener;
     }
 
     private static void findFilesRecursive(@Nonnull File dir, @Nonnull ArrayList<String> files,
