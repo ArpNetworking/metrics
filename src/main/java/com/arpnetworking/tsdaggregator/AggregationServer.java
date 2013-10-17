@@ -9,13 +9,21 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.platform.Verticle;
 
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
- * Vert.x aggregation server class
+ * Vert.x aggregation server class.
  *
  * @author barp
  */
 public class AggregationServer extends Verticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AggregationServer.class);
+    private final ConcurrentHashMap<String, ArrayList<AggregatorConnection>> _clusterConnections;
+
+    public AggregationServer() {
+        _clusterConnections = new ConcurrentHashMap<>();
+    }
 
     @Override
     public void start() {
@@ -24,11 +32,26 @@ public class AggregationServer extends Verticle {
             @Override
             public void handle(final NetSocket socket) {
                 LOGGER.info("Accepted connection from " + socket.remoteAddress());
+                final AggregatorConnection connection =
+                        new AggregatorConnection(socket, new AggregatorConnection.ClusterNameResolvedCallback() {
+                            @Override
+                            public void clusterNameResolved(final String clusterName, AggregatorConnection connection) {
+                                ArrayList<AggregatorConnection> connections = _clusterConnections.get(clusterName);
+                                if (connections == null) {
+                                    ArrayList<AggregatorConnection> newList = new ArrayList<>();
+                                    connections = _clusterConnections.putIfAbsent(clusterName, newList);
+                                    if (connections == null) {
+                                        connections = newList;
+                                    }
+                                }
+                                connections.add(connection);
+                            }
+                        });
                 socket.dataHandler(new Handler<Buffer>() {
                     @Override
                     public void handle(final Buffer data) {
                         LOGGER.info("received " + data.length() + " bytes of data from " + socket.remoteAddress());
-                        socket.write(data);
+                        connection.dataReceived(data);
                     }
                 });
             }

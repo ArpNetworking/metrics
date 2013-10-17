@@ -9,6 +9,9 @@ page at http://checkstyle.sourceforge.net/config.html -->
 
 <module name="Checker">
 
+    <module name="SuppressionFilter">
+        <property name="file" value="config/checkstyle/checkstylesuppressions.xml"/>
+    </module>
 
     <module name="FileTabCharacter">
         <!-- Checks that there are no tab characters in the file.

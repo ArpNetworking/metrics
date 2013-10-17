@@ -108,10 +108,9 @@ public class TsdAggregator {
             _Logger.info("outputting rrd files");
         }
 
-        PlatformManager platformManager;
+        PlatformManager platformManager = PlatformLocator.factory.createPlatformManager();
         if (config.shouldStartClusterAggServer()) {
             int port = config.getClusterAggServerPort();
-            platformManager = PlatformLocator.factory.createPlatformManager();
             URL url = Resources.getResource("mod.json");
             try {
                 String text = Resources.toString(url, Charsets.UTF_8);
@@ -125,30 +124,28 @@ public class TsdAggregator {
                 _Logger.info(urlString);
                 urls[0] = new URL(urlString);
 
-                platformManager.deployModuleFromClasspath("com.arpnetworking~agg-server~1.0", conf, 1, urls, new AsyncResultHandler<String>() {
-                    @Override
-                    public void handle(final AsyncResult<String> event) {
-                        if (event.succeeded()) {
-                            _Logger.info("Aggregation server started, deployment id " + event.result());
-                        } else {
-                            _Logger.error("Error starting aggregation server", event.cause());
-                        }
-                    }
-                });
+                platformManager.deployModuleFromClasspath("com.arpnetworking~agg-server~1.0", conf, 1, urls,
+                        new AsyncResultHandler<String>() {
+                            @Override
+                            public void handle(final AsyncResult<String> event) {
+                                if (event.succeeded()) {
+                                    _Logger.info("Aggregation server started, deployment id " + event.result());
+                                } else {
+                                    _Logger.error("Error starting aggregation server", event.cause());
+                                }
+                            }
+                        });
             } catch (IOException e) {
                 _Logger.error("unable to read module config for aggregation server", e);
                 return;
             }
-
         }
 
-        AggregationPublisher publisher =
-                getPublisher(config);
+        AggregationPublisher publisher = getPublisher(config, platformManager);
 
         LineProcessor processor =
                 new LineProcessor(logParser, timerStatsClasses, counterStatsClasses, gaugeStatsClasses, hostName,
                         serviceName, periods, publisher);
-        List<LogTailerListener> tailers = new ArrayList<>();
 
         ArrayList<String> files = getFileList(filter, fileNames);
         for (String f : files) {
@@ -214,7 +211,8 @@ public class TsdAggregator {
         return fileList;
     }
 
-    private static AggregationPublisher getPublisher(final Configuration config) {
+    private static AggregationPublisher getPublisher(final Configuration config,
+                                                     final PlatformManager platformManager) {
         MultiPublisher listener = new MultiPublisher();
 
         String hostName = config.getHostName();
@@ -222,10 +220,12 @@ public class TsdAggregator {
         String metricsUri = config.getMetricsUri();
         String monitordUri = config.getMonitordAddress();
         String outputFile = config.getOutputFile();
-        Boolean outputRRD = config.shouldUseRRD();
-        Boolean outputMonitord = config.shouldUseMonitord();
-        Boolean outputRemet = config.useRemet();
+        boolean outputRRD = config.shouldUseRRD();
+        boolean outputMonitord = config.shouldUseMonitord();
+        boolean outputRemet = config.useRemet();
         String remetUri = config.getRemetAddress();
+        boolean outputUpstreamAgg = config.shouldUseUpstreamAgg();
+        String upstreamAggHost = config.getClusterAggHost();
         if (!metricsUri.equals("")) {
             _Logger.info("Adding buffered HTTP POST listener");
             AggregationPublisher httpListener = new HttpPostPublisher(metricsUri);
@@ -255,6 +255,11 @@ public class TsdAggregator {
         if (outputRRD) {
             _Logger.info("Adding RRD listener");
             listener.addListener(new RRDClusterPublisher());
+        }
+
+        if (outputUpstreamAgg) {
+            _Logger.info("Adding upstream aggregation listener");
+            listener.addListener(new ClusterAggregationPublisher(upstreamAggHost, hostName, cluster));
         }
         return listener;
     }

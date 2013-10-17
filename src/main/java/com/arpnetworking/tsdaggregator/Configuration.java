@@ -32,8 +32,13 @@ public class Configuration {
     private final boolean _useRRD;
     private final String _metricsUri;
     private final String _outputFile;
-    private final boolean _clusterAggServer;
+    private final boolean _startClusterAggServer;
     private final int _clusterAggServerPort;
+    private final String _clusterAggHost;
+
+    public String getClusterAggHost() {
+        return _clusterAggHost;
+    }
 
     private Configuration(@Nonnull Builder builder) {
         _useRemet = builder.shouldUseRemet();
@@ -54,8 +59,9 @@ public class Configuration {
         _useRRD = builder.shouldUseRRD();
         _metricsUri = builder.getMetricsUri();
         _outputFile = builder.getOutputFile();
-        _clusterAggServer = builder.isClusterAggServer();
+        _startClusterAggServer = builder.isClusterAggServer();
         _clusterAggServerPort = builder.getClusterAggPort();
+        _clusterAggHost = builder.getClusterAggHost();
     }
 
     @Nonnull
@@ -137,11 +143,15 @@ public class Configuration {
     }
 
     public boolean shouldStartClusterAggServer() {
-        return _clusterAggServer;
+        return _startClusterAggServer;
     }
 
     public int getClusterAggServerPort() {
         return _clusterAggServerPort;
+    }
+
+    public Boolean shouldUseUpstreamAgg() {
+        return _clusterAggHost != null;
     }
 
     /**
@@ -209,6 +219,8 @@ public class Configuration {
         private String _outputFile = "";
         private boolean _clusterAggServer = false;
         private int _clusterAggPort = 7065;
+        private boolean _useUpstreamAgg = false;
+        private String _clusterAggHost;
 
         private Builder() {
         }
@@ -432,6 +444,21 @@ public class Configuration {
         public Builder metricsUri(String uri) {
             this._metricsUri = uri;
             return this;
+        }
+
+        @Nonnull
+        public Builder aggHost(String aggregationHost) {
+            this._clusterAggHost = aggregationHost;
+            this._useUpstreamAgg = true;
+            return this;
+        }
+
+        public String getClusterAggHost() {
+            return _clusterAggHost;
+        }
+
+        public boolean shouldUseUpstreamAgg() {
+            return this._useUpstreamAgg;
         }
     }
 }

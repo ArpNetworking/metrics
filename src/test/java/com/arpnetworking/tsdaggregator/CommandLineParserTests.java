@@ -333,6 +333,16 @@ public class CommandLineParserTests {
 		assertThat(config.shouldTailFiles(), equalTo(true));
 	}
 
+    @Test
+    public void testBasicArgsOutputUpstreamAgg() throws ConfigException {
+        CommandLineParser parser = new CommandLineParser(testResolver);
+        final String host = "some.server.local:1283";
+        String[] args = new String[]{"-f", "somefile.log", "-s", "service", "--upstreamagg", host};
+        Configuration config = parser.parse(args);
+        assertThat(config.shouldUseUpstreamAgg(), equalTo(true));
+        assertThat(config.getClusterAggHost(), equalTo(host));
+    }
+
 	@Test
 	public void testBasicArgsInputFile() throws ConfigException {
 		CommandLineParser parser = new CommandLineParser(testResolver);

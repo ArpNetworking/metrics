@@ -208,6 +208,23 @@ public class ConfigurationBuilderTests {
 		assertThat(config.getFilterPattern(), equalTo(pattern));
 	}
 
+    @Test
+    public void TestAggregationHost() {
+        Configuration.Builder builder = Configuration.builder();
+        String host = "some_host.local.:1839";
+        builder.aggHost(host);
+        Configuration config = builder.create();
+        assertThat(config.getClusterAggHost(), equalTo(host));
+        assertThat(config.shouldUseUpstreamAgg(), equalTo(true));
+    }
+
+    @Test
+    public void TestNoAggregationHost() {
+        Configuration.Builder builder = Configuration.builder();
+        Configuration config = builder.create();
+        assertThat(config.shouldUseUpstreamAgg(), equalTo(false));
+    }
+
 	@Test
 	public void TestFiles() {
 		Configuration.Builder builder = Configuration.builder();

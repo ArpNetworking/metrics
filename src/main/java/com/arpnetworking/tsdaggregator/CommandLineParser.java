@@ -56,6 +56,8 @@ class CommandLineParser {
             .argName("uri").desc("send data to a monitord server").build();
     private final Option _clusterAgg = Option.builder().longOpt("aggserver").optionalArg(true).numberOfArgs(1)
             .argName("port").desc("starts the cluster-level aggregation server").build();
+    private final Option _upstreamAgg = Option.builder().longOpt("upstreamagg").hasArg()
+            .argName("host").desc("send data to an upstream cluster aggregator").build();
     private final Options _options = new Options();
     private final HostResolver _hostResolver;
 
@@ -77,6 +79,7 @@ class CommandLineParser {
         _options.addOption(_remetOption);
         _options.addOption(_monitordOption);
         _options.addOption(_clusterAgg);
+        _options.addOption(_upstreamAgg);
         this._hostResolver = hostResolver;
     }
 
@@ -122,7 +125,8 @@ class CommandLineParser {
         }
 
         if (!cl.hasOption(_inputFileOption.getLongOpt()) && !cl.hasOption(_clusterAgg.getLongOpt())) {
-            throw new ConfigException("no file found, must specify file on the command line or start in cluster aggregation mode");
+            throw new ConfigException(
+                    "no file found, must specify file on the command line or start in cluster aggregation mode");
         }
 
         if (!cl.hasOption(_serviceOption.getLongOpt())) {
@@ -131,7 +135,7 @@ class CommandLineParser {
 
         if (!cl.hasOption(_uriOption.getLongOpt()) && !cl.hasOption(_outputFileOption.getLongOpt()) &&
                 !cl.hasOption(_remetOption.getLongOpt()) && !cl.hasOption(_monitordOption.getLongOpt()) &&
-                !cl.hasOption(_rrdOption.getLongOpt())) {
+                !cl.hasOption(_rrdOption.getLongOpt()) && !cl.hasOption(_upstreamAgg.getLongOpt())) {
             throw new ConfigException("no output mode specified");
         }
 
@@ -176,6 +180,10 @@ class CommandLineParser {
 
         if (cl.hasOption(_uriOption.getLongOpt())) {
             builder.metricsUri(cl.getOptionValue(_uriOption.getLongOpt()));
+        }
+
+        if (cl.hasOption(_upstreamAgg.getLongOpt())) {
+            builder.aggHost(cl.getOptionValue(_upstreamAgg.getLongOpt()));
         }
 
 
