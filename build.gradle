@@ -90,6 +90,7 @@ mainClassName = 'com.arpnetworking.tsdaggregator.TsdAggregator'
 sourceCompatibility = 1.7
 version = '0.2.1-SNAPSHOT'
 group = 'com.arpnetworking'
+
 jar {
 
     manifest {
