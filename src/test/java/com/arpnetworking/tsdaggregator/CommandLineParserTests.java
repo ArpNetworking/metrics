@@ -253,6 +253,30 @@ public class CommandLineParserTests {
 		assertThat(periods, hasItem(Period.minutes(10)));
 	}
 
+    @Test
+    public void testConfigFile() throws ConfigException {
+        CommandLineParser parser = new CommandLineParser(testResolver);
+        String file = "file.json";
+        String[] args = new String[]{"-f", "somefile.log", "--rrd", "-s", "service", "--config", file};
+        Configuration config = parser.parse(args);
+        List<String> configFiles = config.getConfigFiles();
+        assertThat(configFiles.size(), equalTo(1));
+        assertThat(configFiles, hasItem(file));
+    }
+
+    @Test
+    public void testMultipleConfigFiles() throws ConfigException {
+        CommandLineParser parser = new CommandLineParser(testResolver);
+        String file1 = "file1.json";
+        String file2 = "file2.json";
+        String[] args = new String[]{"-f", "somefile.log", "--rrd", "-s", "service", "--config", file1, file2};
+        Configuration config = parser.parse(args);
+        List<String> configFiles = config.getConfigFiles();
+        assertThat(configFiles.size(), equalTo(2));
+        assertThat(configFiles, hasItem(file1));
+        assertThat(configFiles, hasItem(file2));
+    }
+
 	@Test
 	public void testMultiplePeriodParsing() throws ConfigException {
 		CommandLineParser parser = new CommandLineParser(testResolver);

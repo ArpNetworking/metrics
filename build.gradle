@@ -42,22 +42,67 @@ dependencies {
 }
 
 findbugs {
-    ignoreFailures = true
+    ignoreFailures = false
     effort = 'max'
     excludeFilter = file("$rootProject.projectDir/config/findbugs/excludeFilter.xml")
 }
 
-checkstyle {
-    showViolations = false
+findbugsTest {
     ignoreFailures = true
 }
 
-task checkstyleReport(dependsOn: checkstyleMain) << {
-    if (file("$buildDir/reports/checkstyle/main.xml").exists()) {
-        ant.xslt(in: "$buildDir/reports/checkstyle/main.xml",
+checkstyle {
+    showViolations = false
+    ignoreFailures = false
+}
+apply plugin: 'checkstyle'
+
+
+checkstyleMain {
+    ignoreFailures = false
+    reports {
+        include('**/*.java')
+        xml {
+            destination "${rootProject.buildDir}/reports/checkstyle/main.xml"
+        }
+    }
+    configFile = file('./config/checkstyle/checkstyle.xml')
+}
+
+checkstyleTest {
+    ignoreFailures = true
+    reports {
+        include('**/*.java')
+        xml {
+            destination "${rootProject.buildDir}/reports/checkstyle/test.xml"
+        }
+    }
+    configFile = file('./config/checkstyle/checkstyle.xml')
+}
+
+
+task checkstyleReport << {
+    if (file("$buildDir/reports/checkstyle/${ext.checkType}.xml").exists()) {
+        ant.xslt(in: "$buildDir/reports/checkstyle/${ext.checkType}.xml",
                 style: "config/checkstyle/checkstyle.xsl",
-                out: "$buildDir/reports/checkstyle/checkstyle_main.html"
+                out: "$buildDir/reports/checkstyle/checkstyle_${checkType}.html"
         )
+    }
+}
+
+task quality(dependsOn: ['checkstyleMain', 'checkstyleTest'])
+
+gradle.taskGraph.afterTask { Task task, TaskState state ->
+    if (state.failure) {
+        if (task.name in ['checkstyleMain', 'checkstyleTest']) {
+            checkstyleReport {
+                def matcher = task.name =~ /^checkstyle(.*)$/
+                if (matcher.matches()) {
+                    checkType = matcher.group(1).toLowerCase()
+                }
+            }
+            checkstyleReport.execute()
+        }
     }
 }
 
@@ -65,15 +110,19 @@ task releasePrep(dependsOn: [test,check,checkstyleReport,jacocoTestReport,javado
 
 }
 
+checkstyleReport {
+    group = "Reporting"
+    description = "Generate checkstyle reports"
+    ext {
+        checkType = "NOTHING"
+    }
+}
+
 releasePrep {
     group = "Release"
     description = "Runs all tests and reports in preparation for release"
 }
 
-checkstyleReport {
-    group = "Reporting"
-    description = "Generate checkstyle reports"
-}
 
 tasks.withType(FindBugs) {
     reports {

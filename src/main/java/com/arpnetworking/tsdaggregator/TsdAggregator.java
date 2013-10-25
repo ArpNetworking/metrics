@@ -39,8 +39,6 @@ public class TsdAggregator {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-
-
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread thread, Throwable throwable) {
@@ -48,16 +46,43 @@ public class TsdAggregator {
             }
         });
 
-
         CommandLineParser parser = new CommandLineParser(new DefaultHostResolver());
-        Configuration config;
+        Configuration commandLineConfig;
         try {
-            config = parser.parse(args);
+            commandLineConfig = parser.parse(args);
         } catch (ConfigException e) {
             System.err.println("error parsing options: " + e.getMessage());
             parser.printUsage(System.err);
             return;
         }
+
+        List<Configuration> configurations = new ArrayList<>();
+        configurations.add(commandLineConfig);
+
+        List<String> configFiles = commandLineConfig.getConfigFiles();
+        ConfigFileParser configFileParser = new ConfigFileParser(new DefaultHostResolver());
+        for (String configFile : configFiles) {
+            try {
+                Configuration fileConfig = configFileParser.parse(configFile);
+                configurations.add(fileConfig);
+            } catch (ConfigException e) {
+                _Logger.warn("Could not parse config file " + configFile, e);
+            }
+        }
+
+        for (final Configuration config : configurations) {
+            Thread runnerThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    startConfiguration(config);
+                }
+            });
+
+            runnerThread.start();
+        }
+    }
+
+    public static void startConfiguration(final Configuration config) {
 
         Class<? extends LogParser> parserClass = config.getParserClass();
         LogParser logParser;
@@ -133,8 +158,8 @@ public class TsdAggregator {
                                 } else {
                                     _Logger.error("Error starting aggregation server", event.cause());
                                 }
-                            }
-                        });
+                    }
+                    });
             } catch (IOException e) {
                 _Logger.error("unable to read module config for aggregation server", e);
                 return;
@@ -157,24 +182,39 @@ public class TsdAggregator {
                     Tailer.create(fileHandle, tailListener, 500L, false);
                 } else {
                     //check the first 4 bytes of the file for utf markers
-                    FileInputStream fis = new FileInputStream(f);
-                    byte[] header = new byte[4];
-                    if (fis.read(header) < 4) {
-                        //If there are less than 4 bytes, we should move on
-                        continue;
-                    }
-                    Charset encoding = Charsets.UTF_8;
-                    if (header[0] == -1 && header[1] == -2) {
-                        _Logger.info("Detected UTF-16 encoding");
-                        encoding = Charsets.UTF_16;
-                    }
+                    FileInputStream fis = null;
+                    BufferedReader reader = null;
+                    try {
+                        fis = new FileInputStream(f);
+                        byte[] header = new byte[4];
+                        if (fis.read(header) < 4) {
+                            //If there are less than 4 bytes, we should move on
+                            continue;
+                        }
+                        Charset encoding = Charsets.UTF_8;
+                        if (header[0] == -1 && header[1] == -2) {
+                            _Logger.info("Detected UTF-16 encoding");
+                            encoding = Charsets.UTF_16;
+                        }
 
-                    InputStreamReader fileReader =
-                            new InputStreamReader(new FileInputStream(f), encoding);
-                    BufferedReader reader = new BufferedReader(fileReader);
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        processor.invoke(line);
+                        InputStreamReader fileReader = new InputStreamReader(new FileInputStream(f), encoding);
+                        reader = new BufferedReader(fileReader);
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            processor.invoke(line);
+                        }
+                    } finally {
+                        if (fis != null) {
+                            try {
+                                fis.close();
+                            } catch (Exception ignored) { }
+                        }
+
+                        if (reader != null) {
+                            try {
+                                reader.close();
+                            } catch (Exception ignored) { }
+                        }
                     }
                 }
 

@@ -58,6 +58,8 @@ class CommandLineParser {
             .argName("port").desc("starts the cluster-level aggregation server").build();
     private final Option _upstreamAgg = Option.builder().longOpt("upstreamagg").hasArg()
             .argName("host").desc("send data to an upstream cluster aggregator").build();
+    private final Option _configFilesOption = Option.builder().longOpt("config").hasArgs().argName("file")
+            .desc("read config files for configuration sets").build();
     private final Options _options = new Options();
     private final HostResolver _hostResolver;
 
@@ -80,6 +82,7 @@ class CommandLineParser {
         _options.addOption(_monitordOption);
         _options.addOption(_clusterAgg);
         _options.addOption(_upstreamAgg);
+        _options.addOption(_configFilesOption);
         this._hostResolver = hostResolver;
     }
 
@@ -211,6 +214,11 @@ class CommandLineParser {
         if (cl.hasOption(_inputFileOption.getLongOpt())) {
             String[] files = cl.getOptionValues(_inputFileOption.getLongOpt());
             builder.files(files);
+        }
+
+        if (cl.hasOption(_configFilesOption.getLongOpt())) {
+            String[] files = cl.getOptionValues(_configFilesOption.getLongOpt());
+            builder.configFiles(files);
         }
 
         builder.periods(getPeriods(cl));
