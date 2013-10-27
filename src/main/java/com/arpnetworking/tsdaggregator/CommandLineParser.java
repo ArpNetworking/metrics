@@ -121,25 +121,40 @@ class CommandLineParser {
         org.apache.commons.cli.CommandLineParser parser = new DefaultParser();
         CommandLine cl;
         Configuration.Builder builder = Configuration.builder();
+        builder.valid(true);
+        boolean isBaseConfig = false;
         try {
             cl = parser.parse(_options, args);
         } catch (ParseException e) {
             throw new ConfigException("Error parsing command line args", e);
         }
 
+        if (cl.hasOption(_configFilesOption.getLongOpt())) {
+            isBaseConfig = true;
+        }
+
         if (!cl.hasOption(_inputFileOption.getLongOpt()) && !cl.hasOption(_clusterAgg.getLongOpt())) {
-            throw new ConfigException(
-                    "no file found, must specify file on the command line or start in cluster aggregation mode");
+            if (!isBaseConfig) {
+                throw new ConfigException(
+                        "no file found, must specify file on the command line or start in cluster aggregation mode");
+            }
+            builder.valid(false);
         }
 
         if (!cl.hasOption(_serviceOption.getLongOpt())) {
-            throw new ConfigException("service name must be specified");
+            if (!isBaseConfig) {
+                throw new ConfigException("service name must be specified");
+            }
+            builder.valid(false);
         }
 
         if (!cl.hasOption(_uriOption.getLongOpt()) && !cl.hasOption(_outputFileOption.getLongOpt()) &&
                 !cl.hasOption(_remetOption.getLongOpt()) && !cl.hasOption(_monitordOption.getLongOpt()) &&
                 !cl.hasOption(_rrdOption.getLongOpt()) && !cl.hasOption(_upstreamAgg.getLongOpt())) {
-            throw new ConfigException("no output mode specified");
+            if (!isBaseConfig) {
+                throw new ConfigException("no output mode specified");
+            }
+            builder.valid(false);
         }
 
         if (cl.hasOption(_parserOption.getLongOpt())) {

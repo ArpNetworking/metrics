@@ -36,6 +36,7 @@ public class Configuration {
     private final int _clusterAggServerPort;
     private final String _clusterAggHost;
     private final List<String> _configFiles;
+    private final boolean _valid;
 
     public String getClusterAggHost() {
         return _clusterAggHost;
@@ -64,6 +65,7 @@ public class Configuration {
         _clusterAggServerPort = builder.getClusterAggPort();
         _clusterAggHost = builder.getClusterAggHost();
         _configFiles = builder.getConfigFiles();
+        _valid = builder.isValid();
     }
 
     @Nonnull
@@ -156,6 +158,10 @@ public class Configuration {
         return _clusterAggHost != null;
     }
 
+    public boolean isValid() {
+        return _valid;
+    }
+
     public List<String> getConfigFiles() {
         return _configFiles;
     }
@@ -228,6 +234,7 @@ public class Configuration {
         private boolean _useUpstreamAgg = false;
         private String _clusterAggHost;
         private List<String> _configFiles = new ArrayList<>();
+        private boolean _valid = false;
 
         private Builder() {
         }
@@ -473,6 +480,16 @@ public class Configuration {
 
         public boolean shouldUseUpstreamAgg() {
             return this._useUpstreamAgg;
+        }
+
+        public boolean isValid() {
+            return _valid;
+        }
+
+        @Nonnull
+        public Builder valid(final boolean valid) {
+            _valid = valid;
+            return this;
         }
 
         public List<String> getConfigFiles() {

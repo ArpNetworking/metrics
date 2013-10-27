@@ -83,7 +83,9 @@ public class TsdAggregator {
     }
 
     public static void startConfiguration(final Configuration config) {
-
+        if (!config.isValid()) {
+            return;
+        }
         Class<? extends LogParser> parserClass = config.getParserClass();
         LogParser logParser;
         try {
