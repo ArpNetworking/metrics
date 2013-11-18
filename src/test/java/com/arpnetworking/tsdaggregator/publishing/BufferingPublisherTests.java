@@ -33,7 +33,7 @@ public class BufferingPublisherTests {
 
         for (int x = 0; x < 9; x++) {
             AggregatedData[] data = new AggregatedData[1];
-            data[0] = new AggregatedData(new NStatistic(), "service" + x, "host", "metric", 1d, DateTime.now(), Period.minutes(5));
+            data[0] = new AggregatedData(new NStatistic(), "service" + x, "host", "metric", 1d, DateTime.now(), Period.minutes(5), new Double[]{});
 
             publisher.recordAggregation(data);
         }
@@ -52,7 +52,7 @@ public class BufferingPublisherTests {
 
         for (int x = 0; x < 10; x++) {
             AggregatedData[] data = new AggregatedData[1];
-            data[0] = new AggregatedData(new NStatistic(), "service" + x, "host", "metric", 1d, DateTime.now(), Period.minutes(5));
+            data[0] = new AggregatedData(new NStatistic(), "service" + x, "host", "metric", 1d, DateTime.now(), Period.minutes(5), new Double[]{});
 
             publisher.recordAggregation(data);
         }
@@ -72,7 +72,7 @@ public class BufferingPublisherTests {
 
         for (int x = 0; x < 8; x++) {
             AggregatedData[] data = new AggregatedData[1];
-            data[0] = new AggregatedData(new NStatistic(), "service" + x, "host", "metric", 1d, DateTime.now(), Period.minutes(5));
+            data[0] = new AggregatedData(new NStatistic(), "service" + x, "host", "metric", 1d, DateTime.now(), Period.minutes(5), new Double[]{});
 
             publisher.recordAggregation(data);
         }

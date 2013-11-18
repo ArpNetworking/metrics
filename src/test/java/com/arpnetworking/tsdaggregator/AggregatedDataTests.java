@@ -29,7 +29,8 @@ public class AggregatedDataTests {
 		final double value = 2332d;
 		final DateTime periodStart = new DateTime(2013, 9, 20, 8, 15, 0, 0);
 		final Period period = Period.minutes(5);
-		AggregatedData data = new AggregatedData(statistic, serviceName, host, metric, value, periodStart, period);
+        final Double[] samples = {1.0d, 1.5d, 3.3d};
+		AggregatedData data = new AggregatedData(statistic, serviceName, host, metric, value, periodStart, period, samples);
 
 		assertThat(data.getStatistic(), (Matcher)sameInstance(statistic));
 		assertThat(data.getService(), equalTo(serviceName));
@@ -49,7 +50,8 @@ public class AggregatedDataTests {
 		final double value = 2332d;
 		final DateTime periodStart = new DateTime(2013, 9, 20, 8, 15, 0, 0);
 		final Period period = Period.minutes(5);
-		AggregatedData data = new AggregatedData(statistic, serviceName, host, metric, value, periodStart, period);
+        final Double[] samples = {1.0d, 1.5d, 3.3d};
+		AggregatedData data = new AggregatedData(statistic, serviceName, host, metric, value, periodStart, period, samples);
 
 		final SumStatistic otherStatistic = new SumStatistic();
 		final String otherServiceName = "service_name";
@@ -58,7 +60,8 @@ public class AggregatedDataTests {
 		final double otherValue = 2332d;
 		final DateTime otherPeriodStart = new DateTime(2013, 9, 20, 8, 15, 0, 0);
 		final Period otherPeriod = Period.minutes(5);
-		AggregatedData otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, otherMetric, otherValue, otherPeriodStart, otherPeriod);
+        final Double[] otherSamples = {1.0d, 1.5d, 3.3d};
+		AggregatedData otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, otherMetric, otherValue, otherPeriodStart, otherPeriod, otherSamples);
 
         //noinspection ObjectEqualsNull
         assertThat(data.equals(null), equalTo(false));
@@ -69,31 +72,31 @@ public class AggregatedDataTests {
         assertThat(otherData.hashCode(), equalTo(data.hashCode()));
 		assertThat(otherData, not(sameInstance(data)));
 
-		otherData = new AggregatedData(new MeanStatistic(), otherServiceName, otherHost, otherMetric, otherValue, otherPeriodStart, otherPeriod);
+		otherData = new AggregatedData(new MeanStatistic(), otherServiceName, otherHost, otherMetric, otherValue, otherPeriodStart, otherPeriod, otherSamples);
 		assertThat(otherData.equals(data), equalTo(false));
         assertThat(otherData.hashCode(), not(equalTo(data.hashCode())));
 
-		otherData = new AggregatedData(otherStatistic, "service_two", otherHost, otherMetric, otherValue, otherPeriodStart, otherPeriod);
+		otherData = new AggregatedData(otherStatistic, "service_two", otherHost, otherMetric, otherValue, otherPeriodStart, otherPeriod, otherSamples);
 		assertThat(otherData.equals(data), equalTo(false));
         assertThat(otherData.hashCode(), not(equalTo(data.hashCode())));
 
-		otherData = new AggregatedData(otherStatistic, otherServiceName, "another_host", otherMetric, otherValue, otherPeriodStart, otherPeriod);
+		otherData = new AggregatedData(otherStatistic, otherServiceName, "another_host", otherMetric, otherValue, otherPeriodStart, otherPeriod, otherSamples);
 		assertThat(otherData.equals(data), equalTo(false));
         assertThat(otherData.hashCode(), not(equalTo(data.hashCode())));
 
-		otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, "another/metric", otherValue, otherPeriodStart, otherPeriod);
+		otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, "another/metric", otherValue, otherPeriodStart, otherPeriod, otherSamples);
 		assertThat(otherData.equals(data), equalTo(false));
         assertThat(otherData.hashCode(), not(equalTo(data.hashCode())));
 
-		otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, otherMetric, 1891d, otherPeriodStart, otherPeriod);
+		otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, otherMetric, 1891d, otherPeriodStart, otherPeriod, otherSamples);
 		assertThat(otherData.equals(data), equalTo(false));
         assertThat(otherData.hashCode(), not(equalTo(data.hashCode())));
 
-		otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, otherMetric, otherValue, new DateTime(), otherPeriod);
+		otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, otherMetric, otherValue, new DateTime(), otherPeriod, otherSamples);
 		assertThat(otherData.equals(data), equalTo(false));
         assertThat(otherData.hashCode(), not(equalTo(data.hashCode())));
 
-		otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, otherMetric, otherValue, otherPeriodStart, Period.seconds(12));
+		otherData = new AggregatedData(otherStatistic, otherServiceName, otherHost, otherMetric, otherValue, otherPeriodStart, Period.seconds(12), otherSamples);
 		assertThat(otherData.equals(data), equalTo(false));
         assertThat(otherData.hashCode(), not(equalTo(data.hashCode())));
 	}
@@ -107,7 +110,8 @@ public class AggregatedDataTests {
         final double value = 2332d;
         final DateTime periodStart = new DateTime(2013, 9, 20, 8, 15, 0, 0);
         final Period period = Period.minutes(5);
-        AggregatedData data = new AggregatedData(statistic, serviceName, host, metric, value, periodStart, period);
+        final Double[] samples = {2.3D, 123.8D};
+        AggregatedData data = new AggregatedData(statistic, serviceName, host, metric, value, periodStart, period, samples);
         assertThat(data.toString(), startsWith("AggregatedData{"));
     }
 

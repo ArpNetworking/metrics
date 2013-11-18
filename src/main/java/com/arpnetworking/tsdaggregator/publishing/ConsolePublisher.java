@@ -16,7 +16,7 @@ public class ConsolePublisher implements AggregationPublisher {
             System.out.println(d.getHost() + "::" + d.getService() + "::" + d.getMetric()
                     + " " + d.getPeriodStart() + " [" + d.getPeriod() + "] " +
                     d.getStatistic().getName() + ": " +
-                    d.getValue().toString());
+                    d.getValue());
         }
 
     }

@@ -32,7 +32,7 @@ public class MultiPublisherTests {
 
 		}});
 
-		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5));
+		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5), new Double[]{});
 		publisher.addListener(mockPub1);
 		publisher.addListener(mockPub2);
 		publisher.recordAggregation(data);

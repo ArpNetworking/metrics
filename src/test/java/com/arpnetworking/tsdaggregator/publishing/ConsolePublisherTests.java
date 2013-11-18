@@ -46,7 +46,7 @@ public class ConsolePublisherTests {
 	public void testOutputtingShowsSomething() {
 		ConsolePublisher publisher = new ConsolePublisher();
 		AggregatedData[] data = new AggregatedData[1];
-		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5));
+		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5), new Double[]{});
 		publisher.recordAggregation(data);
 		assertThat(byteArrayOutputStream.toString(), containsString("set/view"));
 	}
@@ -55,7 +55,7 @@ public class ConsolePublisherTests {
 	public void testClosingDoesntChangeOutput() {
 		ConsolePublisher publisher = new ConsolePublisher();
 		AggregatedData[] data = new AggregatedData[1];
-		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5));
+		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5), new Double[]{});
 		publisher.recordAggregation(data);
 		String preClose = byteArrayOutputStream.toString();
 		publisher.close();

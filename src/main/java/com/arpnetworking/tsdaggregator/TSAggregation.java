@@ -102,7 +102,7 @@ public class TSAggregation {
         for (Statistic stat : _unorderedStatistics) {
             Double value = stat.calculate(dsamples);
             AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
-                    _periodStart, _period);
+                    _periodStart, _period, dsamples);
             aggregates.add(data);
         }
         //only sort if there are ordered statistics
@@ -111,7 +111,7 @@ public class TSAggregation {
             for (Statistic stat : _orderedStatistics) {
                 Double value = stat.calculate(dsamples);
                 AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
-                        _periodStart, _period);
+                        _periodStart, _period, dsamples);
                 aggregates.add(data);
             }
         }

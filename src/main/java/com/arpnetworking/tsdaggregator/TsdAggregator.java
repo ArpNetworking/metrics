@@ -78,6 +78,7 @@ public class TsdAggregator {
                 }
             });
 
+            runnerThread.setDaemon(false);
             runnerThread.start();
         }
     }
@@ -115,7 +116,6 @@ public class TsdAggregator {
         Boolean outputRRD = config.shouldUseRRD();
         String remetUri = config.getRemetAddress();
 
-
         _Logger.info("using files ");
         for (String file : fileNames) {
             _Logger.info("    " + file);
@@ -131,6 +131,7 @@ public class TsdAggregator {
         _Logger.info("using counter stats " + counterStatsClasses.toString());
         _Logger.info("using timer stats " + timerStatsClasses.toString());
         _Logger.info("using gauge stats " + gaugeStatsClasses.toString());
+        _Logger.info("using periods " + periods.toString());
         if (outputRRD) {
             _Logger.info("outputting rrd files");
         }
@@ -147,8 +148,6 @@ public class TsdAggregator {
                 URL[] urls = new URL[1];
                 String urlString = url.toString();
                 urlString = urlString.substring(4, urlString.indexOf("!"));
-                _Logger.info(url);
-                _Logger.info(urlString);
                 urls[0] = new URL(urlString);
 
                 platformManager.deployModuleFromClasspath("com.arpnetworking~agg-server~1.0", conf, 1, urls,
@@ -226,7 +225,7 @@ public class TsdAggregator {
         }
         processor.closeAggregations();
 
-        if (tailFile) {
+        if (tailFile || config.shouldStartClusterAggServer()) {
             while (true) {
                 try {
                     Thread.sleep(5000);
@@ -301,7 +300,7 @@ public class TsdAggregator {
 
         if (outputUpstreamAgg) {
             _Logger.info("Adding upstream aggregation listener");
-            listener.addListener(new ClusterAggregationPublisher(upstreamAggHost, hostName, cluster));
+            listener.addListener(new AggServerPublisher(upstreamAggHost, hostName, cluster));
         }
         return listener;
     }

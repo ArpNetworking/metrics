@@ -9,20 +9,23 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
- * Implementation of a Ketama hash ring for use in mapping metrics to authoritative partition groups
+ * Implementation of a Ketama hash ring for use in mapping metrics to authoritative partition groups.
  *
  * @author barp
  */
 public class KetamaRing {
+    /**
+     * Serves as an entry in the ring.
+     */
     public static class NodeEntry {
-        public final String nodeKey;
-        public final Object mappedObject;
-        public final int vNodes;
+        public final String _nodeKey;
+        public final Object _mappedObject;
+        public final int _vNodes;
 
         public NodeEntry(final String nodeKey, final Object mappedObject, final int vNodes) {
-            this.nodeKey = nodeKey;
-            this.mappedObject = mappedObject;
-            this.vNodes = vNodes;
+            this._nodeKey = nodeKey;
+            this._mappedObject = mappedObject;
+            this._vNodes = vNodes;
         }
     }
     final HashMap<Integer, NodeEntry> _nodes = new HashMap<>();
@@ -58,7 +61,7 @@ public class KetamaRing {
                 if (previous != null) {
                     //we have a collision
                     //resolve by picking the node with the highest lexicographical key
-                    if (previous.nodeKey.compareTo(node.nodeKey) < 0) {
+                    if (previous._nodeKey.compareTo(node._nodeKey) < 0) {
                         if (_ring.replace(hash, previous, node)) {
                             set = true;
                         }

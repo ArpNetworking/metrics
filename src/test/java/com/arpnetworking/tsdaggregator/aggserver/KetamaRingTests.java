@@ -30,7 +30,7 @@ public class KetamaRingTests {
         ring.addNode("test6.server.com:11820", null);
         final Set<Map.Entry<Integer,KetamaRing.NodeEntry>> ringEntries = ring.getRingEntries();
         for (Map.Entry<Integer, KetamaRing.NodeEntry> entry : ringEntries) {
-            System.out.println("key: " + entry.getKey() + ", value: " + entry.getValue().nodeKey);
+            System.out.println("key: " + entry.getKey() + ", value: " + entry.getValue()._nodeKey);
         }
     }
 
@@ -46,7 +46,7 @@ public class KetamaRingTests {
 
         for (int x = 0; x < samples; x++) {
             final KetamaRing.NodeEntry nodeEntry = ring.hash("sample" + x);
-            counts[(int)nodeEntry.mappedObject]++;
+            counts[(int)nodeEntry._mappedObject]++;
         }
 
         double mean = 0;

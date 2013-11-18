@@ -1,4 +1,4 @@
-package com.arpnetworking.tsdaggregator;
+package com.arpnetworking.tsdaggregator.aggserver;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AggregationServer extends Verticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AggregationServer.class);
     private final ConcurrentHashMap<String, ArrayList<AggregatorConnection>> _clusterConnections;
+    public final Object shutdownTrigger = new Object();
 
     public AggregationServer() {
         _clusterConnections = new ConcurrentHashMap<>();

@@ -5,7 +5,8 @@ import com.google.common.base.Objects;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
-import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Serves as a data class for storing data for aggregated values after computation.
@@ -17,12 +18,13 @@ public final class AggregatedData {
     private final String _service;
     private final String _host;
     private final String _metric;
-    private final Double _value;
+    private final double _value;
     private final DateTime _periodStart;
     private final Period _period;
+    private final List<Double> _samples;
 
     public AggregatedData(final Statistic statistic, final String service, final String host, final String metric,
-                          final Double value, final DateTime periodStart, final Period period) {
+                          final double value, final DateTime periodStart, final Period period, final Double[] samples) {
         _statistic = statistic;
         _service = service;
         _host = host;
@@ -30,6 +32,7 @@ public final class AggregatedData {
         _value = value;
         _periodStart = periodStart;
         _period = period;
+        _samples = Arrays.asList(samples);
     }
 
     public Period getPeriod() {
@@ -48,7 +51,7 @@ public final class AggregatedData {
         return _host;
     }
 
-    public Double getValue() {
+    public double getValue() {
         return _value;
     }
 
@@ -60,8 +63,12 @@ public final class AggregatedData {
         return _metric;
     }
 
+    public List<Double> getSamples() {
+        return _samples;
+    }
+
     @Override
-    public boolean equals(@Nullable final Object o) {
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         }
@@ -69,21 +76,43 @@ public final class AggregatedData {
             return false;
         }
 
-        final AggregatedData data = (AggregatedData) o;
+        final AggregatedData that = (AggregatedData) o;
 
-        return _host.equals(data._host) && _metric.equals(data._metric) && _period.equals(data._period) &&
-                _periodStart.equals(data._periodStart) && _service.equals(data._service) &&
-                _statistic.equals(data._statistic) && _value.equals(data._value);
+        if (Double.compare(that._value, _value) != 0) {
+            return false;
+        }
+        if (!_host.equals(that._host)) {
+            return false;
+        }
+        if (!_metric.equals(that._metric)) {
+            return false;
+        }
+        if (!_period.equals(that._period)) {
+            return false;
+        }
+        if (!_periodStart.equals(that._periodStart)) {
+            return false;
+        }
+        if (!_service.equals(that._service)) {
+            return false;
+        }
+        if (!_statistic.equals(that._statistic)) {
+            return false;
+        }
 
+        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = _statistic.hashCode();
+        int result;
+        long temp;
+        result = _statistic.hashCode();
         result = 31 * result + _service.hashCode();
         result = 31 * result + _host.hashCode();
         result = 31 * result + _metric.hashCode();
-        result = 31 * result + _value.hashCode();
+        temp = Double.doubleToLongBits(_value);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
         result = 31 * result + _periodStart.hashCode();
         result = 31 * result + _period.hashCode();
         return result;

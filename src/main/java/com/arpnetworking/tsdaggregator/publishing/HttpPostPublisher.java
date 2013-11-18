@@ -51,7 +51,7 @@ public class HttpPostPublisher implements AggregationPublisher {
             aggregateJson.append("[");
             for (AggregatedData d : data) {
 
-                aggregateJson.append("{\"value\":\"").append(d.getValue().toString())
+                aggregateJson.append("{\"value\":\"").append(d.getValue())
                         .append("\",").append("\"counter\":\"").append(d.getMetric()).append("\",")
                         .append("\"service\":\"").append(d.getService()).append("\",").append("\"host\":\"")
                         .append(d.getHost()).append("\",").append("\"period\":\"").append(d.getPeriod())

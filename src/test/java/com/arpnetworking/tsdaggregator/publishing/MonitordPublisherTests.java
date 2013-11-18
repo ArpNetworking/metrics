@@ -77,7 +77,7 @@ public class MonitordPublisherTests {
 		}});
 
 		AggregatedData[] data = new AggregatedData[1];
-		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.seconds(1));
+		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.seconds(1), new Double[]{});
 		publisher.recordAggregation(data);
 
 		context.assertIsSatisfied();
@@ -109,7 +109,7 @@ public class MonitordPublisherTests {
 		}});
 
 		AggregatedData[] data = new AggregatedData[1];
-		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5));
+		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5), new Double[]{});
 		publisher.recordAggregation(data);
 
 		context.assertIsSatisfied();
@@ -130,8 +130,8 @@ public class MonitordPublisherTests {
 		final Period period = Period.minutes(5);
 
 		AggregatedData[] data = new AggregatedData[2];
-		data[0] = new AggregatedData(new SumStatistic(), serviceName, host, metric, 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), period);
-		data[1] = new AggregatedData(new MeanStatistic(), serviceName, host, metric, 1007d, new DateTime(2013, 9, 20, 8, 15, 0, 0), period);
+		data[0] = new AggregatedData(new SumStatistic(), serviceName, host, metric, 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), period, new Double[]{});
+		data[1] = new AggregatedData(new MeanStatistic(), serviceName, host, metric, 1007d, new DateTime(2013, 9, 20, 8, 15, 0, 0), period, new Double[]{});
 
 		MonitordPublisher publisher = new MonitordPublisher(uri, cluster, host, client);
 
@@ -221,7 +221,7 @@ public class MonitordPublisherTests {
 		mockResponse(context, client, 200, "OK", Matchers.any(HttpUriRequest.class));
 
 		AggregatedData[] data = new AggregatedData[1];
-		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5));
+		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5), new Double[]{});
 		publisher.recordAggregation(data);
 
 		context.assertIsSatisfied();
@@ -238,7 +238,7 @@ public class MonitordPublisherTests {
 		mockResponse(context, client, 500, "something bad happened", Matchers.any(HttpUriRequest.class));
 
 		AggregatedData[] data = new AggregatedData[1];
-		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5));
+		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5), new Double[]{});
 		publisher.recordAggregation(data);
 
 		context.assertIsSatisfied();
@@ -268,7 +268,7 @@ public class MonitordPublisherTests {
 		}});
 
 		AggregatedData[] data = new AggregatedData[1];
-		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5));
+		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5), new Double[]{});
 		publisher.recordAggregation(data);
 
 		context.assertIsSatisfied();
@@ -310,7 +310,7 @@ public class MonitordPublisherTests {
 		}});
 
 		AggregatedData[] data = new AggregatedData[1];
-		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5));
+		data[0] = new AggregatedData(new SumStatistic(), "service_name", "host", "set/view", 2332d, new DateTime(2013, 9, 20, 8, 15, 0, 0), Period.minutes(5), new Double[]{});
 		publisher.recordAggregation(data);
 
 		context.assertIsSatisfied();
