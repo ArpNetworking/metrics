@@ -137,9 +137,25 @@ public class CommandLineParserTests {
     @Test
     public void testBasicAggServer() throws ConfigException {
         CommandLineParser parser = new CommandLineParser(testResolver);
+        String[] args = new String[]{"-monitord", "-s", "service", "--aggserver", "--redis", "localhost"};
+        Configuration config = parser.parse(args);
+        assertThat(config.shouldStartClusterAggServer(), equalTo(true));
+    }
+
+    @Test(expected = ConfigException.class)
+    public void testAggServerRequiresRedis() throws ConfigException {
+        CommandLineParser parser = new CommandLineParser(testResolver);
         String[] args = new String[]{"-monitord", "-s", "service", "--aggserver"};
         Configuration config = parser.parse(args);
         assertThat(config.shouldStartClusterAggServer(), equalTo(true));
+    }
+
+    @Test
+    public void testRedisValue() throws ConfigException {
+        CommandLineParser parser = new CommandLineParser(testResolver);
+        String[] args = new String[]{"-monitord", "-s", "service", "--aggserver", "--redis", "localhost"};
+        Configuration config = parser.parse(args);
+        assertThat(config.getRedisHost(), equalTo("localhost"));
     }
 
 	@Test(expected = ConfigException.class)
@@ -412,7 +428,7 @@ public class CommandLineParserTests {
     @Test
     public void testBasicArgsAggCluster() throws ConfigException {
         CommandLineParser parser = new CommandLineParser(testResolver);
-        String[] args = new String[]{"-f", "somefile.log", "-o", "output.file.txt", "-s", "service", "-c", "cluster", "--aggserver"};
+        String[] args = new String[]{"-f", "somefile.log", "-o", "output.file.txt", "-s", "service", "-c", "cluster", "--aggserver", "--redis", "localhost"};
         Configuration config = parser.parse(args);
         assertThat(config.shouldStartClusterAggServer(), equalTo(true));
     }
@@ -420,7 +436,7 @@ public class CommandLineParserTests {
     @Test
     public void testBasicArgsAggClusterWithPort() throws ConfigException {
         CommandLineParser parser = new CommandLineParser(testResolver);
-        String[] args = new String[]{"-f", "somefile.log", "-o", "output.file.txt", "-s", "service", "-c", "cluster", "--aggserver", "3321"};
+        String[] args = new String[]{"-f", "somefile.log", "-o", "output.file.txt", "-s", "service", "-c", "cluster", "--aggserver", "3321", "--redis", "localhost"};
         Configuration config = parser.parse(args);
         assertThat(config.shouldStartClusterAggServer(), equalTo(true));
         assertThat(config.getClusterAggServerPort(), equalTo(3321));
@@ -429,7 +445,7 @@ public class CommandLineParserTests {
     @Test(expected = ConfigException.class)
     public void testBasicArgsAggClusterBadPort() throws ConfigException {
         CommandLineParser parser = new CommandLineParser(testResolver);
-        String[] args = new String[]{"-f", "somefile.log", "-o", "output.file.txt", "-s", "service", "-c", "cluster", "--aggserver", "33a21"};
+        String[] args = new String[]{"-f", "somefile.log", "-o", "output.file.txt", "-s", "service", "-c", "cluster", "--aggserver", "33a21", "--redis", "localhost"};
         Configuration config = parser.parse(args);
         assertThat(config.shouldStartClusterAggServer(), equalTo(true));
         assertThat(config.getClusterAggServerPort(), equalTo(3321));

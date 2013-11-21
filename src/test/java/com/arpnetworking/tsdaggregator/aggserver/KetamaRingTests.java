@@ -16,18 +16,18 @@ public class KetamaRingTests {
     @Test
     public void addSingleServer() {
         KetamaRing ring = new KetamaRing();
-        ring.addNode("test.server.com:11820", null);
+        ring.addNode("test.server.com:11820", null, "server");
     }
 
     @Test
     public void getEntries() {
         KetamaRing ring = new KetamaRing();
-        ring.addNode("test.server.com:11820", null);
-        ring.addNode("test2.server.com:11820", null);
-        ring.addNode("test3.server.com:11820", null);
-        ring.addNode("test4.server.com:11820", null);
-        ring.addNode("test5.server.com:11820", null);
-        ring.addNode("test6.server.com:11820", null);
+        ring.addNode("test.server.com:11820", null, "server");
+        ring.addNode("test2.server.com:11820", null, "server");
+        ring.addNode("test3.server.com:11820", null, "server");
+        ring.addNode("test4.server.com:11820", null, "server");
+        ring.addNode("test5.server.com:11820", null, "server");
+        ring.addNode("test6.server.com:11820", null, "server");
         final Set<Map.Entry<Integer,KetamaRing.NodeEntry>> ringEntries = ring.getRingEntries();
         for (Map.Entry<Integer, KetamaRing.NodeEntry> entry : ringEntries) {
             System.out.println("key: " + entry.getKey() + ", value: " + entry.getValue()._nodeKey);

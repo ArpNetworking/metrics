@@ -4,10 +4,10 @@
  */
 package com.arpnetworking.tsdaggregator;
 
+import com.arpnetworking.tsdaggregator.aggserver.AggregationServer;
 import com.arpnetworking.tsdaggregator.publishing.*;
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
 import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import org.apache.commons.io.input.Tailer;
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
@@ -19,6 +19,7 @@ import org.vertx.java.platform.PlatformManager;
 
 import java.io.*;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -136,33 +137,10 @@ public class TsdAggregator {
             _Logger.info("outputting rrd files");
         }
 
+        //The agg server needs to deploy itself and the redis module
         PlatformManager platformManager = PlatformLocator.factory.createPlatformManager();
         if (config.shouldStartClusterAggServer()) {
-            int port = config.getClusterAggServerPort();
-            URL url = Resources.getResource("mod.json");
-            try {
-                String text = Resources.toString(url, Charsets.UTF_8);
-                JsonObject conf = new JsonObject(text);
-                conf.putNumber("port", port);
-
-                URL[] urls = new URL[1];
-                String urlString = url.toString();
-                urlString = urlString.substring(4, urlString.indexOf("!"));
-                urls[0] = new URL(urlString);
-
-                platformManager.deployModuleFromClasspath("com.arpnetworking~agg-server~1.0", conf, 1, urls,
-                        new AsyncResultHandler<String>() {
-                            @Override
-                            public void handle(final AsyncResult<String> event) {
-                                if (event.succeeded()) {
-                                    _Logger.info("Aggregation server started, deployment id " + event.result());
-                                } else {
-                                    _Logger.error("Error starting aggregation server", event.cause());
-                                }
-                    }
-                    });
-            } catch (IOException e) {
-                _Logger.error("unable to read module config for aggregation server", e);
+            if (!startAggServer(config, platformManager)) {
                 return;
             }
         }
@@ -236,6 +214,42 @@ public class TsdAggregator {
         }
 
         publisher.close();
+    }
+
+    private static boolean startAggServer(final Configuration config, final PlatformManager platformManager) {
+        int port = config.getClusterAggServerPort();
+        JsonObject conf = new JsonObject();
+        conf.putNumber("port", port);
+        conf.putString("redisAddress", config.getRedisHost());
+
+        ClassLoader classLoader = TsdAggregator.class.getClassLoader();
+        if (!(classLoader instanceof URLClassLoader)) {
+            throw new IllegalStateException("Unable to reflect on classes to start vertx modules");
+        }
+        URLClassLoader urlClassLoader = (URLClassLoader) classLoader;
+        URL[] clURLs = urlClassLoader.getURLs();
+        ArrayList<URL> filteredURLs = new ArrayList<>();
+        for (URL checkUrl : clURLs) {
+            String name = checkUrl.toString().toLowerCase();
+            if (name.contains("vertx-core-") || name.contains("vertx-platform-")) {
+                continue;
+            }
+            filteredURLs.add(checkUrl);
+        }
+
+        platformManager.deployVerticle(AggregationServer.class.getCanonicalName(), conf,
+                filteredURLs.toArray(new URL[filteredURLs.size()]), 1, null, new AsyncResultHandler<String>() {
+            @Override
+            public void handle(final AsyncResult<String> event) {
+                if (event.succeeded()) {
+                    _Logger.info("Aggregation server started, deployment id " + event.result());
+
+                } else {
+                    _Logger.error("Error starting aggregation server", event.cause());
+                }
+            }
+        });
+        return true;
     }
 
     private static ArrayList<String> getFileList(final Pattern filter, final List<String> files) {

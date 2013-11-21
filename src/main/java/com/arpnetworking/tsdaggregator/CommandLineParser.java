@@ -54,12 +54,14 @@ class CommandLineParser {
             .argName("uri").desc("send data to a local remet server").build();
     private final Option _monitordOption = Option.builder().longOpt("monitord").optionalArg(true).numberOfArgs(1)
             .argName("uri").desc("send data to a monitord server").build();
-    private final Option _clusterAgg = Option.builder().longOpt("aggserver").optionalArg(true).numberOfArgs(1)
+    private final Option _clusterAgg = Option.builder().longOpt("aggserver").numberOfArgs(1).optionalArg(true)
             .argName("port").desc("starts the cluster-level aggregation server").build();
     private final Option _upstreamAgg = Option.builder().longOpt("upstreamagg").hasArg()
             .argName("host").desc("send data to an upstream cluster aggregator").build();
     private final Option _configFilesOption = Option.builder().longOpt("config").hasArgs().argName("file")
             .desc("read config files for configuration sets").build();
+    private final  Option _redisServer = Option.builder("r").longOpt("redis").hasArg().numberOfArgs(1).argName("server")
+            .desc("redis server to bootstrap agg server").build();
     private final Options _options = new Options();
     private final HostResolver _hostResolver;
 
@@ -83,6 +85,7 @@ class CommandLineParser {
         _options.addOption(_clusterAgg);
         _options.addOption(_upstreamAgg);
         _options.addOption(_configFilesOption);
+        _options.addOption(_redisServer);
         this._hostResolver = hostResolver;
     }
 
@@ -141,11 +144,15 @@ class CommandLineParser {
             builder.valid(false);
         }
 
-        if (!cl.hasOption(_serviceOption.getLongOpt())) {
+        if (!cl.hasOption(_serviceOption.getLongOpt()) && !cl.hasOption(_clusterAgg.getLongOpt())) {
             if (!isBaseConfig) {
                 throw new ConfigException("service name must be specified");
             }
             builder.valid(false);
+        }
+
+        if (cl.hasOption(_clusterAgg.getLongOpt()) && !cl.hasOption(_redisServer.getLongOpt())) {
+            throw new ConfigException("redis server must be specified if cluster aggregation mode is enabled");
         }
 
         if (!cl.hasOption(_uriOption.getLongOpt()) && !cl.hasOption(_outputFileOption.getLongOpt()) &&
@@ -224,6 +231,8 @@ class CommandLineParser {
                     throw new ConfigException("cluster aggregation port not an integer as expected", e);
                 }
             }
+
+            builder.redisHost(cl.getOptionValue(_redisServer.getLongOpt()));
         }
 
         if (cl.hasOption(_inputFileOption.getLongOpt())) {

@@ -68,17 +68,17 @@ public class HttpPostPublisher implements AggregationPublisher {
             method.setEntity(entity);
             HttpEntity responseEntity = null;
             try {
-                LOGGER.info("Posting to " + _uri + " value '" + aggregateJson + "'");
+                LOGGER.debug("Posting to " + _uri + " value '" + aggregateJson + "'");
                 HttpResponse result = CLIENT.execute(method);
                 responseEntity = result.getEntity();
                 if (result.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                    LOGGER.info("Post response ok");
+                    LOGGER.debug("Post response ok");
                 } else {
-                    LOGGER.warn("post was not accepted, status: " + result + ", body: " +
-                            IOUtils.toString(result.getEntity().getContent(), "UTF-8"));
+                    LOGGER.warn("post to " + _uri + "was not accepted, status: " + result + ", body: " +
+                            IOUtils.toString(result.getEntity().getContent(), "UTF-8") + "\nrequest: " + aggregateJson);
                 }
             } catch (IOException e) {
-                LOGGER.error("Error on reporting", e);
+                LOGGER.error("Error posting to HttpPublisher", e);
             } finally {
                 if (responseEntity != null) {
                     try {

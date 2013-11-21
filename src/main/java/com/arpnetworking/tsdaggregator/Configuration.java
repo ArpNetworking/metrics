@@ -35,8 +35,10 @@ public class Configuration {
     private final boolean _startClusterAggServer;
     private final int _clusterAggServerPort;
     private final String _clusterAggHost;
+    private final boolean _useUpstreamAgg;
     private final List<String> _configFiles;
     private final boolean _valid;
+    private final String _redisHost;
 
     public String getClusterAggHost() {
         return _clusterAggHost;
@@ -64,8 +66,10 @@ public class Configuration {
         _startClusterAggServer = builder.isClusterAggServer();
         _clusterAggServerPort = builder.getClusterAggPort();
         _clusterAggHost = builder.getClusterAggHost();
+        _useUpstreamAgg = builder.shouldUseUpstreamAgg();
         _configFiles = builder.getConfigFiles();
         _valid = builder.isValid();
+        _redisHost = builder.getRedisHost();
     }
 
     @Nonnull
@@ -155,7 +159,7 @@ public class Configuration {
     }
 
     public Boolean shouldUseUpstreamAgg() {
-        return _clusterAggHost != null;
+        return _useUpstreamAgg;
     }
 
     public boolean isValid() {
@@ -164,6 +168,10 @@ public class Configuration {
 
     public List<String> getConfigFiles() {
         return _configFiles;
+    }
+
+    public String getRedisHost() {
+        return _redisHost;
     }
 
     /**
@@ -235,6 +243,7 @@ public class Configuration {
         private String _clusterAggHost;
         private List<String> _configFiles = new ArrayList<>();
         private boolean _valid = false;
+        private String _redisHost;
 
         private Builder() {
         }
@@ -494,6 +503,15 @@ public class Configuration {
 
         public List<String> getConfigFiles() {
             return this._configFiles;
+        }
+
+        public String getRedisHost() {
+            return _redisHost;
+        }
+
+        public Builder redisHost(final String host) {
+            _redisHost = host;
+            return this;
         }
     }
 }
