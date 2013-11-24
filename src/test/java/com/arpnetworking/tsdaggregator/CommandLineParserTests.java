@@ -10,6 +10,7 @@ import com.arpnetworking.tsdaggregator.statistics.TP0;
 import com.arpnetworking.tsdaggregator.statistics.TP100;
 import com.arpnetworking.tsdaggregator.util.InitializeExceptionStatistic;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.joda.time.Period;
 import org.junit.Test;
 
@@ -155,7 +156,20 @@ public class CommandLineParserTests {
         CommandLineParser parser = new CommandLineParser(testResolver);
         String[] args = new String[]{"-monitord", "-s", "service", "--aggserver", "--redis", "localhost"};
         Configuration config = parser.parse(args);
-        assertThat(config.getRedisHost(), equalTo("localhost"));
+        List<String> redisHosts = config.getRedisHosts();
+        assertThat(redisHosts.size(), Matchers.equalTo(1));
+        assertThat(redisHosts, Matchers.hasItem("localhost"));
+    }
+
+    @Test
+    public void testMultipleRedisValue() throws ConfigException {
+        CommandLineParser parser = new CommandLineParser(testResolver);
+        String[] args = new String[]{"-monitord", "-s", "service", "--aggserver", "--redis", "localhost", "anotherhost"};
+        Configuration config = parser.parse(args);
+        List<String> redisHosts = config.getRedisHosts();
+        assertThat(redisHosts.size(), Matchers.equalTo(2));
+        assertThat(redisHosts, Matchers.hasItem("localhost"));
+        assertThat(redisHosts, Matchers.hasItem("anotherhost"));
     }
 
 	@Test(expected = ConfigException.class)

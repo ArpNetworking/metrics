@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import org.joda.time.Period;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.PlatformLocator;
 import org.vertx.java.platform.PlatformManager;
@@ -28,6 +29,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * @author barp
@@ -47,7 +49,7 @@ public class TsdAggregator {
             }
         });
 
-        CommandLineParser parser = new CommandLineParser(new DefaultHostResolver());
+        @Nonnull CommandLineParser parser = new CommandLineParser(new DefaultHostResolver());
         Configuration commandLineConfig;
         try {
             commandLineConfig = parser.parse(args);
@@ -57,22 +59,22 @@ public class TsdAggregator {
             return;
         }
 
-        List<Configuration> configurations = new ArrayList<>();
+        @Nonnull List<Configuration> configurations = new ArrayList<>();
         configurations.add(commandLineConfig);
 
-        List<String> configFiles = commandLineConfig.getConfigFiles();
-        ConfigFileParser configFileParser = new ConfigFileParser(new DefaultHostResolver());
+        @Nonnull List<String> configFiles = commandLineConfig.getConfigFiles();
+        @Nonnull ConfigFileParser configFileParser = new ConfigFileParser(new DefaultHostResolver());
         for (String configFile : configFiles) {
             try {
-                Configuration fileConfig = configFileParser.parse(configFile);
+                @Nonnull Configuration fileConfig = configFileParser.parse(configFile);
                 configurations.add(fileConfig);
             } catch (ConfigException e) {
                 _Logger.warn("Could not parse config file " + configFile, e);
             }
         }
 
-        for (final Configuration config : configurations) {
-            Thread runnerThread = new Thread(new Runnable() {
+        for (@Nonnull final Configuration config : configurations) {
+            @Nonnull Thread runnerThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     startConfiguration(config);
@@ -84,7 +86,7 @@ public class TsdAggregator {
         }
     }
 
-    public static void startConfiguration(final Configuration config) {
+    public static void startConfiguration(@Nonnull final Configuration config) {
         if (!config.isValid()) {
             return;
         }
@@ -106,7 +108,7 @@ public class TsdAggregator {
 
         Boolean tailFile = config.shouldTailFiles();
 
-        List<String> fileNames = config.getFiles();
+        @Nonnull List<String> fileNames = config.getFiles();
         String hostName = config.getHostName();
 
         String cluster = config.getClusterName();
@@ -145,27 +147,27 @@ public class TsdAggregator {
             }
         }
 
-        AggregationPublisher publisher = getPublisher(config, platformManager);
+        @Nonnull AggregationPublisher publisher = getPublisher(config, platformManager);
 
-        LineProcessor processor =
+        @Nonnull LineProcessor processor =
                 new LineProcessor(logParser, timerStatsClasses, counterStatsClasses, gaugeStatsClasses, hostName,
                         serviceName, periods, publisher);
 
-        ArrayList<String> files = getFileList(filter, fileNames);
+        @Nonnull ArrayList<String> files = getFileList(filter, fileNames);
         for (String f : files) {
             try {
                 _Logger.info("Reading file " + f);
                 if (tailFile) {
-                    File fileHandle = new File(f);
-                    LogTailerListener tailListener = new LogTailerListener(processor);
+                    @Nonnull File fileHandle = new File(f);
+                    @Nonnull LogTailerListener tailListener = new LogTailerListener(processor);
                     Tailer.create(fileHandle, tailListener, 500L, false);
                 } else {
                     //check the first 4 bytes of the file for utf markers
-                    FileInputStream fis = null;
-                    BufferedReader reader = null;
+                    @Nullable FileInputStream fis = null;
+                    @Nullable BufferedReader reader = null;
                     try {
                         fis = new FileInputStream(f);
-                        byte[] header = new byte[4];
+                        @Nonnull byte[] header = new byte[4];
                         if (fis.read(header) < 4) {
                             //If there are less than 4 bytes, we should move on
                             continue;
@@ -176,7 +178,7 @@ public class TsdAggregator {
                             encoding = Charsets.UTF_16;
                         }
 
-                        InputStreamReader fileReader = new InputStreamReader(new FileInputStream(f), encoding);
+                        @Nonnull InputStreamReader fileReader = new InputStreamReader(new FileInputStream(f), encoding);
                         reader = new BufferedReader(fileReader);
                         String line;
                         while ((line = reader.readLine()) != null) {
@@ -186,13 +188,15 @@ public class TsdAggregator {
                         if (fis != null) {
                             try {
                                 fis.close();
-                            } catch (Exception ignored) { }
+                            } catch (Exception ignored) {
+                            }
                         }
 
                         if (reader != null) {
                             try {
                                 reader.close();
-                            } catch (Exception ignored) { }
+                            } catch (Exception ignored) {
+                            }
                         }
                     }
                 }
@@ -216,20 +220,24 @@ public class TsdAggregator {
         publisher.close();
     }
 
-    private static boolean startAggServer(final Configuration config, final PlatformManager platformManager) {
+    private static boolean startAggServer(@Nonnull final Configuration config,
+                                          @Nonnull final PlatformManager platformManager) {
         int port = config.getClusterAggServerPort();
-        JsonObject conf = new JsonObject();
+        @Nonnull JsonObject conf = new JsonObject();
         conf.putNumber("port", port);
-        conf.putString("redisAddress", config.getRedisHost());
+        conf.putString("name", config.getHostName());
+        @Nonnull JsonArray redisHosts =
+                new JsonArray(config.getRedisHosts().toArray(new String[config.getRedisHosts().size()]));
+        conf.putArray("redisAddress", redisHosts);
 
         ClassLoader classLoader = TsdAggregator.class.getClassLoader();
         if (!(classLoader instanceof URLClassLoader)) {
             throw new IllegalStateException("Unable to reflect on classes to start vertx modules");
         }
-        URLClassLoader urlClassLoader = (URLClassLoader) classLoader;
+        @Nonnull URLClassLoader urlClassLoader = (URLClassLoader) classLoader;
         URL[] clURLs = urlClassLoader.getURLs();
-        ArrayList<URL> filteredURLs = new ArrayList<>();
-        for (URL checkUrl : clURLs) {
+        @Nonnull ArrayList<URL> filteredURLs = new ArrayList<>();
+        for (@Nonnull URL checkUrl : clURLs) {
             String name = checkUrl.toString().toLowerCase();
             if (name.contains("vertx-core-") || name.contains("vertx-platform-")) {
                 continue;
@@ -240,7 +248,7 @@ public class TsdAggregator {
         platformManager.deployVerticle(AggregationServer.class.getCanonicalName(), conf,
                 filteredURLs.toArray(new URL[filteredURLs.size()]), 1, null, new AsyncResultHandler<String>() {
             @Override
-            public void handle(final AsyncResult<String> event) {
+            public void handle(@Nonnull final AsyncResult<String> event) {
                 if (event.succeeded()) {
                     _Logger.info("Aggregation server started, deployment id " + event.result());
 
@@ -252,10 +260,11 @@ public class TsdAggregator {
         return true;
     }
 
-    private static ArrayList<String> getFileList(final Pattern filter, final List<String> files) {
-        ArrayList<String> fileList = new ArrayList<>();
+    @Nonnull
+    private static ArrayList<String> getFileList(@Nonnull final Pattern filter, @Nonnull final List<String> files) {
+        @Nonnull ArrayList<String> fileList = new ArrayList<>();
         for (String fileName : files) {
-            File file = new File(fileName);
+            @Nonnull File file = new File(fileName);
             if (file.isFile()) {
                 fileList.add(fileName);
             } else if (file.isDirectory()) {
@@ -266,9 +275,10 @@ public class TsdAggregator {
         return fileList;
     }
 
-    private static AggregationPublisher getPublisher(final Configuration config,
+    @Nonnull
+    private static AggregationPublisher getPublisher(@Nonnull final Configuration config,
                                                      final PlatformManager platformManager) {
-        MultiPublisher listener = new MultiPublisher();
+        @Nonnull MultiPublisher listener = new MultiPublisher();
 
         String hostName = config.getHostName();
         String cluster = config.getClusterName();
@@ -283,27 +293,27 @@ public class TsdAggregator {
         String upstreamAggHost = config.getClusterAggHost();
         if (!metricsUri.equals("")) {
             _Logger.info("Adding buffered HTTP POST listener");
-            AggregationPublisher httpListener = new HttpPostPublisher(metricsUri);
+            @Nonnull AggregationPublisher httpListener = new HttpPostPublisher(metricsUri);
             listener.addListener(new BufferingPublisher(httpListener, 50));
         }
 
 
         if (outputRemet) {
             _Logger.info("Adding remet listener");
-            AggregationPublisher httpListener = new HttpPostPublisher(remetUri);
+            @Nonnull AggregationPublisher httpListener = new HttpPostPublisher(remetUri);
             //we don't want to buffer remet responses
             listener.addListener(httpListener);
         }
 
         if (outputMonitord) {
             _Logger.info("Adding monitord listener");
-            AggregationPublisher monitordListener = new MonitordPublisher(monitordUri, cluster, hostName);
+            @Nonnull AggregationPublisher monitordListener = new MonitordPublisher(monitordUri, cluster, hostName);
             listener.addListener(monitordListener);
         }
 
         if (!outputFile.equals("")) {
             _Logger.info("Adding file listener");
-            AggregationPublisher fileListener = new FilePublisher(outputFile);
+            @Nonnull AggregationPublisher fileListener = new FilePublisher(outputFile);
             listener.addListener(fileListener);
         }
 
@@ -324,7 +334,7 @@ public class TsdAggregator {
         String[] list = dir.list();
         Arrays.sort(list);
         for (String f : list) {
-            File entry = new File(dir, f);
+            @Nonnull File entry = new File(dir, f);
             if (entry.isFile()) {
                 Matcher m = filter.matcher(entry.getPath());
                 if (m.find()) {

@@ -15,8 +15,8 @@ public class RRDClusterPublisher implements AggregationPublisher {
 
     @Override
     public void recordAggregation(@Nonnull AggregatedData[] data) {
-        for (AggregatedData d : data) {
-            String rrdName =
+        for (@Nonnull AggregatedData d : data) {
+            @Nonnull String rrdName =
                     d.getHost() + "." + d.getMetric() + "." + d.getPeriod().toString() + d.getStatistic().getName() +
                             ".rrd";
             if (!_listeners.containsKey(rrdName)) {

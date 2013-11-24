@@ -1,5 +1,10 @@
 package com.arpnetworking.tsdaggregator.aggserver;
 
+import com.hazelcast.config.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.MessageListener;
 import io.vertx.redis.RedisMod;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -16,11 +21,16 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.platform.Verticle;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Vert.x aggregation server class.
@@ -31,29 +41,132 @@ public class AggregationServer extends Verticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(AggregationServer.class);
     private static final String EB_REDIS_PREFIX = "agg-redis-";
     private static final String REDIS_LAYER_NAME = "redis";
+    private static final String AGG_LAYER_NAME = "agg";
+    @Nonnull
     private final ConcurrentHashMap<String, ConcurrentSkipListSet<String>> _knownClusters;
     private final Set<RedisInstance> _connectedRedisHosts = new ConcurrentSkipListSet<>();
     private final AtomicInteger _redisSeq = new AtomicInteger(1);
     private final KetamaRing _ketamaRing = new KetamaRing();
+    private final ConcurrentSkipListMap<String, AggServerStatus> _aggServers = new ConcurrentSkipListMap<>();
+    private String _hostName;
+    @Nullable
+    private HazelcastInstance _hazelcast = null;
+    private AtomicBoolean _hazelcastStarting = new AtomicBoolean(false);
+    private ITopic<String> _clusterMemberTopic;
+    private State _serverStatus;
 
     public AggregationServer() {
         _knownClusters = new ConcurrentHashMap<>();
     }
 
+    private void startUpHazelcast() {
+        @Nonnull final Config config = new Config();
+
+        final NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.addOutboundPort(5880);
+        networkConfig.setPortAutoIncrement(true);
+        config.setNetworkConfig(networkConfig);
+
+        Join join = networkConfig.getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        final TcpIpConfig ipConfig = join.getTcpIpConfig();
+        for (@Nonnull AggServerStatus server : _aggServers.values()) {
+            if (server.getHeartbeatTime().isAfter(DateTime.now().minusSeconds(120))) {
+                ipConfig.addMember(server.getName());
+            }
+        }
+        ipConfig.setEnabled(true);
+
+        @Nonnull TopicConfig membershipTopic = new TopicConfig();
+        membershipTopic.setGlobalOrderingEnabled(false);
+        membershipTopic.setName("cluster_membership");
+
+        @Nonnull ListenerConfig membershipListenerConfig = new ListenerConfig();
+        membershipListenerConfig.setImplementation(new MessageListener<String>() {
+            @Override
+            public void onMessage(@Nonnull final com.hazelcast.core.Message<String> message) {
+                processServerStatusChange(message.getMessageObject());
+            }
+        });
+        membershipTopic.addMessageListenerConfig(membershipListenerConfig);
+        config.addTopicConfig(membershipTopic);
+
+
+        LOGGER.info("starting hazelcast classes");
+        _hazelcast = Hazelcast.newHazelcastInstance(config);
+        _clusterMemberTopic = _hazelcast.getTopic("cluster_membership");
+        changeMyState(State.Active, true);
+    }
+
+    private void changeMyState(final State state, final boolean notifyHazelcastCluster) {
+        //Get the redis instance we should use to write our heartbeat
+        _serverStatus = state;
+        writeMyState(notifyHazelcastCluster);
+    }
+
+    private void writeMyState(final boolean notifyHazelcastCluster) {
+        if (_connectedRedisHosts.isEmpty()) {
+            LOGGER.warn("not writing to state to redis, no redis instance found");
+            return;
+        }
+        RedisInstance redis = getRedisInstanceFor(_hostName);
+        Map<String, String> map = new HashMap<>();
+        map.put("status", _serverStatus.toString());
+        map.put("heartbeat", Long.toString(DateTime.now().getMillis()));
+        RedisUtils.hmset(redis, "agg." + _hostName + ".status", map, vertx.eventBus(), new AsyncResultHandler<Void>() {
+            @Override
+            public void handle(final AsyncResult<Void> event) {
+                if (event.succeeded() && notifyHazelcastCluster) {
+                    _clusterMemberTopic.publish(_hostName);
+                }
+            }
+        });
+        RedisUtils.sadd(redis, getAggHostsKey(), _hostName, null, vertx.eventBus());
+    }
+
+    private void heartbeat() {
+        vertx.setTimer(10000, new Handler<Long>() {
+            @Override
+            public void handle(final Long event) {
+                heartbeat();
+            }
+        });
+        if (!_connectedRedisHosts.isEmpty()) {
+            writeMyState(false);
+        }
+    }
+
+    private void processServerStatusChange(final String aggServer) {
+        getAggServerStatus(aggServer, new AsyncResultHandler<AggServerStatus>() {
+            @Override
+            public void handle(final AsyncResult<AggServerStatus> event) {
+                if (event.succeeded()) {
+                    LOGGER.debug("updating agg server record for " + aggServer + ": " + event.result());
+                    _aggServers.put(aggServer, event.result());
+                } else {
+                    LOGGER.warn("error getting updated data for agg server " + aggServer, event.cause());
+                }
+            }
+        });
+    }
+
     @Override
     public void start() {
-        deployRedis(container.config().getString("redisAddress"));
+        deployRedis(container.config().getArray("redisAddress"));
         final int port = container.config().getNumber("port").intValue();
+        _hostName = container.config().getString("name");
+        changeMyState(State.ComingOnline, false);
 
         vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
             @Override
-            public void handle(final NetSocket socket) {
+            public void handle(@Nonnull final NetSocket socket) {
                 LOGGER.info("Accepted connection from " + socket.remoteAddress());
-                final AggregatorConnection connection =
+                @Nonnull final AggregatorConnection connection =
                         new AggregatorConnection(socket, new AggregatorConnection.ClusterNameResolvedCallback() {
                             @Override
-                            public void clusterNameResolved(AggregatorConnection connection, final String hostName,
-                                                            final String clusterName) {
+                            public void clusterNameResolved(AggregatorConnection connection,
+                                                            @Nonnull final String hostName,
+                                                            @Nonnull final String clusterName) {
                                 clusterResolved(connection, hostName, clusterName);
                             }
                         }, new AggregatorConnection.AggregationArrivedCallback() {
@@ -66,16 +179,15 @@ public class AggregationServer extends Verticle {
                         );
                 socket.dataHandler(new Handler<Buffer>() {
                     @Override
-                    public void handle(final Buffer data) {
+                    public void handle(@Nonnull final Buffer data) {
                         LOGGER.debug("received " + data.length() + " bytes of data from " + socket.remoteAddress());
                         connection.dataReceived(data);
                     }
                 });
             }
-        }
-        ).setTCPNoDelay(true).setTCPKeepAlive(true).listen(port, new AsyncResultHandler<NetServer>() {
+        }).setTCPNoDelay(true).setTCPKeepAlive(true).listen(port, new AsyncResultHandler<NetServer>() {
             @Override
-            public void handle(final AsyncResult<NetServer> event) {
+            public void handle(@Nonnull final AsyncResult<NetServer> event) {
                 if (event.succeeded()) {
                     LOGGER.info("Started aggregation server on port " + event.result().port());
                 } else {
@@ -83,49 +195,164 @@ public class AggregationServer extends Verticle {
                 }
             }
         });
+        heartbeat();
+        updateHostLoop();
+    }
 
+    private void deployRedis(@Nonnull JsonArray redisAddresses) {
+        for (Object redisAddressObject : redisAddresses) {
+            @Nonnull String redisAddress = (String) redisAddressObject;
+            @Nonnull final String ebAddress = EB_REDIS_PREFIX + _redisSeq.getAndIncrement();
+            String[] split = redisAddress.split(":");
+            String host = split[0];
+            int port = 6379;
+            if (split.length > 1) {
+                port = Integer.parseInt(split[1]);
+            }
+
+            @Nonnull final String normalizedAddress = host.toLowerCase() + ":" + port;
+
+            @Nonnull JsonObject conf = new JsonObject();
+            conf.putString("address", ebAddress);
+            conf.putString("host", host);
+            conf.putNumber("port", port);
+            conf.putString("encoding", "UTF-8");
+
+            container.deployVerticle(RedisMod.class.getCanonicalName(), conf, 3, new AsyncResultHandler<String>() {
+                @Override
+                public void handle(@Nonnull final AsyncResult<String> event) {
+                    if (event.succeeded()) {
+                        @Nonnull RedisInstance ri = new RedisInstance(normalizedAddress, ebAddress);
+                        _connectedRedisHosts.add(ri);
+                        _ketamaRing.addNode(normalizedAddress, ri, REDIS_LAYER_NAME);
+                        LOGGER.info("Redis module started, address = " + normalizedAddress +
+                                ", bus address = " + ebAddress + ", deployment id " + event.result() + ".");
+                        refreshClusterData();
+                        bootstrapHazelcastCluster();
+                    } else {
+                        LOGGER.error("Error starting redis module", event.cause());
+                    }
+                }
+            });
+        }
+    }
+
+    private void bootstrapHazelcastCluster() {
+        if (_hazelcastStarting.get()) {
+            return;
+        }
+        _hazelcastStarting.set(true);
+        LOGGER.info("attempting to start/join hazelcast cluster");
+        //get the agg hosts for the cluster
+        updateAllHostsStatuses(new AsyncResultHandler<Void>() {
+            @Override
+            public void handle(final AsyncResult<Void> event) {
+                try {
+                    startUpHazelcast();
+                } catch (Exception e) {
+                    LOGGER.warn("failed to start hazelcast cluster, trying again in 60 seconds", e);
+                    _hazelcastStarting.set(false);
+                    vertx.setTimer(60000, new Handler<Long>() {
+                        @Override
+                        public void handle(final Long event) {
+                            bootstrapHazelcastCluster();
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void updateHostLoop() {
+        vertx.setTimer(60000, new Handler<Long>() {
+            @Override
+            public void handle(final Long event) {
+                updateHostLoop();
+                updateAllHostsStatuses(null);
+            }
+        });
+    }
+
+    private void updateAllHostsStatuses(final AsyncResultHandler<Void> resultHandler) {
+        RedisUtils.getAllSMEMBERS(_connectedRedisHosts, getAggHostsKey(), vertx.eventBus(),
+                new AsyncResultHandler<Set<String>>() {
+                    @Override
+                    public void handle(final AsyncResult<Set<String>> event) {
+                        if (!event.succeeded()) {
+                            _hazelcastStarting.set(false);
+                            vertx.setTimer(10000, new Handler<Long>() {
+                                @Override
+                                public void handle(final Long event) {
+                                    bootstrapHazelcastCluster();
+                                }
+                            });
+                        } else {
+
+                            final Set<String> aggHosts = event.result();
+                            if (aggHosts.isEmpty()) {
+                                LOGGER.info(
+                                        "Agg server entry was empty, starting up hazelcast as founding cluster member");
+                                startUpHazelcast();
+                            }
+                            final AtomicInteger countDown = new AtomicInteger(aggHosts.size());
+                            for (final String host : aggHosts) {
+                                getAggServerStatus(host, new AsyncResultHandler<AggServerStatus>() {
+                                    @Override
+                                    public void handle(final AsyncResult<AggServerStatus> event) {
+                                        if (!event.succeeded()) {
+                                            LOGGER.warn("Error getting agg server status for server " + host,
+                                                    event.cause());
+                                        } else {
+                                            registerAndUpdateAggServer(event.result());
+                                        }
+                                        int val = countDown.decrementAndGet();
+                                        if (val == 0 && resultHandler != null) {
+                                            resultHandler.handle(new ASResult<Void>((Void) null));
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
 
     }
 
-    private void deployRedis(String redisAddress) {
-        final String ebAddress = EB_REDIS_PREFIX + _redisSeq.getAndIncrement();
-        String[] split = redisAddress.split(":");
-        String host = split[0];
-        int port = 6379;
-        if (split.length > 1) {
-            port = Integer.parseInt(split[1]);
+    private String getAggHostsKey() {
+        return "agg.hosts";
+    }
+
+    private void registerAndUpdateAggServer(final AggServerStatus aggServer) {
+        LOGGER.info("updating state of agg server " + aggServer);
+        AggServerStatus currentStatus = _aggServers.get(aggServer.getName());
+        if (currentStatus == null) {
+            _ketamaRing.addNode(aggServer.getName(), aggServer, AGG_LAYER_NAME, aggServer.getState());
         }
+        _aggServers.put(aggServer.getName(), aggServer);
+    }
 
-        final String normalizedAddress = host.toLowerCase() + ":" + port;
-
-        JsonObject conf = new JsonObject();
-        conf.putString("address", ebAddress);
-        conf.putString("host", host);
-        conf.putNumber("port", port);
-        conf.putString("encoding", "UTF-8");
-
-        container.deployVerticle(RedisMod.class.getCanonicalName(), conf, 3, new AsyncResultHandler<String>() {
+    private void getAggServerStatus(final String server, final AsyncResultHandler<AggServerStatus> resultHandler) {
+        RedisInstance redis = getRedisInstanceFor(server);
+        RedisUtils.hgetall(redis, getAggServerStatusKey(server), new AsyncResultHandler<Map<String, String>>() {
             @Override
-            public void handle(final AsyncResult<String> event) {
+            public void handle(final AsyncResult<Map<String, String>> event) {
                 if (event.succeeded()) {
-                    RedisInstance ri = new RedisInstance(normalizedAddress, ebAddress);
-                    _connectedRedisHosts.add(ri);
-                    _ketamaRing.addNode(normalizedAddress, ri, REDIS_LAYER_NAME);
-                    LOGGER.info("Redis module started, address = " + normalizedAddress +
-                            ", bus address = " + ebAddress + ", deployment id " + event.result() + ".");
+                    Map<String, String> map = event.result();
+                    String status = map.get("status");
+                    AggServerStatus aggStatus = new AggServerStatus(server, State.valueOf(status),
+                            new DateTime(Long.valueOf(map.get("heartbeat"))));
+                    ASResult<AggServerStatus> result = new ASResult<>(aggStatus);
+                    resultHandler.handle(result);
                 } else {
-                    LOGGER.error("Error starting redis module", event.cause());
+                    LOGGER.warn("Error getting server status for server " + server, event.cause());
+                    resultHandler.handle(new ASResult<AggServerStatus>(event.cause()));
                 }
             }
-        }
-        );
+        }, vertx.eventBus());
+    }
 
-        vertx.setTimer(5000, new Handler<Long>() {
-            @Override
-            public void handle(final Long event) {
-                refreshClusterData();
-            }
-        });
+    private String getAggServerStatusKey(final String server) {
+        return "agg." + server + ".status";
     }
 
     private long getClusterRefreshTimerDelay() {
@@ -140,10 +367,10 @@ public class AggregationServer extends Verticle {
                 refreshClusterData();
             }
         });
-        for (final RedisInstance redis : _connectedRedisHosts) {
-            RedisUtils.getRedisSetEntries(redis, "clusters", new AsyncResultHandler<List<String>>() {
+        for (@Nonnull final RedisInstance redis : _connectedRedisHosts) {
+            RedisUtils.smembers(redis, "clusters", new AsyncResultHandler<Set<String>>() {
                 @Override
-                public void handle(final AsyncResult<List<String>> event) {
+                public void handle(@Nonnull final AsyncResult<Set<String>> event) {
                     for (String cluster : event.result()) {
                         LOGGER.info("adding cluster " + cluster + " to known list");
                         if (!_knownClusters.containsKey(cluster)) {
@@ -156,64 +383,66 @@ public class AggregationServer extends Verticle {
         }
     }
 
-    private void refreshClusterMembership(final RedisInstance redis, final String cluster) {
-        RedisUtils.getRedisSetEntries(redis, getClusterMembershipKey(cluster), new AsyncResultHandler<List<String>>() {
+    private void refreshClusterMembership(@Nonnull final RedisInstance redis, final String cluster) {
+        RedisUtils.smembers(redis, getClusterMembershipKey(cluster), new AsyncResultHandler<Set<String>>() {
             @Override
-            public void handle(final AsyncResult<List<String>> event) {
+            public void handle(@Nonnull final AsyncResult<Set<String>> event) {
                 final ConcurrentSkipListSet<String> set = _knownClusters.get(cluster);
                 for (String host : event.result()) {
                     set.add(host);
                     LOGGER.info("adding host " + host + " to cluster " + cluster);
                 }
             }
+
         }, vertx.eventBus());
     }
 
-    private void clusterResolved(AggregatorConnection connection, String hostName, String clusterName) {
+    private void clusterResolved(AggregatorConnection connection, @Nonnull String hostName,
+                                 @Nonnull String clusterName) {
         registerHostAndCluster(hostName, clusterName);
     }
 
-    private void registerHostAndCluster(final String hostName, final String clusterName) {
+    private void registerHostAndCluster(@Nonnull final String hostName, @Nonnull final String clusterName) {
         EventBus eb = vertx.eventBus();
-        RedisInstance hostRedis = getRedisInstanceFor(hostName);
-        RedisInstance clusterRedis = getRedisInstanceFor(clusterName);
+        @Nullable RedisInstance hostRedis = getRedisInstanceFor(hostName);
+        @Nullable RedisInstance clusterRedis = getRedisInstanceFor(clusterName);
 
-        RedisUtils.addEntryToRedisSet(hostRedis, "hosts", hostName, null, vertx.eventBus());
-        RedisUtils.addEntryToRedisSet(clusterRedis, "clusters", clusterName, null, vertx.eventBus());
-        RedisUtils.addEntryToRedisSet(clusterRedis, getClusterMembershipKey(clusterName), hostName, null,
-                vertx.eventBus());
+        RedisUtils.sadd(hostRedis, "hosts", hostName, null, eb);
+        RedisUtils.sadd(clusterRedis, "clusters", clusterName, null, eb);
+        RedisUtils.sadd(clusterRedis, getClusterMembershipKey(clusterName), hostName, null, eb);
         updateLastSeen(hostName, hostRedis);
     }
 
-    private RedisInstance getRedisInstanceFor(String key) {
+    @Nullable
+    private RedisInstance getRedisInstanceFor(@Nonnull String key) {
         final KetamaRing.NodeEntry entry = _ketamaRing.hash(key, REDIS_LAYER_NAME);
         return (RedisInstance) entry.getMappedObject();
     }
 
-    private void updateLastSeen(final String hostName, final RedisInstance hostRedis) {
+    private void updateLastSeen(final String hostName, @Nonnull final RedisInstance hostRedis) {
         final EventBus eb = vertx.eventBus();
         final JsonObject hostLastSeen = new JsonObject().putString("command", "SET")
                 .putArray("args", new JsonArray().add(getHostLastSeenKey(hostName)).add(DateTime.now().getMillis()));
-        eb.send(hostRedis.getEBName(), hostLastSeen,
-                new Handler<Message<JsonObject>>() {
-                    @Override
-                    public void handle(final Message<JsonObject> event) {
-                        LOGGER.info("response data = " + event.body());
-                    }
-                });
+        eb.send(hostRedis.getEBName(), hostLastSeen, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(@Nonnull final Message<JsonObject> event) {
+                LOGGER.info("response data = " + event.body());
+            }
+        });
     }
 
+    @Nonnull
     private String getHostLastSeenKey(final String hostName) {
 
         return "host." + hostName + ".lastSeen";
     }
 
+    @Nonnull
     private String getClusterMembershipKey(final String clusterName) {
         return "cluster.members." + clusterName;
     }
 
     private void aggregationRecordArrived(AggregatorConnection connection, Messages.AggregationRecord record) {
-
+        //TODO(brandon): the magic with the aggregation record
     }
-
 }

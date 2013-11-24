@@ -29,7 +29,7 @@ public class TPStatistic extends BaseStatistic implements OrderedStatistic {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof TPStatistic) {
-            TPStatistic other = (TPStatistic) obj;
+            @Nonnull TPStatistic other = (TPStatistic) obj;
             return other._tStat.equals(_tStat);
         }
         return false;

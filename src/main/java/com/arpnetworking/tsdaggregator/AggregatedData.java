@@ -7,6 +7,8 @@ import org.joda.time.Period;
 
 import java.util.Arrays;
 import java.util.List;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Serves as a data class for storing data for aggregated values after computation.
@@ -21,6 +23,7 @@ public final class AggregatedData {
     private final double _value;
     private final DateTime _periodStart;
     private final Period _period;
+    @Nonnull
     private final List<Double> _samples;
 
     public AggregatedData(final Statistic statistic, final String service, final String host, final String metric,
@@ -63,12 +66,13 @@ public final class AggregatedData {
         return _metric;
     }
 
+    @Nonnull
     public List<Double> getSamples() {
         return _samples;
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(@Nullable final Object o) {
         if (this == o) {
             return true;
         }
@@ -76,7 +80,7 @@ public final class AggregatedData {
             return false;
         }
 
-        final AggregatedData that = (AggregatedData) o;
+        @Nonnull final AggregatedData that = (AggregatedData) o;
 
         if (Double.compare(that._value, _value) != 0) {
             return false;

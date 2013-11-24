@@ -36,9 +36,10 @@ public class Configuration {
     private final int _clusterAggServerPort;
     private final String _clusterAggHost;
     private final boolean _useUpstreamAgg;
+    @Nonnull
     private final List<String> _configFiles;
     private final boolean _valid;
-    private final String _redisHost;
+    private final List<String> _redisHosts;
 
     public String getClusterAggHost() {
         return _clusterAggHost;
@@ -69,7 +70,7 @@ public class Configuration {
         _useUpstreamAgg = builder.shouldUseUpstreamAgg();
         _configFiles = builder.getConfigFiles();
         _valid = builder.isValid();
-        _redisHost = builder.getRedisHost();
+        _redisHosts = builder.getRedisHosts();
     }
 
     @Nonnull
@@ -166,12 +167,13 @@ public class Configuration {
         return _valid;
     }
 
+    @Nonnull
     public List<String> getConfigFiles() {
         return _configFiles;
     }
 
-    public String getRedisHost() {
-        return _redisHost;
+    public List<String> getRedisHosts() {
+        return _redisHosts;
     }
 
     /**
@@ -241,9 +243,11 @@ public class Configuration {
         private int _clusterAggPort = 7065;
         private boolean _useUpstreamAgg = false;
         private String _clusterAggHost;
+        @Nonnull
         private List<String> _configFiles = new ArrayList<>();
         private boolean _valid = false;
-        private String _redisHost;
+        @Nonnull
+        private List<String> _redisHosts = new ArrayList<>();
 
         private Builder() {
         }
@@ -501,16 +505,18 @@ public class Configuration {
             return this;
         }
 
+        @Nonnull
         public List<String> getConfigFiles() {
             return this._configFiles;
         }
 
-        public String getRedisHost() {
-            return _redisHost;
+        public List<String> getRedisHosts() {
+            return _redisHosts;
         }
 
-        public Builder redisHost(final String host) {
-            _redisHost = host;
+        @Nonnull
+        public Builder redisHost(final String[] hosts) {
+            _redisHosts.addAll(Arrays.asList(hosts));
             return this;
         }
     }

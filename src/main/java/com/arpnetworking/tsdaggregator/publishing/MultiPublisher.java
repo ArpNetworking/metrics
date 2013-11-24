@@ -3,6 +3,7 @@ package com.arpnetworking.tsdaggregator.publishing;
 import com.arpnetworking.tsdaggregator.AggregatedData;
 
 import java.util.ArrayList;
+import javax.annotation.Nonnull;
 
 /**
  * A publisher that wraps multiple others and publishes to all of them.
@@ -18,14 +19,14 @@ public class MultiPublisher implements AggregationPublisher {
 
     @Override
     public void recordAggregation(AggregatedData[] data) {
-        for (AggregationPublisher listener : _listeners) {
+        for (@Nonnull AggregationPublisher listener : _listeners) {
             listener.recordAggregation(data);
         }
     }
 
     @Override
     public void close() {
-        for (AggregationPublisher listener : _listeners) {
+        for (@Nonnull AggregationPublisher listener : _listeners) {
             listener.close();
         }
     }

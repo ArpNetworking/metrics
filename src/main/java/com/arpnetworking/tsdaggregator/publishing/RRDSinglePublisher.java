@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A publisher that stores the data in rrdtool.
@@ -32,7 +33,7 @@ public class RRDSinglePublisher {
             LOGGER.info("replaced a numeric chunk: " + before + " became " + rrdName);
         }
         _fileName = rrdName;
-        Long startTime = data.getPeriodStart().getMillis() / 1000;
+        @Nonnull Long startTime = data.getPeriodStart().getMillis() / 1000;
         createRRDFile(rrdName, data.getPeriod(), startTime);
     }
 
@@ -41,7 +42,7 @@ public class RRDSinglePublisher {
             return;
         }
         LOGGER.info("Creating rrd file " + rrdName);
-        String[] argsList = new String[]{"rrdtool", "create", rrdName, "-b", startTime.toString(), "-s",
+        @Nonnull String[] argsList = new String[]{"rrdtool", "create", rrdName, "-b", startTime.toString(), "-s",
                 Integer.toString(period.toStandardSeconds().getSeconds()),
                 "DS:" + "metric" + ":GAUGE:" + Integer.toString(period.toStandardSeconds().getSeconds() * 3) + ":U:U",
                 "RRA:AVERAGE:0.5:1:1000"};
@@ -49,15 +50,15 @@ public class RRDSinglePublisher {
     }
 
     private void executeProcess(@Nonnull String[] args) {
-        BufferedReader stdOut = null;
+        @Nullable BufferedReader stdOut = null;
         try {
-            ProcessBuilder pb = new ProcessBuilder(args);
+            @Nonnull ProcessBuilder pb = new ProcessBuilder(args);
             pb.redirectErrorStream(true);
             Process p = pb.start();
             stdOut = new BufferedReader(new InputStreamReader(p.getInputStream(), Charsets.UTF_8));
 
             String line;
-            StringBuilder procOutput = new StringBuilder();
+            @Nonnull StringBuilder procOutput = new StringBuilder();
             while ((line = stdOut.readLine()) != null) {
                 procOutput.append(line).append("\n");
             }
@@ -67,7 +68,7 @@ public class RRDSinglePublisher {
                 LOGGER.error("Interrupted waiting for process to exit", e);
             }
             if (p.exitValue() != 0) {
-                StringBuilder builder = new StringBuilder();
+                @Nonnull StringBuilder builder = new StringBuilder();
                 for (String arg : args) {
                     builder.append(arg).append(" ");
                 }
@@ -90,9 +91,9 @@ public class RRDSinglePublisher {
     }
 
     public void storeData(@Nonnull AggregatedData data) {
-        Long unixTime = data.getPeriodStart().getMillis() / 1000;
-        String value = unixTime.toString() + ":" + DOUBLE_FORMAT.format(data.getValue());
-        String[] argsList = new String[]{"rrdtool", "update", _fileName, value};
+        @Nonnull Long unixTime = data.getPeriodStart().getMillis() / 1000;
+        @Nonnull String value = unixTime.toString() + ":" + DOUBLE_FORMAT.format(data.getValue());
+        @Nonnull String[] argsList = new String[]{"rrdtool", "update", _fileName, value};
         executeProcess(argsList);
     }
 }

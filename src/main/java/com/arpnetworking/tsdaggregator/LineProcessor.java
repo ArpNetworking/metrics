@@ -40,7 +40,7 @@ public class LineProcessor {
             while (_run) {
                 try {
                     Thread.sleep(_rotationCheckMillis);
-                    for (Map.Entry<String, TSData> entry : _aggregations.entrySet()) {
+                    for (@Nonnull Map.Entry<String, TSData> entry : _aggregations.entrySet()) {
                         entry.getValue().checkRotate(_rotationFactor);
                     }
                 } catch (InterruptedException e) {
@@ -77,13 +77,13 @@ public class LineProcessor {
 
     private void startAggregationCloser() {
         _aggregationCloser = new AggregationCloser();
-        final Thread aggregationCloserThread = new Thread(_aggregationCloser);
+        @Nonnull final Thread aggregationCloserThread = new Thread(_aggregationCloser);
         aggregationCloserThread.setDaemon(true);
         aggregationCloserThread.start();
     }
 
     public void invoke(String line) {
-        Optional<LogLine> optionalData = _parser.parseLogLine(line);
+        @Nonnull Optional<LogLine> optionalData = _parser.parseLogLine(line);
         if (!optionalData.isPresent()) {
             return;
         }
@@ -91,7 +91,7 @@ public class LineProcessor {
         LogLine data = optionalData.get();
 
         //Loop over all metrics
-        for (Map.Entry<String, CounterVariable> entry : data.getVariables().entrySet()) {
+        for (@Nonnull Map.Entry<String, CounterVariable> entry : data.getVariables().entrySet()) {
             //Find the TSData associated with a metric
             TSData tsdata = _aggregations.get(entry.getKey());
             //If the metric isn't already listed, create a new TSData for it
@@ -127,7 +127,7 @@ public class LineProcessor {
 
     public void closeAggregations() {
         //close all aggregations
-        for (Map.Entry<String, TSData> entry : _aggregations.entrySet()) {
+        for (@Nonnull Map.Entry<String, TSData> entry : _aggregations.entrySet()) {
             entry.getValue().close();
         }
     }

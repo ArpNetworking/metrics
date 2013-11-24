@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Publishes to and http endpoint.
@@ -47,9 +48,9 @@ public class HttpPostPublisher implements AggregationPublisher {
     @Override
     public void recordAggregation(@Nonnull AggregatedData[] data) {
         if (data.length > 0) {
-            StringBuilder aggregateJson = new StringBuilder();
+            @Nonnull StringBuilder aggregateJson = new StringBuilder();
             aggregateJson.append("[");
-            for (AggregatedData d : data) {
+            for (@Nonnull AggregatedData d : data) {
 
                 aggregateJson.append("{\"value\":\"").append(d.getValue())
                         .append("\",").append("\"counter\":\"").append(d.getMetric()).append("\",")
@@ -63,10 +64,10 @@ public class HttpPostPublisher implements AggregationPublisher {
             aggregateJson.delete(aggregateJson.length() - 1, aggregateJson.length());
             aggregateJson.append("]");
 
-            HttpPost method = new HttpPost(_uri);
-            StringEntity entity = new StringEntity(aggregateJson.toString(), ContentType.APPLICATION_JSON);
+            @Nonnull HttpPost method = new HttpPost(_uri);
+            @Nonnull StringEntity entity = new StringEntity(aggregateJson.toString(), ContentType.APPLICATION_JSON);
             method.setEntity(entity);
-            HttpEntity responseEntity = null;
+            @Nullable HttpEntity responseEntity = null;
             try {
                 LOGGER.debug("Posting to " + _uri + " value '" + aggregateJson + "'");
                 HttpResponse result = CLIENT.execute(method);

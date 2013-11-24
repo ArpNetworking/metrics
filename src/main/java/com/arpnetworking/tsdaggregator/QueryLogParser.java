@@ -25,14 +25,14 @@ public class QueryLogParser implements LogParser {
 
     @Nonnull
     private LogLine parseLegacyLogLine(String line) throws ParseException {
-        HashMap<String, CounterVariable> vals = new HashMap<>();
+        @Nonnull HashMap<String, CounterVariable> vals = new HashMap<>();
         line = line.trim();
         line = line.replace("[", "");
         line = line.replace("]", "");
-        ArrayList<String> removalCandidates = new ArrayList<>();
+        @Nonnull ArrayList<String> removalCandidates = new ArrayList<>();
 
         String[] vars = line.split(",");
-        for (String var : vars) {
+        for (@Nonnull String var : vars) {
             if (var.trim().length() > 0) {
                 String[] splits = var.split("=");
                 Double value;
@@ -48,9 +48,9 @@ public class QueryLogParser implements LogParser {
                     key = key.replaceFirst("-start$", "");
                     removalCandidates.add(key);
                 }
-                ArrayList<Double> values = new ArrayList<>();
+                @Nonnull ArrayList<Double> values = new ArrayList<>();
                 values.add(value);
-                CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, values);
+                @Nonnull CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, values);
                 vals.put(key, cv);
             }
         }
@@ -77,48 +77,48 @@ public class QueryLogParser implements LogParser {
 
     @Nonnull
     LogLine parseV2aLogLine(@Nonnull Map<String, Object> line) throws ParseException {
-        TreeMap<String, CounterVariable> variables = new TreeMap<>();
-        final Map<String, Object> counters;
+        @Nonnull TreeMap<String, CounterVariable> variables = new TreeMap<>();
+        @Nonnull final Map<String, Object> counters;
         try {
-            @SuppressWarnings(value = "unchecked")
+            @Nonnull @SuppressWarnings(value = "unchecked")
             Map<String, Object> countersMap = (Map<String, Object>) line.get("counters");
             counters = countersMap;
         } catch (Exception e) {
             throw new ParseException("could not cast element counters", e);
         }
         if (counters != null) {
-            for (Map.Entry<String, Object> entry : counters.entrySet()) {
-                ArrayList<Double> counter = new ArrayList<>();
+            for (@Nonnull Map.Entry<String, Object> entry : counters.entrySet()) {
+                @Nonnull ArrayList<Double> counter = new ArrayList<>();
                 try {
                     counter.add(Double.valueOf(entry.getValue().toString()));
                 } catch (NumberFormatException e) {
                     LOGGER.warn("skipping value due to not being able to parse as double: " +
                             entry.getValue().toString(), e);
                 }
-                CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
+                @Nonnull CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
                 variables.put(entry.getKey(), cv);
             }
         }
 
-        final Map<String, ArrayList<Object>> timers;
+        @Nonnull final Map<String, ArrayList<Object>> timers;
         try {
-            @SuppressWarnings(value = "unchecked")
+            @Nonnull @SuppressWarnings(value = "unchecked")
             Map<String, ArrayList<Object>> timersMap = (Map<String, ArrayList<Object>>) line.get("timers");
             timers = timersMap;
         } catch (Exception e) {
             throw new ParseException("could not cast element timers", e);
         }
         if (timers != null) {
-            for (Map.Entry<String, ArrayList<Object>> entryArray : timers.entrySet()) {
-                ArrayList<Double> counter = new ArrayList<>();
-                for (Object entry : entryArray.getValue()) {
+            for (@Nonnull Map.Entry<String, ArrayList<Object>> entryArray : timers.entrySet()) {
+                @Nonnull ArrayList<Double> counter = new ArrayList<>();
+                for (@Nonnull Object entry : entryArray.getValue()) {
                     try {
                         counter.add(Double.valueOf(entry.toString()));
                     } catch (NumberFormatException e) {
                         LOGGER.warn("skipping value due to not being able to parse as double: " + entry.toString(), e);
                     }
                 }
-                CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, counter);
+                @Nonnull CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, counter);
                 variables.put(entryArray.getKey(), cv);
             }
         }
@@ -138,56 +138,56 @@ public class QueryLogParser implements LogParser {
 
     @Nonnull
     LogLine parseV2bLogLine(@Nonnull Map<String, Object> line) throws ParseException {
-        TreeMap<String, CounterVariable> variables = new TreeMap<>();
+        @Nonnull TreeMap<String, CounterVariable> variables = new TreeMap<>();
 
-        final Map<String, Object> counters;
+        @Nonnull final Map<String, Object> counters;
         try {
-            @SuppressWarnings(value = "unchecked")
+            @Nonnull @SuppressWarnings(value = "unchecked")
             Map<String, Object> countersMap = (Map<String, Object>) line.get("counters");
             counters = countersMap;
         } catch (Exception e) {
             throw new ParseException("could not cast element counters", e);
         }
         if (counters != null) {
-            for (Map.Entry<String, Object> entry : counters.entrySet()) {
-                ArrayList<Double> counter = new ArrayList<>();
+            for (@Nonnull Map.Entry<String, Object> entry : counters.entrySet()) {
+                @Nonnull ArrayList<Double> counter = new ArrayList<>();
                 try {
                     counter.add(Double.parseDouble(entry.getValue().toString()));
                 } catch (NumberFormatException e) {
                     LOGGER.warn("skipping value due to not being able to parse as double: " + entry.getValue(), e);
                 }
-                CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
+                @Nonnull CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, counter);
                 variables.put(entry.getKey(), cv);
             }
         }
 
-        final Map<String, ArrayList<Object>> timers;
+        @Nonnull final Map<String, ArrayList<Object>> timers;
         try {
-            @SuppressWarnings(value = "unchecked")
+            @Nonnull @SuppressWarnings(value = "unchecked")
             Map<String, ArrayList<Object>> timersMap = (Map<String, ArrayList<Object>>) line.get("timers");
             timers = timersMap;
         } catch (Exception e) {
             throw new ParseException("could not cast element timers", e);
         }
         if (timers != null) {
-            for (Map.Entry<String, ArrayList<Object>> entry : timers.entrySet()) {
+            for (@Nonnull Map.Entry<String, ArrayList<Object>> entry : timers.entrySet()) {
                 ArrayList<Object> vals = entry.getValue();
-                ArrayList<Double> newVals = new ArrayList<>();
-                for (Object val : vals) {
+                @Nonnull ArrayList<Double> newVals = new ArrayList<>();
+                for (@Nonnull Object val : vals) {
                     try {
                         newVals.add(Double.valueOf(val.toString()));
                     } catch (NumberFormatException e) {
                         LOGGER.warn("skipping value due to not being able to parse as double: " + val, e);
                     }
                 }
-                CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, newVals);
+                @Nonnull CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Timer, newVals);
                 variables.put(entry.getKey(), cv);
             }
         }
 
-        final Map<String, String> annotations;
+        @Nonnull final Map<String, String> annotations;
         try {
-            @SuppressWarnings(value = "unchecked")
+            @Nonnull @SuppressWarnings(value = "unchecked")
             Map<String, String> annotationsMap = (Map<String, String>) line.get("annotations");
             annotations = annotationsMap;
         } catch (Exception e) {
@@ -196,16 +196,16 @@ public class QueryLogParser implements LogParser {
         if (annotations == null) {
             throw new ParseException("no timestamp found in log line");
         }
-        DateTime timestamp = getTimestamp(annotations);
+        @Nullable DateTime timestamp = getTimestamp(annotations);
 
         return new StandardLogLine(variables, timestamp);
     }
 
     @Nullable
     private DateTime getTimestamp(@Nonnull Map<String, String> annotations) throws ParseException {
-        DateTime timestamp = null;
+        @Nullable DateTime timestamp = null;
         if (annotations.containsKey("finalTimestamp")) {
-            Double time;
+            @Nullable Double time;
             try {
                 time = Double.parseDouble(annotations.get("finalTimestamp"));
             } catch (NumberFormatException e) {
@@ -221,7 +221,7 @@ public class QueryLogParser implements LogParser {
         }
 
         if (timestamp == null && annotations.containsKey("initTimestamp")) {
-            Double time;
+            @Nullable Double time;
             try {
                 time = Double.parseDouble(annotations.get("initTimestamp"));
             } catch (NumberFormatException e) {
@@ -246,7 +246,7 @@ public class QueryLogParser implements LogParser {
     @Override
     @Nonnull
     public Optional<LogLine> parseLogLine(String line) {
-        LogLine logLine;
+        @Nullable LogLine logLine;
 
         final Map<String, Object> jsonLine;
         try {
@@ -264,7 +264,7 @@ public class QueryLogParser implements LogParser {
             return Optional.fromNullable(logLine);
         }
         try {
-            String version = (String) jsonLine.get("version");
+            @Nonnull String version = (String) jsonLine.get("version");
             switch (version) {
                 case "2a":
                     logLine = parseV2aLogLine(jsonLine);
@@ -288,14 +288,14 @@ public class QueryLogParser implements LogParser {
 
     @Nonnull
     private LogLine parseV2cLogLine(@Nonnull Map<String, Object> line) throws ParseException {
-        TreeMap<String, CounterVariable> variables = new TreeMap<>();
+        @Nonnull TreeMap<String, CounterVariable> variables = new TreeMap<>();
         parseChunk(line, "timers", CounterVariable.MetricKind.Timer, variables);
         parseChunk(line, "counters", CounterVariable.MetricKind.Counter, variables);
         parseChunk(line, "gauges", CounterVariable.MetricKind.Gauge, variables);
 
-        final Map<String, String> annotations;
+        @Nonnull final Map<String, String> annotations;
         try {
-            @SuppressWarnings(value = "unchecked")
+            @Nonnull @SuppressWarnings(value = "unchecked")
             Map<String, String> annotationsMap = (Map<String, String>) line.get("annotations");
             annotations = annotationsMap;
         } catch (Exception e) {
@@ -306,33 +306,33 @@ public class QueryLogParser implements LogParser {
             throw new ParseException("no timestamp found in log line");
         }
 
-        DateTime timestamp = getTimestamp(annotations);
+        @Nullable DateTime timestamp = getTimestamp(annotations);
 
         return new StandardLogLine(variables, timestamp);
     }
 
     private void parseChunk(@Nonnull Map<String, Object> lineData, String element, CounterVariable.MetricKind kind,
                             @Nonnull Map<String, CounterVariable> variables) throws ParseException {
-        final Map<String, ArrayList<Object>> elements;
+        @Nonnull final Map<String, ArrayList<Object>> elements;
         try {
-            @SuppressWarnings(value = "unchecked")
+            @Nonnull @SuppressWarnings(value = "unchecked")
             Map<String, ArrayList<Object>> elementMap = (Map<String, ArrayList<Object>>) lineData.get(element);
             elements = elementMap;
         } catch (Exception e) {
             throw new ParseException("could not cast element " + element, e);
         }
         if (elements != null) {
-            for (Map.Entry<String, ArrayList<Object>> entry : elements.entrySet()) {
+            for (@Nonnull Map.Entry<String, ArrayList<Object>> entry : elements.entrySet()) {
                 ArrayList<Object> lineValues = entry.getValue();
-                ArrayList<Double> parsedValues = new ArrayList<>();
-                for (Object val : lineValues) {
+                @Nonnull ArrayList<Double> parsedValues = new ArrayList<>();
+                for (@Nonnull Object val : lineValues) {
                     try {
                         parsedValues.add(Double.valueOf(val.toString()));
                     } catch (NumberFormatException e) {
                         LOGGER.warn("skipping value due to not being able to parse as double: " + val, e);
                     }
                 }
-                CounterVariable cv = new CounterVariable(kind, parsedValues);
+                @Nonnull CounterVariable cv = new CounterVariable(kind, parsedValues);
                 variables.put(entry.getKey(), cv);
             }
         }

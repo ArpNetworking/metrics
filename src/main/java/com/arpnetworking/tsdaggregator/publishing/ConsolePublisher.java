@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 public class ConsolePublisher implements AggregationPublisher {
     @Override
     public void recordAggregation(@Nonnull AggregatedData[] data) {
-        for (AggregatedData d : data) {
+        for (@Nonnull AggregatedData d : data) {
             System.out.println(d.getHost() + "::" + d.getService() + "::" + d.getMetric()
                     + " " + d.getPeriodStart() + " [" + d.getPeriod() + "] " +
                     d.getStatistic().getName() + ": " +

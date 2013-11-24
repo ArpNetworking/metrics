@@ -43,9 +43,9 @@ public class FilePublisher implements AggregationPublisher {
     public void recordAggregation(@Nonnull AggregatedData[] data) {
         LOGGER.debug("Writing aggregation data to FilePublisher, " + data.length + " records to file " + _fileName);
 
-        StringBuilder sb = new StringBuilder();
+        @Nonnull StringBuilder sb = new StringBuilder();
         if (data.length > 0) {
-            for (AggregatedData d : data) {
+            for (@Nonnull AggregatedData d : data) {
 
                 sb.append("{\"value\":\"").append(DOUBLE_FORMAT.format(d.getValue()))
                         .append("\",\"counter\":\"").append(d.getMetric())

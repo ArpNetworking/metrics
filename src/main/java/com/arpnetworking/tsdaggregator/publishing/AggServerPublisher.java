@@ -12,6 +12,8 @@ import org.vertx.java.platform.Verticle;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Publisher to send data to an upstream aggregation server.
@@ -28,10 +30,11 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
     private final int _aggServerPort;
     private final NetClient _client;
     private final ConcurrentLinkedQueue<AggregatedData[]> _pending = new ConcurrentLinkedQueue<>();
+    @Nullable
     private NetSocket _socket = null;
     private final Vertx _vertx;
 
-    public AggServerPublisher(String aggClusterLocation, String hostName, String clusterName) {
+    public AggServerPublisher(@Nonnull String aggClusterLocation, String hostName, String clusterName) {
         _vertx = VertxFactory.newVertx();
         String[] split = aggClusterLocation.split(":");
         _aggServerHost = split[0];
@@ -57,7 +60,7 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
         _client.connect(
                 _aggServerPort, _aggServerHost, new AsyncResultHandler<NetSocket>() {
             @Override
-            public void handle(final AsyncResult<NetSocket> event) {
+            public void handle(@Nonnull final AsyncResult<NetSocket> event) {
                 if (event.succeeded()) {
                     LOGGER.info("connected to aggregation server at " + _aggServerHost + ":" + _aggServerPort);
                     _socket = event.result();
@@ -65,10 +68,10 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
                     _socket.closeHandler(createSocketCloseHandler(_socket));
                     _connected.set(true);
                     _connectionInProgress.set(false);
-                    Messages.HostIdentification hostIdent =
+                    @Nonnull Messages.HostIdentification hostIdent =
                             Messages.HostIdentification.newBuilder().setHostName(_hostName).setClusterName(_clusterName)
                                     .build();
-                    AggregatorConnection.Message m = AggregatorConnection.Message.create(hostIdent);
+                    @Nonnull AggregatorConnection.Message m = AggregatorConnection.Message.create(hostIdent);
                     _socket.write(m.getBuffer());
                     flushPending();
                 } else if (event.failed()) {
@@ -83,6 +86,7 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
         );
     }
 
+    @Nullable
     private Handler<Void> createSocketCloseHandler(final NetSocket socket) {
         return new Handler<Void>() {
             @Override
@@ -95,6 +99,7 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
         };
     }
 
+    @Nullable
     private Handler<Throwable> createSocketExceptionHandler(final NetSocket socket) {
         return new Handler<Throwable>() {
             @Override
@@ -120,17 +125,17 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
         }
         AggregatedData[] dataChunk;
         while (_connected.get() && (dataChunk = _pending.poll()) != null) {
-            for (AggregatedData data : dataChunk) {
+            for (@Nonnull AggregatedData data : dataChunk) {
                 //Don't aggregate metrics < 1 minute
                 if (data.getPeriod().toStandardDuration().isShorterThan(org.joda.time.Duration.standardMinutes(1))) {
                     continue;
                 }
-                Messages.AggregationRecord record = Messages.AggregationRecord.newBuilder()
+                @Nonnull Messages.AggregationRecord record = Messages.AggregationRecord.newBuilder()
                         .setMetric(data.getMetric()).setPeriod(data.getPeriod().toString())
                         .setService(data.getService()).setStatistic(data.getStatistic().getName())
                         .setStatisticValue(data.getValue()).addAllStatisticSamples(data.getSamples())
                         .build();
-                AggregatorConnection.Message message = AggregatorConnection.Message.create(record);
+                @Nonnull AggregatorConnection.Message message = AggregatorConnection.Message.create(record);
                 _socket.write(message.getBuffer());
             }
         }

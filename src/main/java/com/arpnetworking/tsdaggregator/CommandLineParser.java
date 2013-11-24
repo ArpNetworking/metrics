@@ -60,7 +60,7 @@ class CommandLineParser {
             .argName("host").desc("send data to an upstream cluster aggregator").build();
     private final Option _configFilesOption = Option.builder().longOpt("config").hasArgs().argName("file")
             .desc("read config files for configuration sets").build();
-    private final  Option _redisServer = Option.builder("r").longOpt("redis").hasArg().numberOfArgs(1).argName("server")
+    private final  Option _redisServer = Option.builder("r").longOpt("redis").hasArgs().argName("server")
             .desc("redis server to bootstrap agg server").build();
     private final Options _options = new Options();
     private final HostResolver _hostResolver;
@@ -101,7 +101,7 @@ class CommandLineParser {
                 }
                 Statistic stat;
                 if (!Statistic.class.isAssignableFrom(statClass)) {
-                    final String error = "Statistic class [" + statString + "] does not implement required " +
+                    @Nonnull final String error = "Statistic class [" + statString + "] does not implement required " +
                             "Statistic interface";
                     throw new ConfigException(error);
                 }
@@ -109,11 +109,11 @@ class CommandLineParser {
                     stat = (Statistic) statClass.newInstance();
                     statsClasses.add(stat);
                 } catch (@Nonnull InstantiationException | IllegalAccessException ex) {
-                    final String error = "Could not instantiate statistic [" + statString + "]";
+                    @Nonnull final String error = "Could not instantiate statistic [" + statString + "]";
                     throw new ConfigException(error, ex);
                 }
             } catch (ClassNotFoundException ex) {
-                final String error = "could not find statistic class [" + statString + "] on classpath";
+                @Nonnull final String error = "could not find statistic class [" + statString + "] on classpath";
                 throw new ConfigException(error, ex);
             }
         }
@@ -121,9 +121,9 @@ class CommandLineParser {
 
     @Nonnull
     public Configuration parse(String[] args) throws ConfigException {
-        org.apache.commons.cli.CommandLineParser parser = new DefaultParser();
+        @Nonnull org.apache.commons.cli.CommandLineParser parser = new DefaultParser();
         CommandLine cl;
-        Configuration.Builder builder = Configuration.builder();
+        @Nonnull Configuration.Builder builder = Configuration.builder();
         builder.valid(true);
         boolean isBaseConfig = false;
         try {
@@ -170,7 +170,7 @@ class CommandLineParser {
             try {
                 parserClass = Class.forName(lineParser);
                 if (LogParser.class.isAssignableFrom(parserClass)) {
-                    @SuppressWarnings("unchecked")
+                    @Nonnull @SuppressWarnings("unchecked")
                     Class<LogParser> typedParserClass = (Class<LogParser>) parserClass;
                     builder.parser(typedParserClass);
                 } else {
@@ -232,7 +232,7 @@ class CommandLineParser {
                 }
             }
 
-            builder.redisHost(cl.getOptionValue(_redisServer.getLongOpt()));
+            builder.redisHost(cl.getOptionValues(_redisServer.getLongOpt()));
         }
 
         if (cl.hasOption(_inputFileOption.getLongOpt())) {
@@ -289,10 +289,10 @@ class CommandLineParser {
         Pattern filter = Pattern.compile(".*");
         if (cl.hasOption(_extensionOption.getLongOpt())) {
             String[] filters = cl.getOptionValues(_extensionOption.getLongOpt());
-            StringBuilder builder = new StringBuilder();
+            @Nonnull StringBuilder builder = new StringBuilder();
             int x = 0;
-            for (String f : filters) {
-                String filterPart = buildFilter(f);
+            for (@Nonnull String f : filters) {
+                @Nonnull String filterPart = buildFilter(f);
                 if (x > 0) {
                     builder.append("||");
                 }
@@ -306,7 +306,7 @@ class CommandLineParser {
 
     @Nonnull
     private String buildFilter(@Nonnull String filter) {
-        final String regexTrigger = "*+[]{}$^()|";
+        @Nonnull final String regexTrigger = "*+[]{}$^()|";
         boolean treatAsRegex = false;
         for (char c : regexTrigger.toCharArray()) {
             if (filter.indexOf(c) >= 0) {
@@ -325,7 +325,7 @@ class CommandLineParser {
 
     @Nonnull
     private Set<Period> getPeriods(@Nonnull CommandLine cl) {
-        List<String> periodOptions = new ArrayList<>();
+        @Nonnull List<String> periodOptions = new ArrayList<>();
         periodOptions.add("PT5M");
         if (cl.hasOption(_remetOption.getLongOpt())) {
             periodOptions.add("PT1S");
@@ -335,7 +335,7 @@ class CommandLineParser {
             periodOptions = Arrays.asList(cl.getOptionValues(_periodOption.getLongOpt()));
         }
 
-        Set<Period> periods = new HashSet<>();
+        @Nonnull Set<Period> periods = new HashSet<>();
         PeriodFormatter periodParser = ISOPeriodFormat.standard();
         for (String p : periodOptions) {
             periods.add(periodParser.parsePeriod(p));
@@ -344,8 +344,8 @@ class CommandLineParser {
     }
 
     public void printUsage(OutputStream stream) {
-        HelpFormatter formatter = new HelpFormatter();
-        PrintWriter pw = new PrintWriter(new OutputStreamWriter(stream, Charsets.UTF_8));
+        @Nonnull HelpFormatter formatter = new HelpFormatter();
+        @Nonnull PrintWriter pw = new PrintWriter(new OutputStreamWriter(stream, Charsets.UTF_8));
         formatter.printHelp(pw, HelpFormatter.DEFAULT_WIDTH, "tsdaggregator", null,
                 _options, HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD, null, true);
         pw.flush();

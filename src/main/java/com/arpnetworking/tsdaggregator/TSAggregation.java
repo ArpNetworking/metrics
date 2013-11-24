@@ -20,13 +20,18 @@ import javax.annotation.Nonnull;
 public class TSAggregation {
 
     private static final Logger LOGGER = Logger.getLogger(TSAggregation.class);
+    @Nonnull
     private final Period _period;
     private final ArrayList<Double> _samples = new ArrayList<>();
     private final Set<Statistic> _orderedStatistics = new HashSet<>();
     private final Set<Statistic> _unorderedStatistics = new HashSet<>();
+    @Nonnull
     private final String _metric;
+    @Nonnull
     private final String _hostName;
+    @Nonnull
     private final String _serviceName;
+    @Nonnull
     private final AggregationPublisher _listener;
     private int _numberOfSamples = 0;
     private DateTime _periodStart = new DateTime(0);
@@ -94,23 +99,23 @@ public class TSAggregation {
 
     private void emitAggregations() {
         LOGGER.debug("Emitting aggregations; " + _samples.size() + " samples");
-        Double[] dsamples = _samples.toArray(new Double[_samples.size()]);
+        @Nonnull Double[] dsamples = _samples.toArray(new Double[_samples.size()]);
         if (dsamples.length == 0) {
             return;
         }
-        ArrayList<AggregatedData> aggregates = new ArrayList<>();
-        for (Statistic stat : _unorderedStatistics) {
+        @Nonnull ArrayList<AggregatedData> aggregates = new ArrayList<>();
+        for (@Nonnull Statistic stat : _unorderedStatistics) {
             Double value = stat.calculate(dsamples);
-            AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
+            @Nonnull AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
                     _periodStart, _period, dsamples);
             aggregates.add(data);
         }
         //only sort if there are ordered statistics
         if (_orderedStatistics.size() > 0) {
             Arrays.sort(dsamples);
-            for (Statistic stat : _orderedStatistics) {
+            for (@Nonnull Statistic stat : _orderedStatistics) {
                 Double value = stat.calculate(dsamples);
-                AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
+                @Nonnull AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
                         _periodStart, _period, dsamples);
                 aggregates.add(data);
             }

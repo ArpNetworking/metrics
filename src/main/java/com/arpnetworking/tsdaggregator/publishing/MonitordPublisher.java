@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Publishes aggregations to Monitord.
@@ -41,8 +42,8 @@ public class MonitordPublisher implements AggregationPublisher {
 
     @Nonnull
     private static HttpClient buildDefaultClient() {
-        ClientConnectionManager connectionManager = new PoolingClientConnectionManager();
-        HttpClient client = new DefaultHttpClient(connectionManager);
+        @Nonnull ClientConnectionManager connectionManager = new PoolingClientConnectionManager();
+        @Nonnull HttpClient client = new DefaultHttpClient(connectionManager);
         HttpParams params = client.getParams();
         params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 3000);
         return client;
@@ -60,9 +61,9 @@ public class MonitordPublisher implements AggregationPublisher {
         if (data.length == 0) {
             return;
         }
-        HashMap<String, ArrayList<AggregatedData>> aggMap = new HashMap<>();
+        @Nonnull HashMap<String, ArrayList<AggregatedData>> aggMap = new HashMap<>();
         //Build the map for the aggregations
-        for (AggregatedData d : data) {
+        for (@Nonnull AggregatedData d : data) {
             ArrayList<AggregatedData> mapped = aggMap.get(d.getMetric());
             if (mapped == null) {
                 mapped = new ArrayList<>();
@@ -71,7 +72,7 @@ public class MonitordPublisher implements AggregationPublisher {
             mapped.add(d);
         }
 
-        for (Map.Entry<String, ArrayList<AggregatedData>> entry : aggMap.entrySet()) {
+        for (@Nonnull Map.Entry<String, ArrayList<AggregatedData>> entry : aggMap.entrySet()) {
             //All aggregated data values for a metric should have the same metric metadata
             AggregatedData d = entry.getValue().get(0);
 
@@ -80,15 +81,15 @@ public class MonitordPublisher implements AggregationPublisher {
                 continue;
             }
 
-            StringBuilder postValue = new StringBuilder();
-            String combinedMetricName =
+            @Nonnull StringBuilder postValue = new StringBuilder();
+            @Nonnull String combinedMetricName =
                     d.getService() + "_" + d.getPeriod().toString(ISOPeriodFormat.standard()) + "_" + d.getMetric();
             postValue.append("run_every=").append(d.getPeriod().toStandardSeconds().getSeconds())
                     .append("&path=").append(_cluster).append("/").append(_host).append("&monitor=")
                     .append(combinedMetricName)
                     .append("&status=0&output=").append(combinedMetricName).append("%7C");
 
-            for (AggregatedData dataVal : entry.getValue()) {
+            for (@Nonnull AggregatedData dataVal : entry.getValue()) {
                 postValue.append(dataVal.getStatistic().getName()).append("%3D").append(dataVal.getValue())
                         .append("%3B");
             }
@@ -100,10 +101,10 @@ public class MonitordPublisher implements AggregationPublisher {
     }
 
     private void postData(@Nonnull final StringBuilder postValue) {
-        HttpPost method = new HttpPost(_uri);
-        StringEntity entity = new StringEntity(postValue.toString(), ContentType.APPLICATION_FORM_URLENCODED);
+        @Nonnull HttpPost method = new HttpPost(_uri);
+        @Nonnull StringEntity entity = new StringEntity(postValue.toString(), ContentType.APPLICATION_FORM_URLENCODED);
         method.setEntity(entity);
-        HttpEntity responseEntity = null;
+        @Nullable HttpEntity responseEntity = null;
         try {
             LOGGER.info("Posting to " + _uri + " value '" + postValue.toString() + "'");
             HttpResponse result = _client.execute(method);

@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Parses config files and creates a config from it.
@@ -25,8 +26,8 @@ public class ConfigFileParser {
 
     @Nonnull
     public Configuration parse(String fileName) throws ConfigException {
-        ObjectMapper mapper = new ObjectMapper();
-        FileInputStream stream = null;
+        @Nonnull ObjectMapper mapper = new ObjectMapper();
+        @Nullable FileInputStream stream = null;
         JsonNode node;
         try {
             stream = new FileInputStream(fileName);
@@ -54,13 +55,13 @@ public class ConfigFileParser {
             throw new ConfigException("expected a top level \"args\" array");
         }
 
-        ArrayNode argsArray = (ArrayNode) argsNode;
-        ArrayList<String> args = new ArrayList<>();
+        @Nonnull ArrayNode argsArray = (ArrayNode) argsNode;
+        @Nonnull ArrayList<String> args = new ArrayList<>();
         for (int x = 0; x < argsArray.size(); x++) {
             args.add(argsArray.get(x).getTextValue());
         }
 
-        CommandLineParser parser = new CommandLineParser(_hostResolver);
+        @Nonnull CommandLineParser parser = new CommandLineParser(_hostResolver);
         return parser.parse(args.toArray(new String[args.size()]));
     }
 }

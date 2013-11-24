@@ -2,11 +2,14 @@ package com.arpnetworking.tsdaggregator.aggserver;
 
 import com.google.common.base.Objects;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
-* Description goes here
-*
-* @author barp
-*/
+ * Represents an instance of the redis module on the vertx message bus.
+ *
+ * @author barp
+ */
 class RedisInstance implements Comparable<RedisInstance> {
     private final String _hostName;
     private final String _ebName;
@@ -25,7 +28,7 @@ class RedisInstance implements Comparable<RedisInstance> {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(@Nullable final Object o) {
         if (this == o) {
             return true;
         }
@@ -33,11 +36,8 @@ class RedisInstance implements Comparable<RedisInstance> {
             return false;
         }
 
-        final RedisInstance that = (RedisInstance) o;
+        @Nonnull final RedisInstance that = (RedisInstance) o;
 
-        if (_ebName != null ? !_ebName.equals(that._ebName) : that._ebName != null) {
-            return false;
-        }
         if (_hostName != null ? !_hostName.equals(that._hostName) : that._hostName != null) {
             return false;
         }
@@ -48,7 +48,6 @@ class RedisInstance implements Comparable<RedisInstance> {
     @Override
     public int hashCode() {
         int result = _hostName != null ? _hostName.hashCode() : 0;
-        result = 31 * result + (_ebName != null ? _ebName.hashCode() : 0);
         return result;
     }
 
@@ -62,11 +61,7 @@ class RedisInstance implements Comparable<RedisInstance> {
 
 
     @Override
-    public int compareTo(final RedisInstance o) {
-        if (!_hostName.equals(o._hostName)) {
-            return _hostName.compareTo(o._hostName);
-        } else {
-            return _ebName.compareTo(o._ebName);
-        }
+    public int compareTo(@Nonnull final RedisInstance o) {
+        return _hostName.compareTo(o._hostName);
     }
 }

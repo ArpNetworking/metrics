@@ -2,11 +2,10 @@ package com.arpnetworking.tsdaggregator.aggserver;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 import net.jpountz.xxhash.XXHash32;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -20,7 +19,7 @@ import javax.annotation.Nullable;
  */
 public class KetamaRing {
 
-    private static final String DEFAULT_LAYER = "default";
+    public static final String DEFAULT_LAYER = "default";
 
     /**
      * Serves as an entry in the ring.
@@ -33,17 +32,20 @@ public class KetamaRing {
         private final int _vNodes;
         @Nonnull
         private final String _layer;
+        @Nonnull
+        private State _status;
 
         public NodeEntry(@Nonnull final String nodeKey, @Nullable final Object mappedObject,
-                         final int vNodes, @Nonnull final String layer) {
+                         final int vNodes, @Nonnull final String layer, @Nonnull State status) {
             this._nodeKey = nodeKey;
             this._mappedObject = mappedObject;
             this._vNodes = vNodes;
             this._layer = layer;
+            this._status = status;
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(@Nullable final Object o) {
             if (this == o) {
                 return true;
             }
@@ -51,7 +53,7 @@ public class KetamaRing {
                 return false;
             }
 
-            final NodeEntry nodeEntry = (NodeEntry) o;
+            @Nonnull final NodeEntry nodeEntry = (NodeEntry) o;
 
             if (!_layer.equals(nodeEntry._layer)) {
                 return false;
@@ -71,7 +73,7 @@ public class KetamaRing {
         }
 
         @Override
-        public int compareTo(final NodeEntry o) {
+        public int compareTo(@Nonnull final NodeEntry o) {
             if (!_layer.equals(o._layer)) {
                 return _layer.compareTo(o._layer);
             } else {
@@ -107,12 +109,23 @@ public class KetamaRing {
         public String getLayer() {
             return _layer;
         }
+
+        @Nonnull
+        public State getStatus() {
+            return _status;
+        }
+
+        private void setStatus(@Nonnull final State status) {
+            _status = status;
+        }
     }
+
     final HashMap<Integer, NodeEntry> _nodes = new HashMap<>();
     final ConcurrentHashMap<String, ConcurrentSkipListMap<Integer, NodeEntry>> _ring =
             new ConcurrentHashMap<>();
     final ConcurrentHashMap<String, ConcurrentSkipListSet<NodeEntry>> _ringNodes =
             new ConcurrentHashMap<>();
+    final ConcurrentSkipListSet<NodeEntry> _activeNodes = new ConcurrentSkipListSet<>();
     final XXHash32 _hashFunction;
 
     public KetamaRing() {
@@ -124,15 +137,20 @@ public class KetamaRing {
         initializeRingLayer(DEFAULT_LAYER);
     }
 
-    public void addNode(String nodeKey, Object mappedObject) {
+    public void addNode(@Nonnull String nodeKey, Object mappedObject) {
         addNode(nodeKey, mappedObject, DEFAULT_LAYER);
     }
 
-    public void addNode(String nodeKey, Object mappedObject, String layer) {
-        addNode(nodeKey, mappedObject, layer, 160);
+    public void addNode(@Nonnull String nodeKey, Object mappedObject, @Nonnull String layer) {
+        addNode(nodeKey, mappedObject, layer, State.Active);
     }
 
-    public void addNode(String nodeKey, Object mappedObject, String layer, int vNodes) {
+    public void addNode(@Nonnull String nodeKey, Object mappedObject, @Nonnull String layer, @Nonnull State status) {
+        addNode(nodeKey, mappedObject, layer, status, 160);
+    }
+
+    public void addNode(@Nonnull String nodeKey, Object mappedObject, @Nonnull String layer, @Nonnull State status,
+                        int vNodes) {
         byte[] bytes = nodeKey.getBytes(Charsets.UTF_8);
         int seed = 0;
         ConcurrentSkipListMap<Integer, NodeEntry> ringLayer = _ring.get(layer);
@@ -142,7 +160,7 @@ public class KetamaRing {
 
         ConcurrentSkipListSet<NodeEntry> ringNodesLayer = _ringNodes.get(layer);
 
-        NodeEntry node = new NodeEntry(nodeKey, mappedObject, vNodes, layer);
+        NodeEntry node = new NodeEntry(nodeKey, mappedObject, vNodes, layer, status);
 
         //If the node already exists, there's no need to add it to the list
         if (!ringNodesLayer.add(node)) {
@@ -173,9 +191,29 @@ public class KetamaRing {
                 }
             }
         }
+
+        if (status.equals(State.Active)) {
+            _activeNodes.add(node);
+        }
     }
 
-    private ConcurrentSkipListMap<Integer, NodeEntry> initializeRingLayer(final String layer) {
+    public void setNodeStatus(String node, State status) {
+        setNodeStatus(node, DEFAULT_LAYER, status);
+    }
+
+    public void setNodeStatus(String node, String layer, State status) {
+        NodeEntry entry = hash(node, layer);
+        if (entry.getStatus().equals(State.Active)) {
+            _activeNodes.remove(entry);
+        }
+        entry.setStatus(status);
+
+        if (status.equals(State.Active)) {
+            _activeNodes.add(entry);
+        }
+    }
+
+    public ConcurrentSkipListMap<Integer, NodeEntry> initializeRingLayer(final String layer) {
         ConcurrentSkipListMap<Integer, NodeEntry> ringLayer = new ConcurrentSkipListMap<>();
         ConcurrentSkipListMap<Integer, NodeEntry> previous = _ring.putIfAbsent(layer, ringLayer);
         if (previous != null) {
@@ -183,29 +221,68 @@ public class KetamaRing {
         }
 
         ConcurrentSkipListSet<NodeEntry> ringNodesLayer = new ConcurrentSkipListSet<>();
-        ConcurrentSkipListSet<NodeEntry> previousNodes = _ringNodes.putIfAbsent(layer, ringNodesLayer);
+        _ringNodes.putIfAbsent(layer, ringNodesLayer);
 
         return ringLayer;
     }
 
-    public NodeEntry hash(final String key) {
+    public NodeEntry hash(@Nonnull final String key) {
         return hash(key, DEFAULT_LAYER);
     }
-    public NodeEntry hash(final String key, final String layer) {
+
+    public NodeEntry hash(@Nonnull final String key, @Nonnull final String layer) {
         byte[] bytes = key.getBytes(Charsets.UTF_8);
-        Integer hash = _hashFunction.hash(bytes, 0, bytes.length, 0);
+        int hash = _hashFunction.hash(bytes, 0, bytes.length, 0);
         ConcurrentSkipListMap<Integer, NodeEntry> ringLayer = _ring.get(layer);
+        if (ringLayer == null) {
+            throw new IllegalArgumentException("layer does not exist");
+        }
+        if (ringLayer.isEmpty()) {
+            throw new IllegalStateException("layer is empty");
+        }
         Map.Entry<Integer, NodeEntry> entry = ringLayer.ceilingEntry(hash);
+
         if (entry == null) {
             entry = ringLayer.firstEntry();
         }
         return entry.getValue();
+
     }
 
+    public List<NodeEntry> hash(@Nonnull final String key, @Nonnull final String layer, final int serverCount) {
+        byte[] bytes = key.getBytes(Charsets.UTF_8);
+        int hash = _hashFunction.hash(bytes, 0, bytes.length, 0);
+        ConcurrentSkipListMap<Integer, NodeEntry> ringLayer = _ring.get(layer);
+        if (ringLayer == null) {
+            throw new IllegalArgumentException("layer does not exist");
+        }
+        ConcurrentSkipListSet<NodeEntry> ringNodes = _ringNodes.get(layer).clone();
+        ringNodes.retainAll(_activeNodes);
+        int actualCount = Math.min(serverCount, ringNodes.size());
+        if (actualCount == 0) {
+            return Collections.emptyList();
+        }
+        List<NodeEntry> entries = Lists.newArrayListWithCapacity(actualCount);
+
+        Map.Entry<Integer, NodeEntry> entry = ringLayer.ceilingEntry(hash);
+        do {
+            if (entry == null) {
+                entry = ringLayer.firstEntry();
+            }
+            if (!entries.contains(entry.getValue()) && ringNodes.contains(entry.getValue())) {
+                entries.add(entry.getValue());
+            }
+            entry = ringLayer.higherEntry(entry.getKey());
+        } while (entries.size() < actualCount);
+        return entries;
+    }
+
+    @Nonnull
     public Set<Map.Entry<Integer, NodeEntry>> getRingEntries() {
         return getRingEntries(DEFAULT_LAYER);
     }
 
+    @Nonnull
     public Set<Map.Entry<Integer, NodeEntry>> getRingEntries(final String layer) {
         return _ring.get(layer).entrySet();
     }

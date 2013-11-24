@@ -16,15 +16,15 @@ import javax.annotation.Nonnull;
 public class TSData {
     private final Set<TSAggregation> _aggregations = new HashSet<>();
 
-    public TSData(String metricName, @Nonnull Set<Period> aggregations, AggregationPublisher listener, String hostName,
-                  String serviceName, @Nonnull Set<Statistic> statistics) {
-        for (Period period : aggregations) {
+    public TSData(@Nonnull String metricName, @Nonnull Set<Period> aggregations, @Nonnull AggregationPublisher listener,
+                  @Nonnull String hostName, @Nonnull String serviceName, @Nonnull Set<Statistic> statistics) {
+        for (@Nonnull Period period : aggregations) {
             _aggregations.add(new TSAggregation(metricName, period, listener, hostName, serviceName, statistics));
         }
     }
 
     public void addMetric(@Nonnull ArrayList<Double> data, @Nonnull DateTime time) {
-        for (TSAggregation aggregation : _aggregations) {
+        for (@Nonnull TSAggregation aggregation : _aggregations) {
             for (Double val : data) {
                 aggregation.addSample(val, time);
             }
@@ -32,13 +32,13 @@ public class TSData {
     }
 
     public void checkRotate(double rotateFactor) {
-        for (TSAggregation agg : _aggregations) {
+        for (@Nonnull TSAggregation agg : _aggregations) {
             agg.checkRotate(rotateFactor);
         }
     }
 
     public void close() {
-        for (TSAggregation aggregation : _aggregations) {
+        for (@Nonnull TSAggregation aggregation : _aggregations) {
             aggregation.close();
         }
     }

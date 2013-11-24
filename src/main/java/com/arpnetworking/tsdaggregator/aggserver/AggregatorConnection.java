@@ -18,8 +18,11 @@ import javax.annotation.Nonnull;
  */
 public class AggregatorConnection {
     private static final Logger LOGGER = LoggerFactory.getLogger(AggregatorConnection.class);
+    @Nonnull
     private final NetSocket _socket;
+    @Nonnull
     private final ClusterNameResolvedCallback _clusterNameResolvedCallback;
+    @Nonnull
     private final AggregationArrivedCallback _aggregationArrivedCallback;
     private Buffer _buffer;
     private Optional<String> _hostName = Optional.absent();
@@ -50,9 +53,9 @@ public class AggregatorConnection {
         while (current.length() > 4 && (messageOptional = Message.parse(current)).isPresent()) {
             Message message = messageOptional.get();
             current = current.getBuffer(message.length(), current.length());
-            GeneratedMessage gm = message.getMessage();
+            @Nonnull GeneratedMessage gm = message.getMessage();
             if (gm instanceof Messages.HostIdentification) {
-                Messages.HostIdentification hostIdent = (Messages.HostIdentification) gm;
+                @Nonnull Messages.HostIdentification hostIdent = (Messages.HostIdentification) gm;
                 if (hostIdent.hasHostName()) {
                     _hostName = Optional.of(hostIdent.getHostName());
                 }
@@ -62,8 +65,8 @@ public class AggregatorConnection {
                 LOGGER.info("Handshake from host " + _hostName.or("") + " in cluster " + _clusterName.or(""));
                 _clusterNameResolvedCallback.clusterNameResolved(this, _hostName.or(""), _clusterName.or(""));
             } else if (gm instanceof Messages.AggregationRecord) {
-                Messages.AggregationRecord aggRecord = (Messages.AggregationRecord) gm;
-                _aggregationArrivedCallback.aggregationArrived(this,aggRecord);
+                @Nonnull Messages.AggregationRecord aggRecord = (Messages.AggregationRecord) gm;
+                _aggregationArrivedCallback.aggregationArrived(this, aggRecord);
             } else {
                 LOGGER.warn("Unknown message type!");
             }
@@ -85,6 +88,9 @@ public class AggregatorConnection {
         void clusterNameResolved(AggregatorConnection connection, String hostName, String clusterName);
     }
 
+    /**
+     * Interface used to implement a callback when an aggregation record is received.
+     */
     public interface AggregationArrivedCallback {
         void aggregationArrived(AggregatorConnection connection, Messages.AggregationRecord record);
     }
@@ -94,12 +100,14 @@ public class AggregatorConnection {
      */
     public static class Message {
         private static final Logger LOGGER = LoggerFactory.getLogger(Message.class);
+        @Nonnull
         private final GeneratedMessage _message;
 
         private Message(@Nonnull GeneratedMessage message) {
             _message = message;
         }
 
+        @Nonnull
         GeneratedMessage getMessage() {
             return _message;
         }
@@ -108,8 +116,9 @@ public class AggregatorConnection {
             return _message.getSerializedSize() + 5;
         }
 
+        @Nonnull
         public Buffer getBuffer() {
-            Buffer b = new Buffer();
+            @Nonnull Buffer b = new Buffer();
             b.appendInt(0);
             if (_message instanceof Messages.HostIdentification) {
                 b.appendByte((byte) 0x01);
@@ -147,7 +156,8 @@ public class AggregatorConnection {
             }
         }
 
-        public static Message create(GeneratedMessage message) {
+        @Nonnull
+        public static Message create(@Nonnull GeneratedMessage message) {
             return new Message(message);
         }
     }

@@ -3,2032 +3,2374 @@
 
 package com.arpnetworking.tsdaggregator.aggserver;
 
-public final class Messages {
-  private Messages() {}
-  public static void registerAllExtensions(
-      com.google.protobuf.ExtensionRegistry registry) {
-  }
-  public interface HostIdentificationOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-    // optional string host_name = 1;
-    /**
-     * <code>optional string host_name = 1;</code>
-     */
-    boolean hasHostName();
-    /**
-     * <code>optional string host_name = 1;</code>
-     */
-    java.lang.String getHostName();
-    /**
-     * <code>optional string host_name = 1;</code>
-     */
-    com.google.protobuf.ByteString
+public final class Messages {
+    private Messages() {
+    }
+
+    public static void registerAllExtensions(
+            com.google.protobuf.ExtensionRegistry registry) {
+    }
+
+    public interface HostIdentificationOrBuilder
+            extends com.google.protobuf.MessageOrBuilder {
+
+        // optional string host_name = 1;
+
+        /**
+         * <code>optional string host_name = 1;</code>
+         */
+        boolean hasHostName();
+
+        /**
+         * <code>optional string host_name = 1;</code>
+         */
+        @Nullable
+        java.lang.String getHostName();
+
+        /**
+         * <code>optional string host_name = 1;</code>
+         */
+        @Nullable
+        com.google.protobuf.ByteString
         getHostNameBytes();
 
-    // optional string cluster_name = 2;
-    /**
-     * <code>optional string cluster_name = 2;</code>
-     */
-    boolean hasClusterName();
-    /**
-     * <code>optional string cluster_name = 2;</code>
-     */
-    java.lang.String getClusterName();
-    /**
-     * <code>optional string cluster_name = 2;</code>
-     */
-    com.google.protobuf.ByteString
+        // optional string cluster_name = 2;
+
+        /**
+         * <code>optional string cluster_name = 2;</code>
+         */
+        boolean hasClusterName();
+
+        /**
+         * <code>optional string cluster_name = 2;</code>
+         */
+        @Nullable
+        java.lang.String getClusterName();
+
+        /**
+         * <code>optional string cluster_name = 2;</code>
+         */
+        @Nullable
+        com.google.protobuf.ByteString
         getClusterNameBytes();
-  }
-  /**
-   * Protobuf type {@code tsdaggregator.aggserver.HostIdentification}
-   */
-  public static final class HostIdentification extends
-      com.google.protobuf.GeneratedMessage
-      implements HostIdentificationOrBuilder {
-    // Use HostIdentification.newBuilder() to construct.
-    private HostIdentification(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
-      super(builder);
-      this.unknownFields = builder.getUnknownFields();
-    }
-    private HostIdentification(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-    private static final HostIdentification defaultInstance;
-    public static HostIdentification getDefaultInstance() {
-      return defaultInstance;
     }
 
-    public HostIdentification getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final com.google.protobuf.UnknownFieldSet unknownFields;
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
-      return this.unknownFields;
-    }
-    private HostIdentification(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-            case 10: {
-              bitField0_ |= 0x00000001;
-              hostName_ = input.readBytes();
-              break;
-            }
-            case 18: {
-              bitField0_ |= 0x00000002;
-              clusterName_ = input.readBytes();
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_HostIdentification_descriptor;
-    }
-
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_HostIdentification_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.class, com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.Builder.class);
-    }
-
-    public static com.google.protobuf.Parser<HostIdentification> PARSER =
-        new com.google.protobuf.AbstractParser<HostIdentification>() {
-      public HostIdentification parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new HostIdentification(input, extensionRegistry);
-      }
-    };
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<HostIdentification> getParserForType() {
-      return PARSER;
-    }
-
-    private int bitField0_;
-    // optional string host_name = 1;
-    public static final int HOST_NAME_FIELD_NUMBER = 1;
-    private java.lang.Object hostName_;
-    /**
-     * <code>optional string host_name = 1;</code>
-     */
-    public boolean hasHostName() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
-    }
-    /**
-     * <code>optional string host_name = 1;</code>
-     */
-    public java.lang.String getHostName() {
-      java.lang.Object ref = hostName_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          hostName_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string host_name = 1;</code>
-     */
-    public com.google.protobuf.ByteString
-        getHostNameBytes() {
-      java.lang.Object ref = hostName_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        hostName_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    // optional string cluster_name = 2;
-    public static final int CLUSTER_NAME_FIELD_NUMBER = 2;
-    private java.lang.Object clusterName_;
-    /**
-     * <code>optional string cluster_name = 2;</code>
-     */
-    public boolean hasClusterName() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <code>optional string cluster_name = 2;</code>
-     */
-    public java.lang.String getClusterName() {
-      java.lang.Object ref = clusterName_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          clusterName_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string cluster_name = 2;</code>
-     */
-    public com.google.protobuf.ByteString
-        getClusterNameBytes() {
-      java.lang.Object ref = clusterName_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        clusterName_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    private void initFields() {
-      hostName_ = "";
-      clusterName_ = "";
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, getHostNameBytes());
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getClusterNameBytes());
-      }
-      getUnknownFields().writeTo(output);
-    }
-
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, getHostNameBytes());
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getClusterNameBytes());
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
     /**
      * Protobuf type {@code tsdaggregator.aggserver.HostIdentification}
      */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentificationOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_HostIdentification_descriptor;
-      }
-
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_HostIdentification_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.class, com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.Builder.class);
-      }
-
-      // Construct using com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+    public static final class HostIdentification extends
+            com.google.protobuf.GeneratedMessage
+            implements HostIdentificationOrBuilder {
+        // Use HostIdentification.newBuilder() to construct.
+        private HostIdentification(@Nonnull com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+            super(builder);
+            this.unknownFields = builder.getUnknownFields();
         }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
 
-      public Builder clear() {
-        super.clear();
-        hostName_ = "";
-        bitField0_ = (bitField0_ & ~0x00000001);
-        clusterName_ = "";
-        bitField0_ = (bitField0_ & ~0x00000002);
-        return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_HostIdentification_descriptor;
-      }
-
-      public com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification getDefaultInstanceForType() {
-        return com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.getDefaultInstance();
-      }
-
-      public com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification build() {
-        com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
+        private HostIdentification(boolean noInit) {
+            this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance();
         }
-        return result;
-      }
 
-      public com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification buildPartial() {
-        com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification result = new com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-          to_bitField0_ |= 0x00000001;
-        }
-        result.hostName_ = hostName_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.clusterName_ = clusterName_;
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
+        @Nonnull
+        private static final HostIdentification defaultInstance;
 
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification) {
-          return mergeFrom((com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
+        @Nonnull
+        public static HostIdentification getDefaultInstance() {
+            return defaultInstance;
         }
-      }
 
-      public Builder mergeFrom(com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification other) {
-        if (other == com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.getDefaultInstance()) return this;
-        if (other.hasHostName()) {
-          bitField0_ |= 0x00000001;
-          hostName_ = other.hostName_;
-          onChanged();
+        @Nonnull
+        public HostIdentification getDefaultInstanceForType() {
+            return defaultInstance;
         }
-        if (other.hasClusterName()) {
-          bitField0_ |= 0x00000002;
-          clusterName_ = other.clusterName_;
-          onChanged();
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
 
-      public final boolean isInitialized() {
-        return true;
-      }
+        private final com.google.protobuf.UnknownFieldSet unknownFields;
 
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification) e.getUnfinishedMessage();
-          throw e;
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+            return this.unknownFields;
         }
-        return this;
-      }
-      private int bitField0_;
 
-      // optional string host_name = 1;
-      private java.lang.Object hostName_ = "";
-      /**
-       * <code>optional string host_name = 1;</code>
-       */
-      public boolean hasHostName() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
-      }
-      /**
-       * <code>optional string host_name = 1;</code>
-       */
-      public java.lang.String getHostName() {
-        java.lang.Object ref = hostName_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          hostName_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
+        private HostIdentification(
+                @Nonnull com.google.protobuf.CodedInputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            initFields();
+            int mutable_bitField0_ = 0;
+            com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+                    com.google.protobuf.UnknownFieldSet.newBuilder();
+            try {
+                boolean done = false;
+                while (!done) {
+                    int tag = input.readTag();
+                    switch (tag) {
+                        case 0:
+                            done = true;
+                            break;
+                        default: {
+                            if (!parseUnknownField(input, unknownFields,
+                                    extensionRegistry, tag)) {
+                                done = true;
+                            }
+                            break;
+                        }
+                        case 10: {
+                            bitField0_ |= 0x00000001;
+                            hostName_ = input.readBytes();
+                            break;
+                        }
+                        case 18: {
+                            bitField0_ |= 0x00000002;
+                            clusterName_ = input.readBytes();
+                            break;
+                        }
+                    }
+                }
+            } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                throw e.setUnfinishedMessage(this);
+            } catch (java.io.IOException e) {
+                throw new com.google.protobuf.InvalidProtocolBufferException(
+                        e.getMessage()).setUnfinishedMessage(this);
+            } finally {
+                this.unknownFields = unknownFields.build();
+                makeExtensionsImmutable();
+            }
         }
-      }
-      /**
-       * <code>optional string host_name = 1;</code>
-       */
-      public com.google.protobuf.ByteString
-          getHostNameBytes() {
-        java.lang.Object ref = hostName_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          hostName_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>optional string host_name = 1;</code>
-       */
-      public Builder setHostName(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        hostName_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string host_name = 1;</code>
-       */
-      public Builder clearHostName() {
-        bitField0_ = (bitField0_ & ~0x00000001);
-        hostName_ = getDefaultInstance().getHostName();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string host_name = 1;</code>
-       */
-      public Builder setHostNameBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        hostName_ = value;
-        onChanged();
-        return this;
-      }
 
-      // optional string cluster_name = 2;
-      private java.lang.Object clusterName_ = "";
-      /**
-       * <code>optional string cluster_name = 2;</code>
-       */
-      public boolean hasClusterName() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <code>optional string cluster_name = 2;</code>
-       */
-      public java.lang.String getClusterName() {
-        java.lang.Object ref = clusterName_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          clusterName_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
+        public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+            return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_HostIdentification_descriptor;
         }
-      }
-      /**
-       * <code>optional string cluster_name = 2;</code>
-       */
-      public com.google.protobuf.ByteString
-          getClusterNameBytes() {
-        java.lang.Object ref = clusterName_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          clusterName_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>optional string cluster_name = 2;</code>
-       */
-      public Builder setClusterName(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        clusterName_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string cluster_name = 2;</code>
-       */
-      public Builder clearClusterName() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        clusterName_ = getDefaultInstance().getClusterName();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string cluster_name = 2;</code>
-       */
-      public Builder setClusterNameBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        clusterName_ = value;
-        onChanged();
-        return this;
-      }
 
-      // @@protoc_insertion_point(builder_scope:tsdaggregator.aggserver.HostIdentification)
+        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+            return com.arpnetworking.tsdaggregator.aggserver.Messages
+                    .internal_static_tsdaggregator_aggserver_HostIdentification_fieldAccessorTable
+                    .ensureFieldAccessorsInitialized(
+                            com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.class,
+                            com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.Builder.class);
+        }
+
+        @Nonnull
+        public static com.google.protobuf.Parser<HostIdentification> PARSER =
+                new com.google.protobuf.AbstractParser<HostIdentification>() {
+                    @Nonnull
+                    public HostIdentification parsePartialFrom(
+                            @Nonnull com.google.protobuf.CodedInputStream input,
+                            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                        return new HostIdentification(input, extensionRegistry);
+                    }
+                };
+
+        @Nonnull
+        @java.lang.Override
+        public com.google.protobuf.Parser<HostIdentification> getParserForType() {
+            return PARSER;
+        }
+
+        private int bitField0_;
+        // optional string host_name = 1;
+        public static final int HOST_NAME_FIELD_NUMBER = 1;
+        @Nullable
+        private java.lang.Object hostName_;
+
+        /**
+         * <code>optional string host_name = 1;</code>
+         */
+        public boolean hasHostName() {
+            return ((bitField0_ & 0x00000001) == 0x00000001);
+        }
+
+        /**
+         * <code>optional string host_name = 1;</code>
+         */
+        @Nullable
+        public java.lang.String getHostName() {
+            @Nullable java.lang.Object ref = hostName_;
+            if (ref instanceof java.lang.String) {
+                return (java.lang.String) ref;
+            } else {
+                @Nonnull com.google.protobuf.ByteString bs =
+                        (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                if (bs.isValidUtf8()) {
+                    hostName_ = s;
+                }
+                return s;
+            }
+        }
+
+        /**
+         * <code>optional string host_name = 1;</code>
+         */
+        @Nullable
+        public com.google.protobuf.ByteString
+        getHostNameBytes() {
+            @Nullable java.lang.Object ref = hostName_;
+            if (ref instanceof java.lang.String) {
+                com.google.protobuf.ByteString b =
+                        com.google.protobuf.ByteString.copyFromUtf8(
+                                (java.lang.String) ref);
+                hostName_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        // optional string cluster_name = 2;
+        public static final int CLUSTER_NAME_FIELD_NUMBER = 2;
+        @Nullable
+        private java.lang.Object clusterName_;
+
+        /**
+         * <code>optional string cluster_name = 2;</code>
+         */
+        public boolean hasClusterName() {
+            return ((bitField0_ & 0x00000002) == 0x00000002);
+        }
+
+        /**
+         * <code>optional string cluster_name = 2;</code>
+         */
+        @Nullable
+        public java.lang.String getClusterName() {
+            @Nullable java.lang.Object ref = clusterName_;
+            if (ref instanceof java.lang.String) {
+                return (java.lang.String) ref;
+            } else {
+                @Nonnull com.google.protobuf.ByteString bs =
+                        (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                if (bs.isValidUtf8()) {
+                    clusterName_ = s;
+                }
+                return s;
+            }
+        }
+
+        /**
+         * <code>optional string cluster_name = 2;</code>
+         */
+        @Nullable
+        public com.google.protobuf.ByteString
+        getClusterNameBytes() {
+            @Nullable java.lang.Object ref = clusterName_;
+            if (ref instanceof java.lang.String) {
+                com.google.protobuf.ByteString b =
+                        com.google.protobuf.ByteString.copyFromUtf8(
+                                (java.lang.String) ref);
+                clusterName_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        private void initFields() {
+            hostName_ = "";
+            clusterName_ = "";
+        }
+
+        private byte memoizedIsInitialized = -1;
+
+        public final boolean isInitialized() {
+            byte isInitialized = memoizedIsInitialized;
+            if (isInitialized != -1) {
+                return isInitialized == 1;
+            }
+
+            memoizedIsInitialized = 1;
+            return true;
+        }
+
+        public void writeTo(@Nonnull com.google.protobuf.CodedOutputStream output)
+                throws java.io.IOException {
+            getSerializedSize();
+            if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                output.writeBytes(1, getHostNameBytes());
+            }
+            if (((bitField0_ & 0x00000002) == 0x00000002)) {
+                output.writeBytes(2, getClusterNameBytes());
+            }
+            getUnknownFields().writeTo(output);
+        }
+
+        private int memoizedSerializedSize = -1;
+
+        public int getSerializedSize() {
+            int size = memoizedSerializedSize;
+            if (size != -1) {
+                return size;
+            }
+
+            size = 0;
+            if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(1, getHostNameBytes());
+            }
+            if (((bitField0_ & 0x00000002) == 0x00000002)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(2, getClusterNameBytes());
+            }
+            size += getUnknownFields().getSerializedSize();
+            memoizedSerializedSize = size;
+            return size;
+        }
+
+        private static final long serialVersionUID = 0L;
+
+        @java.lang.Override
+        protected java.lang.Object writeReplace()
+                throws java.io.ObjectStreamException {
+            return super.writeReplace();
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
+                com.google.protobuf.ByteString data)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
+                com.google.protobuf.ByteString data,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(byte[] data)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
+                byte[] data,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
+                java.io.InputStream input)
+                throws java.io.IOException {
+            return PARSER.parseFrom(input);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
+                java.io.InputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws java.io.IOException {
+            return PARSER.parseFrom(input, extensionRegistry);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseDelimitedFrom(
+                java.io.InputStream input)
+                throws java.io.IOException {
+            return PARSER.parseDelimitedFrom(input);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseDelimitedFrom(
+                java.io.InputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws java.io.IOException {
+            return PARSER.parseDelimitedFrom(input, extensionRegistry);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
+                com.google.protobuf.CodedInputStream input)
+                throws java.io.IOException {
+            return PARSER.parseFrom(input);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parseFrom(
+                com.google.protobuf.CodedInputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws java.io.IOException {
+            return PARSER.parseFrom(input, extensionRegistry);
+        }
+
+        @Nonnull
+        public static Builder newBuilder() {
+            return Builder.create();
+        }
+
+        @Nonnull
+        public Builder newBuilderForType() {
+            return newBuilder();
+        }
+
+        @Nonnull
+        public static Builder newBuilder(
+                @Nonnull com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification prototype) {
+            return newBuilder().mergeFrom(prototype);
+        }
+
+        @Nonnull
+        public Builder toBuilder() {
+            return newBuilder(this);
+        }
+
+        @Nonnull
+        @java.lang.Override
+        protected Builder newBuilderForType(
+                com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+            @Nonnull Builder builder = new Builder(parent);
+            return builder;
+        }
+
+        /**
+         * Protobuf type {@code tsdaggregator.aggserver.HostIdentification}
+         */
+        public static final class Builder extends
+                com.google.protobuf.GeneratedMessage.Builder<Builder>
+                implements com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentificationOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+                return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_HostIdentification_descriptor;
+            }
+
+            protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+                return com.arpnetworking.tsdaggregator.aggserver.Messages
+                        .internal_static_tsdaggregator_aggserver_HostIdentification_fieldAccessorTable
+                        .ensureFieldAccessorsInitialized(
+                                com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.class,
+                                com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.Builder.class);
+            }
+
+            // Construct using com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.newBuilder()
+            private Builder() {
+                maybeForceBuilderInitialization();
+            }
+
+            private Builder(
+                    com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+                super(parent);
+                maybeForceBuilderInitialization();
+            }
+
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+                }
+            }
+
+            @Nonnull
+            private static Builder create() {
+                return new Builder();
+            }
+
+            @Nonnull
+            public Builder clear() {
+                super.clear();
+                hostName_ = "";
+                bitField0_ = (bitField0_ & ~0x00000001);
+                clusterName_ = "";
+                bitField0_ = (bitField0_ & ~0x00000002);
+                return this;
+            }
+
+            @Nonnull
+            public Builder clone() {
+                return create().mergeFrom(buildPartial());
+            }
+
+            public com.google.protobuf.Descriptors.Descriptor
+            getDescriptorForType() {
+                return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_HostIdentification_descriptor;
+            }
+
+            @Nonnull
+            public com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification getDefaultInstanceForType() {
+                return com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.getDefaultInstance();
+            }
+
+            @Nonnull
+            public com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification build() {
+                @Nonnull com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification result = buildPartial();
+                if (!result.isInitialized()) {
+                    throw newUninitializedMessageException(result);
+                }
+                return result;
+            }
+
+            @Nonnull
+            public com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification buildPartial() {
+                @Nonnull com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification result =
+                        new com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification(this);
+                int from_bitField0_ = bitField0_;
+                int to_bitField0_ = 0;
+                if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+                    to_bitField0_ |= 0x00000001;
+                }
+                result.hostName_ = hostName_;
+                if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+                    to_bitField0_ |= 0x00000002;
+                }
+                result.clusterName_ = clusterName_;
+                result.bitField0_ = to_bitField0_;
+                onBuilt();
+                return result;
+            }
+
+            @Nonnull
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification) {
+                    return mergeFrom((com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
+            }
+
+            @Nonnull
+            public Builder mergeFrom(
+                    @Nonnull com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification other) {
+                if (other ==
+                        com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification.getDefaultInstance()) {
+                    return this;
+                }
+                if (other.hasHostName()) {
+                    bitField0_ |= 0x00000001;
+                    hostName_ = other.hostName_;
+                    onChanged();
+                }
+                if (other.hasClusterName()) {
+                    bitField0_ |= 0x00000002;
+                    clusterName_ = other.clusterName_;
+                    onChanged();
+                }
+                this.mergeUnknownFields(other.getUnknownFields());
+                return this;
+            }
+
+            public final boolean isInitialized() {
+                return true;
+            }
+
+            @Nonnull
+            public Builder mergeFrom(
+                    com.google.protobuf.CodedInputStream input,
+                    com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                    throws java.io.IOException {
+                @Nullable com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification parsedMessage = null;
+                try {
+                    parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                    parsedMessage = (com.arpnetworking.tsdaggregator.aggserver.Messages.HostIdentification) e
+                            .getUnfinishedMessage();
+                    throw e;
+                } finally {
+                    if (parsedMessage != null) {
+                        mergeFrom(parsedMessage);
+                    }
+                }
+                return this;
+            }
+
+            private int bitField0_;
+
+            // optional string host_name = 1;
+            @Nullable
+            private java.lang.Object hostName_ = "";
+
+            /**
+             * <code>optional string host_name = 1;</code>
+             */
+            public boolean hasHostName() {
+                return ((bitField0_ & 0x00000001) == 0x00000001);
+            }
+
+            /**
+             * <code>optional string host_name = 1;</code>
+             */
+            @Nullable
+            public java.lang.String getHostName() {
+                @Nullable java.lang.Object ref = hostName_;
+                if (!(ref instanceof java.lang.String)) {
+                    java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                            .toStringUtf8();
+                    hostName_ = s;
+                    return s;
+                } else {
+                    return (java.lang.String) ref;
+                }
+            }
+
+            /**
+             * <code>optional string host_name = 1;</code>
+             */
+            @Nullable
+            public com.google.protobuf.ByteString
+            getHostNameBytes() {
+                @Nullable java.lang.Object ref = hostName_;
+                if (ref instanceof String) {
+                    com.google.protobuf.ByteString b =
+                            com.google.protobuf.ByteString.copyFromUtf8(
+                                    (java.lang.String) ref);
+                    hostName_ = b;
+                    return b;
+                } else {
+                    return (com.google.protobuf.ByteString) ref;
+                }
+            }
+
+            /**
+             * <code>optional string host_name = 1;</code>
+             */
+            @Nonnull
+            public Builder setHostName(
+                    @Nullable java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000001;
+                hostName_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string host_name = 1;</code>
+             */
+            @Nonnull
+            public Builder clearHostName() {
+                bitField0_ = (bitField0_ & ~0x00000001);
+                hostName_ = getDefaultInstance().getHostName();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string host_name = 1;</code>
+             */
+            @Nonnull
+            public Builder setHostNameBytes(
+                    @Nullable com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000001;
+                hostName_ = value;
+                onChanged();
+                return this;
+            }
+
+            // optional string cluster_name = 2;
+            @Nullable
+            private java.lang.Object clusterName_ = "";
+
+            /**
+             * <code>optional string cluster_name = 2;</code>
+             */
+            public boolean hasClusterName() {
+                return ((bitField0_ & 0x00000002) == 0x00000002);
+            }
+
+            /**
+             * <code>optional string cluster_name = 2;</code>
+             */
+            @Nullable
+            public java.lang.String getClusterName() {
+                @Nullable java.lang.Object ref = clusterName_;
+                if (!(ref instanceof java.lang.String)) {
+                    java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                            .toStringUtf8();
+                    clusterName_ = s;
+                    return s;
+                } else {
+                    return (java.lang.String) ref;
+                }
+            }
+
+            /**
+             * <code>optional string cluster_name = 2;</code>
+             */
+            @Nullable
+            public com.google.protobuf.ByteString
+            getClusterNameBytes() {
+                @Nullable java.lang.Object ref = clusterName_;
+                if (ref instanceof String) {
+                    com.google.protobuf.ByteString b =
+                            com.google.protobuf.ByteString.copyFromUtf8(
+                                    (java.lang.String) ref);
+                    clusterName_ = b;
+                    return b;
+                } else {
+                    return (com.google.protobuf.ByteString) ref;
+                }
+            }
+
+            /**
+             * <code>optional string cluster_name = 2;</code>
+             */
+            @Nonnull
+            public Builder setClusterName(
+                    @Nullable java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000002;
+                clusterName_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string cluster_name = 2;</code>
+             */
+            @Nonnull
+            public Builder clearClusterName() {
+                bitField0_ = (bitField0_ & ~0x00000002);
+                clusterName_ = getDefaultInstance().getClusterName();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string cluster_name = 2;</code>
+             */
+            @Nonnull
+            public Builder setClusterNameBytes(
+                    @Nullable com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000002;
+                clusterName_ = value;
+                onChanged();
+                return this;
+            }
+
+            // @@protoc_insertion_point(builder_scope:tsdaggregator.aggserver.HostIdentification)
+        }
+
+        static {
+            defaultInstance = new HostIdentification(true);
+            defaultInstance.initFields();
+        }
+
+        // @@protoc_insertion_point(class_scope:tsdaggregator.aggserver.HostIdentification)
     }
 
-    static {
-      defaultInstance = new HostIdentification(true);
-      defaultInstance.initFields();
-    }
+    public interface AggregationRecordOrBuilder
+            extends com.google.protobuf.MessageOrBuilder {
 
-    // @@protoc_insertion_point(class_scope:tsdaggregator.aggserver.HostIdentification)
-  }
+        // optional string service = 1;
 
-  public interface AggregationRecordOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
+        /**
+         * <code>optional string service = 1;</code>
+         */
+        boolean hasService();
 
-    // optional string service = 1;
-    /**
-     * <code>optional string service = 1;</code>
-     */
-    boolean hasService();
-    /**
-     * <code>optional string service = 1;</code>
-     */
-    java.lang.String getService();
-    /**
-     * <code>optional string service = 1;</code>
-     */
-    com.google.protobuf.ByteString
+        /**
+         * <code>optional string service = 1;</code>
+         */
+        @Nullable
+        java.lang.String getService();
+
+        /**
+         * <code>optional string service = 1;</code>
+         */
+        @Nullable
+        com.google.protobuf.ByteString
         getServiceBytes();
 
-    // optional string metric = 2;
-    /**
-     * <code>optional string metric = 2;</code>
-     */
-    boolean hasMetric();
-    /**
-     * <code>optional string metric = 2;</code>
-     */
-    java.lang.String getMetric();
-    /**
-     * <code>optional string metric = 2;</code>
-     */
-    com.google.protobuf.ByteString
+        // optional string metric = 2;
+
+        /**
+         * <code>optional string metric = 2;</code>
+         */
+        boolean hasMetric();
+
+        /**
+         * <code>optional string metric = 2;</code>
+         */
+        @Nullable
+        java.lang.String getMetric();
+
+        /**
+         * <code>optional string metric = 2;</code>
+         */
+        @Nullable
+        com.google.protobuf.ByteString
         getMetricBytes();
 
-    // optional string statistic = 3;
-    /**
-     * <code>optional string statistic = 3;</code>
-     */
-    boolean hasStatistic();
-    /**
-     * <code>optional string statistic = 3;</code>
-     */
-    java.lang.String getStatistic();
-    /**
-     * <code>optional string statistic = 3;</code>
-     */
-    com.google.protobuf.ByteString
+        // optional string statistic = 3;
+
+        /**
+         * <code>optional string statistic = 3;</code>
+         */
+        boolean hasStatistic();
+
+        /**
+         * <code>optional string statistic = 3;</code>
+         */
+        @Nullable
+        java.lang.String getStatistic();
+
+        /**
+         * <code>optional string statistic = 3;</code>
+         */
+        @Nullable
+        com.google.protobuf.ByteString
         getStatisticBytes();
 
-    // optional string period = 4;
-    /**
-     * <code>optional string period = 4;</code>
-     */
-    boolean hasPeriod();
-    /**
-     * <code>optional string period = 4;</code>
-     */
-    java.lang.String getPeriod();
-    /**
-     * <code>optional string period = 4;</code>
-     */
-    com.google.protobuf.ByteString
+        // optional string period = 4;
+
+        /**
+         * <code>optional string period = 4;</code>
+         */
+        boolean hasPeriod();
+
+        /**
+         * <code>optional string period = 4;</code>
+         */
+        @Nullable
+        java.lang.String getPeriod();
+
+        /**
+         * <code>optional string period = 4;</code>
+         */
+        @Nullable
+        com.google.protobuf.ByteString
         getPeriodBytes();
 
-    // optional string period_start = 5;
-    /**
-     * <code>optional string period_start = 5;</code>
-     */
-    boolean hasPeriodStart();
-    /**
-     * <code>optional string period_start = 5;</code>
-     */
-    java.lang.String getPeriodStart();
-    /**
-     * <code>optional string period_start = 5;</code>
-     */
-    com.google.protobuf.ByteString
+        // optional string period_start = 5;
+
+        /**
+         * <code>optional string period_start = 5;</code>
+         */
+        boolean hasPeriodStart();
+
+        /**
+         * <code>optional string period_start = 5;</code>
+         */
+        @Nullable
+        java.lang.String getPeriodStart();
+
+        /**
+         * <code>optional string period_start = 5;</code>
+         */
+        @Nullable
+        com.google.protobuf.ByteString
         getPeriodStartBytes();
 
-    // optional double statistic_value = 6;
-    /**
-     * <code>optional double statistic_value = 6;</code>
-     */
-    boolean hasStatisticValue();
-    /**
-     * <code>optional double statistic_value = 6;</code>
-     */
-    double getStatisticValue();
+        // optional double statistic_value = 6;
 
-    // repeated double statistic_samples = 7 [packed = true];
-    /**
-     * <code>repeated double statistic_samples = 7 [packed = true];</code>
-     */
-    java.util.List<java.lang.Double> getStatisticSamplesList();
-    /**
-     * <code>repeated double statistic_samples = 7 [packed = true];</code>
-     */
-    int getStatisticSamplesCount();
-    /**
-     * <code>repeated double statistic_samples = 7 [packed = true];</code>
-     */
-    double getStatisticSamples(int index);
-  }
-  /**
-   * Protobuf type {@code tsdaggregator.aggserver.AggregationRecord}
-   */
-  public static final class AggregationRecord extends
-      com.google.protobuf.GeneratedMessage
-      implements AggregationRecordOrBuilder {
-    // Use AggregationRecord.newBuilder() to construct.
-    private AggregationRecord(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
-      super(builder);
-      this.unknownFields = builder.getUnknownFields();
-    }
-    private AggregationRecord(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+        /**
+         * <code>optional double statistic_value = 6;</code>
+         */
+        boolean hasStatisticValue();
 
-    private static final AggregationRecord defaultInstance;
-    public static AggregationRecord getDefaultInstance() {
-      return defaultInstance;
+        /**
+         * <code>optional double statistic_value = 6;</code>
+         */
+        double getStatisticValue();
+
+        // repeated double statistic_samples = 7 [packed = true];
+
+        /**
+         * <code>repeated double statistic_samples = 7 [packed = true];</code>
+         */
+        java.util.List<java.lang.Double> getStatisticSamplesList();
+
+        /**
+         * <code>repeated double statistic_samples = 7 [packed = true];</code>
+         */
+        int getStatisticSamplesCount();
+
+        /**
+         * <code>repeated double statistic_samples = 7 [packed = true];</code>
+         */
+        double getStatisticSamples(int index);
     }
 
-    public AggregationRecord getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final com.google.protobuf.UnknownFieldSet unknownFields;
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
-      return this.unknownFields;
-    }
-    private AggregationRecord(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-            case 10: {
-              bitField0_ |= 0x00000001;
-              service_ = input.readBytes();
-              break;
-            }
-            case 18: {
-              bitField0_ |= 0x00000002;
-              metric_ = input.readBytes();
-              break;
-            }
-            case 26: {
-              bitField0_ |= 0x00000004;
-              statistic_ = input.readBytes();
-              break;
-            }
-            case 34: {
-              bitField0_ |= 0x00000008;
-              period_ = input.readBytes();
-              break;
-            }
-            case 42: {
-              bitField0_ |= 0x00000010;
-              periodStart_ = input.readBytes();
-              break;
-            }
-            case 49: {
-              bitField0_ |= 0x00000020;
-              statisticValue_ = input.readDouble();
-              break;
-            }
-            case 57: {
-              if (!((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
-                statisticSamples_ = new java.util.ArrayList<java.lang.Double>();
-                mutable_bitField0_ |= 0x00000040;
-              }
-              statisticSamples_.add(input.readDouble());
-              break;
-            }
-            case 58: {
-              int length = input.readRawVarint32();
-              int limit = input.pushLimit(length);
-              if (!((mutable_bitField0_ & 0x00000040) == 0x00000040) && input.getBytesUntilLimit() > 0) {
-                statisticSamples_ = new java.util.ArrayList<java.lang.Double>();
-                mutable_bitField0_ |= 0x00000040;
-              }
-              while (input.getBytesUntilLimit() > 0) {
-                statisticSamples_.add(input.readDouble());
-              }
-              input.popLimit(limit);
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
-      } finally {
-        if (((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
-          statisticSamples_ = java.util.Collections.unmodifiableList(statisticSamples_);
-        }
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor;
-    }
-
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_AggregationRecord_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.class, com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.Builder.class);
-    }
-
-    public static com.google.protobuf.Parser<AggregationRecord> PARSER =
-        new com.google.protobuf.AbstractParser<AggregationRecord>() {
-      public AggregationRecord parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new AggregationRecord(input, extensionRegistry);
-      }
-    };
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<AggregationRecord> getParserForType() {
-      return PARSER;
-    }
-
-    private int bitField0_;
-    // optional string service = 1;
-    public static final int SERVICE_FIELD_NUMBER = 1;
-    private java.lang.Object service_;
-    /**
-     * <code>optional string service = 1;</code>
-     */
-    public boolean hasService() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
-    }
-    /**
-     * <code>optional string service = 1;</code>
-     */
-    public java.lang.String getService() {
-      java.lang.Object ref = service_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          service_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string service = 1;</code>
-     */
-    public com.google.protobuf.ByteString
-        getServiceBytes() {
-      java.lang.Object ref = service_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        service_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    // optional string metric = 2;
-    public static final int METRIC_FIELD_NUMBER = 2;
-    private java.lang.Object metric_;
-    /**
-     * <code>optional string metric = 2;</code>
-     */
-    public boolean hasMetric() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <code>optional string metric = 2;</code>
-     */
-    public java.lang.String getMetric() {
-      java.lang.Object ref = metric_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          metric_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string metric = 2;</code>
-     */
-    public com.google.protobuf.ByteString
-        getMetricBytes() {
-      java.lang.Object ref = metric_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        metric_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    // optional string statistic = 3;
-    public static final int STATISTIC_FIELD_NUMBER = 3;
-    private java.lang.Object statistic_;
-    /**
-     * <code>optional string statistic = 3;</code>
-     */
-    public boolean hasStatistic() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <code>optional string statistic = 3;</code>
-     */
-    public java.lang.String getStatistic() {
-      java.lang.Object ref = statistic_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          statistic_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string statistic = 3;</code>
-     */
-    public com.google.protobuf.ByteString
-        getStatisticBytes() {
-      java.lang.Object ref = statistic_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        statistic_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    // optional string period = 4;
-    public static final int PERIOD_FIELD_NUMBER = 4;
-    private java.lang.Object period_;
-    /**
-     * <code>optional string period = 4;</code>
-     */
-    public boolean hasPeriod() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    /**
-     * <code>optional string period = 4;</code>
-     */
-    public java.lang.String getPeriod() {
-      java.lang.Object ref = period_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          period_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string period = 4;</code>
-     */
-    public com.google.protobuf.ByteString
-        getPeriodBytes() {
-      java.lang.Object ref = period_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        period_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    // optional string period_start = 5;
-    public static final int PERIOD_START_FIELD_NUMBER = 5;
-    private java.lang.Object periodStart_;
-    /**
-     * <code>optional string period_start = 5;</code>
-     */
-    public boolean hasPeriodStart() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    /**
-     * <code>optional string period_start = 5;</code>
-     */
-    public java.lang.String getPeriodStart() {
-      java.lang.Object ref = periodStart_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          periodStart_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string period_start = 5;</code>
-     */
-    public com.google.protobuf.ByteString
-        getPeriodStartBytes() {
-      java.lang.Object ref = periodStart_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        periodStart_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    // optional double statistic_value = 6;
-    public static final int STATISTIC_VALUE_FIELD_NUMBER = 6;
-    private double statisticValue_;
-    /**
-     * <code>optional double statistic_value = 6;</code>
-     */
-    public boolean hasStatisticValue() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
-    }
-    /**
-     * <code>optional double statistic_value = 6;</code>
-     */
-    public double getStatisticValue() {
-      return statisticValue_;
-    }
-
-    // repeated double statistic_samples = 7 [packed = true];
-    public static final int STATISTIC_SAMPLES_FIELD_NUMBER = 7;
-    private java.util.List<java.lang.Double> statisticSamples_;
-    /**
-     * <code>repeated double statistic_samples = 7 [packed = true];</code>
-     */
-    public java.util.List<java.lang.Double>
-        getStatisticSamplesList() {
-      return statisticSamples_;
-    }
-    /**
-     * <code>repeated double statistic_samples = 7 [packed = true];</code>
-     */
-    public int getStatisticSamplesCount() {
-      return statisticSamples_.size();
-    }
-    /**
-     * <code>repeated double statistic_samples = 7 [packed = true];</code>
-     */
-    public double getStatisticSamples(int index) {
-      return statisticSamples_.get(index);
-    }
-    private int statisticSamplesMemoizedSerializedSize = -1;
-
-    private void initFields() {
-      service_ = "";
-      metric_ = "";
-      statistic_ = "";
-      period_ = "";
-      periodStart_ = "";
-      statisticValue_ = 0D;
-      statisticSamples_ = java.util.Collections.emptyList();
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, getServiceBytes());
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getMetricBytes());
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeBytes(3, getStatisticBytes());
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        output.writeBytes(4, getPeriodBytes());
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeBytes(5, getPeriodStartBytes());
-      }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        output.writeDouble(6, statisticValue_);
-      }
-      if (getStatisticSamplesList().size() > 0) {
-        output.writeRawVarint32(58);
-        output.writeRawVarint32(statisticSamplesMemoizedSerializedSize);
-      }
-      for (int i = 0; i < statisticSamples_.size(); i++) {
-        output.writeDoubleNoTag(statisticSamples_.get(i));
-      }
-      getUnknownFields().writeTo(output);
-    }
-
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, getServiceBytes());
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getMetricBytes());
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(3, getStatisticBytes());
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(4, getPeriodBytes());
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(5, getPeriodStartBytes());
-      }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(6, statisticValue_);
-      }
-      {
-        int dataSize = 0;
-        dataSize = 8 * getStatisticSamplesList().size();
-        size += dataSize;
-        if (!getStatisticSamplesList().isEmpty()) {
-          size += 1;
-          size += com.google.protobuf.CodedOutputStream
-              .computeInt32SizeNoTag(dataSize);
-        }
-        statisticSamplesMemoizedSerializedSize = dataSize;
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
     /**
      * Protobuf type {@code tsdaggregator.aggserver.AggregationRecord}
      */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecordOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor;
-      }
+    public static final class AggregationRecord extends
+            com.google.protobuf.GeneratedMessage
+            implements AggregationRecordOrBuilder {
+        // Use AggregationRecord.newBuilder() to construct.
+        private AggregationRecord(@Nonnull com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+            super(builder);
+            this.unknownFields = builder.getUnknownFields();
+        }
 
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_AggregationRecord_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.class, com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.Builder.class);
-      }
+        private AggregationRecord(boolean noInit) {
+            this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+        }
 
-      // Construct using com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
+        @Nonnull
+        private static final AggregationRecord defaultInstance;
 
-      private Builder(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        @Nonnull
+        public static AggregationRecord getDefaultInstance() {
+            return defaultInstance;
         }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
 
-      public Builder clear() {
-        super.clear();
-        service_ = "";
-        bitField0_ = (bitField0_ & ~0x00000001);
-        metric_ = "";
-        bitField0_ = (bitField0_ & ~0x00000002);
-        statistic_ = "";
-        bitField0_ = (bitField0_ & ~0x00000004);
-        period_ = "";
-        bitField0_ = (bitField0_ & ~0x00000008);
-        periodStart_ = "";
-        bitField0_ = (bitField0_ & ~0x00000010);
-        statisticValue_ = 0D;
-        bitField0_ = (bitField0_ & ~0x00000020);
-        statisticSamples_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00000040);
-        return this;
-      }
+        @Nonnull
+        public AggregationRecord getDefaultInstanceForType() {
+            return defaultInstance;
+        }
 
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
+        private final com.google.protobuf.UnknownFieldSet unknownFields;
 
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor;
-      }
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+            return this.unknownFields;
+        }
 
-      public com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord getDefaultInstanceForType() {
-        return com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.getDefaultInstance();
-      }
+        private AggregationRecord(
+                @Nonnull com.google.protobuf.CodedInputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            initFields();
+            int mutable_bitField0_ = 0;
+            com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+                    com.google.protobuf.UnknownFieldSet.newBuilder();
+            try {
+                boolean done = false;
+                while (!done) {
+                    int tag = input.readTag();
+                    switch (tag) {
+                        case 0:
+                            done = true;
+                            break;
+                        default: {
+                            if (!parseUnknownField(input, unknownFields,
+                                    extensionRegistry, tag)) {
+                                done = true;
+                            }
+                            break;
+                        }
+                        case 10: {
+                            bitField0_ |= 0x00000001;
+                            service_ = input.readBytes();
+                            break;
+                        }
+                        case 18: {
+                            bitField0_ |= 0x00000002;
+                            metric_ = input.readBytes();
+                            break;
+                        }
+                        case 26: {
+                            bitField0_ |= 0x00000004;
+                            statistic_ = input.readBytes();
+                            break;
+                        }
+                        case 34: {
+                            bitField0_ |= 0x00000008;
+                            period_ = input.readBytes();
+                            break;
+                        }
+                        case 42: {
+                            bitField0_ |= 0x00000010;
+                            periodStart_ = input.readBytes();
+                            break;
+                        }
+                        case 49: {
+                            bitField0_ |= 0x00000020;
+                            statisticValue_ = input.readDouble();
+                            break;
+                        }
+                        case 57: {
+                            if (!((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+                                statisticSamples_ = new java.util.ArrayList<java.lang.Double>();
+                                mutable_bitField0_ |= 0x00000040;
+                            }
+                            statisticSamples_.add(input.readDouble());
+                            break;
+                        }
+                        case 58: {
+                            int length = input.readRawVarint32();
+                            int limit = input.pushLimit(length);
+                            if (!((mutable_bitField0_ & 0x00000040) == 0x00000040) && input.getBytesUntilLimit() > 0) {
+                                statisticSamples_ = new java.util.ArrayList<java.lang.Double>();
+                                mutable_bitField0_ |= 0x00000040;
+                            }
+                            while (input.getBytesUntilLimit() > 0) {
+                                statisticSamples_.add(input.readDouble());
+                            }
+                            input.popLimit(limit);
+                            break;
+                        }
+                    }
+                }
+            } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                throw e.setUnfinishedMessage(this);
+            } catch (java.io.IOException e) {
+                throw new com.google.protobuf.InvalidProtocolBufferException(
+                        e.getMessage()).setUnfinishedMessage(this);
+            } finally {
+                if (((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+                    statisticSamples_ = java.util.Collections.unmodifiableList(statisticSamples_);
+                }
+                this.unknownFields = unknownFields.build();
+                makeExtensionsImmutable();
+            }
+        }
 
-      public com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord build() {
-        com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
+        public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+            return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor;
         }
-        return result;
-      }
 
-      public com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord buildPartial() {
-        com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord result = new com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-          to_bitField0_ |= 0x00000001;
+        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+            return com.arpnetworking.tsdaggregator.aggserver.Messages
+                    .internal_static_tsdaggregator_aggserver_AggregationRecord_fieldAccessorTable
+                    .ensureFieldAccessorsInitialized(
+                            com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.class,
+                            com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.Builder.class);
         }
-        result.service_ = service_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.metric_ = metric_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.statistic_ = statistic_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.period_ = period_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.periodStart_ = periodStart_;
-        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
-          to_bitField0_ |= 0x00000020;
-        }
-        result.statisticValue_ = statisticValue_;
-        if (((bitField0_ & 0x00000040) == 0x00000040)) {
-          statisticSamples_ = java.util.Collections.unmodifiableList(statisticSamples_);
-          bitField0_ = (bitField0_ & ~0x00000040);
-        }
-        result.statisticSamples_ = statisticSamples_;
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
 
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord) {
-          return mergeFrom((com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
+        @Nonnull
+        public static com.google.protobuf.Parser<AggregationRecord> PARSER =
+                new com.google.protobuf.AbstractParser<AggregationRecord>() {
+                    @Nonnull
+                    public AggregationRecord parsePartialFrom(
+                            @Nonnull com.google.protobuf.CodedInputStream input,
+                            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                        return new AggregationRecord(input, extensionRegistry);
+                    }
+                };
 
-      public Builder mergeFrom(com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord other) {
-        if (other == com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.getDefaultInstance()) return this;
-        if (other.hasService()) {
-          bitField0_ |= 0x00000001;
-          service_ = other.service_;
-          onChanged();
+        @Nonnull
+        @java.lang.Override
+        public com.google.protobuf.Parser<AggregationRecord> getParserForType() {
+            return PARSER;
         }
-        if (other.hasMetric()) {
-          bitField0_ |= 0x00000002;
-          metric_ = other.metric_;
-          onChanged();
-        }
-        if (other.hasStatistic()) {
-          bitField0_ |= 0x00000004;
-          statistic_ = other.statistic_;
-          onChanged();
-        }
-        if (other.hasPeriod()) {
-          bitField0_ |= 0x00000008;
-          period_ = other.period_;
-          onChanged();
-        }
-        if (other.hasPeriodStart()) {
-          bitField0_ |= 0x00000010;
-          periodStart_ = other.periodStart_;
-          onChanged();
-        }
-        if (other.hasStatisticValue()) {
-          setStatisticValue(other.getStatisticValue());
-        }
-        if (!other.statisticSamples_.isEmpty()) {
-          if (statisticSamples_.isEmpty()) {
-            statisticSamples_ = other.statisticSamples_;
-            bitField0_ = (bitField0_ & ~0x00000040);
-          } else {
-            ensureStatisticSamplesIsMutable();
-            statisticSamples_.addAll(other.statisticSamples_);
-          }
-          onChanged();
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
 
-      public final boolean isInitialized() {
-        return true;
-      }
+        private int bitField0_;
+        // optional string service = 1;
+        public static final int SERVICE_FIELD_NUMBER = 1;
+        @Nullable
+        private java.lang.Object service_;
 
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord) e.getUnfinishedMessage();
-          throw e;
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
+        /**
+         * <code>optional string service = 1;</code>
+         */
+        public boolean hasService() {
+            return ((bitField0_ & 0x00000001) == 0x00000001);
         }
-        return this;
-      }
-      private int bitField0_;
 
-      // optional string service = 1;
-      private java.lang.Object service_ = "";
-      /**
-       * <code>optional string service = 1;</code>
-       */
-      public boolean hasService() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
-      }
-      /**
-       * <code>optional string service = 1;</code>
-       */
-      public java.lang.String getService() {
-        java.lang.Object ref = service_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          service_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
+        /**
+         * <code>optional string service = 1;</code>
+         */
+        @Nullable
+        public java.lang.String getService() {
+            @Nullable java.lang.Object ref = service_;
+            if (ref instanceof java.lang.String) {
+                return (java.lang.String) ref;
+            } else {
+                @Nonnull com.google.protobuf.ByteString bs =
+                        (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                if (bs.isValidUtf8()) {
+                    service_ = s;
+                }
+                return s;
+            }
         }
-      }
-      /**
-       * <code>optional string service = 1;</code>
-       */
-      public com.google.protobuf.ByteString
-          getServiceBytes() {
-        java.lang.Object ref = service_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          service_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>optional string service = 1;</code>
-       */
-      public Builder setService(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        service_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string service = 1;</code>
-       */
-      public Builder clearService() {
-        bitField0_ = (bitField0_ & ~0x00000001);
-        service_ = getDefaultInstance().getService();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string service = 1;</code>
-       */
-      public Builder setServiceBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        service_ = value;
-        onChanged();
-        return this;
-      }
 
-      // optional string metric = 2;
-      private java.lang.Object metric_ = "";
-      /**
-       * <code>optional string metric = 2;</code>
-       */
-      public boolean hasMetric() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <code>optional string metric = 2;</code>
-       */
-      public java.lang.String getMetric() {
-        java.lang.Object ref = metric_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          metric_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
+        /**
+         * <code>optional string service = 1;</code>
+         */
+        @Nullable
+        public com.google.protobuf.ByteString
+        getServiceBytes() {
+            @Nullable java.lang.Object ref = service_;
+            if (ref instanceof java.lang.String) {
+                com.google.protobuf.ByteString b =
+                        com.google.protobuf.ByteString.copyFromUtf8(
+                                (java.lang.String) ref);
+                service_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
         }
-      }
-      /**
-       * <code>optional string metric = 2;</code>
-       */
-      public com.google.protobuf.ByteString
-          getMetricBytes() {
-        java.lang.Object ref = metric_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          metric_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>optional string metric = 2;</code>
-       */
-      public Builder setMetric(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        metric_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string metric = 2;</code>
-       */
-      public Builder clearMetric() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        metric_ = getDefaultInstance().getMetric();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string metric = 2;</code>
-       */
-      public Builder setMetricBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        metric_ = value;
-        onChanged();
-        return this;
-      }
 
-      // optional string statistic = 3;
-      private java.lang.Object statistic_ = "";
-      /**
-       * <code>optional string statistic = 3;</code>
-       */
-      public boolean hasStatistic() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <code>optional string statistic = 3;</code>
-       */
-      public java.lang.String getStatistic() {
-        java.lang.Object ref = statistic_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          statistic_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <code>optional string statistic = 3;</code>
-       */
-      public com.google.protobuf.ByteString
-          getStatisticBytes() {
-        java.lang.Object ref = statistic_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          statistic_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>optional string statistic = 3;</code>
-       */
-      public Builder setStatistic(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000004;
-        statistic_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string statistic = 3;</code>
-       */
-      public Builder clearStatistic() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        statistic_ = getDefaultInstance().getStatistic();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string statistic = 3;</code>
-       */
-      public Builder setStatisticBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000004;
-        statistic_ = value;
-        onChanged();
-        return this;
-      }
+        // optional string metric = 2;
+        public static final int METRIC_FIELD_NUMBER = 2;
+        @Nullable
+        private java.lang.Object metric_;
 
-      // optional string period = 4;
-      private java.lang.Object period_ = "";
-      /**
-       * <code>optional string period = 4;</code>
-       */
-      public boolean hasPeriod() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      /**
-       * <code>optional string period = 4;</code>
-       */
-      public java.lang.String getPeriod() {
-        java.lang.Object ref = period_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          period_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
+        /**
+         * <code>optional string metric = 2;</code>
+         */
+        public boolean hasMetric() {
+            return ((bitField0_ & 0x00000002) == 0x00000002);
         }
-      }
-      /**
-       * <code>optional string period = 4;</code>
-       */
-      public com.google.protobuf.ByteString
-          getPeriodBytes() {
-        java.lang.Object ref = period_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          period_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
+
+        /**
+         * <code>optional string metric = 2;</code>
+         */
+        @Nullable
+        public java.lang.String getMetric() {
+            @Nullable java.lang.Object ref = metric_;
+            if (ref instanceof java.lang.String) {
+                return (java.lang.String) ref;
+            } else {
+                @Nonnull com.google.protobuf.ByteString bs =
+                        (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                if (bs.isValidUtf8()) {
+                    metric_ = s;
+                }
+                return s;
+            }
         }
-      }
-      /**
-       * <code>optional string period = 4;</code>
-       */
-      public Builder setPeriod(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        period_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string period = 4;</code>
-       */
-      public Builder clearPeriod() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        period_ = getDefaultInstance().getPeriod();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string period = 4;</code>
-       */
-      public Builder setPeriodBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        period_ = value;
-        onChanged();
-        return this;
-      }
 
-      // optional string period_start = 5;
-      private java.lang.Object periodStart_ = "";
-      /**
-       * <code>optional string period_start = 5;</code>
-       */
-      public boolean hasPeriodStart() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      /**
-       * <code>optional string period_start = 5;</code>
-       */
-      public java.lang.String getPeriodStart() {
-        java.lang.Object ref = periodStart_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          periodStart_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
+        /**
+         * <code>optional string metric = 2;</code>
+         */
+        @Nullable
+        public com.google.protobuf.ByteString
+        getMetricBytes() {
+            @Nullable java.lang.Object ref = metric_;
+            if (ref instanceof java.lang.String) {
+                com.google.protobuf.ByteString b =
+                        com.google.protobuf.ByteString.copyFromUtf8(
+                                (java.lang.String) ref);
+                metric_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
         }
-      }
-      /**
-       * <code>optional string period_start = 5;</code>
-       */
-      public com.google.protobuf.ByteString
-          getPeriodStartBytes() {
-        java.lang.Object ref = periodStart_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          periodStart_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
+
+        // optional string statistic = 3;
+        public static final int STATISTIC_FIELD_NUMBER = 3;
+        @Nullable
+        private java.lang.Object statistic_;
+
+        /**
+         * <code>optional string statistic = 3;</code>
+         */
+        public boolean hasStatistic() {
+            return ((bitField0_ & 0x00000004) == 0x00000004);
         }
-      }
-      /**
-       * <code>optional string period_start = 5;</code>
-       */
-      public Builder setPeriodStart(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000010;
-        periodStart_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string period_start = 5;</code>
-       */
-      public Builder clearPeriodStart() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        periodStart_ = getDefaultInstance().getPeriodStart();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string period_start = 5;</code>
-       */
-      public Builder setPeriodStartBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000010;
-        periodStart_ = value;
-        onChanged();
-        return this;
-      }
 
-      // optional double statistic_value = 6;
-      private double statisticValue_ ;
-      /**
-       * <code>optional double statistic_value = 6;</code>
-       */
-      public boolean hasStatisticValue() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
-      }
-      /**
-       * <code>optional double statistic_value = 6;</code>
-       */
-      public double getStatisticValue() {
-        return statisticValue_;
-      }
-      /**
-       * <code>optional double statistic_value = 6;</code>
-       */
-      public Builder setStatisticValue(double value) {
-        bitField0_ |= 0x00000020;
-        statisticValue_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional double statistic_value = 6;</code>
-       */
-      public Builder clearStatisticValue() {
-        bitField0_ = (bitField0_ & ~0x00000020);
-        statisticValue_ = 0D;
-        onChanged();
-        return this;
-      }
+        /**
+         * <code>optional string statistic = 3;</code>
+         */
+        @Nullable
+        public java.lang.String getStatistic() {
+            @Nullable java.lang.Object ref = statistic_;
+            if (ref instanceof java.lang.String) {
+                return (java.lang.String) ref;
+            } else {
+                @Nonnull com.google.protobuf.ByteString bs =
+                        (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                if (bs.isValidUtf8()) {
+                    statistic_ = s;
+                }
+                return s;
+            }
+        }
 
-      // repeated double statistic_samples = 7 [packed = true];
-      private java.util.List<java.lang.Double> statisticSamples_ = java.util.Collections.emptyList();
-      private void ensureStatisticSamplesIsMutable() {
-        if (!((bitField0_ & 0x00000040) == 0x00000040)) {
-          statisticSamples_ = new java.util.ArrayList<java.lang.Double>(statisticSamples_);
-          bitField0_ |= 0x00000040;
-         }
-      }
-      /**
-       * <code>repeated double statistic_samples = 7 [packed = true];</code>
-       */
-      public java.util.List<java.lang.Double>
-          getStatisticSamplesList() {
-        return java.util.Collections.unmodifiableList(statisticSamples_);
-      }
-      /**
-       * <code>repeated double statistic_samples = 7 [packed = true];</code>
-       */
-      public int getStatisticSamplesCount() {
-        return statisticSamples_.size();
-      }
-      /**
-       * <code>repeated double statistic_samples = 7 [packed = true];</code>
-       */
-      public double getStatisticSamples(int index) {
-        return statisticSamples_.get(index);
-      }
-      /**
-       * <code>repeated double statistic_samples = 7 [packed = true];</code>
-       */
-      public Builder setStatisticSamples(
-          int index, double value) {
-        ensureStatisticSamplesIsMutable();
-        statisticSamples_.set(index, value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated double statistic_samples = 7 [packed = true];</code>
-       */
-      public Builder addStatisticSamples(double value) {
-        ensureStatisticSamplesIsMutable();
-        statisticSamples_.add(value);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated double statistic_samples = 7 [packed = true];</code>
-       */
-      public Builder addAllStatisticSamples(
-          java.lang.Iterable<? extends java.lang.Double> values) {
-        ensureStatisticSamplesIsMutable();
-        super.addAll(values, statisticSamples_);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated double statistic_samples = 7 [packed = true];</code>
-       */
-      public Builder clearStatisticSamples() {
-        statisticSamples_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00000040);
-        onChanged();
-        return this;
-      }
+        /**
+         * <code>optional string statistic = 3;</code>
+         */
+        @Nullable
+        public com.google.protobuf.ByteString
+        getStatisticBytes() {
+            @Nullable java.lang.Object ref = statistic_;
+            if (ref instanceof java.lang.String) {
+                com.google.protobuf.ByteString b =
+                        com.google.protobuf.ByteString.copyFromUtf8(
+                                (java.lang.String) ref);
+                statistic_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
 
-      // @@protoc_insertion_point(builder_scope:tsdaggregator.aggserver.AggregationRecord)
+        // optional string period = 4;
+        public static final int PERIOD_FIELD_NUMBER = 4;
+        @Nullable
+        private java.lang.Object period_;
+
+        /**
+         * <code>optional string period = 4;</code>
+         */
+        public boolean hasPeriod() {
+            return ((bitField0_ & 0x00000008) == 0x00000008);
+        }
+
+        /**
+         * <code>optional string period = 4;</code>
+         */
+        @Nullable
+        public java.lang.String getPeriod() {
+            @Nullable java.lang.Object ref = period_;
+            if (ref instanceof java.lang.String) {
+                return (java.lang.String) ref;
+            } else {
+                @Nonnull com.google.protobuf.ByteString bs =
+                        (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                if (bs.isValidUtf8()) {
+                    period_ = s;
+                }
+                return s;
+            }
+        }
+
+        /**
+         * <code>optional string period = 4;</code>
+         */
+        @Nullable
+        public com.google.protobuf.ByteString
+        getPeriodBytes() {
+            @Nullable java.lang.Object ref = period_;
+            if (ref instanceof java.lang.String) {
+                com.google.protobuf.ByteString b =
+                        com.google.protobuf.ByteString.copyFromUtf8(
+                                (java.lang.String) ref);
+                period_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        // optional string period_start = 5;
+        public static final int PERIOD_START_FIELD_NUMBER = 5;
+        @Nullable
+        private java.lang.Object periodStart_;
+
+        /**
+         * <code>optional string period_start = 5;</code>
+         */
+        public boolean hasPeriodStart() {
+            return ((bitField0_ & 0x00000010) == 0x00000010);
+        }
+
+        /**
+         * <code>optional string period_start = 5;</code>
+         */
+        @Nullable
+        public java.lang.String getPeriodStart() {
+            @Nullable java.lang.Object ref = periodStart_;
+            if (ref instanceof java.lang.String) {
+                return (java.lang.String) ref;
+            } else {
+                @Nonnull com.google.protobuf.ByteString bs =
+                        (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                if (bs.isValidUtf8()) {
+                    periodStart_ = s;
+                }
+                return s;
+            }
+        }
+
+        /**
+         * <code>optional string period_start = 5;</code>
+         */
+        @Nullable
+        public com.google.protobuf.ByteString
+        getPeriodStartBytes() {
+            @Nullable java.lang.Object ref = periodStart_;
+            if (ref instanceof java.lang.String) {
+                com.google.protobuf.ByteString b =
+                        com.google.protobuf.ByteString.copyFromUtf8(
+                                (java.lang.String) ref);
+                periodStart_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        // optional double statistic_value = 6;
+        public static final int STATISTIC_VALUE_FIELD_NUMBER = 6;
+        private double statisticValue_;
+
+        /**
+         * <code>optional double statistic_value = 6;</code>
+         */
+        public boolean hasStatisticValue() {
+            return ((bitField0_ & 0x00000020) == 0x00000020);
+        }
+
+        /**
+         * <code>optional double statistic_value = 6;</code>
+         */
+        public double getStatisticValue() {
+            return statisticValue_;
+        }
+
+        // repeated double statistic_samples = 7 [packed = true];
+        public static final int STATISTIC_SAMPLES_FIELD_NUMBER = 7;
+        private java.util.List<java.lang.Double> statisticSamples_;
+
+        /**
+         * <code>repeated double statistic_samples = 7 [packed = true];</code>
+         */
+        public java.util.List<java.lang.Double>
+        getStatisticSamplesList() {
+            return statisticSamples_;
+        }
+
+        /**
+         * <code>repeated double statistic_samples = 7 [packed = true];</code>
+         */
+        public int getStatisticSamplesCount() {
+            return statisticSamples_.size();
+        }
+
+        /**
+         * <code>repeated double statistic_samples = 7 [packed = true];</code>
+         */
+        public double getStatisticSamples(int index) {
+            return statisticSamples_.get(index);
+        }
+
+        private int statisticSamplesMemoizedSerializedSize = -1;
+
+        private void initFields() {
+            service_ = "";
+            metric_ = "";
+            statistic_ = "";
+            period_ = "";
+            periodStart_ = "";
+            statisticValue_ = 0D;
+            statisticSamples_ = java.util.Collections.emptyList();
+        }
+
+        private byte memoizedIsInitialized = -1;
+
+        public final boolean isInitialized() {
+            byte isInitialized = memoizedIsInitialized;
+            if (isInitialized != -1) {
+                return isInitialized == 1;
+            }
+
+            memoizedIsInitialized = 1;
+            return true;
+        }
+
+        public void writeTo(@Nonnull com.google.protobuf.CodedOutputStream output)
+                throws java.io.IOException {
+            getSerializedSize();
+            if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                output.writeBytes(1, getServiceBytes());
+            }
+            if (((bitField0_ & 0x00000002) == 0x00000002)) {
+                output.writeBytes(2, getMetricBytes());
+            }
+            if (((bitField0_ & 0x00000004) == 0x00000004)) {
+                output.writeBytes(3, getStatisticBytes());
+            }
+            if (((bitField0_ & 0x00000008) == 0x00000008)) {
+                output.writeBytes(4, getPeriodBytes());
+            }
+            if (((bitField0_ & 0x00000010) == 0x00000010)) {
+                output.writeBytes(5, getPeriodStartBytes());
+            }
+            if (((bitField0_ & 0x00000020) == 0x00000020)) {
+                output.writeDouble(6, statisticValue_);
+            }
+            if (getStatisticSamplesList().size() > 0) {
+                output.writeRawVarint32(58);
+                output.writeRawVarint32(statisticSamplesMemoizedSerializedSize);
+            }
+            for (int i = 0; i < statisticSamples_.size(); i++) {
+                output.writeDoubleNoTag(statisticSamples_.get(i));
+            }
+            getUnknownFields().writeTo(output);
+        }
+
+        private int memoizedSerializedSize = -1;
+
+        public int getSerializedSize() {
+            int size = memoizedSerializedSize;
+            if (size != -1) {
+                return size;
+            }
+
+            size = 0;
+            if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(1, getServiceBytes());
+            }
+            if (((bitField0_ & 0x00000002) == 0x00000002)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(2, getMetricBytes());
+            }
+            if (((bitField0_ & 0x00000004) == 0x00000004)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(3, getStatisticBytes());
+            }
+            if (((bitField0_ & 0x00000008) == 0x00000008)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(4, getPeriodBytes());
+            }
+            if (((bitField0_ & 0x00000010) == 0x00000010)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(5, getPeriodStartBytes());
+            }
+            if (((bitField0_ & 0x00000020) == 0x00000020)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeDoubleSize(6, statisticValue_);
+            }
+            {
+                int dataSize = 0;
+                dataSize = 8 * getStatisticSamplesList().size();
+                size += dataSize;
+                if (!getStatisticSamplesList().isEmpty()) {
+                    size += 1;
+                    size += com.google.protobuf.CodedOutputStream
+                            .computeInt32SizeNoTag(dataSize);
+                }
+                statisticSamplesMemoizedSerializedSize = dataSize;
+            }
+            size += getUnknownFields().getSerializedSize();
+            memoizedSerializedSize = size;
+            return size;
+        }
+
+        private static final long serialVersionUID = 0L;
+
+        @java.lang.Override
+        protected java.lang.Object writeReplace()
+                throws java.io.ObjectStreamException {
+            return super.writeReplace();
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
+                com.google.protobuf.ByteString data)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
+                com.google.protobuf.ByteString data,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(byte[] data)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
+                byte[] data,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
+                java.io.InputStream input)
+                throws java.io.IOException {
+            return PARSER.parseFrom(input);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
+                java.io.InputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws java.io.IOException {
+            return PARSER.parseFrom(input, extensionRegistry);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseDelimitedFrom(
+                java.io.InputStream input)
+                throws java.io.IOException {
+            return PARSER.parseDelimitedFrom(input);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseDelimitedFrom(
+                java.io.InputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws java.io.IOException {
+            return PARSER.parseDelimitedFrom(input, extensionRegistry);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
+                com.google.protobuf.CodedInputStream input)
+                throws java.io.IOException {
+            return PARSER.parseFrom(input);
+        }
+
+        public static com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parseFrom(
+                com.google.protobuf.CodedInputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws java.io.IOException {
+            return PARSER.parseFrom(input, extensionRegistry);
+        }
+
+        @Nonnull
+        public static Builder newBuilder() {
+            return Builder.create();
+        }
+
+        @Nonnull
+        public Builder newBuilderForType() {
+            return newBuilder();
+        }
+
+        @Nonnull
+        public static Builder newBuilder(
+                @Nonnull com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord prototype) {
+            return newBuilder().mergeFrom(prototype);
+        }
+
+        @Nonnull
+        public Builder toBuilder() {
+            return newBuilder(this);
+        }
+
+        @Nonnull
+        @java.lang.Override
+        protected Builder newBuilderForType(
+                com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+            @Nonnull Builder builder = new Builder(parent);
+            return builder;
+        }
+
+        /**
+         * Protobuf type {@code tsdaggregator.aggserver.AggregationRecord}
+         */
+        public static final class Builder extends
+                com.google.protobuf.GeneratedMessage.Builder<Builder>
+                implements com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecordOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+                return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor;
+            }
+
+            protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+                return com.arpnetworking.tsdaggregator.aggserver.Messages
+                        .internal_static_tsdaggregator_aggserver_AggregationRecord_fieldAccessorTable
+                        .ensureFieldAccessorsInitialized(
+                                com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.class,
+                                com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.Builder.class);
+            }
+
+            // Construct using com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.newBuilder()
+            private Builder() {
+                maybeForceBuilderInitialization();
+            }
+
+            private Builder(
+                    com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+                super(parent);
+                maybeForceBuilderInitialization();
+            }
+
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+                }
+            }
+
+            @Nonnull
+            private static Builder create() {
+                return new Builder();
+            }
+
+            @Nonnull
+            public Builder clear() {
+                super.clear();
+                service_ = "";
+                bitField0_ = (bitField0_ & ~0x00000001);
+                metric_ = "";
+                bitField0_ = (bitField0_ & ~0x00000002);
+                statistic_ = "";
+                bitField0_ = (bitField0_ & ~0x00000004);
+                period_ = "";
+                bitField0_ = (bitField0_ & ~0x00000008);
+                periodStart_ = "";
+                bitField0_ = (bitField0_ & ~0x00000010);
+                statisticValue_ = 0D;
+                bitField0_ = (bitField0_ & ~0x00000020);
+                statisticSamples_ = java.util.Collections.emptyList();
+                bitField0_ = (bitField0_ & ~0x00000040);
+                return this;
+            }
+
+            @Nonnull
+            public Builder clone() {
+                return create().mergeFrom(buildPartial());
+            }
+
+            public com.google.protobuf.Descriptors.Descriptor
+            getDescriptorForType() {
+                return com.arpnetworking.tsdaggregator.aggserver.Messages.internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor;
+            }
+
+            @Nonnull
+            public com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord getDefaultInstanceForType() {
+                return com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.getDefaultInstance();
+            }
+
+            @Nonnull
+            public com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord build() {
+                @Nonnull com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord result = buildPartial();
+                if (!result.isInitialized()) {
+                    throw newUninitializedMessageException(result);
+                }
+                return result;
+            }
+
+            @Nonnull
+            public com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord buildPartial() {
+                @Nonnull com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord result =
+                        new com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord(this);
+                int from_bitField0_ = bitField0_;
+                int to_bitField0_ = 0;
+                if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+                    to_bitField0_ |= 0x00000001;
+                }
+                result.service_ = service_;
+                if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+                    to_bitField0_ |= 0x00000002;
+                }
+                result.metric_ = metric_;
+                if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+                    to_bitField0_ |= 0x00000004;
+                }
+                result.statistic_ = statistic_;
+                if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+                    to_bitField0_ |= 0x00000008;
+                }
+                result.period_ = period_;
+                if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+                    to_bitField0_ |= 0x00000010;
+                }
+                result.periodStart_ = periodStart_;
+                if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+                    to_bitField0_ |= 0x00000020;
+                }
+                result.statisticValue_ = statisticValue_;
+                if (((bitField0_ & 0x00000040) == 0x00000040)) {
+                    statisticSamples_ = java.util.Collections.unmodifiableList(statisticSamples_);
+                    bitField0_ = (bitField0_ & ~0x00000040);
+                }
+                result.statisticSamples_ = statisticSamples_;
+                result.bitField0_ = to_bitField0_;
+                onBuilt();
+                return result;
+            }
+
+            @Nonnull
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord) {
+                    return mergeFrom((com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
+            }
+
+            @Nonnull
+            public Builder mergeFrom(
+                    @Nonnull com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord other) {
+                if (other ==
+                        com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord.getDefaultInstance()) {
+                    return this;
+                }
+                if (other.hasService()) {
+                    bitField0_ |= 0x00000001;
+                    service_ = other.service_;
+                    onChanged();
+                }
+                if (other.hasMetric()) {
+                    bitField0_ |= 0x00000002;
+                    metric_ = other.metric_;
+                    onChanged();
+                }
+                if (other.hasStatistic()) {
+                    bitField0_ |= 0x00000004;
+                    statistic_ = other.statistic_;
+                    onChanged();
+                }
+                if (other.hasPeriod()) {
+                    bitField0_ |= 0x00000008;
+                    period_ = other.period_;
+                    onChanged();
+                }
+                if (other.hasPeriodStart()) {
+                    bitField0_ |= 0x00000010;
+                    periodStart_ = other.periodStart_;
+                    onChanged();
+                }
+                if (other.hasStatisticValue()) {
+                    setStatisticValue(other.getStatisticValue());
+                }
+                if (!other.statisticSamples_.isEmpty()) {
+                    if (statisticSamples_.isEmpty()) {
+                        statisticSamples_ = other.statisticSamples_;
+                        bitField0_ = (bitField0_ & ~0x00000040);
+                    } else {
+                        ensureStatisticSamplesIsMutable();
+                        statisticSamples_.addAll(other.statisticSamples_);
+                    }
+                    onChanged();
+                }
+                this.mergeUnknownFields(other.getUnknownFields());
+                return this;
+            }
+
+            public final boolean isInitialized() {
+                return true;
+            }
+
+            @Nonnull
+            public Builder mergeFrom(
+                    com.google.protobuf.CodedInputStream input,
+                    com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                    throws java.io.IOException {
+                @Nullable com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord parsedMessage = null;
+                try {
+                    parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                    parsedMessage = (com.arpnetworking.tsdaggregator.aggserver.Messages.AggregationRecord) e
+                            .getUnfinishedMessage();
+                    throw e;
+                } finally {
+                    if (parsedMessage != null) {
+                        mergeFrom(parsedMessage);
+                    }
+                }
+                return this;
+            }
+
+            private int bitField0_;
+
+            // optional string service = 1;
+            @Nullable
+            private java.lang.Object service_ = "";
+
+            /**
+             * <code>optional string service = 1;</code>
+             */
+            public boolean hasService() {
+                return ((bitField0_ & 0x00000001) == 0x00000001);
+            }
+
+            /**
+             * <code>optional string service = 1;</code>
+             */
+            @Nullable
+            public java.lang.String getService() {
+                @Nullable java.lang.Object ref = service_;
+                if (!(ref instanceof java.lang.String)) {
+                    java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                            .toStringUtf8();
+                    service_ = s;
+                    return s;
+                } else {
+                    return (java.lang.String) ref;
+                }
+            }
+
+            /**
+             * <code>optional string service = 1;</code>
+             */
+            @Nullable
+            public com.google.protobuf.ByteString
+            getServiceBytes() {
+                @Nullable java.lang.Object ref = service_;
+                if (ref instanceof String) {
+                    com.google.protobuf.ByteString b =
+                            com.google.protobuf.ByteString.copyFromUtf8(
+                                    (java.lang.String) ref);
+                    service_ = b;
+                    return b;
+                } else {
+                    return (com.google.protobuf.ByteString) ref;
+                }
+            }
+
+            /**
+             * <code>optional string service = 1;</code>
+             */
+            @Nonnull
+            public Builder setService(
+                    @Nullable java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000001;
+                service_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string service = 1;</code>
+             */
+            @Nonnull
+            public Builder clearService() {
+                bitField0_ = (bitField0_ & ~0x00000001);
+                service_ = getDefaultInstance().getService();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string service = 1;</code>
+             */
+            @Nonnull
+            public Builder setServiceBytes(
+                    @Nullable com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000001;
+                service_ = value;
+                onChanged();
+                return this;
+            }
+
+            // optional string metric = 2;
+            @Nullable
+            private java.lang.Object metric_ = "";
+
+            /**
+             * <code>optional string metric = 2;</code>
+             */
+            public boolean hasMetric() {
+                return ((bitField0_ & 0x00000002) == 0x00000002);
+            }
+
+            /**
+             * <code>optional string metric = 2;</code>
+             */
+            @Nullable
+            public java.lang.String getMetric() {
+                @Nullable java.lang.Object ref = metric_;
+                if (!(ref instanceof java.lang.String)) {
+                    java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                            .toStringUtf8();
+                    metric_ = s;
+                    return s;
+                } else {
+                    return (java.lang.String) ref;
+                }
+            }
+
+            /**
+             * <code>optional string metric = 2;</code>
+             */
+            @Nullable
+            public com.google.protobuf.ByteString
+            getMetricBytes() {
+                @Nullable java.lang.Object ref = metric_;
+                if (ref instanceof String) {
+                    com.google.protobuf.ByteString b =
+                            com.google.protobuf.ByteString.copyFromUtf8(
+                                    (java.lang.String) ref);
+                    metric_ = b;
+                    return b;
+                } else {
+                    return (com.google.protobuf.ByteString) ref;
+                }
+            }
+
+            /**
+             * <code>optional string metric = 2;</code>
+             */
+            @Nonnull
+            public Builder setMetric(
+                    @Nullable java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000002;
+                metric_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string metric = 2;</code>
+             */
+            @Nonnull
+            public Builder clearMetric() {
+                bitField0_ = (bitField0_ & ~0x00000002);
+                metric_ = getDefaultInstance().getMetric();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string metric = 2;</code>
+             */
+            @Nonnull
+            public Builder setMetricBytes(
+                    @Nullable com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000002;
+                metric_ = value;
+                onChanged();
+                return this;
+            }
+
+            // optional string statistic = 3;
+            @Nullable
+            private java.lang.Object statistic_ = "";
+
+            /**
+             * <code>optional string statistic = 3;</code>
+             */
+            public boolean hasStatistic() {
+                return ((bitField0_ & 0x00000004) == 0x00000004);
+            }
+
+            /**
+             * <code>optional string statistic = 3;</code>
+             */
+            @Nullable
+            public java.lang.String getStatistic() {
+                @Nullable java.lang.Object ref = statistic_;
+                if (!(ref instanceof java.lang.String)) {
+                    java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                            .toStringUtf8();
+                    statistic_ = s;
+                    return s;
+                } else {
+                    return (java.lang.String) ref;
+                }
+            }
+
+            /**
+             * <code>optional string statistic = 3;</code>
+             */
+            @Nullable
+            public com.google.protobuf.ByteString
+            getStatisticBytes() {
+                @Nullable java.lang.Object ref = statistic_;
+                if (ref instanceof String) {
+                    com.google.protobuf.ByteString b =
+                            com.google.protobuf.ByteString.copyFromUtf8(
+                                    (java.lang.String) ref);
+                    statistic_ = b;
+                    return b;
+                } else {
+                    return (com.google.protobuf.ByteString) ref;
+                }
+            }
+
+            /**
+             * <code>optional string statistic = 3;</code>
+             */
+            @Nonnull
+            public Builder setStatistic(
+                    @Nullable java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000004;
+                statistic_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string statistic = 3;</code>
+             */
+            @Nonnull
+            public Builder clearStatistic() {
+                bitField0_ = (bitField0_ & ~0x00000004);
+                statistic_ = getDefaultInstance().getStatistic();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string statistic = 3;</code>
+             */
+            @Nonnull
+            public Builder setStatisticBytes(
+                    @Nullable com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000004;
+                statistic_ = value;
+                onChanged();
+                return this;
+            }
+
+            // optional string period = 4;
+            @Nullable
+            private java.lang.Object period_ = "";
+
+            /**
+             * <code>optional string period = 4;</code>
+             */
+            public boolean hasPeriod() {
+                return ((bitField0_ & 0x00000008) == 0x00000008);
+            }
+
+            /**
+             * <code>optional string period = 4;</code>
+             */
+            @Nullable
+            public java.lang.String getPeriod() {
+                @Nullable java.lang.Object ref = period_;
+                if (!(ref instanceof java.lang.String)) {
+                    java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                            .toStringUtf8();
+                    period_ = s;
+                    return s;
+                } else {
+                    return (java.lang.String) ref;
+                }
+            }
+
+            /**
+             * <code>optional string period = 4;</code>
+             */
+            @Nullable
+            public com.google.protobuf.ByteString
+            getPeriodBytes() {
+                @Nullable java.lang.Object ref = period_;
+                if (ref instanceof String) {
+                    com.google.protobuf.ByteString b =
+                            com.google.protobuf.ByteString.copyFromUtf8(
+                                    (java.lang.String) ref);
+                    period_ = b;
+                    return b;
+                } else {
+                    return (com.google.protobuf.ByteString) ref;
+                }
+            }
+
+            /**
+             * <code>optional string period = 4;</code>
+             */
+            @Nonnull
+            public Builder setPeriod(
+                    @Nullable java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000008;
+                period_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string period = 4;</code>
+             */
+            @Nonnull
+            public Builder clearPeriod() {
+                bitField0_ = (bitField0_ & ~0x00000008);
+                period_ = getDefaultInstance().getPeriod();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string period = 4;</code>
+             */
+            @Nonnull
+            public Builder setPeriodBytes(
+                    @Nullable com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000008;
+                period_ = value;
+                onChanged();
+                return this;
+            }
+
+            // optional string period_start = 5;
+            @Nullable
+            private java.lang.Object periodStart_ = "";
+
+            /**
+             * <code>optional string period_start = 5;</code>
+             */
+            public boolean hasPeriodStart() {
+                return ((bitField0_ & 0x00000010) == 0x00000010);
+            }
+
+            /**
+             * <code>optional string period_start = 5;</code>
+             */
+            @Nullable
+            public java.lang.String getPeriodStart() {
+                @Nullable java.lang.Object ref = periodStart_;
+                if (!(ref instanceof java.lang.String)) {
+                    java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                            .toStringUtf8();
+                    periodStart_ = s;
+                    return s;
+                } else {
+                    return (java.lang.String) ref;
+                }
+            }
+
+            /**
+             * <code>optional string period_start = 5;</code>
+             */
+            @Nullable
+            public com.google.protobuf.ByteString
+            getPeriodStartBytes() {
+                @Nullable java.lang.Object ref = periodStart_;
+                if (ref instanceof String) {
+                    com.google.protobuf.ByteString b =
+                            com.google.protobuf.ByteString.copyFromUtf8(
+                                    (java.lang.String) ref);
+                    periodStart_ = b;
+                    return b;
+                } else {
+                    return (com.google.protobuf.ByteString) ref;
+                }
+            }
+
+            /**
+             * <code>optional string period_start = 5;</code>
+             */
+            @Nonnull
+            public Builder setPeriodStart(
+                    @Nullable java.lang.String value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000010;
+                periodStart_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string period_start = 5;</code>
+             */
+            @Nonnull
+            public Builder clearPeriodStart() {
+                bitField0_ = (bitField0_ & ~0x00000010);
+                periodStart_ = getDefaultInstance().getPeriodStart();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional string period_start = 5;</code>
+             */
+            @Nonnull
+            public Builder setPeriodStartBytes(
+                    @Nullable com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000010;
+                periodStart_ = value;
+                onChanged();
+                return this;
+            }
+
+            // optional double statistic_value = 6;
+            private double statisticValue_;
+
+            /**
+             * <code>optional double statistic_value = 6;</code>
+             */
+            public boolean hasStatisticValue() {
+                return ((bitField0_ & 0x00000020) == 0x00000020);
+            }
+
+            /**
+             * <code>optional double statistic_value = 6;</code>
+             */
+            public double getStatisticValue() {
+                return statisticValue_;
+            }
+
+            /**
+             * <code>optional double statistic_value = 6;</code>
+             */
+            @Nonnull
+            public Builder setStatisticValue(double value) {
+                bitField0_ |= 0x00000020;
+                statisticValue_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional double statistic_value = 6;</code>
+             */
+            @Nonnull
+            public Builder clearStatisticValue() {
+                bitField0_ = (bitField0_ & ~0x00000020);
+                statisticValue_ = 0D;
+                onChanged();
+                return this;
+            }
+
+            // repeated double statistic_samples = 7 [packed = true];
+            private java.util.List<java.lang.Double> statisticSamples_ = java.util.Collections.emptyList();
+
+            private void ensureStatisticSamplesIsMutable() {
+                if (!((bitField0_ & 0x00000040) == 0x00000040)) {
+                    statisticSamples_ = new java.util.ArrayList<java.lang.Double>(statisticSamples_);
+                    bitField0_ |= 0x00000040;
+                }
+            }
+
+            /**
+             * <code>repeated double statistic_samples = 7 [packed = true];</code>
+             */
+            public java.util.List<java.lang.Double>
+            getStatisticSamplesList() {
+                return java.util.Collections.unmodifiableList(statisticSamples_);
+            }
+
+            /**
+             * <code>repeated double statistic_samples = 7 [packed = true];</code>
+             */
+            public int getStatisticSamplesCount() {
+                return statisticSamples_.size();
+            }
+
+            /**
+             * <code>repeated double statistic_samples = 7 [packed = true];</code>
+             */
+            public double getStatisticSamples(int index) {
+                return statisticSamples_.get(index);
+            }
+
+            /**
+             * <code>repeated double statistic_samples = 7 [packed = true];</code>
+             */
+            @Nonnull
+            public Builder setStatisticSamples(
+                    int index, double value) {
+                ensureStatisticSamplesIsMutable();
+                statisticSamples_.set(index, value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated double statistic_samples = 7 [packed = true];</code>
+             */
+            @Nonnull
+            public Builder addStatisticSamples(double value) {
+                ensureStatisticSamplesIsMutable();
+                statisticSamples_.add(value);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated double statistic_samples = 7 [packed = true];</code>
+             */
+            @Nonnull
+            public Builder addAllStatisticSamples(
+                    java.lang.Iterable<? extends java.lang.Double> values) {
+                ensureStatisticSamplesIsMutable();
+                super.addAll(values, statisticSamples_);
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>repeated double statistic_samples = 7 [packed = true];</code>
+             */
+            @Nonnull
+            public Builder clearStatisticSamples() {
+                statisticSamples_ = java.util.Collections.emptyList();
+                bitField0_ = (bitField0_ & ~0x00000040);
+                onChanged();
+                return this;
+            }
+
+            // @@protoc_insertion_point(builder_scope:tsdaggregator.aggserver.AggregationRecord)
+        }
+
+        static {
+            defaultInstance = new AggregationRecord(true);
+            defaultInstance.initFields();
+        }
+
+        // @@protoc_insertion_point(class_scope:tsdaggregator.aggserver.AggregationRecord)
     }
+
+    private static com.google.protobuf.Descriptors.Descriptor
+            internal_static_tsdaggregator_aggserver_HostIdentification_descriptor;
+    private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internal_static_tsdaggregator_aggserver_HostIdentification_fieldAccessorTable;
+    private static com.google.protobuf.Descriptors.Descriptor
+            internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor;
+    private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internal_static_tsdaggregator_aggserver_AggregationRecord_fieldAccessorTable;
+
+    public static com.google.protobuf.Descriptors.FileDescriptor
+    getDescriptor() {
+        return descriptor;
+    }
+
+    private static com.google.protobuf.Descriptors.FileDescriptor
+            descriptor;
 
     static {
-      defaultInstance = new AggregationRecord(true);
-      defaultInstance.initFields();
+        @Nonnull java.lang.String[] descriptorData = {
+                "\n src/main/protobuf/messages.proto\022\027tsda" +
+                        "ggregator.aggserver\"=\n\022HostIdentificatio" +
+                        "n\022\021\n\thost_name\030\001 \001(\t\022\024\n\014cluster_name\030\002 \001" +
+                        "(\t\"\245\001\n\021AggregationRecord\022\017\n\007service\030\001 \001(" +
+                        "\t\022\016\n\006metric\030\002 \001(\t\022\021\n\tstatistic\030\003 \001(\t\022\016\n\006" +
+                        "period\030\004 \001(\t\022\024\n\014period_start\030\005 \001(\t\022\027\n\017st" +
+                        "atistic_value\030\006 \001(\001\022\035\n\021statistic_samples" +
+                        "\030\007 \003(\001B\002\020\001B+\n)com.arpnetworking.tsdaggre" +
+                        "gator.aggserver"
+        };
+        @Nonnull com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
+                new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
+                    @Nullable
+                    public com.google.protobuf.ExtensionRegistry assignDescriptors(
+                            com.google.protobuf.Descriptors.FileDescriptor root) {
+                        descriptor = root;
+                        internal_static_tsdaggregator_aggserver_HostIdentification_descriptor =
+                                getDescriptor().getMessageTypes().get(0);
+                        internal_static_tsdaggregator_aggserver_HostIdentification_fieldAccessorTable = new
+                                com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+                                internal_static_tsdaggregator_aggserver_HostIdentification_descriptor,
+                                new java.lang.String[]{"HostName", "ClusterName",});
+                        internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor =
+                                getDescriptor().getMessageTypes().get(1);
+                        internal_static_tsdaggregator_aggserver_AggregationRecord_fieldAccessorTable = new
+                                com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+                                internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor,
+                                new java.lang.String[]{"Service", "Metric", "Statistic", "Period", "PeriodStart",
+                                        "StatisticValue", "StatisticSamples",});
+                        return null;
+                    }
+                };
+        com.google.protobuf.Descriptors.FileDescriptor
+                .internalBuildGeneratedFileFrom(descriptorData,
+                        new com.google.protobuf.Descriptors.FileDescriptor[]{
+                        }, assigner);
     }
 
-    // @@protoc_insertion_point(class_scope:tsdaggregator.aggserver.AggregationRecord)
-  }
-
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_tsdaggregator_aggserver_HostIdentification_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_tsdaggregator_aggserver_HostIdentification_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_tsdaggregator_aggserver_AggregationRecord_fieldAccessorTable;
-
-  public static com.google.protobuf.Descriptors.FileDescriptor
-      getDescriptor() {
-    return descriptor;
-  }
-  private static com.google.protobuf.Descriptors.FileDescriptor
-      descriptor;
-  static {
-    java.lang.String[] descriptorData = {
-      "\n src/main/protobuf/messages.proto\022\027tsda" +
-      "ggregator.aggserver\"=\n\022HostIdentificatio" +
-      "n\022\021\n\thost_name\030\001 \001(\t\022\024\n\014cluster_name\030\002 \001" +
-      "(\t\"\245\001\n\021AggregationRecord\022\017\n\007service\030\001 \001(" +
-      "\t\022\016\n\006metric\030\002 \001(\t\022\021\n\tstatistic\030\003 \001(\t\022\016\n\006" +
-      "period\030\004 \001(\t\022\024\n\014period_start\030\005 \001(\t\022\027\n\017st" +
-      "atistic_value\030\006 \001(\001\022\035\n\021statistic_samples" +
-      "\030\007 \003(\001B\002\020\001B+\n)com.arpnetworking.tsdaggre" +
-      "gator.aggserver"
-    };
-    com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-      new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
-        public com.google.protobuf.ExtensionRegistry assignDescriptors(
-            com.google.protobuf.Descriptors.FileDescriptor root) {
-          descriptor = root;
-          internal_static_tsdaggregator_aggserver_HostIdentification_descriptor =
-            getDescriptor().getMessageTypes().get(0);
-          internal_static_tsdaggregator_aggserver_HostIdentification_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_tsdaggregator_aggserver_HostIdentification_descriptor,
-              new java.lang.String[] { "HostName", "ClusterName", });
-          internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor =
-            getDescriptor().getMessageTypes().get(1);
-          internal_static_tsdaggregator_aggserver_AggregationRecord_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_tsdaggregator_aggserver_AggregationRecord_descriptor,
-              new java.lang.String[] { "Service", "Metric", "Statistic", "Period", "PeriodStart", "StatisticValue", "StatisticSamples", });
-          return null;
-        }
-      };
-    com.google.protobuf.Descriptors.FileDescriptor
-      .internalBuildGeneratedFileFrom(descriptorData,
-        new com.google.protobuf.Descriptors.FileDescriptor[] {
-        }, assigner);
-  }
-
-  // @@protoc_insertion_point(outer_class_scope)
+    // @@protoc_insertion_point(outer_class_scope)
 }
