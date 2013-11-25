@@ -286,5 +286,10 @@ public class KetamaRing {
     public Set<Map.Entry<Integer, NodeEntry>> getRingEntries(final String layer) {
         return _ring.get(layer).entrySet();
     }
+
+    @Nonnull
+    public Set<String> getLayers() {
+        return _ring.keySet();
+    }
 }
 

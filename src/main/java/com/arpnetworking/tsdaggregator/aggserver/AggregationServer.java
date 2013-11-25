@@ -5,8 +5,11 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.vertx.redis.RedisMod;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.joda.time.ReadableDuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vertx.java.core.AsyncResult;
@@ -15,6 +18,8 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.http.HttpServer;
+import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetServer;
@@ -42,6 +47,7 @@ public class AggregationServer extends Verticle {
     private static final String EB_REDIS_PREFIX = "agg-redis-";
     private static final String REDIS_LAYER_NAME = "redis";
     private static final String AGG_LAYER_NAME = "agg";
+    private static final ReadableDuration HOST_HEARTBEAT_TIMEOUT = Duration.standardMinutes(2);
     @Nonnull
     private final ConcurrentHashMap<String, ConcurrentSkipListSet<String>> _knownClusters;
     private final Set<RedisInstance> _connectedRedisHosts = new ConcurrentSkipListSet<>();
@@ -49,6 +55,9 @@ public class AggregationServer extends Verticle {
     private final KetamaRing _ketamaRing = new KetamaRing();
     private final ConcurrentSkipListMap<String, AggServerStatus> _aggServers = new ConcurrentSkipListMap<>();
     private String _hostName;
+    private int _tcpPort;
+    private int _httpPort;
+    private int _hazelcastPort;
     @Nullable
     private HazelcastInstance _hazelcast = null;
     private AtomicBoolean _hazelcastStarting = new AtomicBoolean(false);
@@ -63,7 +72,8 @@ public class AggregationServer extends Verticle {
         @Nonnull final Config config = new Config();
 
         final NetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.addOutboundPort(5880);
+        networkConfig.setPort(_hazelcastPort);
+        networkConfig.setPublicAddress(_hostName.substring(0, _hostName.indexOf(':')));
         networkConfig.setPortAutoIncrement(true);
         config.setNetworkConfig(networkConfig);
 
@@ -71,8 +81,20 @@ public class AggregationServer extends Verticle {
         join.getMulticastConfig().setEnabled(false);
         final TcpIpConfig ipConfig = join.getTcpIpConfig();
         for (@Nonnull AggServerStatus server : _aggServers.values()) {
-            if (server.getHeartbeatTime().isAfter(DateTime.now().minusSeconds(120))) {
-                ipConfig.addMember(server.getName());
+            if (server.getName().equals(_hostName)) {
+                LOGGER.debug("found myself in server list, skipping");
+                continue;
+            }
+            LOGGER.info("adding server to hazelcast connection list: " + server);
+            if (server.getHeartbeatTime().isAfter(DateTime.now().minus(HOST_HEARTBEAT_TIMEOUT))) {
+                String hazelcastEndpoint = server.getName();
+                if (hazelcastEndpoint.indexOf(':') >= 0) {
+                    String[] split = hazelcastEndpoint.split(":");
+                    int port = Integer.valueOf(split[1]);
+                    port += 2;
+                    hazelcastEndpoint = split[0] + ":" + port;
+                }
+                ipConfig.addMember(hazelcastEndpoint);
             }
         }
         ipConfig.setEnabled(true);
@@ -154,7 +176,10 @@ public class AggregationServer extends Verticle {
     public void start() {
         deployRedis(container.config().getArray("redisAddress"));
         final int port = container.config().getNumber("port").intValue();
-        _hostName = container.config().getString("name");
+        _hostName = container.config().getString("name") + ":" + port;
+        _tcpPort = port;
+        _httpPort = port + 1;
+        _hazelcastPort = port + 2;
         changeMyState(State.ComingOnline, false);
 
         vertx.createNetServer().connectHandler(new Handler<NetSocket>() {
@@ -195,8 +220,73 @@ public class AggregationServer extends Verticle {
                 }
             }
         });
+        vertx.createHttpServer().setTCPKeepAlive(true).setTCPNoDelay(true)
+                .requestHandler(new Handler<HttpServerRequest>() {
+                    @Override
+                    public void handle(final HttpServerRequest event) {
+                        handleHttpRequest(event);
+                    }
+                }).listen(port + 1, new AsyncResultHandler<HttpServer>() {
+            @Override
+            public void handle(final AsyncResult<HttpServer> event) {
+                if (event.succeeded()) {
+                    LOGGER.info("Started HTTP server on port " + (port + 1));
+                } else {
+                    LOGGER.error("Failed to start HTTP server, failed to bind listener", event.cause());
+                }
+            }
+        });
         heartbeat();
         updateHostLoop();
+    }
+
+    private void handleHttpRequest(HttpServerRequest event) {
+        LOGGER.debug("got http request with path " + event.path());
+
+        if (event.path().equals("/status")) {
+            JsonObject response = new JsonObject();
+            final JsonObject dataObject = new JsonObject();
+            final JsonArray aggServersArray = new JsonArray();
+            for (Map.Entry<String, AggServerStatus> entry : _aggServers.entrySet()) {
+                aggServersArray.add(new JsonObject().putString("name", entry.getValue().getName())
+                        .putString("status", entry.getValue().getState().name())
+                        .putString("heartbeat", entry.getValue().getHeartbeatTime().toString()));
+            }
+            dataObject.putArray("aggServers", aggServersArray);
+            final JsonArray redisServersArray = new JsonArray();
+            for (RedisInstance instance : _connectedRedisHosts) {
+                redisServersArray.add(new JsonObject().putString("host", instance.getHostName())
+                        .putString("ebName", instance.getEBName()));
+            }
+            dataObject.putArray("redisServers", redisServersArray);
+            JsonObject ketamaRingObject = new JsonObject();
+            final Set<String> layers = _ketamaRing.getLayers();
+            JsonArray layersArray = new JsonArray();
+            for (String layer : layers) {
+                JsonObject layerObject = new JsonObject();
+                layersArray.add(layerObject);
+                layerObject.putString("name", layer);
+                JsonArray entriesArray = new JsonArray();
+                layerObject.putArray("entries", entriesArray);
+                final Set<Map.Entry<Integer, KetamaRing.NodeEntry>> entries = _ketamaRing.getRingEntries(layer);
+                for (Map.Entry<Integer, KetamaRing.NodeEntry> entry : entries) {
+                    JsonObject entryObject = new JsonObject().putNumber("key", entry.getKey())
+                            .putString("nodeKey", entry.getValue().getNodeKey())
+                            .putString("status", entry.getValue().getStatus().name());
+                    entriesArray.add(entryObject);
+                }
+            }
+            ketamaRingObject.putArray("layers", layersArray);
+            dataObject.putObject("ketamaRing", ketamaRingObject);
+            response.putString("status", "success").putObject("data", dataObject);
+            Buffer buffer = new Buffer();
+            String responseString = response.encode();
+            buffer.appendString(responseString);
+            event.response().setStatusCode(200)
+                    .putHeader(HttpHeaders.Names.CONTENT_LENGTH, Integer.toString(buffer.length())).write(buffer).end();
+        } else {
+            event.response().setStatusCode(404).end();
+        }
     }
 
     private void deployRedis(@Nonnull JsonArray redisAddresses) {
@@ -338,9 +428,18 @@ public class AggregationServer extends Verticle {
             public void handle(final AsyncResult<Map<String, String>> event) {
                 if (event.succeeded()) {
                     Map<String, String> map = event.result();
+                    if (map.isEmpty()) {
+                        LOGGER.warn("found empty map looking up status of server " + server);
+                        resultHandler
+                                .handle(new ASResult<AggServerStatus>(new Exception("empty map for server " + server)));
+                        return;
+                    }
                     String status = map.get("status");
                     AggServerStatus aggStatus = new AggServerStatus(server, State.valueOf(status),
                             new DateTime(Long.valueOf(map.get("heartbeat"))));
+                    if (aggStatus.getHeartbeatTime().isBefore(DateTime.now().minus(HOST_HEARTBEAT_TIMEOUT))) {
+                        aggStatus.setState(State.PresumedDead);
+                    }
                     ASResult<AggServerStatus> result = new ASResult<>(aggStatus);
                     resultHandler.handle(result);
                 } else {
