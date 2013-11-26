@@ -153,7 +153,10 @@ class GraphVM implements StatisticView {
 
     updateColor(cvm: ConnectionVM): void {
         console.log("updating color of " + cvm.server)
+        console.log(cvm.color());
         var index = this.dataStreams[cvm.server];
+        console.log("color index is " + index);
+
         this.data[index].color = cvm.color();
         console.log("new color is");
         console.log(cvm.color());
@@ -544,7 +547,10 @@ class AppViewModel
     }
     
     parseFragment(fragment: string) {
-        var obj = jQuery.parseJSON(fragment.substring(1));    
+        var obj = jQuery.parseJSON(fragment.substring(1));
+        if (obj == null) {
+            return;
+        }
         var servers = obj.connections;
         var graphs = obj.graphs;
         var self = this;
@@ -790,10 +796,10 @@ class AppViewModel
         this.connectionIndex[server] = connectionNode;
         this.doConnect(server, connectionNode);
 
-        for (var i = 0; i < this.graphs().length; i++) {
-            var graph: StatisticView = this.graphs()[i];
-            graph.updateColor(connectionNode);
-        }
+//        for (var i = 0; i < this.graphs().length; i++) {
+//            var graph: StatisticView = this.graphs()[i];
+//            graph.updateColor(connectionNode);
+//        }
         this.connections.push(connectionNode);
 
         var heartbeat = (node) => {
@@ -848,10 +854,17 @@ ko.bindingHandlers.slide = {
 }
 
 ko.bindingHandlers.stackdrag = {
-        init: function(element) {
+        init: function(element, valueAccessor) {
             var thisLevel = $(element).parent().children();
+            var value = valueAccessor();
+            console.log("value");
+            console.log(value);
+            var valueUnwrapped = ko.utils.unwrapObservable(value);
+
 //            console.log(thisLevel);
-            jQuery.each(thisLevel, function(index, e) { $(e).draggable();});
+            jQuery.each(thisLevel, function(index, e) { $(e).draggable(valueUnwrapped);});
+            console.log("valueUnwrapped");
+            console.log(valueUnwrapped);
         }
     }
 
