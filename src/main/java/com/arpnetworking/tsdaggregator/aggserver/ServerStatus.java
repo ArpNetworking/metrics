@@ -11,12 +11,12 @@ import javax.annotation.Nullable;
  *
  * @author barp
  */
-public class AggServerStatus {
+public class ServerStatus {
     private final String _name;
     private State _state;
     private DateTime _heartbeatTime;
 
-    public AggServerStatus(final String name, final State state, final DateTime heartbeatTime) {
+    public ServerStatus(final String name, final State state, final DateTime heartbeatTime) {
         _name = name;
         _state = state;
         _heartbeatTime = heartbeatTime;
@@ -51,7 +51,7 @@ public class AggServerStatus {
             return false;
         }
 
-        @Nonnull final AggServerStatus that = (AggServerStatus) o;
+        @Nonnull final ServerStatus that = (ServerStatus) o;
 
         if (!_name.equals(that._name)) {
             return false;

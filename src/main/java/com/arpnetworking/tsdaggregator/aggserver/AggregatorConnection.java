@@ -1,5 +1,6 @@
 package com.arpnetworking.tsdaggregator.aggserver;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -42,6 +43,14 @@ public class AggregatorConnection {
         return _socket;
     }
 
+    public Optional<String> getHostName() {
+        return _hostName;
+    }
+
+    public Optional<String> getClusterName() {
+        return _clusterName;
+    }
+
     public void dataReceived(final Buffer data) {
         _buffer.appendBuffer(data);
         processMessages();
@@ -66,6 +75,7 @@ public class AggregatorConnection {
                 _clusterNameResolvedCallback.clusterNameResolved(this, _hostName.or(""), _clusterName.or(""));
             } else if (gm instanceof Messages.AggregationRecord) {
                 @Nonnull Messages.AggregationRecord aggRecord = (Messages.AggregationRecord) gm;
+                LOGGER.info("Aggregation from host " + _hostName.or("") + " in cluster " + _clusterName.or(""));
                 _aggregationArrivedCallback.aggregationArrived(this, aggRecord);
             } else {
                 LOGGER.warn("Unknown message type!");
@@ -160,5 +170,11 @@ public class AggregatorConnection {
         public static Message create(@Nonnull GeneratedMessage message) {
             return new Message(message);
         }
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).add("_hostName", _hostName).add("_clusterName", _clusterName)
+                .add("_socket", _socket).toString();
     }
 }

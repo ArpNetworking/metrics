@@ -76,7 +76,7 @@ public class TSAggregation {
     }
 
     private void rotateAggregation(@Nonnull DateTime time) {
-        LOGGER.debug("Checking roll. Period is " + _period + ", Roll time is " + _periodStart.plus(_period));
+        LOGGER.trace("Checking roll. Period is " + _period + ", Roll time is " + _periodStart.plus(_period));
         if (time.isAfter(_periodStart.plus(_period))) {
             //Calculate the start of the new aggregation
             LOGGER.debug("We're rolling");

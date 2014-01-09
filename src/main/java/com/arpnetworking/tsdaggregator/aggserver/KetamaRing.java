@@ -97,8 +97,8 @@ public class KetamaRing {
         }
 
         @Nullable
-        public Object getMappedObject() {
-            return _mappedObject;
+        public <T> T getMappedObject() {
+            return (T)_mappedObject;
         }
 
         public int getvNodes() {
@@ -230,9 +230,13 @@ public class KetamaRing {
         return hash(key, DEFAULT_LAYER);
     }
 
-    public NodeEntry hash(@Nonnull final String key, @Nonnull final String layer) {
+    public int getHashCodeFor(@Nonnull final String key) {
         byte[] bytes = key.getBytes(Charsets.UTF_8);
-        int hash = _hashFunction.hash(bytes, 0, bytes.length, 0);
+        return _hashFunction.hash(bytes, 0, bytes.length, 0);
+    }
+
+    public NodeEntry hash(@Nonnull final String key, @Nonnull final String layer) {
+        int hash = getHashCodeFor(key);
         ConcurrentSkipListMap<Integer, NodeEntry> ringLayer = _ring.get(layer);
         if (ringLayer == null) {
             throw new IllegalArgumentException("layer does not exist");
