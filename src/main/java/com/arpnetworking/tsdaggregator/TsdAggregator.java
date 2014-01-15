@@ -55,6 +55,7 @@ public class TsdAggregator {
             commandLineConfig = parser.parse(args);
         } catch (ConfigException e) {
             System.err.println("error parsing options: " + e.getMessage());
+            _Logger.error("Error parsing command line options", e);
             parser.printUsage(System.err);
             return;
         }
