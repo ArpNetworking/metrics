@@ -1,5 +1,6 @@
 package com.arpnetworking.tsdaggregator.aggserver;
 
+import com.google.common.base.Joiner;
 import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -8,7 +9,6 @@ import com.hazelcast.core.MessageListener;
 import io.vertx.redis.RedisMod;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.joda.time.Period;
 import org.joda.time.ReadableDuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,13 +57,14 @@ public class AggregationServer extends Verticle {
     private int _hazelcastPort;
     @Nullable
     private HazelcastInstance _hazelcast = null;
+    @Nonnull
     private AtomicBoolean _hazelcastStarting = new AtomicBoolean(false);
     private ITopic<String> _clusterMemberTopic;
     private State _serverStatus;
 
 
     //Aggregation records
-    private final ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>> _registeredMetrics = new ConcurrentSkipListMap<>();
+    private final ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>>> _registeredMetrics = new ConcurrentSkipListMap<>();
 
     public AggregationServer() {
         _knownClusters = new ConcurrentHashMap<>();
@@ -138,7 +139,7 @@ public class AggregationServer extends Verticle {
         map.put("heartbeat", Long.toString(DateTime.now().getMillis()));
         RedisUtils.hmset(redis, "agg." + _hostName + ".status", map, vertx.eventBus(), new AsyncResultHandler<Void>() {
             @Override
-            public void handle(final AsyncResult<Void> event) {
+            public void handle(@Nonnull final AsyncResult<Void> event) {
                 if (event.succeeded() && notifyHazelcastCluster) {
                     _clusterMemberTopic.publish(_hostName);
                 }
@@ -159,10 +160,10 @@ public class AggregationServer extends Verticle {
         }
     }
 
-    private void processServerStatusChange(final String aggServer) {
+    private void processServerStatusChange(@Nonnull final String aggServer) {
         getAggServerStatus(aggServer, new AsyncResultHandler<ServerStatus>() {
             @Override
-            public void handle(final AsyncResult<ServerStatus> event) {
+            public void handle(@Nonnull final AsyncResult<ServerStatus> event) {
                 if (event.succeeded()) {
                     LOGGER.debug("updating agg server record for " + aggServer + ": " + event.result());
                     _aggServers.put(aggServer, event.result());
@@ -193,12 +194,12 @@ public class AggregationServer extends Verticle {
                             public void clusterNameResolved(AggregatorConnection connection,
                                                             @Nonnull final String hostName,
                                                             @Nonnull final String clusterName) {
-                                clusterResolved(connection, hostName, clusterName);
+                                clusterResolved(hostName, clusterName);
                             }
                         }, new AggregatorConnection.AggregationArrivedCallback() {
                             @Override
-                            public void aggregationArrived(final AggregatorConnection connection,
-                                                           final Messages.AggregationRecord record) {
+                            public void aggregationArrived(@Nonnull final AggregatorConnection connection,
+                                                           @Nonnull final Messages.AggregationRecord record) {
                                 aggregationRecordArrived(connection, record);
                             }
                         }
@@ -224,12 +225,12 @@ public class AggregationServer extends Verticle {
         vertx.createHttpServer().setTCPKeepAlive(true).setTCPNoDelay(true)
                 .requestHandler(new Handler<HttpServerRequest>() {
                     @Override
-                    public void handle(final HttpServerRequest event) {
+                    public void handle(@Nonnull final HttpServerRequest event) {
                         handleHttpRequest(event);
                     }
                 }).listen(port + 1, new AsyncResultHandler<HttpServer>() {
             @Override
-            public void handle(final AsyncResult<HttpServer> event) {
+            public void handle(@Nonnull final AsyncResult<HttpServer> event) {
                 if (event.succeeded()) {
                     LOGGER.info("Started HTTP server on port " + (port + 1));
                 } else {
@@ -239,59 +240,14 @@ public class AggregationServer extends Verticle {
         });
         heartbeat();
         updateHostLoop();
+        updateMetricsLoop();
     }
 
-    private void handleHttpRequest(HttpServerRequest event) {
+    private void handleHttpRequest(@Nonnull HttpServerRequest event) {
         LOGGER.debug("got http request with path " + event.path());
 
         if (event.path().equals("/status")) {
-            JsonObject response = new JsonObject();
-            final JsonObject dataObject = new JsonObject();
-            final JsonArray aggServersArray = new JsonArray();
-            for (Map.Entry<String, ServerStatus> entry : _aggServers.entrySet()) {
-                aggServersArray.add(new JsonObject().putString("name", entry.getValue().getName())
-                        .putString("status", entry.getValue().getState().name())
-                        .putString("heartbeat", entry.getValue().getHeartbeatTime().toString()));
-            }
-            dataObject.putArray("aggServers", aggServersArray);
-            final JsonArray clustersArray = new JsonArray();
-            for (Map.Entry<String, ConcurrentSkipListMap<String, Metric>> entry : _registeredMetrics.entrySet()) {
-                final JsonObject clusterObject = new JsonObject();
-                final JsonArray metricsArray = new JsonArray();
-                clusterObject.putString("name", entry.getKey());
-                for (Map.Entry<String, Metric> metric : entry.getValue().entrySet()) {
-                    metricsArray.add(metric.getKey());
-                }
-                clusterObject.putArray("metrics", metricsArray);
-                clustersArray.addObject(clusterObject);
-            }
-            dataObject.putArray("metrics", clustersArray);
-            final JsonArray redisServersArray = new JsonArray();
-            for (RedisInstance instance : _connectedRedisHosts) {
-                redisServersArray.add(new JsonObject().putString("host", instance.getHostName())
-                        .putString("ebName", instance.getEBName()));
-            }
-            dataObject.putArray("redisServers", redisServersArray);
-            JsonObject ketamaRingObject = new JsonObject();
-            final Set<String> layers = _ketamaRing.getLayers();
-            JsonArray layersArray = new JsonArray();
-            for (String layer : layers) {
-                JsonObject layerObject = new JsonObject();
-                layersArray.add(layerObject);
-                layerObject.putString("name", layer);
-                JsonArray entriesArray = new JsonArray();
-                layerObject.putArray("entries", entriesArray);
-                final Set<Map.Entry<Integer, KetamaRing.NodeEntry>> entries = _ketamaRing.getRingEntries(layer);
-                for (Map.Entry<Integer, KetamaRing.NodeEntry> entry : entries) {
-                    JsonObject entryObject = new JsonObject().putNumber("key", entry.getKey())
-                            .putString("nodeKey", entry.getValue().getNodeKey())
-                            .putString("status", entry.getValue().getStatus().name());
-                    entriesArray.add(entryObject);
-                }
-            }
-            ketamaRingObject.putArray("layers", layersArray);
-            dataObject.putObject("ketamaRing", ketamaRingObject);
-            response.putString("status", "success").putObject("data", dataObject);
+            JsonObject response = getStatusJson();
             Buffer buffer = new Buffer();
             String responseString = response.encode();
             buffer.appendString(responseString);
@@ -299,6 +255,76 @@ public class AggregationServer extends Verticle {
         } else {
             event.response().setStatusCode(404).end();
         }
+    }
+
+    private JsonObject getStatusJson() {
+        JsonObject response = new JsonObject();
+        final JsonObject dataObject = new JsonObject();
+        final JsonArray aggServersArray = new JsonArray();
+        for (Map.Entry<String, ServerStatus> entry : _aggServers.entrySet()) {
+            aggServersArray.add(new JsonObject().putString("name", entry.getValue().getName())
+                    .putString("status", entry.getValue().getState().name())
+                    .putString("heartbeat", entry.getValue().getHeartbeatTime().toString()));
+        }
+        dataObject.putArray("aggServers", aggServersArray);
+        final JsonArray clustersArray = new JsonArray();
+        for (Map.Entry<String, ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>>> entry : _registeredMetrics.entrySet()) {
+            final JsonObject clusterObject = new JsonObject();
+            clusterObject.putString("name", entry.getKey());
+
+            final JsonArray servicesArray = new JsonArray();
+            for (Map.Entry<String, ConcurrentSkipListMap<String, Metric>> mapEntry : entry.getValue().entrySet()) {
+                JsonObject serviceObject = new JsonObject();
+                serviceObject.putString("name", mapEntry.getKey());
+
+                final JsonArray metricsArray = new JsonArray();
+                for (Map.Entry<String, Metric> metric : mapEntry.getValue().entrySet()) {
+                    metricsArray.add(metric.getKey());
+                }
+                serviceObject.putArray("metrics", metricsArray);
+            }
+
+            clusterObject.putArray("services", servicesArray);
+
+            final JsonArray hostsArray = new JsonArray();
+            for (Map.Entry<String, ServerStatus> statusEntry : _knownClusters.get(entry.getKey()).entrySet()) {
+                hostsArray.add(statusEntry.getKey());
+            }
+            clusterObject.putArray("hosts", hostsArray);
+
+
+            clustersArray.addObject(clusterObject);
+        }
+        dataObject.putArray("metrics", clustersArray);
+
+        final JsonArray redisServersArray = new JsonArray();
+        for (RedisInstance instance : _connectedRedisHosts) {
+            redisServersArray.add(new JsonObject().putString("host", instance.getHostName())
+                    .putString("ebName", instance.getEBName()));
+        }
+        dataObject.putArray("redisServers", redisServersArray);
+
+        JsonObject ketamaRingObject = new JsonObject();
+        final Set<String> layers = _ketamaRing.getLayers();
+        JsonArray layersArray = new JsonArray();
+        for (String layer : layers) {
+            JsonObject layerObject = new JsonObject();
+            layersArray.add(layerObject);
+            layerObject.putString("name", layer);
+            JsonArray entriesArray = new JsonArray();
+            layerObject.putArray("entries", entriesArray);
+            final Set<Map.Entry<Integer, KetamaRing.NodeEntry>> entries = _ketamaRing.getRingEntries(layer);
+            for (Map.Entry<Integer, KetamaRing.NodeEntry> entry : entries) {
+                JsonObject entryObject = new JsonObject().putNumber("key", entry.getKey())
+                        .putString("nodeKey", entry.getValue().getNodeKey())
+                        .putString("status", entry.getValue().getStatus().name());
+                entriesArray.add(entryObject);
+            }
+        }
+        ketamaRingObject.putArray("layers", layersArray);
+        dataObject.putObject("ketamaRing", ketamaRingObject);
+        response.putString("status", "success").putObject("data", dataObject);
+        return response;
     }
 
     private void deployRedis(@Nonnull JsonArray redisAddresses) {
@@ -375,11 +401,25 @@ public class AggregationServer extends Verticle {
         });
     }
 
-    private void updateAllHostsStatuses(final AsyncResultHandler<Void> resultHandler) {
+    private void updateMetricsLoop() {
+        //Random interval between 2 and 3 minutes
+        vertx.setTimer((long)(Math.random() * 120000 + 60000), new Handler<Long>() {
+            @Override
+            public void handle(final Long event) {
+                updateMetrics();
+            }
+        });
+    }
+
+    private void updateMetrics() {
+
+    }
+
+    private void updateAllHostsStatuses(@Nullable final AsyncResultHandler<Void> resultHandler) {
         RedisUtils.getAllSMEMBERS(_connectedRedisHosts, getAggHostsKey(), vertx.eventBus(),
                 new AsyncResultHandler<Set<String>>() {
                     @Override
-                    public void handle(final AsyncResult<Set<String>> event) {
+                    public void handle(@Nonnull final AsyncResult<Set<String>> event) {
                         if (!event.succeeded()) {
                             _hazelcastStarting.set(false);
                             vertx.setTimer(10000, new Handler<Long>() {
@@ -400,7 +440,7 @@ public class AggregationServer extends Verticle {
                             for (final String host : aggHosts) {
                                 getAggServerStatus(host, new AsyncResultHandler<ServerStatus>() {
                                     @Override
-                                    public void handle(final AsyncResult<ServerStatus> event) {
+                                    public void handle(@Nonnull final AsyncResult<ServerStatus> event) {
                                         if (!event.succeeded()) {
                                             LOGGER.warn("Error getting agg server status for server " + host,
                                                     event.cause());
@@ -409,7 +449,7 @@ public class AggregationServer extends Verticle {
                                         }
                                         int val = countDown.decrementAndGet();
                                         if (val == 0 && resultHandler != null) {
-                                            resultHandler.handle(new ASResult<Void>((Void) null));
+                                            resultHandler.handle(new ASResult<>((Void) null));
                                         }
                                     }
                                 });
@@ -420,11 +460,12 @@ public class AggregationServer extends Verticle {
 
     }
 
+    @Nonnull
     private String getAggHostsKey() {
         return "agg.hosts";
     }
 
-    private void registerAndUpdateAggServer(final ServerStatus aggServer) {
+    private void registerAndUpdateAggServer(@Nonnull final ServerStatus aggServer) {
         LOGGER.info("updating state of agg server " + aggServer);
         ServerStatus currentStatus = _aggServers.get(aggServer.getName());
         if (currentStatus == null) {
@@ -433,11 +474,17 @@ public class AggregationServer extends Verticle {
         _aggServers.put(aggServer.getName(), aggServer);
     }
 
-    private void getAggServerStatus(final String server, final AsyncResultHandler<ServerStatus> resultHandler) {
+    private void getAggServerStatus(@Nonnull final String server, @Nonnull final AsyncResultHandler<ServerStatus> resultHandler) {
         RedisInstance redis = getRedisInstanceFor(server);
+        if (redis == null) {
+            final String msg = "unable to get agg server status for server " + server + ".  No redis instance found for key.";
+            LOGGER.warn(msg);
+            resultHandler.handle(new ASResult<ServerStatus>(new IllegalStateException(msg)));
+            return;
+        }
         RedisUtils.hgetall(redis, getAggServerStatusKey(server), vertx.eventBus(), new AsyncResultHandler<Map<String, String>>() {
             @Override
-            public void handle(final AsyncResult<Map<String, String>> event) {
+            public void handle(@Nonnull final AsyncResult<Map<String, String>> event) {
                 if (event.succeeded()) {
                     Map<String, String> map = event.result();
                     if (map.isEmpty()) {
@@ -462,6 +509,7 @@ public class AggregationServer extends Verticle {
         });
     }
 
+    @Nonnull
     private String getAggServerStatusKey(final String server) {
         return "agg." + server + ".status";
     }
@@ -508,7 +556,7 @@ public class AggregationServer extends Verticle {
                     LOGGER.info("adding host " + host + " to cluster " + cluster);
                     getHostLastSeen(host, getRedisInstanceFor(host), new AsyncResultHandler<DateTime>() {
                         @Override
-                        public void handle(final AsyncResult<DateTime> event) {
+                        public void handle(@Nonnull final AsyncResult<DateTime> event) {
                             if (event.succeeded()) {
                                 ServerStatus status = map.get(host);
                                 status.setHeartbeatTime(event.result());
@@ -529,8 +577,7 @@ public class AggregationServer extends Verticle {
         });
     }
 
-    private void clusterResolved(AggregatorConnection connection, @Nonnull String hostName,
-                                 @Nonnull String clusterName) {
+    private void clusterResolved(@Nonnull String hostName, @Nonnull String clusterName) {
         registerHostAndCluster(hostName, clusterName);
     }
 
@@ -545,10 +592,10 @@ public class AggregationServer extends Verticle {
         updateLastSeen(hostName, hostRedis);
     }
 
-    private void registerMetric(@Nonnull final String cluster, @Nonnull final String metricName, @Nullable final AsyncResultHandler<Metric> callback) {
+    private void registerMetric(@Nonnull final String cluster, @Nonnull final String serviceName, @Nonnull final String metricName, @Nullable final AsyncResultHandler<Metric> callback) {
         EventBus eb = vertx.eventBus();
 
-        String key = "metrics." + cluster + ".metrics";
+        String key = "metrics." + cluster + "." + serviceName + ".metrics";
         @Nullable RedisInstance metricsRedis = getRedisInstanceFor(key);
         if (metricsRedis == null) {
             final String msg = "unable to register metric " + metricName + ".  No redis instance found for key.";
@@ -561,10 +608,10 @@ public class AggregationServer extends Verticle {
         int metricsHash = _ketamaRing.getHashCodeFor(metricName);
         RedisUtils.zadd(metricsRedis, key, metricsHash, metricName, eb, new AsyncResultHandler<Integer>() {
             @Override
-            public void handle(final AsyncResult<Integer> event) {
+            public void handle(@Nonnull final AsyncResult<Integer> event) {
                 if (event.succeeded()) {
-                    final Metric metric = new Metric(cluster, metricName);
-                    _registeredMetrics.get(cluster).put(metricName, metric);
+                    final Metric metric = new Metric(cluster, serviceName, metricName);
+                    _registeredMetrics.get(cluster).get(serviceName).put(metricName, metric);
                     if (callback != null) {
                         callback.handle(new ASResult<Metric>(metric));
                     }
@@ -580,7 +627,7 @@ public class AggregationServer extends Verticle {
 
     private void registerAggregationForMetric(@Nonnull final Metric metric, @Nonnull final String aggregation, @Nullable final AsyncResultHandler<String> callback) {
         EventBus eb = vertx.eventBus();
-        String serverKey = "metrics." + metric.getCluster() + "." + metric.getName();
+        String serverKey = getServerKeyForMetric(metric);
         RedisInstance metricRedis = getRedisInstanceFor(serverKey);
         if (metricRedis == null) {
             final String msg = "unable to add aggregation to metric " + metric + ".  No redis instance found for key.";
@@ -593,7 +640,7 @@ public class AggregationServer extends Verticle {
         String key = serverKey + ".aggs";
         RedisUtils.sadd(metricRedis, key, aggregation, eb, new AsyncResultHandler<Integer>() {
             @Override
-            public void handle(final AsyncResult<Integer> event) {
+            public void handle(@Nonnull final AsyncResult<Integer> event) {
                 if (event.succeeded()) {
                     if (callback != null) {
                         callback.handle(new ASResult<String>(aggregation));
@@ -607,56 +654,81 @@ public class AggregationServer extends Verticle {
         });
     }
 
-    private void registerPeriodForMetric(@Nonnull final Metric metric, @Nonnull final Period period, @Nullable final AsyncResultHandler<Period> callback) {
+    private String getServerKeyForMetric(final Metric metric) {
+        return "metrics." + metric.getCluster() + "." + metric.getService() + "." + metric.getName();
+    }
+
+    private void registerPeriodForMetric(@Nonnull final Metric metric, @Nonnull final String period, @Nullable final AsyncResultHandler<String> callback) {
         EventBus eb = vertx.eventBus();
-        String serverKey = "metrics." + metric.getCluster() + "." + metric.getName();
+        String serverKey = getServerKeyForMetric(metric);
         RedisInstance metricRedis = getRedisInstanceFor(serverKey);
         if (metricRedis == null) {
             final String msg = "unable to add period to metric " + metric + ".  No redis instance found for key.";
             LOGGER.warn(msg);
             if (callback != null) {
-                callback.handle(new ASResult<Period>(new IllegalStateException(msg)));
+                callback.handle(new ASResult<String>(new IllegalStateException(msg)));
             }
             return;
         }
         String key = serverKey + ".periods";
-        RedisUtils.sadd(metricRedis, key, period.toString(), eb, new AsyncResultHandler<Integer>() {
+        RedisUtils.sadd(metricRedis, key, period, eb, new AsyncResultHandler<Integer>() {
             @Override
-            public void handle(final AsyncResult<Integer> event) {
+            public void handle(@Nonnull final AsyncResult<Integer> event) {
                 if (event.succeeded()) {
                     if (callback != null) {
-                        callback.handle(new ASResult<Period>(period));
+                        callback.handle(new ASResult<>(period));
                     }
                 } else {
                     if (callback != null) {
-                        callback.handle(new ASResult<Period>(event.cause()));
+                        callback.handle(new ASResult<String>(event.cause()));
                     }
                 }
             }
         });
     }
 
+    private void writeMetricAggregation(@Nonnull final AggregatorConnection connection, @Nonnull final Messages.AggregationRecord record,
+                                        @Nonnull final Metric metric, @Nonnull final String period, @Nonnull final String statistic) {
+        EventBus eb = vertx.eventBus();
+        String key = getServerKeyForMetric(metric) + "." + period + "." + statistic + "." + connection.getHostName().or("unknown");
+        RedisInstance metricRedis = getRedisInstanceFor(key);
+        if (metricRedis == null) {
+            final String msg = "unable to add period to metric " + metric + ".  No redis instance found for key.";
+            LOGGER.warn(msg);
+            return;
+        }
+        Map<String, String> values = new HashMap<>();
+        values.put("value", String.valueOf(record.getStatisticValue()));
+        values.put("periodStart", record.getPeriodStart());
+        StringBuilder samplesBuilder = new StringBuilder();
+        samplesBuilder.append("[");
+        Joiner.on(", ").appendTo(samplesBuilder, record.getStatisticSamplesList()).append("]");
+        String samples = samplesBuilder.toString();
+        values.put("samples", samples);
+        RedisUtils.hmset(metricRedis, key, values, eb, null);
+    }
+
 
     @Nullable
-    private RedisInstance getRedisInstanceFor(@Nonnull String key) {
+    private RedisInstance getRedisInstanceFor(@Nonnull final String key) {
         final KetamaRing.NodeEntry entry = _ketamaRing.hash(key, KetamaLayers.REDIS.getVal());
         return entry.getMappedObject();
     }
 
-    private void updateLastSeen(final String hostName, @Nonnull final RedisInstance hostRedis) {
+    private void updateLastSeen(@Nonnull final String hostName, @Nonnull final RedisInstance hostRedis) {
         final EventBus eb = vertx.eventBus();
         RedisUtils.set(hostRedis, getHostLastSeenKey(hostName), Long.toString(DateTime.now().getMillis()), eb, null);
     }
 
-    private void getHostLastSeen(final String hostName, final RedisInstance hostRedis, final AsyncResultHandler<DateTime> handler) {
+    private void getHostLastSeen(@Nonnull final String hostName, @Nonnull final RedisInstance hostRedis, @Nullable final AsyncResultHandler<DateTime> handler) {
         RedisUtils.get(hostRedis, getHostLastSeenKey(hostName), vertx.eventBus(), new AsyncResultHandler<String>() {
             @Override
-            public void handle(final AsyncResult<String> event) {
+            public void handle(@Nonnull final AsyncResult<String> event) {
                 if (handler == null) {
                     return;
                 }
                 if (event.succeeded()) {
-                    handler.handle(new ASResult<DateTime>(new DateTime(Long.valueOf(event.result()))));
+                    handler.handle(new ASResult<>(new DateTime(Long.valueOf(event.result()))));
                 } else {
                     handler.handle(new ASResult<DateTime>(event.cause()));
                 }
@@ -695,74 +767,89 @@ public class AggregationServer extends Verticle {
             return;
         }
 
-        String metricName = record.getMetric();
-        String clusterName = connection.getClusterName().get();
-        ConcurrentSkipListMap<String, Metric> metrics = _registeredMetrics.get(clusterName);
+        createMetric(record.getService(), record.getMetric(), connection.getClusterName().get(), record.getStatistic(), record.getPeriod(),
+                new AsyncResultHandler<Metric>() {
+            @Override
+            public void handle(@Nonnull final AsyncResult<Metric> event) {
+                if (event.succeeded()) {
+                    final String period = record.getPeriod();
+                    final String statistic = record.getStatistic();
+                    updateMetricMetadata(event.result(), period, statistic);
+                    writeMetricAggregation(connection, record, event.result(), period, statistic);
+                }
+            }
+        });
+    }
+
+    private void createMetric(final String serviceName, final String metricName, final String clusterName, final String statistic,
+                              final String period, @Nullable final AsyncResultHandler<Metric> callback) {
+        ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>> services = _registeredMetrics.get(clusterName);
+        if (services == null) {
+            ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>> newServices = new ConcurrentSkipListMap<>();
+            services = _registeredMetrics.putIfAbsent(clusterName, newServices);
+            if (services == null) {
+                services = newServices;
+            }
+        }
+
+        ConcurrentSkipListMap<String, Metric> metrics = services.get(serviceName);
         if (metrics == null) {
             ConcurrentSkipListMap<String, Metric> newMetrics = new ConcurrentSkipListMap<>();
-            metrics = _registeredMetrics.putIfAbsent(clusterName, newMetrics);
+            metrics = services.putIfAbsent(serviceName, newMetrics);
             if (metrics == null) {
                 metrics = newMetrics;
             }
         }
 
-        final Period period = Period.parse(record.getPeriod());
+
+
+
         if (!metrics.containsKey(metricName)) {
-            registerMetric(clusterName, metricName, new AsyncResultHandler<Metric>() {
+            registerMetric(clusterName, serviceName, metricName, new AsyncResultHandler<Metric>() {
                 @Override
-                public void handle(final AsyncResult<Metric> event) {
+                public void handle(@Nonnull final AsyncResult<Metric> event) {
                     if (event.succeeded()) {
                         final Metric metric = event.result();
-                        if (!metric.hasAggregation(record.getStatistic())) {
-                            registerAggregationForMetric(metric, record.getStatistic(), new AsyncResultHandler<String>() {
-                                @Override
-                                public void handle(final AsyncResult<String> event) {
-                                    if (event.succeeded()) {
-                                        metric.addAggregation(record.getStatistic());
-                                    }
-                                }
-                            });
+                        if (callback != null) {
+                            callback.handle(new ASResult<>(metric));
                         }
-
-                        if (!metric.hasPeriod(period)) {
-                            registerPeriodForMetric(metric, period, new AsyncResultHandler<Period>() {
-                                @Override
-                                public void handle(final AsyncResult<Period> event) {
-                                    if (event.succeeded()) {
-                                        metric.addPeriod(period);
-                                    }
-                                }
-                            });
+                        updateMetricMetadata(metric, period, statistic);
+                    } else {
+                        if (callback != null) {
+                            callback.handle(new ASResult<Metric>(event.cause()));
                         }
                     }
                 }
             });
         } else {
             final Metric metric = metrics.get(metricName);
-            if (!metric.hasAggregation(record.getStatistic())) {
-                registerAggregationForMetric(metric, record.getStatistic(), new AsyncResultHandler<String>() {
-                    @Override
-                    public void handle(final AsyncResult<String> event) {
-                        if (event.succeeded()) {
-                            metric.addAggregation(record.getStatistic());
-                        }
-                    }
-                });
-            }
-
-            if (!metric.hasPeriod(period)) {
-                registerPeriodForMetric(metric, period, new AsyncResultHandler<Period>() {
-                    @Override
-                    public void handle(final AsyncResult<Period> event) {
-                        if (event.succeeded()) {
-                            metric.addPeriod(period);
-                        }
-                    }
-                });
+            if (callback != null) {
+                callback.handle(new ASResult<>(metric));
             }
         }
-        //TODO(brandon): the magic with the aggregation record
-        //Store the metric in redis
+    }
 
+    private void updateMetricMetadata(@Nonnull final Metric metric, @Nonnull final String period, @Nonnull final String statistic) {
+        if (!metric.hasAggregation(statistic)) {
+            registerAggregationForMetric(metric, statistic, new AsyncResultHandler<String>() {
+                @Override
+                public void handle(@Nonnull final AsyncResult<String> event) {
+                    if (event.succeeded()) {
+                        metric.addAggregation(statistic);
+                    }
+                }
+            });
+        }
+
+        if (!metric.hasPeriod(period)) {
+            registerPeriodForMetric(metric, period, new AsyncResultHandler<String>() {
+                @Override
+                public void handle(@Nonnull final AsyncResult<String> event) {
+                    if (event.succeeded()) {
+                        metric.addPeriod(period);
+                    }
+                }
+            });
+        }
     }
 }

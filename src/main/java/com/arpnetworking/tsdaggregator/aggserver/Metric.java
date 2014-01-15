@@ -1,7 +1,6 @@
 package com.arpnetworking.tsdaggregator.aggserver;
 
 import com.google.common.base.Objects;
-import org.joda.time.Period;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -12,13 +11,15 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 public class Metric {
     private String _cluster;
+    private String _service;
     private final String _name;
 
-    private final ConcurrentSkipListSet<Period> _periods = new ConcurrentSkipListSet<>();
+    private final ConcurrentSkipListSet<String> _periods = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<String> _aggregations = new ConcurrentSkipListSet<>();
 
-    public Metric(String cluster, String name) {
+    public Metric(String cluster, String service, String name) {
         _cluster = cluster;
+        _service = service;
         _name = name;
     }
 
@@ -30,7 +31,11 @@ public class Metric {
         return _cluster;
     }
 
-    public boolean addPeriod(Period period) {
+    public String getService() {
+        return _service;
+    }
+
+    public boolean addPeriod(String period) {
         return _periods.add(period);
     }
 
@@ -48,7 +53,7 @@ public class Metric {
         return _aggregations.contains(statistic);
     }
 
-    public boolean hasPeriod(final Period period) {
+    public boolean hasPeriod(final String period) {
         return _periods.contains(period);
     }
 }

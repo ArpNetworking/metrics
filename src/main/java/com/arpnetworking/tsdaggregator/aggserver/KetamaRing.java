@@ -97,6 +97,7 @@ public class KetamaRing {
         }
 
         @Nullable
+        @SuppressWarnings("unchecked")
         public <T> T getMappedObject() {
             return (T)_mappedObject;
         }
