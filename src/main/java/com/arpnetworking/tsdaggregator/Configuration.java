@@ -1,6 +1,8 @@
 package com.arpnetworking.tsdaggregator;
 
 import com.arpnetworking.tsdaggregator.statistics.*;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.joda.time.Period;
 
 import java.util.*;
@@ -225,9 +227,9 @@ public class Configuration {
         private boolean _useMonitord = false;
         private String _monitordAddress = MONITORD_DEFAULT_URI;
         @Nonnull
-        private ArrayList<String> _files = new ArrayList<>();
+        private ArrayList<String> _files = Lists.newArrayList();
         private Class<? extends LogParser> _parserClass = QueryLogParser.class;
-        private Set<Period> _periods = new TreeSet<>();
+        private Set<Period> _periods = Sets.newHashSet();
         private Pattern _filterPattern = Pattern.compile(".*");
         private boolean _shouldTail = false;
         private Set<Statistic> _timerStatistics;
@@ -244,10 +246,10 @@ public class Configuration {
         private boolean _useUpstreamAgg = false;
         private String _clusterAggHost;
         @Nonnull
-        private List<String> _configFiles = new ArrayList<>();
+        private List<String> _configFiles = Lists.newArrayList();
         private boolean _valid = false;
         @Nonnull
-        private List<String> _redisHosts = new ArrayList<>();
+        private List<String> _redisHosts = Lists.newArrayList();
 
         private Builder() {
         }
@@ -350,7 +352,7 @@ public class Configuration {
 
         @Nonnull
         public Builder files(String[] files) {
-            this._files = new ArrayList<>();
+            this._files = Lists.newArrayList();
             Collections.addAll(this._files, files);
             return this;
         }
@@ -482,7 +484,7 @@ public class Configuration {
 
         @Nonnull
         public Builder configFiles(String[] files) {
-            this._configFiles = new ArrayList<>();
+            this._configFiles = Lists.newArrayList();
             this._configFiles.addAll(Arrays.asList(files));
             return this;
         }

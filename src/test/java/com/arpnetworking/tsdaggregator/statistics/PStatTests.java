@@ -3,6 +3,7 @@ package com.arpnetworking.tsdaggregator.statistics;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+import com.google.common.collect.Lists;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ public class PStatTests {
 
 	@Nonnull
     private Double[] generateNumber(int number) {
-		ArrayList<Double> vals = new ArrayList<>();
+		ArrayList<Double> vals = Lists.newArrayList();
 		for (double x = 0; x < number; x++) {
 			vals.add(x);
 		}

@@ -1,6 +1,7 @@
 package com.arpnetworking.tsdaggregator.publishing;
 
 import com.arpnetworking.tsdaggregator.AggregatedData;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import javax.annotation.Nonnull;
@@ -11,7 +12,7 @@ import javax.annotation.Nonnull;
  * @author barp
  */
 public class MultiPublisher implements AggregationPublisher {
-    private final ArrayList<AggregationPublisher> _listeners = new ArrayList<>();
+    private final ArrayList<AggregationPublisher> _listeners = Lists.newArrayList();
 
     public void addListener(AggregationPublisher listener) {
         _listeners.add(listener);

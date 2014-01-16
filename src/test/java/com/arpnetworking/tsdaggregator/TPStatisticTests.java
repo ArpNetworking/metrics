@@ -1,6 +1,7 @@
 package com.arpnetworking.tsdaggregator;
 
 import com.arpnetworking.tsdaggregator.statistics.TPStatistic;
+import com.google.common.collect.Lists;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,7 +40,7 @@ public class TPStatisticTests {
 	@Test
 	public void TestTP99Stat() {
 		TPStatistic tp = new TPStatistic(99d);
-		ArrayList<Double> vList = new ArrayList<>();
+		ArrayList<Double> vList = Lists.newArrayList();
 		for (Integer x = 0; x < 100; x++) {
 			vList.add(x.doubleValue());
 		}
@@ -52,7 +53,7 @@ public class TPStatisticTests {
 	@Test
 	public void TestTP50Stat() {
 		TPStatistic tp = new TPStatistic(50d);
-		ArrayList<Double> vList = new ArrayList<>();
+		ArrayList<Double> vList = Lists.newArrayList();
 		for (Integer x = 0; x < 100; x++) {
 			vList.add(x.doubleValue());
 		}
@@ -65,7 +66,7 @@ public class TPStatisticTests {
 	@Test
 	public void TestTP999Stat() {
 		TPStatistic tp = new TPStatistic(99.9d);
-		ArrayList<Double> vList = new ArrayList<>();
+		ArrayList<Double> vList = Lists.newArrayList();
 		for (Integer x = 0; x < 10000; x++) {
 			vList.add(x.doubleValue());
 		}

@@ -1,6 +1,8 @@
 package com.arpnetworking.tsdaggregator.publishing;
 
 import com.arpnetworking.tsdaggregator.AggregatedData;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -61,12 +63,12 @@ public class MonitordPublisher implements AggregationPublisher {
         if (data.length == 0) {
             return;
         }
-        @Nonnull HashMap<String, ArrayList<AggregatedData>> aggMap = new HashMap<>();
+        @Nonnull HashMap<String, ArrayList<AggregatedData>> aggMap = Maps.newHashMap();
         //Build the map for the aggregations
         for (@Nonnull AggregatedData d : data) {
             ArrayList<AggregatedData> mapped = aggMap.get(d.getMetric());
             if (mapped == null) {
-                mapped = new ArrayList<>();
+                mapped = Lists.newArrayList();
                 aggMap.put(d.getMetric(), mapped);
             }
             mapped.add(d);

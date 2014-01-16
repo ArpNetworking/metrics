@@ -2,11 +2,11 @@ package com.arpnetworking.tsdaggregator;
 
 import com.arpnetworking.tsdaggregator.publishing.AggregationPublisher;
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
+import com.google.common.collect.Sets;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
@@ -14,7 +14,7 @@ import javax.annotation.Nonnull;
  * Class representing a metric and a set of aggregations.
  */
 public class TSData {
-    private final Set<TSAggregation> _aggregations = new HashSet<>();
+    private final Set<TSAggregation> _aggregations = Sets.newHashSet();
 
     public TSData(@Nonnull String metricName, @Nonnull Set<Period> aggregations, @Nonnull AggregationPublisher listener,
                   @Nonnull String hostName, @Nonnull String serviceName, @Nonnull Set<Statistic> statistics) {

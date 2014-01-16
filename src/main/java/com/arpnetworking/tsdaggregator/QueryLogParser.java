@@ -1,6 +1,8 @@
 package com.arpnetworking.tsdaggregator;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.joda.time.DateTime;
@@ -25,11 +27,11 @@ public class QueryLogParser implements LogParser {
 
     @Nonnull
     private LogLine parseLegacyLogLine(String line) throws ParseException {
-        @Nonnull HashMap<String, CounterVariable> vals = new HashMap<>();
+        @Nonnull HashMap<String, CounterVariable> vals = Maps.newHashMap();
         line = line.trim();
         line = line.replace("[", "");
         line = line.replace("]", "");
-        @Nonnull ArrayList<String> removalCandidates = new ArrayList<>();
+        @Nonnull ArrayList<String> removalCandidates = Lists.newArrayList();
 
         String[] vars = line.split(",");
         for (@Nonnull String var : vars) {
@@ -48,7 +50,7 @@ public class QueryLogParser implements LogParser {
                     key = key.replaceFirst("-start$", "");
                     removalCandidates.add(key);
                 }
-                @Nonnull ArrayList<Double> values = new ArrayList<>();
+                @Nonnull ArrayList<Double> values = Lists.newArrayList();
                 values.add(value);
                 @Nonnull CounterVariable cv = new CounterVariable(CounterVariable.MetricKind.Counter, values);
                 vals.put(key, cv);
@@ -77,7 +79,7 @@ public class QueryLogParser implements LogParser {
 
     @Nonnull
     LogLine parseV2aLogLine(@Nonnull Map<String, Object> line) throws ParseException {
-        @Nonnull TreeMap<String, CounterVariable> variables = new TreeMap<>();
+        @Nonnull TreeMap<String, CounterVariable> variables = Maps.newTreeMap();
         @Nonnull final Map<String, Object> counters;
         try {
             @Nonnull @SuppressWarnings(value = "unchecked")
@@ -88,7 +90,7 @@ public class QueryLogParser implements LogParser {
         }
         if (counters != null) {
             for (@Nonnull Map.Entry<String, Object> entry : counters.entrySet()) {
-                @Nonnull ArrayList<Double> counter = new ArrayList<>();
+                @Nonnull ArrayList<Double> counter = Lists.newArrayList();
                 try {
                     counter.add(Double.valueOf(entry.getValue().toString()));
                 } catch (NumberFormatException e) {
@@ -110,7 +112,7 @@ public class QueryLogParser implements LogParser {
         }
         if (timers != null) {
             for (@Nonnull Map.Entry<String, ArrayList<Object>> entryArray : timers.entrySet()) {
-                @Nonnull ArrayList<Double> counter = new ArrayList<>();
+                @Nonnull ArrayList<Double> counter = Lists.newArrayList();
                 for (@Nonnull Object entry : entryArray.getValue()) {
                     try {
                         counter.add(Double.valueOf(entry.toString()));
@@ -138,7 +140,7 @@ public class QueryLogParser implements LogParser {
 
     @Nonnull
     LogLine parseV2bLogLine(@Nonnull Map<String, Object> line) throws ParseException {
-        @Nonnull TreeMap<String, CounterVariable> variables = new TreeMap<>();
+        @Nonnull TreeMap<String, CounterVariable> variables = Maps.newTreeMap();
 
         @Nonnull final Map<String, Object> counters;
         try {
@@ -150,7 +152,7 @@ public class QueryLogParser implements LogParser {
         }
         if (counters != null) {
             for (@Nonnull Map.Entry<String, Object> entry : counters.entrySet()) {
-                @Nonnull ArrayList<Double> counter = new ArrayList<>();
+                @Nonnull ArrayList<Double> counter = Lists.newArrayList();
                 try {
                     counter.add(Double.parseDouble(entry.getValue().toString()));
                 } catch (NumberFormatException e) {
@@ -172,7 +174,7 @@ public class QueryLogParser implements LogParser {
         if (timers != null) {
             for (@Nonnull Map.Entry<String, ArrayList<Object>> entry : timers.entrySet()) {
                 ArrayList<Object> vals = entry.getValue();
-                @Nonnull ArrayList<Double> newVals = new ArrayList<>();
+                @Nonnull ArrayList<Double> newVals = Lists.newArrayList();
                 for (@Nonnull Object val : vals) {
                     try {
                         newVals.add(Double.valueOf(val.toString()));
@@ -265,19 +267,18 @@ public class QueryLogParser implements LogParser {
         }
         try {
             @Nonnull String version = (String) jsonLine.get("version");
-            switch (version) {
-                case "2a":
-                    logLine = parseV2aLogLine(jsonLine);
-                    break;
-                case "2b":
-                    logLine = parseV2bLogLine(jsonLine);
-                    break;
-                case "2c":
-                    logLine = parseV2cLogLine(jsonLine);
-                    break;
-                default:
-                    LOGGER.warn("Discarding line: Unknown line format version.\nLine was:\n" + line);
-                    logLine = null;
+            if (version.equals("2a")) {
+                logLine = parseV2aLogLine(jsonLine);
+
+            } else if (version.equals("2b")) {
+                logLine = parseV2bLogLine(jsonLine);
+
+            } else if (version.equals("2c")) {
+                logLine = parseV2cLogLine(jsonLine);
+
+            } else {
+                LOGGER.warn("Discarding line: Unknown line format version.\nLine was:\n" + line);
+                logLine = null;
             }
         } catch (ParseException e) {
             LOGGER.warn("Discarding line: Unparsable.\nLine was:\n" + line, e);
@@ -288,7 +289,7 @@ public class QueryLogParser implements LogParser {
 
     @Nonnull
     private LogLine parseV2cLogLine(@Nonnull Map<String, Object> line) throws ParseException {
-        @Nonnull TreeMap<String, CounterVariable> variables = new TreeMap<>();
+        @Nonnull TreeMap<String, CounterVariable> variables = Maps.newTreeMap();
         parseChunk(line, "timers", CounterVariable.MetricKind.Timer, variables);
         parseChunk(line, "counters", CounterVariable.MetricKind.Counter, variables);
         parseChunk(line, "gauges", CounterVariable.MetricKind.Gauge, variables);
@@ -324,7 +325,7 @@ public class QueryLogParser implements LogParser {
         if (elements != null) {
             for (@Nonnull Map.Entry<String, ArrayList<Object>> entry : elements.entrySet()) {
                 ArrayList<Object> lineValues = entry.getValue();
-                @Nonnull ArrayList<Double> parsedValues = new ArrayList<>();
+                @Nonnull ArrayList<Double> parsedValues = Lists.newArrayList();
                 for (@Nonnull Object val : lineValues) {
                     try {
                         parsedValues.add(Double.valueOf(val.toString()));

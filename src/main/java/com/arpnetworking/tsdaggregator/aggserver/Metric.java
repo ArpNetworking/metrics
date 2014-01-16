@@ -5,7 +5,7 @@ import com.google.common.base.Objects;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
- * Represents what we know about a metric
+ * Represents what we know about a metric.
  *
  * @author barp
  */
@@ -14,8 +14,8 @@ public class Metric {
     private String _service;
     private final String _name;
 
-    private final ConcurrentSkipListSet<String> _periods = new ConcurrentSkipListSet<>();
-    private final ConcurrentSkipListSet<String> _aggregations = new ConcurrentSkipListSet<>();
+    private final ConcurrentSkipListSet<String> _periods = new ConcurrentSkipListSet<String>();
+    private final ConcurrentSkipListSet<String> _aggregations = new ConcurrentSkipListSet<String>();
 
     public Metric(String cluster, String service, String name) {
         _cluster = cluster;

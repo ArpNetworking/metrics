@@ -66,7 +66,7 @@ public class LineProcessor {
         this._serviceName = serviceName;
         this._periods = periods;
         this._listener = listener;
-        this._aggregations = new ConcurrentHashMap<>();
+        this._aggregations = new ConcurrentHashMap<String, TSData>();
 
         startAggregationCloser();
     }

@@ -3,6 +3,8 @@ package com.arpnetworking.tsdaggregator;
 import com.arpnetworking.tsdaggregator.publishing.AggregationPublisher;
 import com.arpnetworking.tsdaggregator.statistics.OrderedStatistic;
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -10,7 +12,6 @@ import org.joda.time.Period;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
@@ -22,9 +23,9 @@ public class TSAggregation {
     private static final Logger LOGGER = Logger.getLogger(TSAggregation.class);
     @Nonnull
     private final Period _period;
-    private final ArrayList<Double> _samples = new ArrayList<>();
-    private final Set<Statistic> _orderedStatistics = new HashSet<>();
-    private final Set<Statistic> _unorderedStatistics = new HashSet<>();
+    private final ArrayList<Double> _samples = Lists.newArrayList();
+    private final Set<Statistic> _orderedStatistics = Sets.newHashSet();
+    private final Set<Statistic> _unorderedStatistics = Sets.newHashSet();
     @Nonnull
     private final String _metric;
     @Nonnull
@@ -103,7 +104,7 @@ public class TSAggregation {
         if (dsamples.length == 0) {
             return;
         }
-        @Nonnull ArrayList<AggregatedData> aggregates = new ArrayList<>();
+        @Nonnull ArrayList<AggregatedData> aggregates = Lists.newArrayList();
         for (@Nonnull Statistic stat : _unorderedStatistics) {
             Double value = stat.calculate(dsamples);
             @Nonnull AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,

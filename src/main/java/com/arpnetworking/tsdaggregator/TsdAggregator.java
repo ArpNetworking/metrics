@@ -8,6 +8,7 @@ import com.arpnetworking.tsdaggregator.aggserver.AggregationServer;
 import com.arpnetworking.tsdaggregator.publishing.*;
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import org.apache.commons.io.input.Tailer;
 import org.apache.log4j.Logger;
 import org.joda.time.Period;
@@ -60,7 +61,7 @@ public class TsdAggregator {
             return;
         }
 
-        @Nonnull List<Configuration> configurations = new ArrayList<>();
+        @Nonnull List<Configuration> configurations = Lists.newArrayList();
         configurations.add(commandLineConfig);
 
         @Nonnull List<String> configFiles = commandLineConfig.getConfigFiles();
@@ -95,7 +96,10 @@ public class TsdAggregator {
         LogParser logParser;
         try {
             logParser = parserClass.newInstance();
-        } catch (@Nonnull InstantiationException | IllegalAccessException e) {
+        } catch (@Nonnull InstantiationException e) {
+            _Logger.error("Could not instantiate parser class", e);
+            return;
+        } catch (@Nonnull IllegalAccessException e) {
             _Logger.error("Could not instantiate parser class", e);
             return;
         }
@@ -237,7 +241,7 @@ public class TsdAggregator {
         }
         @Nonnull URLClassLoader urlClassLoader = (URLClassLoader) classLoader;
         URL[] clURLs = urlClassLoader.getURLs();
-        @Nonnull ArrayList<URL> filteredURLs = new ArrayList<>();
+        @Nonnull ArrayList<URL> filteredURLs = Lists.newArrayList();
         for (@Nonnull URL checkUrl : clURLs) {
             String name = checkUrl.toString().toLowerCase();
             if (name.contains("vertx-core-") || name.contains("vertx-platform-")) {
@@ -263,7 +267,7 @@ public class TsdAggregator {
 
     @Nonnull
     private static ArrayList<String> getFileList(@Nonnull final Pattern filter, @Nonnull final List<String> files) {
-        @Nonnull ArrayList<String> fileList = new ArrayList<>();
+        @Nonnull ArrayList<String> fileList = Lists.newArrayList();
         for (String fileName : files) {
             @Nonnull File file = new File(fileName);
             if (file.isFile()) {

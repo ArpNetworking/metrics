@@ -1,7 +1,7 @@
 package com.arpnetworking.tsdaggregator.aggserver;
 
 /**
- * Description goes here
+ * Descries a layer in the ketama ring.
  *
  * @author barp
  */

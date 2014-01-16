@@ -29,7 +29,7 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
     private final String _clusterName;
     private final int _aggServerPort;
     private final NetClient _client;
-    private final ConcurrentLinkedQueue<AggregatedData[]> _pending = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<AggregatedData[]> _pending = new ConcurrentLinkedQueue<AggregatedData[]>();
     @Nullable
     private NetSocket _socket = null;
     private final Vertx _vertx;

@@ -1,11 +1,11 @@
 package com.arpnetworking.tsdaggregator.aggserver;
 
+import com.google.common.collect.Sets;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,7 +60,7 @@ public class KetamaRingTests {
         ring.addNode("test6.server.com:11820", null, "server");
         List<KetamaRing.NodeEntry> entries = ring.hash("test", "server", 3);
         Assert.assertThat(entries.size(), CoreMatchers.equalTo(3));
-        Set<String> hosts = new HashSet<>();
+        Set<String> hosts = Sets.newHashSet();
         for (KetamaRing.NodeEntry entry : entries) {
             hosts.add(entry.getNodeKey());
         }
@@ -78,7 +78,7 @@ public class KetamaRingTests {
         ring.addNode("test6.server.com:11820", null, "server");
         List<KetamaRing.NodeEntry> entries = ring.hash("test", "server", 4);
         Assert.assertThat(entries.size(), CoreMatchers.equalTo(3));
-        Set<String> hosts = new HashSet<>();
+        Set<String> hosts = Sets.newHashSet();
         for (KetamaRing.NodeEntry entry : entries) {
             hosts.add(entry.getNodeKey());
         }
@@ -100,7 +100,7 @@ public class KetamaRingTests {
         ring.setNodeStatus("test5.server.com:11820", "server", State.Offline);
         List<KetamaRing.NodeEntry> entries = ring.hash("test", "server", 4);
         Assert.assertThat(entries.size(), CoreMatchers.equalTo(3));
-        Set<String> hosts = new HashSet<>();
+        Set<String> hosts = Sets.newHashSet();
         for (KetamaRing.NodeEntry entry : entries) {
             hosts.add(entry.getNodeKey());
         }
@@ -122,7 +122,7 @@ public class KetamaRingTests {
 
         for (int x = 0; x < samples; x++) {
             final KetamaRing.NodeEntry nodeEntry = ring.hash("sample" + x);
-            counts[(int)nodeEntry.getMappedObject()]++;
+            counts[(Integer)nodeEntry.getMappedObject()]++;
         }
 
         double mean = 0;

@@ -1,6 +1,7 @@
 package com.arpnetworking.tsdaggregator.aggserver;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vertx.java.core.AsyncResult;
@@ -12,7 +13,6 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -30,12 +30,13 @@ public class RedisUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisUtils.class);
 
     static void getAllSMEMBERS(final Set<RedisInstance> instances, final String key, final EventBus bus,
-                               final AsyncResultHandler<Set<String>> replyHandler) {
+                               final AsyncResultHandler<Set<String>> replyHandler)
+    {
         RedisInstance[] redisInstances = instances.toArray(new RedisInstance[instances.size()]);
         LOGGER.debug("calling smembers " + key + " for redis cluster " + Arrays.toString(redisInstances));
         final AtomicInteger latch = new AtomicInteger(redisInstances.length);
-        final Set<String> collected = new ConcurrentSkipListSet<>();
-        final AtomicReference<Throwable> failed = new AtomicReference<>(null);
+        final Set<String> collected = new ConcurrentSkipListSet<String>();
+        final AtomicReference<Throwable> failed = new AtomicReference<Throwable>(null);
         for (RedisInstance redis : redisInstances) {
             smembers(redis, key, bus, new AsyncResultHandler<Set<String>>() {
                 @Override
@@ -52,10 +53,10 @@ public class RedisUtils {
                     if (val == 0) {
                         if (replyHandler != null) {
                             if (failed.get() == null) {
-                                ASResult<Set<String>> result = new ASResult<>(collected);
+                                ASResult<Set<String>> result = new ASResult<Set<String>>(collected);
                                 replyHandler.handle(result);
                             } else {
-                                ASResult<Set<String>> result = new ASResult<>(failed.get());
+                                ASResult<Set<String>> result = new ASResult<Set<String>>(failed.get());
                                 replyHandler.handle(result);
                             }
                         }
@@ -66,10 +67,10 @@ public class RedisUtils {
     }
 
     static void smembers(@Nonnull final RedisInstance redisInstance, final String key, @Nonnull final EventBus bus,
-                         @Nullable final AsyncResultHandler<Set<String>> replyHandler) {
+                         @Nullable final AsyncResultHandler<Set<String>> replyHandler)
+    {
         LOGGER.debug("calling smembers " + key + " on redis " + redisInstance);
-        final JsonObject addServer =
-                new JsonObject().putString("command", "SMEMBERS").putArray("args", new JsonArray().add(key));
+        final JsonObject addServer = new JsonObject().putString("command", "SMEMBERS").putArray("args", new JsonArray().add(key));
         bus.send(redisInstance.getEBName(), addServer, new Handler<Message<JsonObject>>() {
             @Override
             public void handle(@Nonnull final Message<JsonObject> event) {
@@ -81,24 +82,24 @@ public class RedisUtils {
                 @Nonnull final ASResult<Set<String>> result;
                 if (json.getString("status").equals("ok")) {
                     final JsonArray array = json.getArray("value");
-                    @Nonnull Set<String> list = new HashSet<>();
+                    @Nonnull Set<String> list = Sets.newHashSet();
                     for (@Nonnull Object o : array) {
                         list.add(o.toString());
                     }
-                    result = new ASResult<>(list);
+                    result = new ASResult<Set<String>>(list);
                 } else {
-                    result = new ASResult<>(new Exception(json.getString("message")));
+                    result = new ASResult<Set<String>>(new Exception(json.getString("message")));
                 }
                 replyHandler.handle(result);
             }
         });
     }
 
-    static void sadd(@Nonnull final RedisInstance redisInstance, final String key, final String value,
-                     @Nonnull final EventBus bus, @Nullable final AsyncResultHandler<Integer> replyHandler) {
+    static void sadd(@Nonnull final RedisInstance redisInstance, final String key, final String value, @Nonnull final EventBus bus,
+                     @Nullable final AsyncResultHandler<Integer> replyHandler)
+    {
         LOGGER.debug("calling sadd " + key + " " + value + " on redis " + redisInstance);
-        final JsonObject addServer =
-                new JsonObject().putString("command", "SADD").putArray("args", new JsonArray().add(key).add(value));
+        final JsonObject addServer = new JsonObject().putString("command", "SADD").putArray("args", new JsonArray().add(key).add(value));
         bus.send(redisInstance.getEBName(), addServer, new Handler<Message<JsonObject>>() {
             @Override
             public void handle(@Nonnull final Message<JsonObject> event) {
@@ -109,9 +110,9 @@ public class RedisUtils {
                 JsonObject json = event.body();
                 @Nonnull final ASResult<Integer> result;
                 if (json.getString("status").equals("ok")) {
-                    result = new ASResult<>(json.getInteger("value"));
+                    result = new ASResult<Integer>(json.getInteger("value"));
                 } else {
-                    result = new ASResult<>(new Exception(json.getString("message")));
+                    result = new ASResult<Integer>(new Exception(json.getString("message")));
                 }
                 replyHandler.handle(result);
             }
@@ -119,11 +120,11 @@ public class RedisUtils {
 
     }
 
-    static void set(@Nonnull final RedisInstance redisInstance, final String key, final String value,
-                    @Nonnull final EventBus bus, @Nullable final AsyncResultHandler<Void> replyHandler) {
+    static void set(@Nonnull final RedisInstance redisInstance, final String key, final String value, @Nonnull final EventBus bus,
+                    @Nullable final AsyncResultHandler<Void> replyHandler)
+    {
         LOGGER.debug("calling set " + key + " " + value + " on redis " + redisInstance);
-        final JsonObject addServer =
-                new JsonObject().putString("command", "SET").putArray("args", new JsonArray().add(key).add(value));
+        final JsonObject addServer = new JsonObject().putString("command", "SET").putArray("args", new JsonArray().add(key).add(value));
         bus.send(redisInstance.getEBName(), addServer, new Handler<Message<JsonObject>>() {
             @Override
             public void handle(@Nonnull final Message<JsonObject> event) {
@@ -134,9 +135,9 @@ public class RedisUtils {
                 JsonObject json = event.body();
                 @Nonnull final ASResult<Void> result;
                 if (json.getString("status").equals("ok")) {
-                    result = new ASResult<>((Void) null);
+                    result = new ASResult<Void>(( Void ) null);
                 } else {
-                    result = new ASResult<>(new Exception(json.getString("message")));
+                    result = new ASResult<Void>(new Exception(json.getString("message")));
                 }
                 replyHandler.handle(result);
             }
@@ -145,10 +146,10 @@ public class RedisUtils {
     }
 
     static void hgetall(@Nonnull final RedisInstance redisInstance, final String key, @Nonnull final EventBus bus,
-                        @Nullable final AsyncResultHandler<Map<String, String>> replyHandler) {
+                        @Nullable final AsyncResultHandler<Map<String, String>> replyHandler)
+    {
         LOGGER.debug("calling hgetall " + key + " on redis " + redisInstance);
-        final JsonObject addServer =
-                new JsonObject().putString("command", "HGETALL").putArray("args", new JsonArray().add(key));
+        final JsonObject addServer = new JsonObject().putString("command", "HGETALL").putArray("args", new JsonArray().add(key));
         bus.send(redisInstance.getEBName(), addServer, new Handler<Message<JsonObject>>() {
             @Override
             public void handle(@Nonnull final Message<JsonObject> event) {
@@ -166,9 +167,9 @@ public class RedisUtils {
                         value = value.substring(1, value.length() - 1);
                         map.put(field, value);
                     }
-                    result = new ASResult<>(map);
+                    result = new ASResult<Map<String, String>>(map);
                 } else {
-                    result = new ASResult<>(new Exception(json.getString("message")));
+                    result = new ASResult<Map<String, String>>(new Exception(json.getString("message")));
                 }
                 replyHandler.handle(result);
             }
@@ -176,10 +177,10 @@ public class RedisUtils {
     }
 
     static void get(@Nonnull final RedisInstance redisInstance, final String key, @Nonnull final EventBus bus,
-                    @Nullable final AsyncResultHandler<String> replyHandler) {
+                    @Nullable final AsyncResultHandler<String> replyHandler)
+    {
         LOGGER.debug("calling get " + key + " on redis " + redisInstance);
-        final JsonObject addServer =
-                new JsonObject().putString("command", "GET").putArray("args", new JsonArray().add(key));
+        final JsonObject addServer = new JsonObject().putString("command", "GET").putArray("args", new JsonArray().add(key));
         bus.send(redisInstance.getEBName(), addServer, new Handler<Message<JsonObject>>() {
             @Override
             public void handle(@Nonnull final Message<JsonObject> event) {
@@ -190,20 +191,19 @@ public class RedisUtils {
                 JsonObject json = event.body();
                 @Nonnull final ASResult<String> result;
                 if (json.getString("status").equals("ok")) {
-                    Map<String, String> map = Maps.newHashMap();
                     String val = json.getString("value");
-                    result = new ASResult<>(val);
+                    result = new ASResult<String>(val);
                 } else {
-                    result = new ASResult<>(new Exception(json.getString("message")));
+                    result = new ASResult<String>(new Exception(json.getString("message")));
                 }
                 replyHandler.handle(result);
             }
         });
     }
 
-    static void hmset(@Nonnull final RedisInstance redisInstance, @Nonnull final String key,
-                      @Nonnull final Map<String, String> values, @Nonnull EventBus bus,
-                      @Nullable final AsyncResultHandler<Void> replyHandler) {
+    static void hmset(@Nonnull final RedisInstance redisInstance, @Nonnull final String key, @Nonnull final Map<String, String> values,
+                      @Nonnull EventBus bus, @Nullable final AsyncResultHandler<Void> replyHandler)
+    {
         LOGGER.debug("calling hmset " + key + " " + values.toString() + " on redis " + redisInstance);
         final JsonArray args = new JsonArray().add(key);
         for (Map.Entry<String, String> entry : values.entrySet()) {
@@ -220,7 +220,7 @@ public class RedisUtils {
                 JsonObject json = event.body();
                 final ASResult<Void> result;
                 if (json.getString("status").equals("ok")) {
-                    result = new ASResult<Void>((Void)null);
+                    result = new ASResult<Void>(( Void ) null);
                 } else {
                     result = new ASResult<Void>(new Exception(json.getString("message")));
                 }
@@ -230,7 +230,8 @@ public class RedisUtils {
     }
 
     static void zadd(@Nonnull final RedisInstance redisInstance, @Nonnull final String key, final int score, @Nullable final String value,
-                     @Nonnull final EventBus bus, @Nullable final AsyncResultHandler<Integer> replyHandler) {
+                     @Nonnull final EventBus bus, @Nullable final AsyncResultHandler<Integer> replyHandler)
+    {
 
         LOGGER.debug("calling zadd " + key + " " + score + " " + value + " on redis " + redisInstance);
         final JsonObject addServer =
@@ -245,9 +246,9 @@ public class RedisUtils {
                 JsonObject json = event.body();
                 @Nonnull final ASResult<Integer> result;
                 if (json.getString("status").equals("ok")) {
-                    result = new ASResult<>(json.getInteger("value"));
+                    result = new ASResult<Integer>(json.getInteger("value"));
                 } else {
-                    result = new ASResult<>(new Exception(json.getString("message")));
+                    result = new ASResult<Integer>(new Exception(json.getString("message")));
                 }
                 replyHandler.handle(result);
             }

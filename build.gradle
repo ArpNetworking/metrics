@@ -142,8 +142,8 @@ tasks.withType(Compile) {
 }
 
 mainClassName = 'com.arpnetworking.tsdaggregator.TsdAggregator'
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
 version = '0.2.1-SNAPSHOT'
 group = 'com.arpnetworking'
 

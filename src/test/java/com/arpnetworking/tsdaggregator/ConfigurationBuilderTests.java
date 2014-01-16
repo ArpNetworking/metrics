@@ -9,11 +9,11 @@ import com.arpnetworking.tsdaggregator.statistics.MeanStatistic;
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
 import com.arpnetworking.tsdaggregator.statistics.TP100;
 import com.arpnetworking.tsdaggregator.statistics.TP50;
+import com.google.common.collect.Sets;
 import org.hamcrest.Matcher;
 import org.joda.time.Period;
 import org.junit.Test;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -119,7 +119,7 @@ public class ConfigurationBuilderTests {
 	@Test
 	public void TestGaugeStats() {
 		Configuration.Builder builder = Configuration.builder();
-		Set<Statistic> stats = new HashSet<>();
+		Set<Statistic> stats = Sets.newHashSet();
 		stats.add(new TP100());
 		stats.add(new TP50());
 		builder.gaugeStats(stats);
@@ -133,7 +133,7 @@ public class ConfigurationBuilderTests {
 	@Test
 	public void TestCounterStats() {
 		Configuration.Builder builder = Configuration.builder();
-		Set<Statistic> stats = new HashSet<>();
+		Set<Statistic> stats = Sets.newHashSet();
 		stats.add(new MeanStatistic());
 		stats.add(new TP50());
 		builder.counterStats(stats);
@@ -147,7 +147,7 @@ public class ConfigurationBuilderTests {
 	@Test
 	public void TestTimerStats() {
 		Configuration.Builder builder = Configuration.builder();
-		Set<Statistic> stats = new HashSet<>();
+		Set<Statistic> stats = Sets.newHashSet();
 		stats.add(new MeanStatistic());
 		stats.add(new TP50());
 		builder.timerStats(stats);
@@ -161,7 +161,7 @@ public class ConfigurationBuilderTests {
 	@Test
 	public void TestPeriods() {
 		Configuration.Builder builder = Configuration.builder();
-		Set<Period> periods = new HashSet<>();
+		Set<Period> periods = Sets.newHashSet();
 		periods.add(Period.minutes(8));
 		periods.add(Period.minutes(15));
 		builder.periods(periods);

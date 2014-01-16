@@ -11,7 +11,7 @@ import java.util.Collections;
  * @author barp
  */
 public class BufferingPublisher implements AggregationPublisher {
-    private final ArrayList<AggregatedData> _data = new ArrayList<>();
+    private final ArrayList<AggregatedData> _data = new ArrayList<AggregatedData>();
     private final AggregationPublisher _wrapped;
     private final int _buffer;
 

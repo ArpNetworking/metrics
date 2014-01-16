@@ -3,6 +3,7 @@ package com.arpnetworking.tsdaggregator.aggserver;
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import net.jpountz.xxhash.XXHash32;
 
 import java.util.*;
@@ -35,8 +36,9 @@ public class KetamaRing {
         @Nonnull
         private State _status;
 
-        public NodeEntry(@Nonnull final String nodeKey, @Nullable final Object mappedObject,
-                         final int vNodes, @Nonnull final String layer, @Nonnull State status) {
+        public NodeEntry(@Nonnull final String nodeKey, @Nullable final Object mappedObject, final int vNodes, @Nonnull final String layer,
+                         @Nonnull State status)
+        {
             this._nodeKey = nodeKey;
             this._mappedObject = mappedObject;
             this._vNodes = vNodes;
@@ -83,12 +85,8 @@ public class KetamaRing {
 
         @Override
         public String toString() {
-            return Objects.toStringHelper(this)
-                    .add("_nodeKey", _nodeKey)
-                    .add("_mappedObject", _mappedObject)
-                    .add("_vNodes", _vNodes)
-                    .add("_layer", _layer)
-                    .toString();
+            return Objects.toStringHelper(this).add("_nodeKey", _nodeKey).add("_mappedObject", _mappedObject).add("_vNodes", _vNodes)
+                    .add("_layer", _layer).toString();
         }
 
         @Nonnull
@@ -99,7 +97,7 @@ public class KetamaRing {
         @Nullable
         @SuppressWarnings("unchecked")
         public <T> T getMappedObject() {
-            return (T)_mappedObject;
+            return (T) _mappedObject;
         }
 
         public int getvNodes() {
@@ -121,12 +119,12 @@ public class KetamaRing {
         }
     }
 
-    final HashMap<Integer, NodeEntry> _nodes = new HashMap<>();
+    final HashMap<Integer, NodeEntry> _nodes = Maps.newHashMap();
     final ConcurrentHashMap<String, ConcurrentSkipListMap<Integer, NodeEntry>> _ring =
-            new ConcurrentHashMap<>();
+            new ConcurrentHashMap<String, ConcurrentSkipListMap<Integer, NodeEntry>>();
     final ConcurrentHashMap<String, ConcurrentSkipListSet<NodeEntry>> _ringNodes =
-            new ConcurrentHashMap<>();
-    final ConcurrentSkipListSet<NodeEntry> _activeNodes = new ConcurrentSkipListSet<>();
+            new ConcurrentHashMap<String, ConcurrentSkipListSet<NodeEntry>>();
+    final ConcurrentSkipListSet<NodeEntry> _activeNodes = new ConcurrentSkipListSet<NodeEntry>();
     final XXHash32 _hashFunction;
 
     public KetamaRing() {
@@ -150,8 +148,7 @@ public class KetamaRing {
         addNode(nodeKey, mappedObject, layer, status, 160);
     }
 
-    public void addNode(@Nonnull String nodeKey, Object mappedObject, @Nonnull String layer, @Nonnull State status,
-                        int vNodes) {
+    public void addNode(@Nonnull String nodeKey, Object mappedObject, @Nonnull String layer, @Nonnull State status, int vNodes) {
         byte[] bytes = nodeKey.getBytes(Charsets.UTF_8);
         int seed = 0;
         ConcurrentSkipListMap<Integer, NodeEntry> ringLayer = _ring.get(layer);
@@ -215,13 +212,13 @@ public class KetamaRing {
     }
 
     public ConcurrentSkipListMap<Integer, NodeEntry> initializeRingLayer(final String layer) {
-        ConcurrentSkipListMap<Integer, NodeEntry> ringLayer = new ConcurrentSkipListMap<>();
+        ConcurrentSkipListMap<Integer, NodeEntry> ringLayer = new ConcurrentSkipListMap<Integer, NodeEntry>();
         ConcurrentSkipListMap<Integer, NodeEntry> previous = _ring.putIfAbsent(layer, ringLayer);
         if (previous != null) {
             ringLayer = previous;
         }
 
-        ConcurrentSkipListSet<NodeEntry> ringNodesLayer = new ConcurrentSkipListSet<>();
+        ConcurrentSkipListSet<NodeEntry> ringNodesLayer = new ConcurrentSkipListSet<NodeEntry>();
         _ringNodes.putIfAbsent(layer, ringNodesLayer);
 
         return ringLayer;

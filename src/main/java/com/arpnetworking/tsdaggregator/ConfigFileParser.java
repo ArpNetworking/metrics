@@ -1,5 +1,6 @@
 package com.arpnetworking.tsdaggregator;
 
+import com.google.common.collect.Lists;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -56,7 +57,7 @@ public class ConfigFileParser {
         }
 
         @Nonnull ArrayNode argsArray = (ArrayNode) argsNode;
-        @Nonnull ArrayList<String> args = new ArrayList<>();
+        @Nonnull ArrayList<String> args = Lists.newArrayList();
         for (int x = 0; x < argsArray.size(); x++) {
             args.add(argsArray.get(x).getTextValue());
         }

@@ -3,6 +3,7 @@ package com.arpnetworking.tsdaggregator.publishing;
 import com.arpnetworking.tsdaggregator.AggregatedData;
 import com.arpnetworking.tsdaggregator.statistics.MeanStatistic;
 import com.arpnetworking.tsdaggregator.statistics.SumStatistic;
+import com.google.common.collect.Maps;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BrokenInputStream;
@@ -155,7 +156,7 @@ public class MonitordPublisherTests {
 					final String content = IOUtils.toString(entity.getContent());
 					String decoded = URLDecoder.decode(content, "utf-8");
 					String[] split = decoded.split("&");
-					HashMap<String, String> mapped = new HashMap<>();
+					HashMap<String, String> mapped = Maps.newHashMap();
 					for (String s : split) {
 						String[] vals = s.split("=");
 						if (!vals[0].equals("output")) {

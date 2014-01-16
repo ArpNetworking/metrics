@@ -1,6 +1,7 @@
 package com.arpnetworking.tsdaggregator.publishing;
 
 import com.arpnetworking.tsdaggregator.AggregatedData;
+import com.google.common.collect.Maps;
 
 import java.util.HashMap;
 import javax.annotation.Nonnull;
@@ -11,7 +12,7 @@ import javax.annotation.Nonnull;
  * @author barp
  */
 public class RRDClusterPublisher implements AggregationPublisher {
-    private final HashMap<String, RRDSinglePublisher> _listeners = new HashMap<>();
+    private final HashMap<String, RRDSinglePublisher> _listeners = Maps.newHashMap();
 
     @Override
     public void recordAggregation(@Nonnull AggregatedData[] data) {

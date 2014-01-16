@@ -2,6 +2,8 @@ package com.arpnetworking.tsdaggregator;
 
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.cli.*;
 import org.apache.commons.cli.ParseException;
 import org.joda.time.Period;
@@ -12,7 +14,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 
@@ -108,7 +112,10 @@ class CommandLineParser {
                 try {
                     stat = (Statistic) statClass.newInstance();
                     statsClasses.add(stat);
-                } catch (@Nonnull InstantiationException | IllegalAccessException ex) {
+                } catch (@Nonnull InstantiationException ex) {
+                    @Nonnull final String error = "Could not instantiate statistic [" + statString + "]";
+                    throw new ConfigException(error, ex);
+                } catch (IllegalAccessException ex) {
                     @Nonnull final String error = "Could not instantiate statistic [" + statString + "]";
                     throw new ConfigException(error, ex);
                 }
@@ -275,7 +282,7 @@ class CommandLineParser {
     private Set<Statistic> getStatistics(@Nonnull CommandLine cl, @Nonnull Option statisticOption,
                                          Set<Statistic> defaultStats)
             throws ConfigException {
-        Set<Statistic> statsClasses = new HashSet<>();
+        Set<Statistic> statsClasses = Sets.newHashSet();
         if (cl.hasOption(statisticOption.getLongOpt())) {
             String[] statisticsStrings = cl.getOptionValues(statisticOption.getLongOpt());
             buildStats(statsClasses, statisticsStrings);
@@ -325,7 +332,7 @@ class CommandLineParser {
 
     @Nonnull
     private Set<Period> getPeriods(@Nonnull CommandLine cl) {
-        @Nonnull List<String> periodOptions = new ArrayList<>();
+        @Nonnull List<String> periodOptions = Lists.newArrayList();
         periodOptions.add("PT5M");
         if (cl.hasOption(_remetOption.getLongOpt())) {
             periodOptions.add("PT1S");
@@ -335,7 +342,7 @@ class CommandLineParser {
             periodOptions = Arrays.asList(cl.getOptionValues(_periodOption.getLongOpt()));
         }
 
-        @Nonnull Set<Period> periods = new HashSet<>();
+        @Nonnull Set<Period> periods = Sets.newHashSet();
         PeriodFormatter periodParser = ISOPeriodFormat.standard();
         for (String p : periodOptions) {
             periods.add(periodParser.parsePeriod(p));

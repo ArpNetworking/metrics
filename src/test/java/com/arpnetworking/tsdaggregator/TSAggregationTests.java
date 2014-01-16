@@ -2,6 +2,7 @@ package com.arpnetworking.tsdaggregator;
 
 import com.arpnetworking.tsdaggregator.publishing.ConsolePublisher;
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
+import com.google.common.collect.Sets;
 import org.jmock.Mockery;
 import org.jmock.integration.junit4.JMock;
 import org.joda.time.Period;
@@ -9,7 +10,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @RunWith(JMock.class)
@@ -20,7 +20,7 @@ public class TSAggregationTests {
     @Test
 	public void testContruct() {
 		Period period = new Period(0, 5, 0, 0);
-        Set<Statistic> stats = new HashSet<>();
+        Set<Statistic> stats = Sets.newHashSet();
 		TSAggregation agg = new TSAggregation("test metric", period, new ConsolePublisher(), "testHost", "testService", stats);
 		Assert.assertNotNull(agg);
 	}
