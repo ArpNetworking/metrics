@@ -31,6 +31,8 @@ public class Configuration {
     private final String _hostName;
     private final boolean _useMonitord;
     private final String _monitordAddress;
+    private final boolean _useCarbon;
+    private final String _carbonAddress;
     private final boolean _useRRD;
     private final String _metricsUri;
     private final String _outputFile;
@@ -73,6 +75,8 @@ public class Configuration {
         _configFiles = builder.getConfigFiles();
         _valid = builder.isValid();
         _redisHosts = builder.getRedisHosts();
+        _useCarbon = builder.shouldUseCarbon();
+        _carbonAddress = builder.getCarbonAddress();
     }
 
     @Nonnull
@@ -130,6 +134,14 @@ public class Configuration {
 
     public String getRemetAddress() {
         return _remetAddress;
+    }
+
+    public String getCarbonAddress() {
+        return _carbonAddress;
+    }
+
+    public boolean shouldUseCarbon() {
+        return _useCarbon;
     }
 
     @Nonnull
@@ -245,6 +257,8 @@ public class Configuration {
         private int _clusterAggPort = 7065;
         private boolean _useUpstreamAgg = false;
         private String _clusterAggHost;
+        private boolean _useCarbon = false;
+        private String _carbonAddress = "";
         @Nonnull
         private List<String> _configFiles = Lists.newArrayList();
         private boolean _valid = false;
@@ -347,6 +361,20 @@ public class Configuration {
         @Nonnull
         public Builder useMonitord(boolean use) {
             _useMonitord = use;
+            return this;
+        }
+
+
+        @Nonnull
+        public Builder carbon(String address) {
+            _useCarbon = true;
+            _carbonAddress = address;
+            return this;
+        }
+
+        @Nonnull
+        public Builder useCarbon(boolean use) {
+            _useCarbon = use;
             return this;
         }
 
@@ -495,6 +523,14 @@ public class Configuration {
 
         public boolean shouldUseUpstreamAgg() {
             return this._useUpstreamAgg;
+        }
+
+        public boolean shouldUseCarbon() {
+            return _useCarbon;
+        }
+
+        public String getCarbonAddress() {
+            return _carbonAddress;
         }
 
         public boolean isValid() {

@@ -1,5 +1,6 @@
 package com.arpnetworking.tsdaggregator.aggserver;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -176,6 +178,7 @@ public class RedisUtils {
         });
     }
 
+
     static void get(@Nonnull final RedisInstance redisInstance, final String key, @Nonnull final EventBus bus,
                     @Nullable final AsyncResultHandler<String> replyHandler)
     {
@@ -249,6 +252,37 @@ public class RedisUtils {
                     result = new ASResult<Integer>(json.getInteger("value"));
                 } else {
                     result = new ASResult<Integer>(new Exception(json.getString("message")));
+                }
+                replyHandler.handle(result);
+            }
+        });
+    }
+
+    static void zrange(@Nonnull final RedisInstance redisInstance, @Nonnull final String key, final int startIndex, final int endIndex,
+                       @Nonnull final EventBus bus, @Nullable final AsyncResultHandler<List<String>> replyHandler)
+    {
+        LOGGER.debug("calling zrange " + key + " " + startIndex + " " + endIndex + " on redis " + redisInstance);
+        final JsonObject addServer =
+                new JsonObject().putString("command", "ZRANGE").putArray("args", new JsonArray().add(key).add(startIndex).add(endIndex));
+        bus.send(redisInstance.getEBName(), addServer, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(@Nonnull final Message<JsonObject> event) {
+                LOGGER.debug("data = " + event.body());
+                if (replyHandler == null) {
+                    return;
+                }
+                JsonObject json = event.body();
+                @Nonnull final ASResult<List<String>> result;
+                if (json.getString("status").equals("ok")) {
+                    List<String> list = Lists.newArrayList();
+                    JsonArray obj = json.getArray("value");
+                    for (Object o : obj) {
+                        String value = o.toString();
+                        list.add(value);
+                    }
+                    result = new ASResult<List<String>>(list);
+                } else {
+                    result = new ASResult<List<String>>(new Exception(json.getString("message")));
                 }
                 replyHandler.handle(result);
             }

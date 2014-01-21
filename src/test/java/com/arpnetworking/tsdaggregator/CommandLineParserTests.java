@@ -162,6 +162,15 @@ public class CommandLineParserTests {
     }
 
     @Test
+    public void testCarbonValue() throws ConfigException {
+        CommandLineParser parser = new CommandLineParser(testResolver);
+        String[] args = new String[]{"-monitord", "-s", "service", "-f", "test_file", "--carbon", "localhost:5000"};
+        Configuration config = parser.parse(args);
+        assertThat(config.shouldUseCarbon(), Matchers.equalTo(true));
+        assertThat(config.getCarbonAddress(), Matchers.equalTo("localhost:5000"));
+    }
+
+    @Test
     public void testMultipleRedisValue() throws ConfigException {
         CommandLineParser parser = new CommandLineParser(testResolver);
         String[] args = new String[]{"-monitord", "-s", "service", "--aggserver", "--redis", "localhost", "anotherhost"};

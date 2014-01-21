@@ -26,6 +26,7 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.platform.Verticle;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -329,7 +330,7 @@ public class AggregationServer extends Verticle {
 
     private void deployRedis(@Nonnull JsonArray redisAddresses) {
         for (Object redisAddressObject : redisAddresses) {
-            @Nonnull String redisAddress = (String) redisAddressObject;
+            @Nonnull String redisAddress = ( String ) redisAddressObject;
             @Nonnull final String ebAddress = EB_REDIS_PREFIX + _redisSeq.getAndIncrement();
             String[] split = redisAddress.split(":");
             String host = split[0];
@@ -403,16 +404,74 @@ public class AggregationServer extends Verticle {
 
     private void updateMetricsLoop() {
         //Random interval between 2 and 3 minutes
-        vertx.setTimer((long) (Math.random() * 120000 + 60000), new Handler<Long>() {
+        vertx.setTimer(( long ) (Math.random() * 120000 + 60000), new Handler<Long>() {
             @Override
             public void handle(final Long event) {
+                updateMetricsLoop();
                 updateMetrics();
             }
         });
     }
 
     private void updateMetrics() {
+        LOGGER.info("Beginning metrics update sweep");
+        //Walk through each of the clusters and services looking for metrics
+        for (Map.Entry<String, ConcurrentSkipListMap<String, ServerStatus>> clustersEntry : _knownClusters.entrySet()) {
+            final String cluster = clustersEntry.getKey();
+            for (Map.Entry<String, ConcurrentSkipListMap<String, ServerStatus>> servicesEntry : _knownClusters.entrySet()) {
+                final String service = servicesEntry.getKey();
+                //Get all the metric names for the service
+                getMetricsForClusterService(cluster, service, new AsyncResultHandler<List<String>>() {
+                    @Override
+                    public void handle(final AsyncResult<List<String>> event) {
+                        if (event.succeeded()) {
+                            final List<String> metricNames = event.result();
+                            for (String metricName : metricNames) {
+                                //Hash the metric string to see if this host should process it
+                                String hashKey = "metrics." + cluster + "." + service + "." + metricName;
+                                final KetamaRing.NodeEntry aggServer = _ketamaRing.hash(hashKey, KetamaLayers.AGG.getVal());
+                                if (aggServer.getNodeKey().equals(_hostName)) {
+                                    LOGGER.info("Found a metric I should be calculating: cluster=" + cluster + ", service=" + service +
+                                            ", metric=" + metricName);
+                                    if (_registeredMetrics.containsKey(cluster) && _registeredMetrics.get(cluster).containsKey(service)) {
+                                        //We already have the metrics, but we might need to put them in to the to-calculate list.
+                                    } else {
+                                        //Need to lookup the metric info
+                                    }
+                                } else {
+                                    LOGGER.info(
+                                            "Found a metric for someone else: cluster=" + cluster + ", service=" + service + ", metric=" +
+                                                    metricName + ", owned by=" + aggServer.getNodeKey());
+                                }
+                            }
+                        } else {
+                            LOGGER.warn("Error looking up metrics for cluster " + cluster + ", service " + service, event.cause());
+                        }
+                    }
+                });
+            }
+        }
+    }
 
+    private void getMetricsForClusterService(@Nonnull final String cluster, @Nonnull final String service,
+                                             @Nonnull final AsyncResultHandler<List<String>> resulthandler)
+    {
+        final String key = "metrics." + cluster + "." + service + ".metrics";
+
+        RedisInstance redis = getRedisInstanceFor(key);
+        EventBus bus = vertx.eventBus();
+        RedisUtils.zrange(redis, key, 0, -1, bus, new AsyncResultHandler<List<String>>() {
+            @Override
+            public void handle(final AsyncResult<List<String>> event) {
+                if (resulthandler != null) {
+                    if (event.succeeded()) {
+                        resulthandler.handle(new ASResult<List<String>>(event.result()));
+                    } else {
+                        resulthandler.handle(new ASResult<List<String>>(event.cause()));
+                    }
+                }
+            }
+        });
     }
 
     private void updateAllHostsStatuses(@Nullable final AsyncResultHandler<Void> resultHandler) {
@@ -446,7 +505,7 @@ public class AggregationServer extends Verticle {
                                 }
                                 int val = countDown.decrementAndGet();
                                 if (val == 0 && resultHandler != null) {
-                                    resultHandler.handle(new ASResult<Void>((Void) null));
+                                    resultHandler.handle(new ASResult<Void>(( Void ) null));
                                 }
                             }
                         });
@@ -454,7 +513,6 @@ public class AggregationServer extends Verticle {
                 }
             }
         });
-
     }
 
     @Nonnull
@@ -512,7 +570,7 @@ public class AggregationServer extends Verticle {
 
     private long getClusterRefreshTimerDelay() {
         //3 minutes +- 15 seconds.
-        return (long) (180000 + Math.random() * 30000 - 15000);
+        return ( long ) (180000 + Math.random() * 30000 - 15000);
     }
 
     private void refreshClusterData() {

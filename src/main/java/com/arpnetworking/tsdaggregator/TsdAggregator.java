@@ -290,9 +290,11 @@ public class TsdAggregator {
         String metricsUri = config.getMetricsUri();
         String monitordUri = config.getMonitordAddress();
         String outputFile = config.getOutputFile();
+        String carbonAddress = config.getCarbonAddress();
         boolean outputRRD = config.shouldUseRRD();
         boolean outputMonitord = config.shouldUseMonitord();
         boolean outputRemet = config.useRemet();
+        boolean outputCarbon = config.shouldUseCarbon();
         String remetUri = config.getRemetAddress();
         boolean outputUpstreamAgg = config.shouldUseUpstreamAgg();
         String upstreamAggHost = config.getClusterAggHost();
@@ -308,6 +310,12 @@ public class TsdAggregator {
             @Nonnull AggregationPublisher httpListener = new HttpPostPublisher(remetUri);
             //we don't want to buffer remet responses
             listener.addListener(httpListener);
+        }
+
+        if (outputCarbon) {
+            _Logger.info("Adding carbon listener");
+            @Nonnull AggregationPublisher carbonPublisher = new CarbonPublisher(carbonAddress, hostName, cluster);
+            listener.addListener(carbonPublisher);
         }
 
         if (outputMonitord) {

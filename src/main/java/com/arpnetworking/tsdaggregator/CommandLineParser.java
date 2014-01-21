@@ -66,6 +66,8 @@ class CommandLineParser {
             .desc("read config files for configuration sets").build();
     private final  Option _redisServer = Option.builder("r").longOpt("redis").hasArgs().argName("server")
             .desc("redis server to bootstrap agg server").build();
+    private final Option _carbonServer = Option.builder().longOpt("carbon").hasArg()
+            .argName("host").desc("send data to a carbon server").build();
     private final Options _options = new Options();
     private final HostResolver _hostResolver;
 
@@ -90,6 +92,7 @@ class CommandLineParser {
         _options.addOption(_upstreamAgg);
         _options.addOption(_configFilesOption);
         _options.addOption(_redisServer);
+        _options.addOption(_carbonServer);
         this._hostResolver = hostResolver;
     }
 
@@ -164,7 +167,8 @@ class CommandLineParser {
 
         if (!cl.hasOption(_uriOption.getLongOpt()) && !cl.hasOption(_outputFileOption.getLongOpt()) &&
                 !cl.hasOption(_remetOption.getLongOpt()) && !cl.hasOption(_monitordOption.getLongOpt()) &&
-                !cl.hasOption(_rrdOption.getLongOpt()) && !cl.hasOption(_upstreamAgg.getLongOpt())) {
+                !cl.hasOption(_rrdOption.getLongOpt()) && !cl.hasOption(_upstreamAgg.getLongOpt()) &&
+                !cl.hasOption(_carbonServer.getLongOpt())) {
             if (!isBaseConfig) {
                 throw new ConfigException("no output mode specified");
             }
@@ -218,6 +222,9 @@ class CommandLineParser {
             builder.aggHost(cl.getOptionValue(_upstreamAgg.getLongOpt()));
         }
 
+        if (cl.hasOption(_carbonServer.getLongOpt())) {
+            builder.carbon(cl.getOptionValue(_carbonServer.getLongOpt()));
+        }
 
         if (cl.hasOption(_outputFileOption.getLongOpt())) {
             builder.outputFile(cl.getOptionValue(_outputFileOption.getLongOpt()));
