@@ -234,6 +234,10 @@ public class KetamaRing {
     }
 
     public NodeEntry hash(@Nonnull final String key, @Nonnull final String layer) {
+        return hash(key, layer, false);
+    }
+
+    public NodeEntry hash(@Nonnull final String key, @Nonnull final String layer, final boolean onlyOnline) {
         int hash = getHashCodeFor(key);
         ConcurrentSkipListMap<Integer, NodeEntry> ringLayer = _ring.get(layer);
         if (ringLayer == null) {
@@ -242,10 +246,22 @@ public class KetamaRing {
         if (ringLayer.isEmpty()) {
             throw new IllegalStateException("layer is empty");
         }
+        boolean validEntry = false;
         Map.Entry<Integer, NodeEntry> entry = ringLayer.ceilingEntry(hash);
+        while (!validEntry) {
+            if (entry == null) {
+                entry = ringLayer.firstEntry();
+            }
 
-        if (entry == null) {
-            entry = ringLayer.firstEntry();
+            if (onlyOnline) {
+                if (entry.getValue().getStatus().equals(State.Active)) {
+                    validEntry = true;
+                } else {
+                    entry = ringLayer.higherEntry(entry.getKey());
+                }
+            } else {
+                validEntry = true;
+            }
         }
         return entry.getValue();
 
