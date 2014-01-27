@@ -200,7 +200,10 @@ public class KetamaRing {
     }
 
     public void setNodeStatus(String node, String layer, State status) {
-        NodeEntry entry = hash(node, layer);
+        NodeEntry entry = hash(node, layer, false);
+        if (entry == null || !entry.getNodeKey().equals(node)) {
+            throw new IllegalArgumentException("node not found in ketama ring, node=" + node + ", layer=" + layer);
+        }
         if (entry.getStatus().equals(State.Active)) {
             _activeNodes.remove(entry);
         }
@@ -248,6 +251,7 @@ public class KetamaRing {
         }
         boolean validEntry = false;
         Map.Entry<Integer, NodeEntry> entry = ringLayer.ceilingEntry(hash);
+        int firstEntryKey = entry.getKey();
         while (!validEntry) {
             if (entry == null) {
                 entry = ringLayer.firstEntry();
@@ -258,6 +262,9 @@ public class KetamaRing {
                     validEntry = true;
                 } else {
                     entry = ringLayer.higherEntry(entry.getKey());
+                    if (entry.getKey().equals(firstEntryKey)) {
+                        return null;
+                    }
                 }
             } else {
                 validEntry = true;

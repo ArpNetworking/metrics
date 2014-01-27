@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
  *
  * @author barp
  */
-public class Metric {
+public class Metric implements Comparable<Metric> {
     private String _cluster;
     private String _service;
     private final String _name;
@@ -39,8 +39,24 @@ public class Metric {
         return _periods.add(period);
     }
 
+    public int addPeriods(Iterable<String> periods) {
+        int ret = 0;
+        for (String period : periods) {
+            ret = _periods.add(period) ? ret + 1 : ret;
+        }
+        return ret;
+    }
+
     public boolean addAggregation(String aggregation) {
         return _aggregations.add(aggregation);
+    }
+
+    public int addAggregations(Iterable<String> aggregations) {
+        int ret = 0;
+        for (String agg : aggregations) {
+            ret = _aggregations.add(agg) ? ret + 1 : ret;
+        }
+        return ret;
     }
 
     @Override
@@ -55,5 +71,17 @@ public class Metric {
 
     public boolean hasPeriod(final String period) {
         return _periods.contains(period);
+    }
+
+    @Override
+    public int compareTo(final Metric o) {
+        int comp = _cluster.compareTo(o._cluster);
+        if (comp == 0) {
+            comp = _service.compareTo(o._service);
+        }
+        if (comp == 0) {
+            comp = _name.compareTo(o._name);
+        }
+        return comp;
     }
 }

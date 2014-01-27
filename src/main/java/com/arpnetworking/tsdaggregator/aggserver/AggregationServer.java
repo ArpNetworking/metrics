@@ -1,7 +1,9 @@
 package com.arpnetworking.tsdaggregator.aggserver;
 
+import com.arpnetworking.tsdaggregator.CounterVariable;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.Atomics;
 import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,6 +28,7 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.platform.Verticle;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +37,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -55,6 +59,8 @@ public class AggregationServer extends Verticle {
     //Aggregation records
     private final ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>>> _registeredMetrics =
             new ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>>>();
+    private final AtomicReference<ConcurrentSkipListSet<Metric>> _ownedMetrics =
+            new AtomicReference<ConcurrentSkipListSet<Metric>>(new ConcurrentSkipListSet<Metric>());
     private String _hostName;
     private int _tcpPort;
     private int _httpPort;
@@ -179,6 +185,7 @@ public class AggregationServer extends Verticle {
         deployRedis(container.config().getArray("redisAddress"));
         final int port = container.config().getNumber("port").intValue();
         _hostName = container.config().getString("name") + ":" + port;
+        _ketamaRing.addNode(_hostName, new ServerStatus(_hostName, State.Active, DateTime.now()), KetamaLayers.AGG.getVal(), State.Active);
         _tcpPort = port;
         _httpPort = port + 1;
         _hazelcastPort = port + 2;
@@ -276,28 +283,29 @@ public class AggregationServer extends Verticle {
         }
         dataObject.putArray("aggServers", aggServersArray);
         final JsonArray clustersArray = new JsonArray();
-        for (Map.Entry<String, ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>>> entry : _registeredMetrics
+        for (Map.Entry<String, ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>>> clusterEntry : _registeredMetrics
                 .entrySet())
         {
             final JsonObject clusterObject = new JsonObject();
-            clusterObject.putString("name", entry.getKey());
+            clusterObject.putString("name", clusterEntry.getKey());
 
             final JsonArray servicesArray = new JsonArray();
-            for (Map.Entry<String, ConcurrentSkipListMap<String, Metric>> mapEntry : entry.getValue().entrySet()) {
+            for (Map.Entry<String, ConcurrentSkipListMap<String, Metric>> serviceEntry : clusterEntry.getValue().entrySet()) {
                 JsonObject serviceObject = new JsonObject();
-                serviceObject.putString("name", mapEntry.getKey());
+                serviceObject.putString("name", serviceEntry.getKey());
 
                 final JsonArray metricsArray = new JsonArray();
-                for (Map.Entry<String, Metric> metric : mapEntry.getValue().entrySet()) {
+                for (Map.Entry<String, Metric> metric : serviceEntry.getValue().entrySet()) {
                     metricsArray.add(metric.getKey());
                 }
                 serviceObject.putArray("metrics", metricsArray);
+                servicesArray.add(serviceObject);
             }
 
             clusterObject.putArray("services", servicesArray);
 
             final JsonArray hostsArray = new JsonArray();
-            for (Map.Entry<String, ServerStatus> statusEntry : _knownClusters.get(entry.getKey()).entrySet()) {
+            for (Map.Entry<String, ServerStatus> statusEntry : _knownClusters.get(clusterEntry.getKey()).entrySet()) {
                 hostsArray.add(statusEntry.getKey());
             }
             clusterObject.putArray("hosts", hostsArray);
@@ -412,8 +420,8 @@ public class AggregationServer extends Verticle {
 
     private void updateMetricsLoop() {
         //Random interval between 2 and 3 minutes
-//        vertx.setTimer(( long ) (Math.random() * 120000 + 60000), new Handler<Long>() {
-          vertx.setTimer(( long ) (Math.random() * 1000 + 30000), new Handler<Long>() {
+        //        vertx.setTimer(( long ) (Math.random() * 120000 + 60000), new Handler<Long>() {
+        vertx.setTimer(( long ) (Math.random() * 1000 + 30000), new Handler<Long>() {
             @Override
             public void handle(final Long event) {
                 updateMetricsLoop();
@@ -425,7 +433,8 @@ public class AggregationServer extends Verticle {
     private void updateMetrics() {
         LOGGER.info("Beginning metrics update sweep");
         //Walk through each of the clusters and services looking for metrics
-
+        final ConcurrentSkipListSet<Metric> newOwned = new ConcurrentSkipListSet<Metric>();
+        final AtomicInteger clusterLatch = new AtomicInteger(_knownClusters.size());
         for (Map.Entry<String, ConcurrentSkipListMap<String, ServerStatus>> clustersEntry : _knownClusters.entrySet()) {
             final String cluster = clustersEntry.getKey();
             LOGGER.info("Looking up services for cluster " + cluster);
@@ -436,7 +445,10 @@ public class AggregationServer extends Verticle {
                         LOGGER.error("failed to get services for cluster " + cluster, event.cause());
                         return;
                     }
-                    for (final String service : event.result()) {
+                    Set<String> services = event.result();
+                    //We need to keep track of how many services are in the cluster we've returned
+                    final AtomicInteger serviceLatch = new AtomicInteger(services.size());
+                    for (final String service : services) {
                         LOGGER.info("looking over service " + service);
                         //Get all the metric names for the service
                         getMetricsForClusterService(cluster, service, new AsyncResultHandler<List<String>>() {
@@ -447,22 +459,54 @@ public class AggregationServer extends Verticle {
                                     return;
                                 }
                                 final List<String> metricNames = event.result();
-                                for (String metricName : metricNames) {
+                                //We need to keep track of how many metrics in the service we've returned
+                                final AtomicInteger metricLatch = new AtomicInteger(metricNames.size());
+                                for (final String metricName : metricNames) {
+
                                     //Hash the metric string to see if this host should process it
                                     String hashKey = "metrics." + cluster + "." + service + "." + metricName;
                                     final KetamaRing.NodeEntry aggServer = _ketamaRing.hash(hashKey, KetamaLayers.AGG.getVal(), true);
+                                    if (aggServer == null) {
+                                        LOGGER.error("found no recorded online agg servers for metric aggregation!");
+                                    }
                                     if (aggServer.getNodeKey().equals(_hostName)) {
                                         LOGGER.info("Found a metric I should be calculating: cluster=" + cluster + ", service=" + service +
                                                 ", metric=" + metricName);
-                                        if (_registeredMetrics.containsKey(cluster) && _registeredMetrics.get(cluster).containsKey(service)) {
-                                            //We already have the metrics, but we might need to put them in to the to-calculate list.
-                                        } else {
-                                            //Need to lookup the metric info
-                                        }
+                                            getMetricMetadata(cluster, service, metricName, new AsyncResultHandler<Metric>(){
+                                                @Override
+                                                public void handle(final AsyncResult<Metric> event) {
+                                                    if (event.succeeded()) {
+                                                        newOwned.add(event.result());
+                                                    }
+                                                    LOGGER.info("finished metadata grab for: cluster=" + cluster + ", service=" + service +
+                                                        ", metric=" + metricName);
+                                                    int newMetricLatchVal = metricLatch.decrementAndGet();
+                                                    LOGGER.info(newMetricLatchVal + " metrics to go in this service");
+                                                    if (newMetricLatchVal == 0) {
+                                                        //We've cleared all the metrics for this service
+                                                        //Decrement the service latch
+                                                        LOGGER.info("finished with metrics in service: cluster=" + cluster + ", service=" + service);
+                                                        int newServiceLatchVal = serviceLatch.decrementAndGet();
+                                                        LOGGER.info(newServiceLatchVal + " services to go in this cluster");
+                                                        if (newServiceLatchVal == 0) {
+                                                            //We've cleared the last metric in this cluster
+                                                            //Decrement the cluster latch
+                                                            LOGGER.info("finished with services in cluster " + cluster);
+                                                            int newClusterLatchVal = clusterLatch.decrementAndGet();
+                                                            LOGGER.info(newClusterLatchVal + " clusters to go");
+                                                            if (newClusterLatchVal == 0) {
+                                                                LOGGER.info("finished metrics sweep successfully");
+                                                                //We got all the metrics, commit our changes
+                                                                _ownedMetrics.set(newOwned);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            });
                                     } else {
-                                        LOGGER.info(
-                                                "Found a metric for someone else: cluster=" + cluster + ", service=" + service + ", metric=" +
-                                                        metricName + ", owned by=" + aggServer.getNodeKey());
+                                        LOGGER.info("Found a metric for someone else: cluster=" + cluster + ", service=" + service +
+                                                ", metric=" +
+                                                metricName + ", owned by=" + aggServer.getNodeKey());
                                     }
                                 }
                             }
@@ -472,6 +516,98 @@ public class AggregationServer extends Verticle {
                 }
             });
         }
+    }
+
+    private void getMetricMetadata(@Nonnull final String cluster, @Nonnull final String service, @Nonnull final String metricName,
+                                   @Nonnull final AsyncResultHandler<Metric> handler)
+    {
+        //We need to fire off 3 requests to lookup the periods, kind, and aggs
+
+        //All of the metadata lives on the same redis node with key metrics.[cluster].[service].[metric]
+        final String partitionKey = "metrics." + cluster + "." + service + "." + metricName;
+        RedisInstance redis = getRedisInstanceFor(partitionKey);
+        EventBus bus = vertx.eventBus();
+        final String statsKey = partitionKey + ".aggs";
+        final String periodsKey = partitionKey + ".periods";
+        final String kindKey = partitionKey + ".kind";
+
+        final AtomicInteger latch = new AtomicInteger(3);
+        final Set<String> stats = new HashSet<String>();
+        final Set<String> periods = new HashSet<String>();
+        final AtomicReference<CounterVariable.MetricKind> metricKind = Atomics.newReference();
+
+        class MetricSetter {
+            void lookupAndSetMetric() {
+                if (!_registeredMetrics.containsKey(cluster)) {
+                    _registeredMetrics.put(cluster, new ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>>());
+                }
+
+                ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>> serviceList = _registeredMetrics.get(cluster);
+                if (!serviceList.containsKey(service)) {
+                    serviceList.put(service, new ConcurrentSkipListMap<String, Metric>());
+                }
+
+                ConcurrentSkipListMap<String, Metric> metricsList = serviceList.get(service);
+                if (!metricsList.containsKey(metricName)) {
+                    metricsList.put(metricName, new Metric(cluster, service, metricName));
+                }
+
+                final Metric metric = _registeredMetrics.get(cluster).get(service).get(metricName);
+
+                metric.addAggregations(stats);
+                metric.addPeriods(periods);
+                //TODO: set the type of metric this is
+
+                handler.handle(new ASResult<Metric>(metric));
+            }
+        }
+        final MetricSetter setter = new MetricSetter();
+        RedisUtils.smembers(redis, statsKey, bus, new AsyncResultHandler<Set<String>>() {
+            @Override
+            public void handle(final AsyncResult<Set<String>> event) {
+                if (event.failed()) {
+                    LOGGER.error("unable to fetch metadata for metric " + metricName, event.cause());
+                    handler.handle(new ASResult<Metric>(event.cause()));
+                }
+                stats.addAll(event.result());
+                final int newVal = latch.decrementAndGet();
+                if (newVal == 0) {
+                    setter.lookupAndSetMetric();
+                }
+            }
+        });
+
+        RedisUtils.smembers(redis, periodsKey, bus, new AsyncResultHandler<Set<String>>() {
+            @Override
+            public void handle(final AsyncResult<Set<String>> event) {
+                if (event.failed()) {
+                    LOGGER.error("unable to fetch metadata for metric " + metricName, event.cause());
+                    handler.handle(new ASResult<Metric>(event.cause()));
+                }
+                periods.addAll(event.result());
+                final int newVal = latch.decrementAndGet();
+                if (newVal == 0) {
+                    setter.lookupAndSetMetric();
+                }
+            }
+        });
+
+        RedisUtils.get(redis, kindKey, bus, new AsyncResultHandler<String>() {
+            @Override
+            public void handle(final AsyncResult<String> event) {
+                if (event.failed()) {
+                    LOGGER.error("unable to fetch metadata for metric " + metricName, event.cause());
+                    handler.handle(new ASResult<Metric>(event.cause()));
+                }
+
+                //TODO: set the kind of metric
+//                metricKind.set(CounterVariable.MetricKind.valueOf(event.result()));
+                final int newVal = latch.decrementAndGet();
+                if (newVal == 0) {
+                    setter.lookupAndSetMetric();
+                }
+            }
+        });
     }
 
     private void getServicesForCluster(@Nonnull final String cluster, @Nonnull final AsyncResultHandler<Set<String>> resultHandler) {
@@ -951,18 +1087,20 @@ public class AggregationServer extends Verticle {
         }
     }
 
-    private void registerServiceInCluster(final String serviceName, final String clusterName, final AsyncResultHandler<Void> resultHandler) {
+    private void registerServiceInCluster(final String serviceName, final String clusterName,
+                                          final AsyncResultHandler<Void> resultHandler)
+    {
         String key = "metrics." + clusterName + ".services";
         EventBus eb = vertx.eventBus();
 
         RedisInstance redis = getRedisInstanceFor(key);
 
-        RedisUtils.sadd(redis, key, clusterName, eb, new AsyncResultHandler<Integer>() {
+        RedisUtils.sadd(redis, key, serviceName, eb, new AsyncResultHandler<Integer>() {
             @Override
             public void handle(final AsyncResult<Integer> event) {
                 if (resultHandler != null) {
                     if (event.succeeded()) {
-                        resultHandler.handle(new ASResult<Void>((Void)null));
+                        resultHandler.handle(new ASResult<Void>(( Void ) null));
                     } else {
                         resultHandler.handle(new ASResult<Void>(event.cause()));
                     }
