@@ -14,4 +14,5 @@ message AggregationRecord {
     optional string period_start = 5;
     optional double statistic_value = 6;
     repeated double statistic_samples = 7 [packed=true];
+    optional int32  raw_sample_count = 8;
 }

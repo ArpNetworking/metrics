@@ -49,7 +49,7 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
 
         _client = _vertx.createNetClient();
 
-        _client.setReconnectAttempts(3).setReconnectInterval(3000L).setConnectTimeout(5000).setTCPNoDelay(true)
+        _client.setReconnectAttempts(1).setReconnectInterval(3000L).setConnectTimeout(5000).setTCPNoDelay(true)
                 .setTCPKeepAlive(true);
         connectToAggServer();
     }
@@ -104,6 +104,11 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
         return new Handler<Throwable>() {
             @Override
             public void handle(final Throwable event) {
+                try {
+                    if (socket != null) {
+                        socket.close();
+                    }
+                } catch (Exception ignored) { }
                 _socket = null;
                 _connected.set(false);
                 LOGGER.error("error on agg server publisher socket, attempting to reestablish connection", event);

@@ -12,6 +12,7 @@ import com.hazelcast.core.MessageListener;
 import io.vertx.redis.RedisMod;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.joda.time.Period;
 import org.joda.time.ReadableDuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,10 +29,7 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.platform.Verticle;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -61,6 +59,7 @@ public class AggregationServer extends Verticle {
             new ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, ConcurrentSkipListMap<String, Metric>>>();
     private final AtomicReference<ConcurrentSkipListSet<Metric>> _ownedMetrics =
             new AtomicReference<ConcurrentSkipListSet<Metric>>(new ConcurrentSkipListSet<Metric>());
+    private final AtomicReference<ArrayList<Period>> _ownedPeriods = new AtomicReference<ArrayList<Period>>(new ArrayList<Period>());
     private String _hostName;
     private int _tcpPort;
     private int _httpPort;
@@ -928,6 +927,9 @@ public class AggregationServer extends Verticle {
         Map<String, String> values = Maps.newHashMap();
         values.put("value", String.valueOf(record.getStatisticValue()));
         values.put("periodStart", record.getPeriodStart());
+        if (record.hasRawSampleCount()) {
+            values.put("totalSamples", Integer.toString(record.getRawSampleCount()));
+        }
         StringBuilder samplesBuilder = new StringBuilder();
         samplesBuilder.append("[");
         Joiner.on(", ").appendTo(samplesBuilder, record.getStatisticSamplesList()).append("]");
