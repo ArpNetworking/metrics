@@ -55,6 +55,10 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
     }
 
     private void connectToAggServer() {
+        if (_connectionInProgress.get() || _connected.get()) {
+            LOGGER.warn("agg server publisher trying to connect when another connection is active or attempt in progress");
+            return;
+        }
         _connectionInProgress.set(true);
         LOGGER.info("attempting to connect to agg server at " + _aggServerHost + ":" + _aggServerPort);
         _client.connect(
@@ -91,6 +95,11 @@ public class AggServerPublisher extends Verticle implements AggregationPublisher
         return new Handler<Void>() {
             @Override
             public void handle(final Void event) {
+                try {
+                    if (socket != null) {
+                        socket.close();
+                    }
+                } catch (Exception ignored) { }
                 _socket = null;
                 _connected.set(false);
                 LOGGER.error("agg server publisher socket closed, attempting to reestablish connection", event);
