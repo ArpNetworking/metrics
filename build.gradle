@@ -8,9 +8,9 @@ apply plugin: 'findbugs'
 apply plugin: 'checkstyle'
 
 repositories {
-    maven {
-	url "http://artifactory.arpnetworking.com:8081/nexus/content/groups/public/"
-    }
+//    maven {
+//        //url "http://artifactory.arpnetworking.com:8081/nexus/content/groups/public/"
+//    }
     maven {
         url "http://repository.apache.org/snapshots/"
     }
@@ -21,7 +21,7 @@ configurations {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.8'
+    gradleVersion = '1.10'
 }
 
 
