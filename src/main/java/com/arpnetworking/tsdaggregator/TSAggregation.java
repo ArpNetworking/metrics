@@ -67,7 +67,7 @@ public class TSAggregation {
         rotateAggregation(time);
         _samples.add(value);
         _numberOfSamples++;
-        LOGGER.debug("Added sample to aggregation: time = " + time.toString());
+        LOGGER.trace("Added sample to aggregation: time = " + time.toString());
     }
 
     public void checkRotate(double rotateFactor) {
