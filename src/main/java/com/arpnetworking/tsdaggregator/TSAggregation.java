@@ -99,11 +99,12 @@ public class TSAggregation {
     }
 
     private void emitAggregations() {
-        LOGGER.debug("Emitting aggregations; " + _samples.size() + " samples");
-        @Nonnull Double[] dsamples = _samples.toArray(new Double[_samples.size()]);
-        if (dsamples.length == 0) {
+        if (_samples.size() == 0) {
+            LOGGER.debug("Not emitting aggregations due to 0 samples");
             return;
         }
+        LOGGER.debug("Emitting aggregations; " + _samples.size() + " samples");
+        @Nonnull Double[] dsamples = _samples.toArray(new Double[_samples.size()]);
         @Nonnull ArrayList<AggregatedData> aggregates = Lists.newArrayList();
         for (@Nonnull Statistic stat : _unorderedStatistics) {
             Double value = stat.calculate(dsamples);

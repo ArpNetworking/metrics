@@ -19,8 +19,8 @@ public class LogTailerListener extends TailerListenerAdapter {
 
     @Override
     public void handle(String line) {
-        LOGGER.debug("Line read by LogTailerListener");
-        LOGGER.debug(line);
+        LOGGER.trace("Line read by LogTailerListener");
+        LOGGER.trace(line);
         _processor.invoke(line);
     }
 }
