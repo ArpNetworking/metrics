@@ -17,6 +17,7 @@ import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpParams;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 import org.joda.time.format.ISOPeriodFormat;
 
 import java.io.IOException;
@@ -80,6 +81,13 @@ public class MonitordPublisher implements AggregationPublisher {
 
             //Skip periods < 60 seconds
             if (d.getPeriod().toStandardSeconds().getSeconds() < 60) {
+                continue;
+            }
+
+            //Monitord is very much "now-oriented"
+            //Skip the entry if the period start is too long ago (ie, not within 2x periods of the start period)
+            if (DateTime.now().isAfter(d.getPeriodStart().plus(d.getPeriod().multipliedBy(2)))) {
+                LOGGER.debug("Skipping monitord publishing of entry with period start " + d.getPeriodStart());
                 continue;
             }
 

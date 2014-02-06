@@ -4,11 +4,14 @@ import com.arpnetworking.tsdaggregator.publishing.AggregationPublisher;
 import com.arpnetworking.tsdaggregator.statistics.Statistic;
 import com.google.common.base.Optional;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.joda.time.Period;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
 /**
@@ -29,6 +32,7 @@ public class LineProcessor {
     private final ConcurrentHashMap<String, TSData> _aggregations;
     private AggregationCloser _aggregationCloser;
     private static final Logger LOGGER = Logger.getLogger(LineProcessor.class);
+    private final AtomicReference<DateTime> _lastLineReadTime;
 
     private class AggregationCloser implements Runnable {
         private volatile boolean _run = true;
@@ -40,8 +44,11 @@ public class LineProcessor {
             while (_run) {
                 try {
                     Thread.sleep(_rotationCheckMillis);
-                    for (@Nonnull Map.Entry<String, TSData> entry : _aggregations.entrySet()) {
-                        entry.getValue().checkRotate(_rotationFactor);
+                    //Wait at least 3 seconds to roll the file
+                    if (_lastLineReadTime.get().isBefore(DateTime.now().minus(Duration.standardSeconds(3)))) {
+                        for (@Nonnull Map.Entry<String, TSData> entry : _aggregations.entrySet()) {
+                            entry.getValue().checkRotate(_rotationFactor);
+                        }
                     }
                 } catch (InterruptedException e) {
                     Thread.interrupted();
@@ -67,6 +74,7 @@ public class LineProcessor {
         this._periods = periods;
         this._listener = listener;
         this._aggregations = new ConcurrentHashMap<String, TSData>();
+        this._lastLineReadTime = new AtomicReference<DateTime>(DateTime.now());
 
         startAggregationCloser();
     }
@@ -88,6 +96,7 @@ public class LineProcessor {
             return;
         }
 
+        _lastLineReadTime.set(DateTime.now());
         LogLine data = optionalData.get();
 
         //Loop over all metrics

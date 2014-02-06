@@ -65,6 +65,9 @@ public class TSAggregation {
 
     public void addSample(Double value, @Nonnull DateTime time) {
         rotateAggregation(time);
+        if (time.isBefore(_periodStart)) {
+            LOGGER.trace("Not adding sample due to it being before the current agg period");
+        }
         _samples.add(value);
         _numberOfSamples++;
         LOGGER.trace("Added sample to aggregation: time = " + time.toString());

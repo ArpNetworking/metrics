@@ -1,4 +1,4 @@
-package tsdaggregator.aggserver;
+package com.arpnetworking.tsdaggregator.aggserver;
 option java_package = "com.arpnetworking.tsdaggregator.aggserver";
 
 message HostIdentification {
