@@ -3,6 +3,7 @@ package com.arpnetworking.tsdaggregator.aggserver;
 import com.google.common.base.Objects;
 
 import java.util.concurrent.ConcurrentSkipListSet;
+import javax.annotation.Nonnull;
 
 /**
  * Represents what we know about a metric.
@@ -17,7 +18,7 @@ public class Metric implements Comparable<Metric> {
     private final ConcurrentSkipListSet<String> _periods = new ConcurrentSkipListSet<String>();
     private final ConcurrentSkipListSet<String> _aggregations = new ConcurrentSkipListSet<String>();
 
-    public Metric(String cluster, String service, String name) {
+    public Metric(@Nonnull String cluster, @Nonnull String service, @Nonnull String name) {
         _cluster = cluster;
         _service = service;
         _name = name;
@@ -71,6 +72,38 @@ public class Metric implements Comparable<Metric> {
 
     public boolean hasPeriod(final String period) {
         return _periods.contains(period);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final Metric metric = ( Metric ) o;
+
+        if (!_cluster.equals(metric._cluster)) {
+            return false;
+        }
+        if (!_name.equals(metric._name)) {
+            return false;
+        }
+        if (!_service.equals(metric._service)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = _cluster.hashCode();
+        result = 31 * result + _service.hashCode();
+        result = 31 * result + _name.hashCode();
+        return result;
     }
 
     @Override

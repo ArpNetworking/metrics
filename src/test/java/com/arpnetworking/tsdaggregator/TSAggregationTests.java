@@ -18,13 +18,13 @@ public class TSAggregationTests {
     Mockery context = new Mockery();
 
     @Test
-	public void testContruct() {
-		Period period = new Period(0, 5, 0, 0);
+    public void testContruct() {
+        Period period = new Period(0, 5, 0, 0);
         Set<Statistic> stats = Sets.newHashSet();
-		TSAggregation agg = new TSAggregation("test metric", period, new ConsolePublisher(), "testHost", "testService", stats);
-		Assert.assertNotNull(agg);
-	}
-	
+        TSAggregation agg = new TSAggregation("test metric", period, new ConsolePublisher(), "testHost", "testService", stats);
+        Assert.assertNotNull(agg);
+    }
+
 //	@Test
 //	public void TestSimpleAggregation() {
 //		final Period period = new Period(0, 5, 0, 0);

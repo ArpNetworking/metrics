@@ -250,13 +250,17 @@ public class KetamaRing {
             throw new IllegalStateException("layer is empty");
         }
         boolean validEntry = false;
+        //Get the initial entry which may or not be valid (or null)
         Map.Entry<Integer, NodeEntry> entry = ringLayer.ceilingEntry(hash);
-        int firstEntryKey = entry.getKey();
-        while (!validEntry) {
-            if (entry == null) {
-                entry = ringLayer.firstEntry();
-            }
+        if (entry == null) {
+            entry = ringLayer.firstEntry();
+        }
 
+        //This is an indicator.  If we walk all the way around the ring and come back to this entry,
+        //we know that there is no valid entry
+        int firstEntryKey = entry.getKey();
+
+        while (!validEntry) {
             if (onlyOnline) {
                 if (entry.getValue().getStatus().equals(State.Active)) {
                     validEntry = true;

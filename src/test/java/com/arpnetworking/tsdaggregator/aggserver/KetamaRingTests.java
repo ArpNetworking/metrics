@@ -137,7 +137,7 @@ public class KetamaRingTests {
         }
 
         double stdDev = Math.sqrt(o2 / buckets);
-        double fracDev = stdDev / (samples / buckets);
+        double fracDev = stdDev / (samples / (double)buckets);
         Assert.assertThat(fracDev, Matchers.lessThanOrEqualTo(0.1D));
     }
 }

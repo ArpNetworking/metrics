@@ -66,6 +66,7 @@ public class MonitordPublisher implements AggregationPublisher {
         }
         @Nonnull HashMap<String, ArrayList<AggregatedData>> aggMap = Maps.newHashMap();
         //Build the map for the aggregations
+        //Map metrics->
         for (@Nonnull AggregatedData d : data) {
             ArrayList<AggregatedData> mapped = aggMap.get(d.getMetric());
             if (mapped == null) {
