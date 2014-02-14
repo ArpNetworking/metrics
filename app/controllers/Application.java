@@ -51,6 +51,13 @@ public class Application extends Controller {
         return JsonNodeFactory.instance.textNode("UNKNOWN TYPE: " + element.getClass().getCanonicalName());
     }
 
+    public static Result healthCheck() {
+        ObjectNode result = JsonNodeFactory.instance.objectNode();
+        result.put("status", "success");
+        result.put("data", "ok");
+        return ok(result);
+    }
+
     private static void put(ObjectNode node, String remaining, ConfigValue value) {
         int dotIndex = remaining.indexOf(".");
         boolean leaf = dotIndex == -1;
