@@ -1,0 +1,18 @@
+package com.arpnetworking.tsdaggregator.aggserver;
+option java_package = "com.arpnetworking.tsdaggregator.aggserver";
+
+message HostIdentification {
+    optional string host_name = 1;
+    optional string cluster_name = 2;
+}
+
+message AggregationRecord {
+    optional string service = 1;
+    optional string metric = 2;
+    optional string statistic = 3;
+    optional string period = 4;
+    optional string period_start = 5;
+    optional double statistic_value = 6;
+    repeated double statistic_samples = 7 [packed=true];
+    optional int32  raw_sample_count = 8;
+}
