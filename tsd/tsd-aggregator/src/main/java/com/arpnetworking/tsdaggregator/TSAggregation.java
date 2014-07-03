@@ -1,44 +1,64 @@
+/**
+ * Copyright 2014 Brandon Arp
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.arpnetworking.tsdaggregator;
 
-import com.arpnetworking.tsdaggregator.publishing.AggregationPublisher;
-import com.arpnetworking.tsdaggregator.statistics.OrderedStatistic;
-import com.arpnetworking.tsdaggregator.statistics.Statistic;
+import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Quantity;
+import com.arpnetworking.tsdcore.sinks.Sink;
+import com.arpnetworking.tsdcore.statistics.OrderedStatistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.utility.SampleUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Period;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
-import javax.annotation.Nonnull;
 
 /**
- * Holds samples, delegates calculations to statistics, and emits the calculated statistics.
+ * Holds samples, delegates calculations to statistics, and emits the calculated
+ * statistics.
+ *
+ * @author Brandon Arp (barp at groupon dot com)
  */
 public class TSAggregation {
 
-    private static final Logger LOGGER = Logger.getLogger(TSAggregation.class);
-    @Nonnull
-    private final Period _period;
-    private final ArrayList<Double> _samples = Lists.newArrayList();
-    private final Set<Statistic> _orderedStatistics = Sets.newHashSet();
-    private final Set<Statistic> _unorderedStatistics = Sets.newHashSet();
-    @Nonnull
-    private final String _metric;
-    @Nonnull
-    private final String _hostName;
-    @Nonnull
-    private final String _serviceName;
-    @Nonnull
-    private final AggregationPublisher _listener;
-    private int _numberOfSamples = 0;
-    private DateTime _periodStart = new DateTime(0);
-
-    public TSAggregation(@Nonnull String metric, @Nonnull Period period, @Nonnull AggregationPublisher listener,
-                         @Nonnull String hostName, @Nonnull String serviceName, @Nonnull Set<Statistic> statistics) {
+    /**
+     * Public constructor.
+     * 
+     * @param metric The name of the metric.
+     * @param period The period of the aggregation.
+     * @param listener The destination for completed aggregations.
+     * @param hostName The name of the host.
+     * @param serviceName The name of the service.
+     * @param statistics The <code>Set</code> of statistics to compute.
+     */
+    public TSAggregation(
+            final String metric,
+            final Period period,
+            final Sink listener,
+            final String hostName,
+            final String serviceName,
+            final Set<Statistic> statistics) {
         _metric = metric;
         _period = period;
         addStatistics(statistics, _orderedStatistics, _unorderedStatistics);
@@ -47,15 +67,15 @@ public class TSAggregation {
         _listener = listener;
     }
 
-    private void addStatistics(@Nonnull Set<Statistic> stats, @Nonnull Set<Statistic> orderedStatsSet,
-                               @Nonnull Set<Statistic> unorderedStatsSet) {
-        for (Statistic s : stats) {
+    private void addStatistics(final Set<Statistic> stats, final Set<Statistic> orderedStatsSet,
+            final Set<Statistic> unorderedStatsSet) {
+        for (final Statistic s : stats) {
             addStatistic(s, orderedStatsSet, unorderedStatsSet);
         }
     }
 
-    private void addStatistic(Statistic s, @Nonnull Set<Statistic> orderedStatsSet,
-                              @Nonnull Set<Statistic> unorderedStatsSet) {
+    private void addStatistic(final Statistic s, final Set<Statistic> orderedStatsSet,
+            final Set<Statistic> unorderedStatsSet) {
         if (s instanceof OrderedStatistic) {
             orderedStatsSet.add(s);
         } else {
@@ -63,23 +83,35 @@ public class TSAggregation {
         }
     }
 
-    public void addSample(Double value, @Nonnull DateTime time) {
+    /**
+     * Add a sample to this aggregation.
+     * 
+     * @param value The sample to add.
+     * @param time The timestamp the sample was generated at.
+     */
+    public void addSample(final Quantity value, final DateTime time) {
         rotateAggregation(time);
         if (time.isBefore(_periodStart)) {
             LOGGER.trace("Not adding sample due to it being before the current agg period");
         }
         _samples.add(value);
         _numberOfSamples++;
-        LOGGER.trace("Added sample to aggregation: time = " + time.toString());
+        LOGGER.trace("Added sample to aggregation: time = " + time);
     }
 
-    public void checkRotate(double rotateFactor) {
-        Duration rotateDuration = Duration.millis(
+    /**
+     * Check for a rotation and rotate if necessary.
+     * 
+     * @param rotateFactor The fraction of a period to wait beyond the end of a
+     * period before rotating to the next period.
+     */
+    public void checkRotate(final double rotateFactor) {
+        final Duration rotateDuration = Duration.millis(
                 (long) (_period.toDurationFrom(_periodStart).getMillis() * rotateFactor));
         rotateAggregation(DateTime.now().minus(new Duration(rotateDuration)));
     }
 
-    private void rotateAggregation(@Nonnull DateTime time) {
+    private void rotateAggregation(final DateTime time) {
         LOGGER.trace("Checking roll. Period is " + _period + ", Roll time is " + _periodStart.plus(_period));
         if (time.isAfter(_periodStart.plus(_period))) {
             //Calculate the start of the new aggregation
@@ -97,6 +129,9 @@ public class TSAggregation {
         }
     }
 
+    /**
+     * Closes and emits the aggregation.
+     */
     public void close() {
         emitAggregations();
     }
@@ -107,25 +142,58 @@ public class TSAggregation {
             return;
         }
         LOGGER.debug("Emitting aggregations; " + _samples.size() + " samples");
-        @Nonnull Double[] dsamples = _samples.toArray(new Double[_samples.size()]);
-        @Nonnull ArrayList<AggregatedData> aggregates = Lists.newArrayList();
-        for (@Nonnull Statistic stat : _unorderedStatistics) {
-            Double value = stat.calculate(dsamples);
-            @Nonnull AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
-                    _periodStart, _period, dsamples);
+        //Copy the arraylist so it can be shared with the AggregatedData objects
+        final List<Quantity> samples = Lists.newArrayList(_samples);
+        final ArrayList<AggregatedData> aggregates = Lists.newArrayList();
+        final List<Quantity> unified = SampleUtils.unifyUnits(samples);
+        for (final Statistic stat : _unorderedStatistics) {
+            final Double value = stat.calculate(samples);
+            final AggregatedData data = new AggregatedData.Builder()
+                    .setStatistic(stat)
+                    .setService(_serviceName)
+                    .setHost(_hostName)
+                    .setMetric(_metric)
+                    .setValue(value)
+                    .setPeriodStart(_periodStart)
+                    .setPeriod(_period)
+                    .setSamples(unified)
+                    .setPopulationSize(Long.valueOf(_numberOfSamples))
+                    .build();
             aggregates.add(data);
         }
         //only sort if there are ordered statistics
         if (_orderedStatistics.size() > 0) {
-            Arrays.sort(dsamples);
-            for (@Nonnull Statistic stat : _orderedStatistics) {
-                Double value = stat.calculate(dsamples);
-                @Nonnull AggregatedData data = new AggregatedData(stat, _serviceName, _hostName, _metric, value,
-                        _periodStart, _period, dsamples);
+            Collections.sort(unified);
+            for (final Statistic stat : _orderedStatistics) {
+                final Double value = stat.calculate(samples);
+                final AggregatedData data = new AggregatedData.Builder()
+                        .setStatistic(stat)
+                        .setService(_serviceName)
+                        .setHost(_hostName)
+                        .setMetric(_metric)
+                        .setValue(value)
+                        .setPeriodStart(_periodStart)
+                        .setPeriod(_period)
+                        .setSamples(unified)
+                        .setPopulationSize(Long.valueOf(_numberOfSamples))
+                        .build();
                 aggregates.add(data);
             }
         }
         LOGGER.debug("Writing " + aggregates.size() + " aggregation records");
-        _listener.recordAggregation(aggregates.toArray(new AggregatedData[aggregates.size()]));
+        _listener.recordAggregateData(aggregates);
     }
+
+    private final Period _period;
+    private final ArrayList<Quantity> _samples = Lists.newArrayList();
+    private final Set<Statistic> _orderedStatistics = Sets.newHashSet();
+    private final Set<Statistic> _unorderedStatistics = Sets.newHashSet();
+    private final String _metric;
+    private final String _hostName;
+    private final String _serviceName;
+    private final Sink _listener;
+    private long _numberOfSamples = 0;
+    private DateTime _periodStart = new DateTime(0);
+
+    private static final Logger LOGGER = Logger.getLogger(TSAggregation.class);
 }

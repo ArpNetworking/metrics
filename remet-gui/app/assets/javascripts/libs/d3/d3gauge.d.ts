@@ -1,5 +1,5 @@
 declare class Gauge {
-    constructor(id, options);
-    render();
-    redraw(value: number, duration?: number);
+    constructor(id: string, options: any);
+    render(): void;
+    redraw(value: number, duration?: number): void;
 }

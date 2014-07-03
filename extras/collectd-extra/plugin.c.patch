@@ -1,0 +1,17 @@
+--- ./plugin.c.org	2014-04-01 17:13:01.000000000 +0000
++++ ./plugin.c	2014-04-01 17:15:23.000000000 +0000
+@@ -967,14 +967,6 @@
+ 					sstrerror (errno, errbuf, sizeof (errbuf)));
+ 			continue;
+ 		}
+-		else if (!S_ISREG (statbuf.st_mode))
+-		{
+-			/* don't follow symlinks */
+-			WARNING ("plugin_load: %s is not a regular file.",
+-				       	filename);
+-			continue;
+-		}
+-
+ 		status = plugin_load_file (filename, flags);
+ 		if (status == 0)
+ 		{

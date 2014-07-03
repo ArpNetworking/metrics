@@ -1,0 +1,31 @@
+// Copyright 2014 Brandon Arp
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+package com.arpnetworking.tsdcore;
+option java_package = "com.arpnetworking.tsdcore";
+
+message HostIdentification {
+    optional string host_name = 1;
+    optional string cluster_name = 2;
+}
+
+message AggregationRecord {
+    required string service = 1;
+    required string metric = 2;
+    required string statistic = 3;
+    required string period = 4;
+    required string period_start = 5;
+    required double statistic_value = 6;
+    repeated double samples = 7 [packed=true];
+    required int64  population_size = 8;
+}
