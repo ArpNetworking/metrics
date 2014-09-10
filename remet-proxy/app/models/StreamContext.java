@@ -1,244 +1,186 @@
+/**
+ * Copyright 2014 Brandon Arp
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package models;
 
 import akka.actor.ActorRef;
+import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
+import akka.pattern.Patterns;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import models.messages.Command;
+import models.messages.Connect;
+import models.messages.MetricReport;
+import models.messages.MetricsList;
+import models.messages.MetricsListRequest;
+import models.messages.NewMetric;
+import models.messages.Quit;
 import org.joda.time.DateTime;
 import play.Logger;
 import play.libs.Akka;
 import play.libs.F.Callback;
 import play.libs.F.Callback0;
-import play.libs.Json;
 import play.mvc.WebSocket;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import static akka.pattern.Patterns.ask;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import java.util.concurrent.TimeUnit;
 
 /**
- * A chat room is an Actor.
+ * Actor responsible for holding the set of connected websockets and publishing
+ * metrics to them.
+ *
+ * @author Brandon Arp (barp at groupon dot com)
  */
 public class StreamContext extends UntypedActor {
 
-    // Default room.
-    static ActorRef defaultContext = Akka.system().actorOf(new Props(StreamContext.class));
-
-
     /**
-     * Join the default room.
+     * Method to register a client that has connected.
+     *
+     * @param in Incoming <code>WebSocket</code>.
+     * @param out Outgoing <code>WebSocket</code>.
+     * @throws Exception Thrown by <code>Await</code>.
      */
-    public static void connect(WebSocket.In<JsonNode> in, final WebSocket.Out<JsonNode> out) throws Exception{
+    public static void connect(final WebSocket.In<JsonNode> in, final WebSocket.Out<JsonNode> out) throws Exception {
 
+        Logger.info("Connection on creation: " + out);
         // Send the Join message to the room
-        String result = (String) Await.result(ask(defaultContext, new Connect(out), 1000), Duration.apply(1, SECONDS));
+        final Object result = Await.result(
+                Patterns.ask(
+                        DEFAULT_CONTEXT,
+                        new Connect(out),
+                        1000),
+                Duration.apply(
+                        1,
+                        TimeUnit.SECONDS
+                        )
+                );
 
-        if("OK".equals(result)) {
+        if (result instanceof ActorRef) {
+            //We were passed the reference to the child actor
+            final ActorRef child = (ActorRef) result;
 
-            // For each event received on the socket,
             in.onMessage(new Callback<JsonNode>() {
-                public void invoke(JsonNode event) {
-                    // Send the command
-                    defaultContext.tell(new Command(out, event));
+                @Override
+                public void invoke(final JsonNode event) {
+                    // Send the command to the child actor
+                    child.tell(new Command(event), ActorRef.noSender());
                 }
             });
 
-            // When the socket is closed.
             in.onClose(new Callback0() {
+                @Override
                 public void invoke() {
-                    // Send a Quit message to the room.
-                    defaultContext.tell(new Quit(out));
+                    Logger.debug(String.format("Connection closed from channel %s", out));
+                    // Send a Quit message
+                    DEFAULT_CONTEXT.tell(new Quit(out), ActorRef.noSender());
                 }
             });
         }
-
     }
 
-    public static void reportMetrics(JsonNode node) {
+    /**
+     * Method to notify this actor that a MetricReport is ready to be sent to
+     * interested clients.
+     *
+     * @param node Instance of <code>JsonNode</code> describing new metrics.
+     */
+    public static void reportMetrics(final JsonNode node) {
         Logger.info("got a metrics report");
-        defaultContext.tell(new MetricReport(node));
+
+        //TODO(barp): Map with a POJO mapper [MAI-184]
+        final ArrayNode list = (ArrayNode) node;
+        for (final JsonNode objNode : list) {
+            final ObjectNode obj = (ObjectNode) objNode;
+            final String service = obj.get("service").asText();
+            final String host = obj.get("host").asText();
+            final String statistic = obj.get("statistic").asText();
+            final String metric = obj.get("metric").asText();
+            final double value = obj.get("value").asDouble();
+            final String periodStart = obj.get("periodStart").asText();
+            final DateTime startTime = DateTime.parse(periodStart);
+
+            DEFAULT_CONTEXT.tell(new MetricReport(service, host, statistic, metric, value, startTime), ActorRef.noSender());
+        }
     }
 
-        // Members of this room.
-    Set<WebSocket.Out<JsonNode>> members = new HashSet<WebSocket.Out<JsonNode>>();
-    Map<String, Map<String, Set<String>>> serviceMetrics = new HashMap<String, Map<String, Set<String>>>();
-
-    public void onReceive(Object message) throws Exception {
-        Logger.info("received message " + message);
-        if(message instanceof Connect) {
-            // Received a Join message
-            Connect connect = (Connect)message;
-            members.add(connect.channel);
-            Logger.info("adding new channel to streaming context");
-            getSender().tell("OK");
-        } else if(message instanceof Command)  {
-            // Received a Command message
-
-            Command commandMessage = (Command)message;
-            ObjectNode cmd = (ObjectNode)commandMessage.command;
-
-            String commandString = cmd.get("command").asText();
-            if (commandString.equals("getMetrics")) {
-                Logger.info("channel has requested the metrics list");
-                ObjectNode returnNode = JsonNodeFactory.instance.objectNode();
-
-                ArrayNode services = JsonNodeFactory.instance.arrayNode();
-                for (Map.Entry<String, Map<String, Set<String>>> service : serviceMetrics.entrySet()) {
-                    ObjectNode serviceObject = JsonNodeFactory.instance.objectNode();
-                    serviceObject.put("name", service.getKey());
-                    ArrayNode metrics = JsonNodeFactory.instance.arrayNode();
-                    for (Map.Entry<String, Set<String>> metric : service.getValue().entrySet()) {
-                        ObjectNode metricObject = JsonNodeFactory.instance.objectNode();
-                        metricObject.put("name", metric.getKey());
-                        ArrayNode stats = JsonNodeFactory.instance.arrayNode();
-                        for (String statistic : metric.getValue()) {
-                            ObjectNode statsObject = JsonNodeFactory.instance.objectNode();
-                            statsObject.put("name", statistic);
-                            statsObject.put("children", JsonNodeFactory.instance.arrayNode());
-                            stats.add(statsObject);
-                        }
-                        metricObject.put("children", stats);
-                        metrics.add(metricObject);
-                    }
-                    serviceObject.put("children", metrics);
-                    services.add(serviceObject);
-                }
-                returnNode.put("metrics", services);
-                ObjectNode command = Json.newObject();
-                command.put("command", "metricsList");
-                command.put("data", returnNode);
-                commandMessage.channel.write(command);
-            } else if (commandString.equals("heartbeat")) {
-                ObjectNode ret = Json.newObject();
-                ret.put("response", "ok");
-                commandMessage.channel.write(ret);
-            } else {
-
-            }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onReceive(final Object message) throws Exception {
+        Logger.debug(String.format("received message %s", message));
+        if (message instanceof Connect) {
+            final Connect connect = (Connect) message;
+            final ActorRef context = context().actorOf(ConnectionContext.props(connect.getChannel()));
+            _members.put(connect.getChannel(), context);
+            Logger.info(String.format("adding new channel to streaming context; channel=%s", connect.getChannel()));
+            getSender().tell(context, getSelf());
         } else if (message instanceof MetricReport) {
-            MetricReport report = (MetricReport)message;
-            ArrayNode list = (ArrayNode)report.report;
-            for (JsonNode node : list) {
-                ObjectNode obj = (ObjectNode)node;
-                String service = obj.get("service").asText();
-                String host = obj.get("host").asText();
-                String statistic = obj.get("statistic").asText();
-                String metric = obj.get("counter").asText();
-                Double value = obj.get("value").asDouble();
-                String periodStart = obj.get("periodStart").asText();
-                DateTime startTime = DateTime.parse(periodStart);
-                registerMetric(service, metric, statistic);
-                emitAggregation(host, service, metric, statistic, startTime.getMillis(), value);
-            }
-        } else if(message instanceof Quit)  {
-            // Received a Quit message
-            Quit quit = (Quit)message;
-
-            members.remove(quit.channel);
-            Logger.info("removing channel from streaming context");
+            final MetricReport report = (MetricReport) message;
+            registerMetric(report.getService(), report.getMetric(), report.getStatistic());
+            broadcast(message);
+        } else if (message instanceof Quit) {
+            Logger.info(String.format("removing channel from streaming context; channel=%s", ((Quit) message).getChannel()));
+            _members.remove(((Quit) message).getChannel()).tell(PoisonPill.getInstance(), getSelf());
+        } else if (message instanceof MetricsListRequest) {
+            getSender().tell(new MetricsList(_serviceMetrics), getSelf());
         } else {
+            Logger.warn(String.format("Got an unexpected message; message=%s", message));
             unhandled(message);
         }
     }
 
-    private void registerMetric(String service, String metric, String statistic) {
-        if (!serviceMetrics.containsKey(service)) {
-            serviceMetrics.put(service, new HashMap<String, Set<String>>());
+    private void broadcast(final Object message) {
+        for (final ActorRef ref : _members.values()) {
+            ref.tell(message, getSelf());
         }
-        Map<String, Set<String>> serviceMap = serviceMetrics.get(service);
+    }
+
+    private void registerMetric(final String service, final String metric, final String statistic) {
+        if (!_serviceMetrics.containsKey(service)) {
+            _serviceMetrics.put(service, Maps.<String, Set<String>>newHashMap());
+        }
+        final Map<String, Set<String>> serviceMap = _serviceMetrics.get(service);
 
         if (!serviceMap.containsKey(metric)) {
-            serviceMap.put(metric, new HashSet<String>());
+            serviceMap.put(metric, Sets.<String>newHashSet());
         }
-        Set<String> metricMap = serviceMap.get(metric);
+        final Set<String> statistics = serviceMap.get(metric);
 
-        if (!metricMap.contains(statistic)) {
-            metricMap.add(statistic);
+        if (!statistics.contains(statistic)) {
+            statistics.add(statistic);
             notifyNewMetric(service, metric, statistic);
         }
     }
 
-    private void notifyNewMetric(String service, String metric, String statistic) {
-        ObjectNode n = Json.newObject();
-        n.put("service", service);
-        n.put("metric", metric);
-        n.put("statistic", statistic);
-        sendToAll("newMetric", n);
+    private void notifyNewMetric(final String service, final String metric, final String statistic) {
+        final NewMetric newMetric = new NewMetric(service, metric, statistic);
+        broadcast(newMetric);
     }
 
-    // Send a Json event to all members
-    public void emitAggregation(String server, String service, String metric, String statistic, Long timestamp, Double data) {
-        ObjectNode event = Json.newObject();
-        event.put("server", server);
-        event.put("service", service);
-        event.put("metric", metric);
-        event.put("timestamp", timestamp);
-        event.put("statistic", statistic);
-        event.put("data", data);
+    private final Map<WebSocket.Out<JsonNode>, ActorRef> _members = Maps.newHashMap();
+    private final Map<String, Map<String, Set<String>>> _serviceMetrics = Maps.newHashMap();
 
-        sendToAll("report", event);
-    }
-
-    private void sendToAll(String name, JsonNode node) {
-        ObjectNode command = Json.newObject();
-        command.put("command", name);
-        command.put("data", node);
-        for(WebSocket.Out<JsonNode> channel: members) {
-            try {
-                channel.write(command);
-            } catch (Throwable e) {
-                members.remove(channel);
-            }
-        }
-    }
-
-    // -- Messages
-
-    public static class Connect {
-
-        final WebSocket.Out<JsonNode> channel;
-
-        public Connect(WebSocket.Out<JsonNode> channel) {
-            this.channel = channel;
-        }
-
-    }
-
-    public static class Command {
-
-        final WebSocket.Out<JsonNode> channel;
-        final JsonNode command;
-
-        public Command(WebSocket.Out<JsonNode> channel, JsonNode command) {
-            this.channel = channel;
-            this.command = command;
-        }
-    }
-
-    public static class MetricReport {
-
-        final JsonNode report;
-
-        public MetricReport(JsonNode report) {
-            this.report = report;
-        }
-    }
-
-    public static class Quit {
-        final WebSocket.Out<JsonNode> channel;
-        public Quit(WebSocket.Out<JsonNode> channel) {
-            this.channel = channel;
-        }
-
-    }
+    private static final ActorRef DEFAULT_CONTEXT = Akka.system().actorOf(Props.create(StreamContext.class));
 
 }

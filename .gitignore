@@ -1,0 +1,28 @@
+# Output
+target/
+logs/
+pom.xml.versionsBackup
+dependency-reduced-pom.xml
+.gwt/
+tsd/build
+tsd/*/build
+.gradle
+**/npm-debug.log
+
+# Eclipse
+.metadata/
+**/.classpath
+maven-eclipse.xml
+**/bin/
+**/eclipse-bin/
+**/.externalToolBuilders/
+**/RemoteSystemsTempFiles/
+
+# IntelliJ
+.idea
+**/.settings/*
+*.iml
+
+# Mac
+.DS_Store
+

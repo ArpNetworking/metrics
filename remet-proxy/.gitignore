@@ -1,7 +1,9 @@
+# Play
 logs
 project/project
 project/target
 target
 tmp
 .history
+.target
 dist

@@ -1,0 +1,180 @@
+/*
+ * Copyright 2014 Brandon Arp
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'build-dashboard'
+
+version = '0.2.1-SNAPSHOT'
+group = 'com.arpnetworking.metrics'
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+    apply plugin: 'maven'
+    apply plugin: 'jacoco'
+    apply plugin: 'findbugs'
+    apply plugin: 'checkstyle'
+
+    version = rootProject.version
+    group = rootProject.group
+
+    generatedSources = ['com/arpnetworking/tsdcore/Messages*']
+
+    repositories {
+        maven {
+            url "http://repository.apache.org/snapshots/"
+        }
+        mavenCentral()
+        mavenLocal()
+    }
+
+    configurations {
+        deployJars
+        all*.exclude group: 'log4j', module: 'log4j'
+    }
+
+    findbugs {
+        ignoreFailures = false
+        effort = 'max'
+        excludeFilter = file("$rootProject.projectDir/config/findbugs/excludeFilter.xml")
+        sourceSets = [sourceSets.main, sourceSets.test]
+    }
+
+    tasks.withType(FindBugs) {
+        reports {
+            xml.enabled = false
+            html.enabled = true
+        }
+    }
+
+    checkstyleMain {
+        reports {
+            include('**/*.java')
+            exclude('**/tsdcore/Messages.java')
+            xml {
+                destination "${buildDir}/reports/checkstyle/main.xml"
+            }
+        }
+        showViolations = false
+        ignoreFailures = false
+        classpath += configurations.runtime
+        classpath += sourceSets.main.output
+        configFile = file("${rootProject.projectDir}/../build/checkstyle.xml")
+        configProperties = [samedir:"${rootProject.projectDir}/../build/"]
+    }
+
+    checkstyleTest {
+        reports {
+            include('**/*.java')
+            xml {
+                destination "${buildDir}/reports/checkstyle/test.xml"
+            }
+        }
+        showViolations = false
+        ignoreFailures = false
+        classpath += configurations.runtime
+        classpath += sourceSets.main.output
+        configFile = file("${rootProject.projectDir}/../build/checkstyle.xml")
+        configProperties = [samedir:"${rootProject.projectDir}/../build/"]
+    }
+
+    sourceSets.each { ss ->
+            def cap = ss.name.capitalize()
+            def t = tasks.find { it.name == "checkstyle$cap" }
+            if (t != null) {
+                task "checkstyleReport$cap" << {
+                    if (file("$buildDir/reports/checkstyle/${ss.name}.xml").exists()) {
+                        ant.xslt(in: "$buildDir/reports/checkstyle/${ss.name}.xml",
+                                style: "${rootProject.projectDir}/config/checkstyle/checkstyle.xsl",
+                                out: "$buildDir/reports/checkstyle/checkstyle_${ss.name}.html"
+                        )
+                    }
+
+                }
+                t.finalizedBy "checkstyleReport$cap"
+            }
+    }
+
+    jacoco {
+        toolVersion = "0.7.0.201403182114"
+    }
+
+    check.dependsOn jacocoTestReport
+
+    task releasePrep(dependsOn: [test,check,javadoc]) << {
+
+    }
+
+    releasePrep {
+        group = "Release"
+        description = "Runs all tests and reports in preparation for release"
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        // TODO(vkoskela): Send different arguments to different source groups
+        //options.compilerArgs << "-Werror" << "-Xlint:all"
+    }
+
+    jacocoTestReport {
+        doFirst {
+            classDirectories = fileTree(dir: "${buildDir}/classes/main/").exclude(generatedSources)
+        }
+        group = "Reporting"
+        description = "Generate Jacoco coverage reports after running tests."
+        //additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+        reports {
+            xml.enabled true
+            html.enabled true
+        }
+    }
+
+    test {
+        jacoco {
+            excludes = ["Messages.class"]
+        }
+    }
+    
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allJava
+    }
+    
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+    
+    artifacts {
+        archives sourcesJar
+        archives javadocJar
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.11'
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath group: 'ws.antonov.gradle.plugins', name: 'gradle-plugin-protobuf', version: '0.8'
+    }
+}
+

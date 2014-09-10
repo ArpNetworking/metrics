@@ -1,0 +1,10 @@
+# Gem
+*.gem
+.bundle
+
+# DotCi
+tmp
+.gemencap
+
+# Test Output
+my_file.json
