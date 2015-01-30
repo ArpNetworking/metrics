@@ -17,6 +17,6 @@ describe "TsdMetrics" do
   it "can build a TsdMetric object" do
     metric = TsdMetrics.buildMetric
     metric.should_not be_nil
-    metric.should be_a(TsdMetric2c)
+    metric.should be_a(TsdMetric)
   end
 end

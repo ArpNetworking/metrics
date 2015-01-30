@@ -17,11 +17,12 @@
 package models.messages;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
+import models.protocol.MessageProcessorsFactory;
 import play.mvc.WebSocket;
 
 /**
- * Message class to hold new connection data.
+ * Akka message to hold new connection data.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
@@ -29,14 +30,29 @@ public final class Connect {
     /**
      * Public constructor.
      *
-     * @param channel Instance of <code>WebSocket.Out</code>.
+     * @param inChannel                Instance of <code>WebSocket.In</code>.
+     * @param outChannel               Instance of <code>WebSocket.Out</code>.
+     * @param messageProcessorsFactory Factory to create a <code>Metrics</code> object.
      */
-    public Connect(final WebSocket.Out<JsonNode> channel) {
-        _channel = channel;
+    public Connect(
+        final WebSocket.In<JsonNode> inChannel,
+        final WebSocket.Out<JsonNode> outChannel,
+        final MessageProcessorsFactory messageProcessorsFactory) {
+        _outputChannel = outChannel;
+        _inputChannel = inChannel;
+        _messageProcessorsFactory = messageProcessorsFactory;
     }
 
-    public WebSocket.Out<JsonNode> getChannel() {
-        return _channel;
+    public WebSocket.Out<JsonNode> getOutputChannel() {
+        return _outputChannel;
+    }
+
+    public WebSocket.In<JsonNode> getInputChannel() {
+        return _inputChannel;
+    }
+
+    public MessageProcessorsFactory getMessageProcessorsFactory() {
+        return _messageProcessorsFactory;
     }
 
     /**
@@ -44,10 +60,14 @@ public final class Connect {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
-                .add("Channel", _channel)
-                .toString();
+        return MoreObjects.toStringHelper(this)
+            .add("OutputChannel", _outputChannel)
+            .add("InputChannel", _inputChannel)
+            .add("MessageProcessorsFactory", _messageProcessorsFactory)
+            .toString();
     }
 
-    private final WebSocket.Out<JsonNode> _channel;
+    private final WebSocket.Out<JsonNode> _outputChannel;
+    private final WebSocket.In<JsonNode> _inputChannel;
+    private final MessageProcessorsFactory _messageProcessorsFactory;
 }

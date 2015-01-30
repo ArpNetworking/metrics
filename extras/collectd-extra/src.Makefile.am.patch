@@ -1,0 +1,9 @@
+309a310,317
+> if BUILD_PLUGIN_TSD
+> pkglib_LTLIBRARIES += tsd.la
+> tsd_la_SOURCES = tsd.c
+> tsd_la_LDFLAGS = -module -avoid-version
+> collectd_LDADD += "-dlopen" tsd.la
+> collectd_DEPENDENCIES += tsd.la
+> endif
+> 

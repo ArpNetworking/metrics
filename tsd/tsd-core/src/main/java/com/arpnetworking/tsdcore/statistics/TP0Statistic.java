@@ -15,6 +15,10 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.tsdcore.model.Quantity;
+
+import java.util.List;
+
 /**
  * Top 0th percentile statistic (aka min).
  *
@@ -37,4 +41,14 @@ public class TP0Statistic extends TPStatistic {
     public String getName() {
         return "min";
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double calculate(final List<Quantity> orderedValues) {
+        return Double.valueOf(orderedValues.get(0).getValue()).doubleValue();
+    }
+
+    private static final long serialVersionUID = 107620025236661457L;
 }

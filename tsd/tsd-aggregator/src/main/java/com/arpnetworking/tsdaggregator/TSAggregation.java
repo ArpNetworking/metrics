@@ -16,6 +16,7 @@
 package com.arpnetworking.tsdaggregator;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.sinks.Sink;
 import com.arpnetworking.tsdcore.statistics.OrderedStatistic;
@@ -44,12 +45,13 @@ public class TSAggregation {
 
     /**
      * Public constructor.
-     * 
+     *
      * @param metric The name of the metric.
      * @param period The period of the aggregation.
      * @param listener The destination for completed aggregations.
      * @param hostName The name of the host.
      * @param serviceName The name of the service.
+     * @param cluster The name of the cluster.
      * @param statistics The <code>Set</code> of statistics to compute.
      */
     public TSAggregation(
@@ -58,6 +60,7 @@ public class TSAggregation {
             final Sink listener,
             final String hostName,
             final String serviceName,
+            final String cluster,
             final Set<Statistic> statistics) {
         _metric = metric;
         _period = period;
@@ -65,6 +68,7 @@ public class TSAggregation {
         _hostName = hostName;
         _serviceName = serviceName;
         _listener = listener;
+        _cluster = cluster;
     }
 
     private void addStatistics(final Set<Statistic> stats, final Set<Statistic> orderedStatsSet,
@@ -85,7 +89,7 @@ public class TSAggregation {
 
     /**
      * Add a sample to this aggregation.
-     * 
+     *
      * @param value The sample to add.
      * @param time The timestamp the sample was generated at.
      */
@@ -101,7 +105,7 @@ public class TSAggregation {
 
     /**
      * Check for a rotation and rotate if necessary.
-     * 
+     *
      * @param rotateFactor The fraction of a period to wait beyond the end of a
      * period before rotating to the next period.
      */
@@ -142,39 +146,56 @@ public class TSAggregation {
             return;
         }
         LOGGER.debug("Emitting aggregations; " + _samples.size() + " samples");
-        //Copy the arraylist so it can be shared with the AggregatedData objects
-        final List<Quantity> samples = Lists.newArrayList(_samples);
+        // Copy the samples list to share it with AggregatedData instances
+        final List<Quantity> localSamples = Lists.newArrayList(_samples);
+        // Unify the units on the sample list to compute aggregates
+        final List<Quantity> unifiedSamples = SampleUtils.unifyUnits(localSamples);
+
+        // Compute aggregates for statistics not requiring ordered samples
         final ArrayList<AggregatedData> aggregates = Lists.newArrayList();
-        final List<Quantity> unified = SampleUtils.unifyUnits(samples);
         for (final Statistic stat : _unorderedStatistics) {
-            final Double value = stat.calculate(samples);
+            final double value = stat.calculate(unifiedSamples);
             final AggregatedData data = new AggregatedData.Builder()
-                    .setStatistic(stat)
-                    .setService(_serviceName)
+                    .setFQDSN(new FQDSN.Builder()
+                        .setStatistic(stat)
+                        .setMetric(_metric)
+                        .setService(_serviceName)
+                        .setCluster(_cluster)
+                        .build())
                     .setHost(_hostName)
-                    .setMetric(_metric)
-                    .setValue(value)
-                    .setPeriodStart(_periodStart)
+                    .setValue(new Quantity.Builder()
+                            .setValue(Double.valueOf(value))
+                            .setUnit(unifiedSamples.get(0).getUnit().orNull())
+                            .build())
+                    .setStart(_periodStart)
                     .setPeriod(_period)
-                    .setSamples(unified)
+                    .setSamples(localSamples)
                     .setPopulationSize(Long.valueOf(_numberOfSamples))
                     .build();
             aggregates.add(data);
         }
-        //only sort if there are ordered statistics
+
+        // Compute aggregates for statistics requiring ordered samples
         if (_orderedStatistics.size() > 0) {
-            Collections.sort(unified);
+            final List<Quantity> sortedAndUnifiedSamples = Lists.newArrayList(unifiedSamples);
+            Collections.sort(sortedAndUnifiedSamples);
             for (final Statistic stat : _orderedStatistics) {
-                final Double value = stat.calculate(samples);
+                final double value = stat.calculate(sortedAndUnifiedSamples);
                 final AggregatedData data = new AggregatedData.Builder()
-                        .setStatistic(stat)
-                        .setService(_serviceName)
+                        .setFQDSN(new FQDSN.Builder()
+                                .setStatistic(stat)
+                                .setMetric(_metric)
+                                .setService(_serviceName)
+                                .setCluster(_cluster)
+                                .build())
                         .setHost(_hostName)
-                        .setMetric(_metric)
-                        .setValue(value)
-                        .setPeriodStart(_periodStart)
+                        .setValue(new Quantity.Builder()
+                                .setValue(Double.valueOf(value))
+                                .setUnit(unifiedSamples.get(0).getUnit().orNull())
+                                .build())
+                        .setStart(_periodStart)
                         .setPeriod(_period)
-                        .setSamples(unified)
+                        .setSamples(localSamples)
                         .setPopulationSize(Long.valueOf(_numberOfSamples))
                         .build();
                 aggregates.add(data);
@@ -191,6 +212,7 @@ public class TSAggregation {
     private final String _metric;
     private final String _hostName;
     private final String _serviceName;
+    private final String _cluster;
     private final Sink _listener;
     private long _numberOfSamples = 0;
     private DateTime _periodStart = new DateTime(0);

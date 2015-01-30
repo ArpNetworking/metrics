@@ -16,9 +16,10 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Condition;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Interface to describe a class that publishes <code>AggregatedData</code>.
@@ -38,7 +39,18 @@ public interface Sink {
      * @param data The <code>List</code> of <code>AggregatedData</code> to be 
      * published. 
      */
-    void recordAggregateData(List<AggregatedData> data);
+    void recordAggregateData(Collection<AggregatedData> data);
+
+    /**
+     * Called when additional <code>AggregatedData</code> and <code>Condition</code>
+     * instances are available for publication.
+     *
+     * @param data The <code>List</code> of <code>AggregatedData</code> to be
+     * published.
+     * @param conditions The <code>List</code> of <code>Condition</code>
+     * instances to be published
+     */
+    void recordAggregateData(Collection<AggregatedData> data, Collection<Condition> conditions);
 
     /**
      * Called to allow the publisher to clean-up. No further calls to 

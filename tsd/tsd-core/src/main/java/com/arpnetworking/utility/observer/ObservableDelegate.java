@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.utility.observer;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
 
 import java.util.Set;
@@ -34,10 +34,10 @@ public final class ObservableDelegate implements Observable {
 
     /**
      * Create a new instance of <code>Observable</code>.
-     * 
+     *
      * @return New instance of <code>Observable</code>
      */
-    public static Observable newInstance() {
+    public static ObservableDelegate newInstance() {
         return new ObservableDelegate();
     }
 
@@ -49,7 +49,7 @@ public final class ObservableDelegate implements Observable {
         try {
             _lock.writeLock().lock();
             if (!_observers.add(observer)) {
-                throw new IllegalArgumentException(String.format("Observer already regsitered; observer=%s", observer));
+                throw new IllegalArgumentException(String.format("Observer already registered; observer=%s", observer));
             }
         } finally {
             _lock.writeLock().unlock();
@@ -64,7 +64,7 @@ public final class ObservableDelegate implements Observable {
         try {
             _lock.writeLock().lock();
             if (!_observers.remove(observer)) {
-                throw new IllegalArgumentException(String.format("Observer not regsitered; obsever=%s", observer));
+                throw new IllegalArgumentException(String.format("Observer not registered; observer=%s", observer));
             }
         } finally {
             _lock.writeLock().unlock();
@@ -72,9 +72,11 @@ public final class ObservableDelegate implements Observable {
     }
 
     /**
-     * {@inheritDoc}
+     * Notify all registered observers of an event.
+     *
+     * @param observable The observable raising the event.
+     * @param event The even being raised.
      */
-    @Override
     public void notify(final Observable observable, final Object event) {
         try {
             _lock.readLock().lock();
@@ -93,7 +95,7 @@ public final class ObservableDelegate implements Observable {
     public String toString() {
         try {
             _lock.readLock().lock();
-            return Objects.toStringHelper(this)
+            return MoreObjects.toStringHelper(this)
                     .add("Observers", _observers)
                     .toString();
         } finally {

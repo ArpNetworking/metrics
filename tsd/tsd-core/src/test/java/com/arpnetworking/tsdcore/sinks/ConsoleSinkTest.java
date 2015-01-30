@@ -69,11 +69,11 @@ public class ConsoleSinkTest {
 
         final String output = _byteArrayStream.toString();
         Assert.assertThat(output, Matchers.containsString(datum.getHost()));
-        Assert.assertThat(output, Matchers.containsString(datum.getService()));
-        Assert.assertThat(output, Matchers.containsString(datum.getMetric()));
+        Assert.assertThat(output, Matchers.containsString(datum.getFQDSN().getService()));
+        Assert.assertThat(output, Matchers.containsString(datum.getFQDSN().getMetric()));
         Assert.assertThat(output, Matchers.containsString(datum.getPeriodStart().toString()));
         Assert.assertThat(output, Matchers.containsString(datum.getPeriod().toString()));
-        Assert.assertThat(output, Matchers.containsString(datum.getStatistic().getName()));
+        Assert.assertThat(output, Matchers.containsString(datum.getFQDSN().getStatistic().getName()));
     }
 
     @Test

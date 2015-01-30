@@ -21,7 +21,6 @@ import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Objects;
@@ -34,9 +33,9 @@ import java.util.Objects;
 public final class SampleUtils {
     /**
      * Converts all of the samples to a single unit.
-     * 
+     *
      * @param samples samples to convert
-     * @return a new list of samples with a unified unit
+     * @return list of samples with a unified unit
      */
     public static List<Quantity> unifyUnits(final List<Quantity> samples) {
         //This is a 2-pass operation:
@@ -55,7 +54,7 @@ public final class SampleUtils {
             return FluentIterable.from(samples).transform(new SampleConverter(smallestUnit.get())).toList();
         }
 
-        return Lists.newArrayList(samples);
+        return samples;
     }
 
     private SampleUtils() {}

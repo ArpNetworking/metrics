@@ -16,20 +16,19 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.google.common.base.Objects;
-
+import com.arpnetworking.tsdcore.model.Condition;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
- * A publisher that wraps multiple others and publishes to all of them. This 
+ * A publisher that wraps multiple others and publishes to all of them. This
  * class is thread safe.
- * 
+ *
  * TODO(vkoskela): Support concurent execution [MAI-98]
  *
  * @author Brandon Arp (barp at groupon dot com)
@@ -40,11 +39,15 @@ public final class MultiSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final List<AggregatedData> data) {
-        LOGGER.debug(getName() + ": Writing aggregated data; size=" + data.size());
+    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+        LOGGER.debug(String.format(
+                "%s: Recording; dataSize=%d, conditionsSize=%d",
+                getName(), 
+                Integer.valueOf(data.size()),
+                Integer.valueOf(conditions.size())));
 
         for (final Sink sink : _sinks) {
-            sink.recordAggregateData(data);
+            sink.recordAggregateData(data, conditions);
         }
     }
 
@@ -53,7 +56,7 @@ public final class MultiSink extends BaseSink {
      */
     @Override
     public void close() {
-        LOGGER.info(getName() + ": Closing sink");
+        LOGGER.info(String.format("%s: Closing sink", getName()));
         for (final Sink sink : _sinks) {
             sink.close();
         }
@@ -64,7 +67,7 @@ public final class MultiSink extends BaseSink {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("super", super.toString())
                 .add("Sinks", _sinks)
                 .toString();
@@ -84,7 +87,7 @@ public final class MultiSink extends BaseSink {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class Builder extends BaseSink.Builder<Builder> {
+    public static final class Builder extends BaseSink.Builder<Builder, MultiSink> {
 
         /**
          * Public constructor.
@@ -95,12 +98,26 @@ public final class MultiSink extends BaseSink {
 
         /**
          * The aggregated data sinks to wrap. Cannot be null.
-         * 
+         *
          * @param value The aggregated data sinks to wrap.
          * @return This instance of <code>Builder</code>.
          */
         public Builder setSinks(final Collection<Sink> value) {
-            _sinks = value;
+            _sinks = Lists.newArrayList(value);
+            return this;
+        }
+
+        /**
+         * Adds a sink to the list of sinks.
+         *
+         * @param value A sink.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder addSink(final Sink value) {
+            if (_sinks == null) {
+                _sinks = Lists.newArrayList();
+            }
+            _sinks.add(value);
             return this;
         }
 

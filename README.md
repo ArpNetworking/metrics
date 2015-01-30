@@ -180,4 +180,4 @@ The statistical operators supported by the system are not limited to streaming o
 License
 -------
 
-Published under Apache Software License 2.0, see LICENSE
+Published under Apache Software License 2.0, see [LICENSE](LICENSE)

@@ -16,7 +16,8 @@
 package com.arpnetworking.tsdcore.limiter;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
-
+import com.arpnetworking.utility.Launchable;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.joda.time.DateTime;
 
 /**
@@ -24,12 +25,16 @@ import org.joda.time.DateTime;
  *
  * @author Joe Frisbie (jfrisbie at groupon dot com)
  */
-public interface MetricsLimiter {
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type")
+public interface MetricsLimiter extends Launchable {
 
     /**
      * Apply a limit to time series data based on number of unique metric
      * aggregation periods.
-     * 
+     *
      * @param data Instance of <code>AggregatedData</code>.
      * @param time The timestamp the data was last seen at.
      * @return True if and only if the data passes the limit test.

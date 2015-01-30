@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* istanbul ignore next */ //ignores inheritance snippet emitted by the TS compiler
 
 import tsdDef = require("tsdDef");
 import counters = require("./tsd-counter");
-import tsd = require("tsd-metrics-client");
+import tsd = require("./tsd-metrics-client");
 import metricsList = require("./tsd-metrics-list");
 import utils = require("./utils");
 
@@ -27,23 +28,31 @@ import TsdMetricsList = metricsList.TsdMetricsList;
 
 /**
  * Class for managing samples for a counter.
+ *
+ * @class
+ * @alias CounterSamples
+ * @ignore
  */
-export class CounterSamples {
-    private samples:TsdMetricsList<tsdDef.Counter> = new TsdMetricsList < tsdDef.Counter >();
+export class CounterSamples extends TsdMetricsList<tsdDef.MetricSample> {
 
-    public constructor(private metricsStateObject:MetricsStateObject){
+    /**
+     * Constructor.
+     *
+     * @param {MetricsStateObject} _metricsStateObject Object holding state of the original metrics object.
+     */
+     public constructor(private _metricsStateObject:MetricsStateObject) {
+        super();
     }
 
     /**
      * Add a new counter sample.
+     *
+     * @method
+     * @return {Counter} The new counter sample instance added to the counter samples.
      */
-    public addCounter(): tsdDef.Counter{
-        var tsdCounter = new TsdCounter(this.metricsStateObject);
-        this.samples.push(tsdCounter);
+    public addCounter():tsdDef.Counter {
+        var tsdCounter = new TsdCounter(this._metricsStateObject);
+        this.push(tsdCounter);
         return tsdCounter;
-    }
-
-    public toJSON() {
-        return this.samples;
     }
 }

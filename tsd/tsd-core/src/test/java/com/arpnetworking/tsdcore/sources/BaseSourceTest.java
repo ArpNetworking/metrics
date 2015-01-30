@@ -32,35 +32,35 @@ public class BaseSourceTest {
 
     @Test
     public void testAttachDetachNotify() {
-        final Source source = new TestSource.Builder()
+        final TestSource source = (TestSource) new TestSource.Builder()
                 .setName("My name")
                 .build();
         final Object event = new Object();
         final Observer observer1 = Mockito.mock(Observer.class, "observer1");
         final Observer observer2 = Mockito.mock(Observer.class, "observer2");
 
-        source.notify(source, event);
+        source.publicNotify(event);
         Mockito.verifyZeroInteractions(observer1);
         Mockito.verifyZeroInteractions(observer2);
         Mockito.reset(observer1);
         Mockito.reset(observer2);
 
         source.attach(observer1);
-        source.notify(source, event);
+        source.publicNotify(event);
         Mockito.verify(observer1).notify(source, event);
         Mockito.verifyZeroInteractions(observer2);
         Mockito.reset(observer1);
         Mockito.reset(observer2);
 
         source.attach(observer2);
-        source.notify(source, event);
+        source.publicNotify(event);
         Mockito.verify(observer1).notify(source, event);
         Mockito.verify(observer2).notify(source, event);
         Mockito.reset(observer1);
         Mockito.reset(observer2);
 
         source.detach(observer2);
-        source.notify(source, event);
+        source.publicNotify(event);
         Mockito.verify(observer1).notify(source, event);
         Mockito.verifyZeroInteractions(observer2);
         Mockito.reset(observer1);
@@ -120,6 +120,10 @@ public class BaseSourceTest {
         @Override
         public void stop() {
             // Do nothing
+        }
+
+        public void publicNotify(final Object event) {
+            super.notify(event);
         }
 
         private TestSource(final Builder builder) {

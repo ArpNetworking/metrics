@@ -19,41 +19,51 @@ import tsdDef = require("tsdDef");
 import tsd = require("tsd-metrics-client");
 import tsdUtils = require("./utils");
 
+/**
+ * Base class for metric sample. A metric sample is an object with a value and unit. The unit can be undefined,
+ * to imply scalar values.
+ *
+ * @class
+ * @alias TsdMetricSample
+ * @ignore
+ */
 export class TsdMetricSample implements tsdDef.MetricSample {
     /**
      * Static factory
      *
-     * @param value The magnitude of the sample.
-     * @param metrics The unit that the magnitude is expressed in. Default = undefined (i.e. has not unit).
+     * @param {number} value The magnitude of the sample.
+     * @param {Units} unit The unit that the magnitude is expressed in. Default = undefined (i.e. has not unit).
      */
-    public static of(value:number, unit:tsdDef.Unit = undefined): tsdDef.MetricSample{
+    public static of(value:number, unit:tsdDef.Unit = undefined):tsdDef.MetricSample {
         return new TsdMetricSample(value, unit);
     }
 
     /**
-      * Constructor.
-      *
-      * @param value The magnitude of the sample.
-      * @param metrics The unit that the magnitude is expressed in.
-      */
-     constructor(private value:number, private unit:tsdDef.Unit) {
-     }
+     * Constructor.
+     *
+     * @param {number} value The magnitude of the sample.
+     * @param {Units} unit The unit that the magnitude is expressed in.
+     */
+    constructor(private value:number, private unit:tsdDef.Unit) {
+    }
 
     /**
      * Access the magnitude of the sample.
      *
-     * @return The magnitude.
+     * @method
+     * @return {number} The magnitude.
      */
-    getValue(): number {
+    public getValue():number {
         return this.value;
     }
 
     /**
      * Access the units that the magnitude is expressed in.
      *
-     * @return The units of the magnitude.
+     * @method
+     * @return {number} The units of the magnitude.
      */
-    getUnit(): tsdDef.Unit {
+    public getUnit():tsdDef.Unit {
         return this.unit;
     }
 

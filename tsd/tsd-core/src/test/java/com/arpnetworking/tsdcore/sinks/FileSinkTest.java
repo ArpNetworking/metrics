@@ -60,13 +60,13 @@ public class FileSinkTest {
         final List<String> outLines = Files.readLines(_outFile, Charsets.UTF_8);
         Assert.assertEquals(1, outLines.size());
         final JsonNode jsonNode = OBJECT_MAPPER.readTree(Iterables.getOnlyElement(outLines));
-        Assert.assertEquals(datum.getValue(), jsonNode.get("value").asDouble(), 0.001);
-        Assert.assertEquals(datum.getMetric(), jsonNode.get("metric").asText());
-        Assert.assertEquals(datum.getService(), jsonNode.get("service").asText());
+        Assert.assertEquals(datum.getValue().getValue(), jsonNode.get("value").asDouble(), 0.001);
+        Assert.assertEquals(datum.getFQDSN().getMetric(), jsonNode.get("metric").asText());
+        Assert.assertEquals(datum.getFQDSN().getService(), jsonNode.get("service").asText());
         Assert.assertEquals(datum.getHost(), jsonNode.get("host").asText());
         Assert.assertEquals(datum.getPeriod(), Period.parse(jsonNode.get("period").asText()));
         Assert.assertEquals(datum.getPeriodStart().getMillis(), DateTime.parse(jsonNode.get("periodStart").asText()).getMillis());
-        Assert.assertEquals(datum.getStatistic().getName(), jsonNode.get("statistic").asText());
+        Assert.assertEquals(datum.getFQDSN().getStatistic().getName(), jsonNode.get("statistic").asText());
     }
 
     @Test

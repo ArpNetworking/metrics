@@ -22,7 +22,16 @@ Add a dependency on the metrics client in your Gemfile:
 The metrics library must be initialized before being used. The following example will configure the library to output metrics to the relative directory "./log/query.log":
 
 ```ruby
-TsdMetrics.init(Rails.root.join 'log', 'query.log')
+TsdMetrics.init(filename: Rails.root.join('log', 'query.log'))
+```
+
+The options accepted by TsdMetrics.init() and their defaults are:
+```ruby
+TsdMetrics.init({
+  filename: 'query.log'  # Optional: the relative or absolute path to output metrics. Default: 'query.log' in the working directory
+  errorLogger: Logger.new(STDOUT)  # Optional: a place to which mis-uses of the library can be logged. Expects methods info, warn, error.
+  rollLogs: true  # Have the library do log rolling; not thread-safe! Setting to false means the library-user should have external log-rolling in place.
+})
 ```
 
 ### Metrics
@@ -138,6 +147,22 @@ Install the current version locally:
     gem install --local /path_to_gem/tsd_metrics.gem
 
 Using the local version is intended only for testing or development. 
+
+Frameworks
+----------
+
+It is common for Ruby frameworks to run in a multi-process mode for serving requests.  Often, the
+frameworks will using forking to setup new processes.  Forking can be problematic as the client
+creates a Ruby thread to write the log in the background.  If the client is initialized before 
+the fork, the background writer thread will continue to run in the original process, but not
+in the newly created process.  This often manifests as an increasing write queue, but no data
+written to the metrics log file.  The following describes what steps are needed for frameworks
+we have encountered.
+
+### Passenger
+
+No work is needed to make the client work under Phusion Passenger.  Internally, we detect the fork 
+and re-initialize the client.  Everything just works.
 
 License
 -------

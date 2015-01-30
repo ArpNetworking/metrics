@@ -17,10 +17,11 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
 
+import com.arpnetworking.tsdcore.model.Condition;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Tests for the <code>BaseSink</code> class.
@@ -32,7 +33,7 @@ public class BaseSinkTest {
     @Test
     public void testName() {
         final String expectedName = "TheSinkName";
-        final TestAggregatedDataSink sink = (TestAggregatedDataSink) new TestAggregatedDataSink.Builder()
+        final TestAggregatedDataSink sink = new TestAggregatedDataSink.Builder()
                 .setName(expectedName)
                 .build();
         Assert.assertEquals(expectedName, sink.getName());
@@ -40,7 +41,7 @@ public class BaseSinkTest {
 
     @Test
     public void testMetricName() {
-        final TestAggregatedDataSink sink = (TestAggregatedDataSink) new TestAggregatedDataSink.Builder()
+        final TestAggregatedDataSink sink = new TestAggregatedDataSink.Builder()
                 .setName("The.Sink.Name")
                 .build();
         Assert.assertEquals("The_Sink_Name", sink.getMetricSafeName());
@@ -49,7 +50,7 @@ public class BaseSinkTest {
     private static final class TestAggregatedDataSink extends BaseSink {
 
         @Override
-        public void recordAggregateData(final List<AggregatedData> data) {
+        public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
             // Nothing to do
         }
 
@@ -62,7 +63,7 @@ public class BaseSinkTest {
             super(builder);
         }
 
-        public static final class Builder extends BaseSink.Builder<Builder> {
+        public static final class Builder extends BaseSink.Builder<Builder, TestAggregatedDataSink> {
 
             public Builder() {
                 super(TestAggregatedDataSink.class);

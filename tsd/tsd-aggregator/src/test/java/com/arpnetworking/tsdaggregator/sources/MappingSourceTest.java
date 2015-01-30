@@ -51,7 +51,7 @@ public class MappingSourceTest {
     public void setUp() {
         _mockObserver = Mockito.mock(Observer.class);
         _mockSource = Mockito.mock(Source.class);
-        _mergingSourceBuilder = new MappingSource.Builder()
+        _mappingSourceBuilder = new MappingSource.Builder()
                 .setName("MergingSourceTest")
                 .setFindAndReplace(ImmutableMap.of(
                         "foo/([^/]*)/bar", ImmutableList.of("foo/bar"),
@@ -61,32 +61,41 @@ public class MappingSourceTest {
 
     @Test
     public void testAttach() {
-        _mergingSourceBuilder.build();
+        _mappingSourceBuilder.build();
         Mockito.verify(_mockSource).attach(Matchers.any(Observer.class));
     }
 
     @Test
     public void testStart() {
-        _mergingSourceBuilder.build().start();
+        _mappingSourceBuilder.build().start();
         Mockito.verify(_mockSource).start();
     }
 
     @Test
     public void testStop() {
-        _mergingSourceBuilder.build().stop();
+        _mappingSourceBuilder.build().stop();
         Mockito.verify(_mockSource).stop();
     }
 
     @Test
     public void testToString() {
-        final String asString = _mergingSourceBuilder.build().toString();
+        final String asString = _mappingSourceBuilder.build().toString();
         Assert.assertNotNull(asString);
         Assert.assertFalse(asString.isEmpty());
     }
 
     @Test
     public void testMergingObserverInvalidEvent() {
-        new MappingSource.MappingObserver(_mockSource, Collections.<Pattern, List<String>>emptyMap()).notify(_mockSource, "Not a Record");
+        final MappingSource mappingSource = (MappingSource) new MappingSource.Builder()
+                .setName("testMergingObserverInvalidEventMappingSource")
+                .setSource(_mockSource)
+                .setFindAndReplace(Collections.<String, List<String>>emptyMap())
+                .build();
+        Mockito.reset(_mockSource);
+        new MappingSource.MappingObserver(
+                mappingSource,
+                Collections.<Pattern, List<String>>emptyMap())
+                .notify(null, "Not a Record");
         Mockito.verifyZeroInteractions(_mockSource);
     }
 
@@ -109,7 +118,7 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetric()))
                 .build();
 
-        final Source mergingSource = _mergingSourceBuilder.build();
+        final Source mergingSource = _mappingSourceBuilder.build();
         mergingSource.attach(_mockObserver);
         notify(_mockSource, nonMatchingRecord);
 
@@ -141,7 +150,7 @@ public class MappingSourceTest {
                                 .build()))
                 .build();
 
-        final Source mergingSource = _mergingSourceBuilder.build();
+        final Source mergingSource = _mappingSourceBuilder.build();
         mergingSource.attach(_mockObserver);
         notify(_mockSource, matchingRecord);
 
@@ -184,7 +193,7 @@ public class MappingSourceTest {
                                 .build()))
                 .build();
 
-        final Source mergingSource = _mergingSourceBuilder.build();
+        final Source mergingSource = _mappingSourceBuilder.build();
         mergingSource.attach(_mockObserver);
         notify(_mockSource, matchingRecord);
 
@@ -234,7 +243,7 @@ public class MappingSourceTest {
                                 .build()))
                 .build();
 
-        final Source mergingSource = _mergingSourceBuilder.build();
+        final Source mergingSource = _mappingSourceBuilder.build();
         mergingSource.attach(_mockObserver);
         notify(_mockSource, matchingRecord);
 
@@ -277,12 +286,12 @@ public class MappingSourceTest {
                                 .build()))
                 .build();
 
-        final Source mergingSource = _mergingSourceBuilder.build();
-        mergingSource.attach(_mockObserver);
+        final Source mappingSource = _mappingSourceBuilder.build();
+        mappingSource.attach(_mockObserver);
         notify(_mockSource, matchingRecord);
 
         final ArgumentCaptor<Record> argument = ArgumentCaptor.forClass(Record.class);
-        Mockito.verify(_mockObserver).notify(Matchers.same(mergingSource), argument.capture());
+        Mockito.verify(_mockObserver).notify(Matchers.same(mappingSource), argument.capture());
         final Record actualRecord = argument.getValue();
 
         final Record expectedRecord = TestBeanFactory.createRecordBuilder()
@@ -324,5 +333,5 @@ public class MappingSourceTest {
 
     private Observer _mockObserver;
     private Source _mockSource;
-    private MappingSource.Builder _mergingSourceBuilder;
+    private MappingSource.Builder _mappingSourceBuilder;
 }

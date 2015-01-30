@@ -148,7 +148,6 @@ Building
 
 Links to prerequisites:
 * [NodeJs 0.10.26+](http://nodejs.org/download/)
-* [Typescript 1.0.1.0+](http://www.typescriptlang.org/#Download)
 
 Install the package dependencies:
 
@@ -161,10 +160,14 @@ Install Grunt task runner:
 Build the project:
 
     client-nodejs> grunt
-  
+
 Execute the tests:
   
     client-nodejs> grunt test
+
+Generate documentation:
+
+    client-nodejs> grunt build jsdoc
 
 Install the current version locally:
 

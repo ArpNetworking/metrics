@@ -16,7 +16,7 @@
 
 package models.messages;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 /**
  * Message class to inform clients of a new metric.
@@ -54,7 +54,7 @@ public final class NewMetric {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Service", _service)
                 .add("Metric", _metric)
                 .add("Statistic", _statistic)

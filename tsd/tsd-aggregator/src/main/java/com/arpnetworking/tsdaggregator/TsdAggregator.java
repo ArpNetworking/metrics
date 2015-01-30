@@ -15,37 +15,43 @@
  */
 package com.arpnetworking.tsdaggregator;
 
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.dispatch.Foreach;
+import akka.http.HttpExt;
+import akka.http.model.japi.Http;
+import akka.stream.FlowMaterializer;
+import akka.stream.MaterializerSettings;
 import ch.qos.logback.classic.LoggerContext;
-
+import com.arpnetworking.configuration.FileTrigger;
+import com.arpnetworking.configuration.jackson.DynamicConfiguration;
+import com.arpnetworking.configuration.jackson.JsonNodeFileSource;
+import com.arpnetworking.http.Routes;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.impl.TsdQueryLogSink;
 import com.arpnetworking.tsdaggregator.configuration.PipelineConfiguration;
-import com.arpnetworking.tsdaggregator.configuration.PipelineConfiguration.PipelineConfigurationFactory;
 import com.arpnetworking.tsdaggregator.configuration.TsdAggregatorConfiguration;
-import com.arpnetworking.tsdcore.exceptions.ConfigurationException;
-import com.arpnetworking.tsdcore.sinks.MultiSink;
-import com.arpnetworking.tsdcore.sinks.Sink;
-import com.arpnetworking.tsdcore.sources.Source;
-import com.arpnetworking.utility.DefaultHostResolver;
-import com.arpnetworking.utility.HostResolver;
-import com.google.common.base.Throwables;
+import com.arpnetworking.tsdcore.limiter.MetricsLimiter;
+import com.arpnetworking.utility.Configurator;
+import com.arpnetworking.utility.Launchable;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
+import com.google.inject.name.Names;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class containing entry point for Time Series Data (TSD) Aggregator.
@@ -53,7 +59,7 @@ import java.util.Set;
  * @author Brandon Arp (barp at groupon dot com)
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public final class TsdAggregator implements Runnable {
+public final class TsdAggregator implements Launchable {
 
     /**
      * Entry point for Time Series Data (TSD) Aggregator.
@@ -61,7 +67,7 @@ public final class TsdAggregator implements Runnable {
      * @param args the command line arguments
      */
     public static void main(final String[] args) {
-        LOGGER.info("Starting tsd-aggregator");
+        LOGGER.info("Launching tsd-aggregator");
 
         // Global initialization
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
@@ -82,160 +88,244 @@ public final class TsdAggregator implements Runnable {
         System.setProperty("org.vertx.logger-delegate-factory-class-name", "org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory");
 
         // Run the tsd aggregator
-        new TsdAggregator(Arrays.asList(args)).run();
+        if (args.length != 1) {
+            throw new RuntimeException("No configuration file specified");
+        }
+        LOGGER.debug(String.format("Loading configuration from file; file=%s", args[0]));
 
-        LOGGER.info("Shutting down tsd-aggregator");
+        final File configurationFile = new File(args[0]);
+        final Configurator<TsdAggregator, TsdAggregatorConfiguration> configurator =
+                new Configurator<>(TsdAggregator.class, TsdAggregatorConfiguration.class);
+        final ObjectMapper objectMapper = TsdAggregatorConfiguration.createObjectMapper();
+        final DynamicConfiguration configuration = new DynamicConfiguration.Builder()
+                .setObjectMapper(objectMapper)
+                .addSourceBuilder(new JsonNodeFileSource.Builder()
+                        .setObjectMapper(objectMapper)
+                        .setFile(configurationFile))
+                .addTrigger(new FileTrigger.Builder()
+                        .setFile(configurationFile)
+                        .build())
+                .addListener(configurator)
+                .build();
+
+        configuration.launch();
+
+        final AtomicBoolean isRunning = new AtomicBoolean(true);
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                LOGGER.info("Stopping tsd-aggregator");
+                configuration.shutdown();
+                configurator.shutdown();
+                isRunning.set(false);
+            }
+        }));
+
+        while (isRunning.get()) {
+            try {
+                Thread.sleep(30000);
+            } catch (final InterruptedException e) {
+                break;
+            }
+        }
+
+        LOGGER.info("Exiting tsd-aggregator");
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param tsdAggregatorConfiguration Instance of <code>TsdAggregatorConfiguration</code>.
+     */
+    public TsdAggregator(final TsdAggregatorConfiguration tsdAggregatorConfiguration) {
+        _tsdAggregatorConfiguration = tsdAggregatorConfiguration;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void run() {
-        try {
-            // Configure and launch
-            configure();
-            launchPipelines();
-
-            // Wait until killed
-            while (!_processors.isEmpty() || !_sinks.isEmpty() || !_sources.isEmpty()) {
-                try {
-                    Thread.sleep(30000);
-                } catch (final InterruptedException e) {
-                    break;
-                }
-            }
-        } finally {
-            // Shutdown
-            shutdownPipelines();
-        }
+    public void launch() {
+        launchCore();
+        launchAkka();
+        launchLimiters();
+        launchPipelines();
     }
 
-    private void shutdownPipelines() {
-        LOGGER.info("Stopping pipelines");
-
-        for (final Source source : _sources) {
-            source.stop();
-        }
-        for (final LineProcessor processor : _processors) {
-            processor.closeAggregations();
-            processor.shutdown();
-        }
-        for (final Sink sink : _sinks) {
-            sink.close();
-        }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void shutdown() {
+        shutdownPipelines();
+        shutdownLimiters();
+        shutdownAkka();
+        shutdownCore();
     }
 
     private void launchPipelines() {
         LOGGER.info("Launching pipelines");
 
-        String hostName = null;
-        try {
-            hostName = HOST_RESOLVER.getLocalHostName();
-        } catch (final UnknownHostException e) {
-            LOGGER.error("Failed to determine host name", e);
-            Throwables.propagate(e);
+        final ObjectMapper objectMapper = PipelineConfiguration.createObjectMapper(_injector);
+
+        final File[] files = MoreObjects.firstNonNull(
+                _tsdAggregatorConfiguration.getPipelinesDirectory().listFiles(),
+                new File[0]);
+
+        for (final File configurationFile : files) {
+            LOGGER.debug(String.format("Creating pipeline; configurationFile=%s", configurationFile));
+
+            final Configurator<Pipeline, PipelineConfiguration> pipelineConfigurator =
+                    new Configurator<>(Pipeline.class, PipelineConfiguration.class);
+            final DynamicConfiguration pipelineConfiguration = new DynamicConfiguration.Builder()
+                    .setObjectMapper(objectMapper)
+                    .addSourceBuilder(new JsonNodeFileSource.Builder()
+                            .setObjectMapper(objectMapper)
+                            .setFile(configurationFile))
+                    .addTrigger(new FileTrigger.Builder()
+                            .setFile(configurationFile)
+                            .build())
+                    .addListener(pipelineConfigurator)
+                    .build();
+
+            pipelineConfiguration.launch();
+            _pipelineLaunchables.add(pipelineConfigurator);
+            _pipelineLaunchables.add(pipelineConfiguration);
         }
 
-        for (final PipelineConfiguration pipelineConfiguration : _pipelineConfigurations) {
-            LOGGER.debug(String.format("Launching pipeline; configuration=%s", pipelineConfiguration.toString()));
-
-            // TODO(vkoskela): Refactor me [MAI-?]
-            final Sink rootSink = new MultiSink.Builder()
-                    .setName(pipelineConfiguration.getName())
-                    .setSinks(pipelineConfiguration.getSinks())
-                    .build();
-            _sinks.add(rootSink);
-
-            final LineProcessor processor = new LineProcessor(
-                    pipelineConfiguration.getTimerStatistic(),
-                    pipelineConfiguration.getCounterStatistic(),
-                    pipelineConfiguration.getGaugeStatistic(),
-                    hostName,
-                    pipelineConfiguration.getServiceName(),
-                    pipelineConfiguration.getPeriods(),
-                    rootSink);
-            _processors.add(processor);
-
-            for (final Source source : pipelineConfiguration.getSources()) {
-                source.attach(processor);
-                source.start();
-                _sources.add(source);
-            }
-            // ** End Refactor **
+        if (_pipelineLaunchables.isEmpty()) {
+            LOGGER.warn(String.format(
+                    "No pipelines found in pipelines directory; path=%s",
+                    _tsdAggregatorConfiguration.getPipelinesDirectory().getAbsolutePath()));
         }
     }
 
-    private void configure() {
-        LOGGER.info("Configuring tsd-aggregator");
+    private void launchLimiters() {
+        LOGGER.info("Launching limiters");
 
-        // Create the configuration for the tsd aggregator
-        try {
-            _configuration = TsdAggregatorConfiguration.create(_arguments);
-        } catch (final ConfigurationException e) {
-            LOGGER.error("Failed to load configuration", e);
-            Throwables.propagate(e);
+        // NOTE: Limiters were "launched" when they were created
+        _limiters.addAll(_tsdAggregatorConfiguration.getLimiters().values());
+
+        for (final Launchable limiter : _limiters) {
+            limiter.launch();
         }
-        if (_configuration.getLogDirectory().mkdirs()) {
-            LOGGER.info(String.format("Created log directory; directory=%s", _configuration.getLogDirectory()));
+    }
+
+    private void launchAkka() {
+        LOGGER.info("Launching akka");
+
+        // Initialize Akka
+
+        final Config akkaConfiguration = ConfigFactory.parseMap(_tsdAggregatorConfiguration.getAkkaConfiguration());
+        _actorSystem = ActorSystem.create("TsdAggregator", ConfigFactory.load(akkaConfiguration));
+        final Routes routes = new Routes(_actorSystem, _metricsFactory);
+
+        // Create the status actor
+        _actorSystem.actorOf(Props.create(Status.class), "status");
+
+        final MaterializerSettings materializerSettings = MaterializerSettings.create(_actorSystem);
+        final FlowMaterializer materializer = FlowMaterializer.create(materializerSettings, _actorSystem);
+
+        // Create and bind Http server
+        final HttpExt httpExt = (HttpExt) Http.get(_actorSystem);
+        final akka.http.Http.ServerBinding binding = httpExt.bind(
+                _tsdAggregatorConfiguration.getHttpHost(),
+                _tsdAggregatorConfiguration.getHttpPort(),
+                httpExt.bind$default$3(),
+                httpExt.bind$default$4(),
+                httpExt.bind$default$5(),
+                httpExt.bind$default$6());
+        binding.connections().foreach(
+                new Foreach<akka.http.Http.IncomingConnection>() {
+                    @Override
+                    public void each(final akka.http.Http.IncomingConnection input) {
+                        input.handleWithAsyncHandler(routes, materializer);
+                    }
+                },
+                materializer);
+    }
+
+    private void launchCore() {
+        LOGGER.info("Launching core");
+
+        // Create directories
+        if (_tsdAggregatorConfiguration.getLogDirectory().mkdirs()) {
+            LOGGER.info(String.format(
+                    "Created log directory; directory=%s",
+                    _tsdAggregatorConfiguration.getLogDirectory()));
         }
-        if (_configuration.getPipelinesDirectory().mkdirs()) {
-            LOGGER.info(String.format("Created pipelines directory; directory=%s", _configuration.getPipelinesDirectory()));
+        if (_tsdAggregatorConfiguration.getPipelinesDirectory().mkdirs()) {
+            LOGGER.info(String.format(
+                    "Created pipelines directory; directory=%s",
+                    _tsdAggregatorConfiguration.getPipelinesDirectory()));
         }
 
         // Instantiate the metrics factory
         _metricsFactory = new TsdMetricsFactory.Builder()
                 .setSinks(Collections.singletonList(
                         new TsdQueryLogSink.Builder()
-                                .setPath(_configuration.getLogDirectory().getAbsolutePath())
+                                .setPath(_tsdAggregatorConfiguration.getLogDirectory().getAbsolutePath())
                                 .setName("tsd-aggregator-query")
                                 .build()))
                 .build();
 
-        final Injector injector = Guice.createInjector(
+        // Instantiate Guice
+        _injector = Guice.createInjector(
                 new AbstractModule() {
                     @Override
                     public void configure() {
-                        bind(TsdAggregatorConfiguration.class).toInstance(_configuration);
                         bind(MetricsFactory.class).toInstance(_metricsFactory);
+                        for (final Map.Entry<String, MetricsLimiter> entry : _tsdAggregatorConfiguration.getLimiters().entrySet()) {
+                            bind(MetricsLimiter.class).annotatedWith(Names.named(entry.getKey())).toInstance(entry.getValue());
+                        }
                     }
-                },
-                new PipelineConfiguration.Module());
+                });
+    }
 
-        try {
-            for (final URI uri : toUriSet(_configuration.getPipelinesDirectory().listFiles())) {
-                LOGGER.info(String.format("Configuring pipeline; uri=%s", uri));
-                final PipelineConfigurationFactory factory = injector.getInstance(PipelineConfigurationFactory.class);
-                _pipelineConfigurations.add(factory.create(uri));
-            }
-        } catch (final ConfigurationException e) {
-            LOGGER.error("Failed to load pipeline configuration", e);
-            Throwables.propagate(e);
+    private void shutdownPipelines() {
+        LOGGER.info("Stopping pipelines");
+
+        for (final Launchable pipeline : _pipelineLaunchables) {
+            pipeline.shutdown();
+        }
+        _pipelineLaunchables.clear();
+    }
+
+    private void shutdownLimiters() {
+        LOGGER.info("Stopping limiters");
+
+        for (final Launchable limiter : _limiters) {
+            limiter.shutdown();
+        }
+
+        _limiters.clear();
+    }
+
+    private void shutdownAkka() {
+        LOGGER.info("Stopping akka");
+
+        if (_actorSystem != null) {
+            _actorSystem.shutdown();
+            _actorSystem.awaitTermination();
+            _actorSystem = null;
         }
     }
 
-    private static Set<URI> toUriSet(final File[] files) {
-        final Set<URI> uris = Sets.newHashSetWithExpectedSize(files.length);
-        for (final File file : files) {
-            uris.add(file.toURI());
-        }
-        return uris;
+    private void shutdownCore() {
+        LOGGER.info("Stopping core");
+        _injector = null;
+        _metricsFactory = null;
     }
 
-    private TsdAggregator(final List<String> arguments) {
-        _arguments = arguments;
-    }
+    private final TsdAggregatorConfiguration _tsdAggregatorConfiguration;
 
-    private final List<String> _arguments;
-    private final List<LineProcessor> _processors = Lists.newArrayList();;
-    private final List<Sink> _sinks = Lists.newArrayList();;
-    private final List<Source> _sources = Lists.newArrayList();
-    private final List<PipelineConfiguration> _pipelineConfigurations = Lists.newArrayList();
 
-    // TODO(vkoskela): Refactor to make these final [MAI-?]
-    private TsdAggregatorConfiguration _configuration;
+    private final List<Launchable> _limiters = Lists.newArrayList();
+    private final List<Launchable> _pipelineLaunchables = Lists.newArrayList();
+
+    private Injector _injector;
+    private ActorSystem _actorSystem;
     private MetricsFactory _metricsFactory;
 
-    private static final HostResolver HOST_RESOLVER = new DefaultHostResolver();
     private static final Logger LOGGER = LoggerFactory.getLogger(TsdAggregator.class);
 }

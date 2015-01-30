@@ -29,5 +29,9 @@ module TsdMetrics
     def decrement(magnitude = 1)
       increment(-1*magnitude)
     end
+    def sampleRepresentation
+      # Always unitless
+      {value: @value}
+    end
   end
 end

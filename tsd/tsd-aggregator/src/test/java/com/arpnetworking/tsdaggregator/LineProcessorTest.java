@@ -38,6 +38,7 @@ public class LineProcessorTest {
         final Set<Statistic> gaugeStats = Sets.newHashSet();
         final String hostName = "host";
         final String service = "serviceName";
+        final String cluster = "cluster";
         final Set<Period> periods = Sets.newHashSet();
         periods.add(Period.seconds(7));
         periods.add(Period.minutes(3));
@@ -48,8 +49,10 @@ public class LineProcessorTest {
                 gaugeStats,
                 hostName,
                 service,
+                cluster,
                 periods,
-                publisher);
+                publisher
+        );
         processor.shutdown();
     }
 }

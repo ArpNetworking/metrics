@@ -12,33 +12,35 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-require "tsd_metrics/json_formatter_receiver"
+require "tsd_metrics/json_formatting_sink"
 require "json"
+require "json-schema"
+require 'timecop'
+require 'time'
 
-describe "JsonFormatterReceiver" do
+describe "JsonFormattingSink" do
   let(:outputStreamMock) do
     mock = double()
   end
   let(:minimalStruct) do
     {
       gauges: {
-        "myGauge" => [4]
+        "myGauge" => [{value: 4}]
       },
       timers: {
-        "myGauge" => [427297]
+        "myGauge" => [{value: 427297}]
       },
       counters: {
-        "myCounter" => [16238, 948]
+        "myCounter" => [{value: 16238}, {value: 948}]
       },
       annotations: {
         "myAnnotation" => "Nevermore, quoth the Raven",
-        initTimestamp: 1393037729.0,
-        finalTimestamp: 1393037735.0
+        initTimestamp: Time.parse("2014-11-02T03:33:38.000Z"),
+        finalTimestamp: Time.parse("2014-11-02T03:33:40.838Z")
       }
     }
   end
 
-  # TODO(mhayter): Empty metrics should never get this far [MAI-174]
   let(:zeroSampleStruct) do
     {
       gauges: {
@@ -53,7 +55,7 @@ describe "JsonFormatterReceiver" do
       }
     }
   end
-  let(:receiver) { JsonFormatterReceiver.new(outputStreamMock) }
+  let(:receiver) { JsonFormattingSink.new(outputStreamMock) }
 
   def captureOutput(metricStructMock)
     json = nil
@@ -64,24 +66,30 @@ describe "JsonFormatterReceiver" do
     json
   end
 
-  it "formats a metric as json" do
-    expectedJson = '{"gauges":{"myGauge":[4]},"timers":{"myGauge":[427297]},"counters":{"myCounter":[16238,948]},"annotations":{"myAnnotation":"Nevermore, quoth the Raven","initTimestamp":1393037729.0,"finalTimestamp":1393037735.0}}'
+  it "contains all the metric data" do
+
     jsonString = captureOutput(double(minimalStruct))
-    jsonString.should == expectedJson
+    expect(jsonString).to include("427297")
+    expect(jsonString).to include("16238")
+    expect(jsonString).to include("948")
+    expect(jsonString).to include('"Nevermore, quoth the Raven"')
+    expect(jsonString).to include('"2014-11-02T03:33:38.000Z"')
+    expect(jsonString).to include('"2014-11-02T03:33:40.838Z"')
 
   end
-  it "outputs the inital and final timestamps in seconds since the epoch, millisecond accuracy" do
 
-    startTime = Time.now.to_f
-    finalTime = startTime + 10.567
-
-    minimalStruct[:annotations][:initTimestamp] = startTime
-    minimalStruct[:annotations][:finalTimestamp] = finalTime
+  it "includes the time as ISO8601 in UTC" do
+    timeString = '"2014-11-02T03:33:38.000Z"'
+    Timecop.freeze(Time.parse(timeString))
 
     jsonString = captureOutput(double(minimalStruct))
-    json = JSON.parse(jsonString)
-    json["annotations"]["initTimestamp"].should === startTime.to_f
-    json["annotations"]["finalTimestamp"].should === finalTime.to_f
+    expect(jsonString).to include(timeString)
+    Timecop.return
+  end
+
+  it "conforms to the JSON schema" do
+    jsonString = captureOutput(double(minimalStruct))
+    JSON::Validator.validate!("../doc/query-log-schema-2e.json", jsonString)
   end
 
   it "does not output anything when no samples are present" do

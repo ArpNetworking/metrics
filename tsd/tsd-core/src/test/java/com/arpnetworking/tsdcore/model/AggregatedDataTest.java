@@ -42,54 +42,67 @@ public class AggregatedDataTest {
         final String expectedService = "MyService";
         final String expectedHost = "MyHost";
         final String expectedMetric = "MyMetric";
-        final double expectedValue = 3.14f;
+        final String expectedCluster = "MyCluster";
+        final Quantity expectedValue = TestBeanFactory.createSample();
         final DateTime expectedPeriodStart = new DateTime();
         final Period expectedPeriod = Period.minutes(5);
         final long expectedPopulationSize = 111;
         final List<Quantity> expectedSamples = Lists.newArrayList(TestBeanFactory.createSample(), TestBeanFactory.createSample());
 
         final AggregatedData aggregatedData = new AggregatedData.Builder()
-                .setStatistic(expectedStatistic)
-                .setService(expectedService)
+                .setFQDSN(new FQDSN.Builder()
+                        .setStatistic(expectedStatistic)
+                        .setMetric(expectedMetric)
+                        .setService(expectedService)
+                        .setCluster(expectedCluster)
+                        .build())
                 .setHost(expectedHost)
-                .setMetric(expectedMetric)
-                .setValue(Double.valueOf(expectedValue))
-                .setPeriodStart(expectedPeriodStart)
+                .setValue(expectedValue)
+                .setStart(expectedPeriodStart)
                 .setPeriod(expectedPeriod)
                 .setPopulationSize(Long.valueOf(expectedPopulationSize))
                 .setSamples(expectedSamples)
                 .build();
 
-        Assert.assertEquals(expectedStatistic, aggregatedData.getStatistic());
+        Assert.assertEquals(expectedStatistic, aggregatedData.getFQDSN().getStatistic());
         Assert.assertEquals(expectedHost, aggregatedData.getHost());
-        Assert.assertEquals(expectedMetric, aggregatedData.getMetric());
-        Assert.assertEquals(expectedValue, aggregatedData.getValue(), 0.001);
+        Assert.assertEquals(expectedMetric, aggregatedData.getFQDSN().getMetric());
+        Assert.assertEquals(expectedValue, aggregatedData.getValue());
+        Assert.assertEquals(expectedValue.getValue(), aggregatedData.getValue().getValue(), 0.001);
         Assert.assertEquals(expectedPeriodStart, aggregatedData.getPeriodStart());
         Assert.assertEquals(expectedPeriod, aggregatedData.getPeriod());
         Assert.assertEquals(expectedPopulationSize, aggregatedData.getPopulationSize());
         Assert.assertEquals(expectedSamples, aggregatedData.getSamples());
+        Assert.assertEquals(expectedCluster, aggregatedData.getFQDSN().getCluster());
+        Assert.assertEquals(expectedService, aggregatedData.getFQDSN().getService());
     }
 
     @Test
     public void testEqualsAndHashCode() {
         BuildableEqualsAndHashCodeTester.assertEqualsAndHashCode(
                 new AggregatedData.Builder()
-                        .setStatistic(new TP99Statistic())
-                        .setService("MyServiceA")
+                        .setFQDSN(new FQDSN.Builder()
+                                .setStatistic(new TP99Statistic())
+                                .setMetric("MyMetricA")
+                                .setService("MyServiceA")
+                                .setCluster("MyServiceA")
+                                .build())
                         .setHost("MyHostA")
-                        .setMetric("MyMetricA")
-                        .setValue(Double.valueOf(3.14f))
-                        .setPeriodStart(new DateTime())
+                        .setValue(TestBeanFactory.createSample())
+                        .setStart(new DateTime())
                         .setPeriod(Period.minutes(1))
                         .setPopulationSize(Long.valueOf(1))
                         .setSamples(Lists.newArrayList(TestBeanFactory.createSample())),
                 new AggregatedData.Builder()
-                        .setStatistic(new TP50Statistic())
-                        .setService("MyServiceB")
+                        .setFQDSN(new FQDSN.Builder()
+                                .setStatistic(new TP50Statistic())
+                                .setMetric("MyMetricB")
+                                .setService("MyServiceB")
+                                .setCluster("MyServiceB")
+                                .build())
                         .setHost("MyHostB")
-                        .setMetric("MyMetricB")
-                        .setValue(Double.valueOf(6.28f))
-                        .setPeriodStart(new DateTime().plusDays(1))
+                        .setValue(TestBeanFactory.createSample())
+                        .setStart(new DateTime().plusDays(1))
                         .setPeriod(Period.minutes(5))
                         .setPopulationSize(Long.valueOf(2))
                         .setSamples(Lists.newArrayList(TestBeanFactory.createSample(), TestBeanFactory.createSample())));
@@ -98,12 +111,15 @@ public class AggregatedDataTest {
     @Test
     public void testToString() {
         final String asString = new AggregatedData.Builder()
-                .setStatistic(new TP99Statistic())
-                .setService("MyServiceA")
+                .setFQDSN(new FQDSN.Builder()
+                        .setStatistic(new TP99Statistic())
+                        .setMetric("MyMetricA")
+                        .setService("MyServiceA")
+                        .setCluster("MyServiceA")
+                        .build())
                 .setHost("MyHostA")
-                .setMetric("MyMetricA")
-                .setValue(Double.valueOf(3.14f))
-                .setPeriodStart(new DateTime())
+                .setValue(TestBeanFactory.createSample())
+                .setStart(new DateTime())
                 .setPeriod(Period.minutes(1))
                 .setPopulationSize(Long.valueOf(1))
                 .setSamples(Lists.newArrayList(TestBeanFactory.createSample()))

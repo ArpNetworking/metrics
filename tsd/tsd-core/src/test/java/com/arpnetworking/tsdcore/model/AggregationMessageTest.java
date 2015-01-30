@@ -78,6 +78,7 @@ public class AggregationMessageTest {
                 .setService("MyService")
                 .setStatistic(new TP99Statistic().getName())
                 .setStatisticValue(6.28f)
+                .setUnit("")
                 .build();
         final AggregationMessage message = AggregationMessage.create(protobufMessage);
         Assert.assertNotNull(message);

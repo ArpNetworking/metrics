@@ -12,18 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~~
- 
+
 # Routes
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
 # Metrics API
-GET         /stream              controllers.Metrics.stream()
-POST        /report              controllers.Metrics.report()
+GET         /telemetry/v1/stream        @controllers.TelemetryController.streamV1()
+GET         /telemetry/v2/stream        @controllers.TelemetryController.streamV2()
+
+POST        /telemetry/v1/report        @controllers.TelemetryController.report()
+
+# TODO(vkoskela): Deprecate these after the next major release [MAI-266]
+GET         /stream                     @controllers.TelemetryController.streamV1()
+POST        /report                     @controllers.TelemetryController.report()
 
 # Configuration
-GET         /config              controllers.Application.config()
+GET         /config                     controllers.MetaController.config()
 
 # Health checks
-GET         /ping                controllers.Application.ping()
-GET         /heartbeat.txt       controllers.Application.healthCheck()
+GET         /ping                       controllers.MetaController.ping()

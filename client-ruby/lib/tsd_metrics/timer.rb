@@ -33,11 +33,11 @@ module TsdMetrics
       @samples.push sample
     end
 
-    def durations
+    def samples
       durations = []
       @samples.each do |s|
-        if !(s.isRunning)
-          durations.push s.duration
+        if s.stopped?
+          durations.push s.sampleRepresentation
         else
           TsdMetrics.errorLogger.warn("Unstopped timer dropped from log")
         end

@@ -15,7 +15,10 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Quantity;
+import com.arpnetworking.tsdcore.model.Unit;
+import com.google.common.base.Optional;
 
 import java.util.List;
 
@@ -30,12 +33,12 @@ public class SumStatistic extends BaseStatistic {
      * {@inheritDoc}
      */
     @Override
-    public Double calculate(final List<Quantity> unorderedValues) {
+    public double calculate(final List<Quantity> unorderedValues) {
         double sum = 0d;
         for (final Quantity sample : unorderedValues) {
             sum += sample.getValue();
         }
-        return Double.valueOf(sum);
+        return sum;
     }
 
     /**
@@ -45,4 +48,20 @@ public class SumStatistic extends BaseStatistic {
     public String getName() {
         return "sum";
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
+        double sum = 0;
+        Optional<Unit> unit = Optional.absent();
+        for (final AggregatedData aggregation : aggregations) {
+            sum += aggregation.getValue().getValue();
+            unit = unit.or(aggregation.getValue().getUnit());
+        }
+        return new Quantity(sum, unit);
+    }
+
+    private static final long serialVersionUID = -1534109546290882210L;
 }

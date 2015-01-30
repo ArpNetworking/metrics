@@ -24,6 +24,11 @@
     </Match>
 
     <Match>
+        <!-- Lua implements only part of the equals-hash contract -->
+        <Class name="com.arpnetworking.tsdcore.scripting.lua.LuaExpression$CreateQuantityLuaFunction"/>
+        <Bug pattern="HE_INHERITS_EQUALS_USE_HASHCODE"/>
+    </Match>
+    <Match>
         <!-- When configured, we want to fail fast, so calling exit() is appropriate -->
         <Class name="com.arpnetworking.tsdaggregator.MetricsLimiter"/>
         <Method name="addToAggregations"/>

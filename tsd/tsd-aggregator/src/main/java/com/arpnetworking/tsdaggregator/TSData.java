@@ -43,12 +43,18 @@ public class TSData {
      * @param listener the listener
      * @param hostName the host name
      * @param serviceName the service name
+     * @param cluster the cluster name
      * @param statistics the statistics
      */
-    public TSData(final String metricName, final Set<Period> aggregations, final Sink listener,
-            final String hostName, final String serviceName, final Set<Statistic> statistics) {
+    public TSData(final String metricName,
+                  final Set<Period> aggregations,
+                  final Sink listener,
+                  final String hostName,
+                  final String serviceName,
+                  final String cluster,
+                  final Set<Statistic> statistics) {
         for (final Period period : aggregations) {
-            _aggregations.add(new TSAggregation(metricName, period, listener, hostName, serviceName, statistics));
+            _aggregations.add(new TSAggregation(metricName, period, listener, hostName, serviceName, cluster, statistics));
         }
         // Note _aggregations holds a TSAggregation for each requested time period. Each TSAggregation computes
         // what ever statistics are defined in statistics, therefore, the total number aggregations maintained in

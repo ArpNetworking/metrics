@@ -16,14 +16,13 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Condition;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
-
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-
 import org.joda.time.Period;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,13 +31,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * RRD publisher that maintains all the rrd databases for a cluster. This class
  * is not thread safe.
- * 
+ *
  * TODO(vkoskela): Make this class thread safe [MAI-100]
  *
  * @author Brandon Arp (barp at groupon dot com)
@@ -49,14 +48,14 @@ public final class RrdSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final List<AggregatedData> data) {
+    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
         LOGGER.debug(getName() + ": Writing aggregated data; size=" + data.size());
 
         for (final AggregatedData datum : data) {
             final String name = (datum.getHost() + "."
-                    + datum.getMetric() + "."
+                    + datum.getFQDSN().getMetric() + "."
                     + datum.getPeriod().toString()
-                    + datum.getStatistic().getName()
+                    + datum.getFQDSN().getStatistic().getName()
                     + ".rrd").replace("/", "-");
 
             RrdNode listener = _listeners.get(name);
@@ -79,7 +78,7 @@ public final class RrdSink extends BaseSink {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("super", super.toString())
                 .add("Path", _path)
                 .add("RrdTool", _rrdTool)
@@ -104,7 +103,7 @@ public final class RrdSink extends BaseSink {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class Builder extends BaseSink.Builder<Builder> {
+    public static final class Builder extends BaseSink.Builder<Builder, RrdSink> {
 
         /**
          * Public constructor.
@@ -115,7 +114,7 @@ public final class RrdSink extends BaseSink {
 
         /**
          * The path to the RRD root. Cannot be null or empty.
-         * 
+         *
          * @param value The path to the RRD root.
          * @return This instance of <code>Builder</code>.
          */
@@ -126,7 +125,7 @@ public final class RrdSink extends BaseSink {
 
         /**
          * The RRD tool to use. Cannot be null or empty. Default is "rrdtool".
-         * 
+         *
          * @param value The RRD tool to use.
          * @return This instance of <code>Builder</code>.
          */
@@ -160,7 +159,7 @@ public final class RrdSink extends BaseSink {
         public void storeData(final AggregatedData data) {
             final long startTimeEpochInSeconds = data.getPeriodStart().getMillis() / 1000;
             createRRDFile(data.getPeriod(), startTimeEpochInSeconds);
-            final String value = startTimeEpochInSeconds + ":" + String.format("%f", Double.valueOf(data.getValue()));
+            final String value = startTimeEpochInSeconds + ":" + String.format("%f", Double.valueOf(data.getValue().getValue()));
             final String[] arguments = new String[] {
                 _rrdTool,
                 "update",

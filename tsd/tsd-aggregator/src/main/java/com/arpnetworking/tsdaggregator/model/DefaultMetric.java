@@ -17,6 +17,7 @@ package com.arpnetworking.tsdaggregator.model;
 
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.utility.OvalBuilder;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
@@ -78,7 +79,7 @@ public final class DefaultMetric implements Metric {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Type", _type)
                 .add("Values", _values)
                 .toString();
@@ -104,18 +105,6 @@ public final class DefaultMetric implements Metric {
          */
         public Builder() {
             super(DefaultMetric.class);
-        }
-
-        /**
-         * Public constructor. This constructor can be used for cloning.
-         * 
-         * @param metric The <code>Metric</code> instance to set all the builder
-         * fields from.
-         */
-        public Builder(final Metric metric) {
-            super(DefaultMetric.class);
-            setType(metric.getType());
-            setValues(metric.getValues());
         }
 
         /**

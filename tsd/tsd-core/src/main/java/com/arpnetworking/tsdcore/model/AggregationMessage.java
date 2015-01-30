@@ -27,14 +27,14 @@ import org.vertx.java.core.buffer.Buffer;
 
 /**
  * Class for building messages from the raw, on-the-wire bytes in the TCP stream.
- * 
+ *
  * @author Brandon Arp (barp at groupon dot com)
  */
 public final class AggregationMessage {
 
     /**
      * Static factory.
-     * 
+     *
      * @param message The message.
      * @return New <code>AggregationMessage</code> instance.
      */
@@ -44,20 +44,25 @@ public final class AggregationMessage {
 
     /**
      * Deserialize message from <code>Buffer</code>.
-     * 
+     *
      * TODO(vkoskela): The header and message need to be versioned [MAI-133].
-     * 
+     *
      * @param data The <code>Buffer</code> containing the serialized message.
      * @return The deserialized <code>AggregationMessage</code> or absent if
      * the <code>Buffer</code> could not be deserialized.
      */
     public static Optional<AggregationMessage> deserialize(final Buffer data) {
         int position = 0;
+        // Make sure we have enough data to get the size
+        if (data.length() < HEADER_SIZE_IN_BYTES) {
+            return Optional.absent();
+        }
 
         // Deserialize and validate buffer length
         final int length = data.getInt(position);
         position += INTEGER_SIZE_IN_BYTES;
-        if (data.length() != length) {
+        if (data.length() < length) {
+            LOGGER.trace(String.format("we only have %d of %d bytes.", data.length(), length));
             return Optional.absent();
         }
 
@@ -74,21 +79,27 @@ public final class AggregationMessage {
                 case 0x01:
                     return Optional.of(new AggregationMessage(Messages.HostIdentification.parseFrom(payloadBytes)));
                 case 0x02:
-                    return Optional.of(new AggregationMessage(Messages.AggregationRecord.parseFrom(payloadBytes)));
+                    try {
+                        return Optional.of(new AggregationMessage(Messages.AggregationRecord.parseFrom(payloadBytes)));
+                    } catch (final InvalidProtocolBufferException ignored) {
+                        return Optional.of(new AggregationMessage(Messages.LegacyAggRecord.parseFrom(payloadBytes)));
+                    }
+                case 0x03:
+                    return Optional.of(new AggregationMessage(Messages.HeartbeatRecord.parseFrom(payloadBytes)));
                 default:
-                    LOGGER.warn("Unsupported message type; type=" + type);
+                    LOGGER.warn(String.format("Unsupported message type; type=%s", type));
                     return Optional.absent();
             }
         } catch (final InvalidProtocolBufferException e) {
-            LOGGER.warn("Invalid protocol buffer; type=" + type + " bytes="
-                    + Hex.encodeHexString(data.getBytes(0, length)), e);
+            LOGGER.warn(
+                String.format("Invalid protocol buffer; type=%s bytes=%s", type, Hex.encodeHexString(payloadBytes)), e);
             return Optional.absent();
         }
     }
 
     /**
      * Serialize the message into a <code>Buffer</code>.
-     * 
+     *
      * @return <code>Buffer</code> containing serialized message.
      */
     public Buffer serialize() {
@@ -98,8 +109,10 @@ public final class AggregationMessage {
             b.appendByte((byte) 0x01);
         } else if (_message instanceof Messages.AggregationRecord) {
             b.appendByte((byte) 0x02);
+        } else if (_message instanceof Messages.HeartbeatRecord) {
+            b.appendByte((byte) 0x03);
         } else {
-            throw new IllegalArgumentException("Unsupported message; message=" + _message);
+            throw new IllegalArgumentException(String.format("Unsupported message; message=%s", _message));
         }
         b.appendBytes(_message.toByteArray());
         b.setInt(0, b.length());

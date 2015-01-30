@@ -19,6 +19,17 @@ message HostIdentification {
     optional string cluster_name = 2;
 }
 
+message LegacyAggRecord {
+    required string service = 1;
+    required string metric = 2;
+    optional string statistic = 3;
+    optional string period = 4;
+    optional string period_start = 5;
+    optional double statistic_value = 6;
+    repeated double statistic_samples = 7 [packed=true];
+    optional int32  raw_sample_count = 8;
+}
+
 message AggregationRecord {
     required string service = 1;
     required string metric = 2;
@@ -28,4 +39,9 @@ message AggregationRecord {
     required double statistic_value = 6;
     repeated double samples = 7 [packed=true];
     required int64  population_size = 8;
+    required string unit = 9;
+}
+
+message HeartbeatRecord {
+    required string timestamp = 1;
 }

@@ -16,11 +16,11 @@
 package com.arpnetworking.test;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.statistics.MeanStatistic;
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 
@@ -40,20 +40,40 @@ import java.util.UUID;
 public final class TestBeanFactory {
 
     /**
+     * Create a builder for pseudo-random <code>FQDSN</code>.
+     *
+     * @return New builder for pseudo-random <code>FQDSN</code>.
+     */
+    public static FQDSN.Builder createFQDSNBuilder() {
+        return new FQDSN.Builder()
+                .setStatistic(new MeanStatistic())
+                .setService("service-" + UUID.randomUUID())
+                .setMetric("metric-" + UUID.randomUUID())
+                .setCluster("cluster-" + UUID.randomUUID());
+    }
+
+    /**
+     * Create a new reasonable pseudo-random <code>FQDSN</code>.
+     *
+     * @return New reasonable pseudo-random <code>FQDSN</code>.
+     */
+    public static FQDSN createFQDSN() {
+        return createFQDSNBuilder().build();
+    }
+
+    /**
      * Create a builder for pseudo-random <code>AggregatedData</code>.
      *
      * @return New builder for pseudo-random <code>AggregatedData</code>.
      */
     public static AggregatedData.Builder createAggregatedDataBuilder() {
         return new AggregatedData.Builder()
-                .setStatistic(new MeanStatistic())
-                .setService("service-" + UUID.randomUUID())
+                .setFQDSN(createFQDSN())
                 .setHost("host-" + UUID.randomUUID())
-                .setMetric("metric-" + UUID.randomUUID())
-                .setValue(Double.valueOf(Math.random()))
-                .setPeriodStart(DateTime.now())
+                .setValue(createSample())
+                .setStart(DateTime.now())
                 .setPeriod(Period.minutes(5))
-                .setSamples(Lists.newArrayList(new Quantity(Math.random(), Optional.<Unit>absent())))
+                .setSamples(Lists.newArrayList(createSample()))
                 .setPopulationSize(Long.valueOf((long) (Math.random() * 100)));
     }
 
@@ -67,18 +87,30 @@ public final class TestBeanFactory {
     }
 
     /**
-     * Create a new reasonable pseudo-random <code>Sample</code>.
+     * Create a builder for reasonable pseudo-random <code>Quantity</code>.
      *
-     * @return New reasonable pseudo-random <code>Sample</code>.
+     * @return New builder for reasonable pseudo-random <code>Quantity</code>.
      */
-    public static Quantity createSample() {
-        return new Quantity(Math.random(), Optional.of(Unit.BIT));
+    public static Quantity.Builder createSampleBuilder() {
+        return new Quantity.Builder().setValue(Double.valueOf(Math.random())).setUnit(Unit.BIT);
     }
 
     /**
-     * Create samples from an array of doubles.
-     * @param values values
-     * @return a list of samples
+     * Create a new reasonable pseudo-random <code>Quantity</code>.
+     *
+     * @return New reasonable pseudo-random <code>Quantity</code>.
+     */
+    public static Quantity createSample() {
+        return new Quantity.Builder().setValue(Double.valueOf(Math.random())).setUnit(Unit.BIT).build();
+    }
+
+    /**
+     * Create a <code>List</code> of <code>Quantity</code> instances in
+     * <code>Unit.MILLISECOND</code> from a <code>List</code> of <code>Double</code>
+     * values.
+     *
+     * @param values The values.
+     * @return <code>List</code> of <code>Quantity</code> instances.
      */
     public static List<Quantity> createSamples(final List<Double> values) {
         return FluentIterable.from(Lists.newArrayList(values)).transform(CREATE_SAMPLE).toList();
@@ -87,10 +119,7 @@ public final class TestBeanFactory {
     private static final Function<Double, Quantity> CREATE_SAMPLE = new Function<Double, Quantity>() {
         @Override
         public Quantity apply(final Double input) {
-            if (input == null) {
-                throw new IllegalArgumentException("cannot create a sample from a null value");
-            }
-            return new Quantity(input.doubleValue(), Optional.fromNullable(Unit.MILLISECOND));
+            return new Quantity.Builder().setValue(input).setUnit(Unit.MILLISECOND).build();
         }
     };
 

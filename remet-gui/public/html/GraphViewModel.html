@@ -13,36 +13,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-    <div class="container-fluid">
-        <div class="navbar-header">
-            <span class="navbar-brand navbar-title title">ReMet</span>
-        </div>
-
-        <!-- Collect the nav links, forms, and other content for toggling -->
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul class="nav navbar-nav">
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Connections (<span data-bind="text: connections().length"></span>)<b class="caret"></b></a>
-                    <ul class="dropdown-menu" data-bind="foreach: {data: connections()}">
-                        <li>
-                            <a href="#" data-bind="attr: { id: 'dropDownMenu' + server}, click: $root.reconnect"><span data-bind="text: server"></span> <span data-bind="text: status, css: status() == 'connected' ? 'label label-success' : 'label label-danger'"></span></a> <a href="#" data-bind="click: $root.removeConnection">Remove</a>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <a data-bind="attr: {href: fragment()}">Workspace Link</a>
-                </li>
-            </ul>
-            <form class="navbar-form navbar-right" role="form" data-bind="submit: connect">
-                <div class="form-group">
-                    <input class="input-medium" type="text" id="connectTo" placeholder="Host">
-                </div>
-                <button class="btn-info btn" type="submit">Connect</button>
-            </form>
-        </div>
-    </div>
-</nav>
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-2 sidebar" id="accordion">
@@ -53,7 +23,7 @@
                 <li>
                     <form class="form-inline" role="form" data-bind="">
                         <div class="form-group col-xs-8">
-                            <input class="input-medium" type="text" id="searchQuery" placeholder="Search" data-bind="value: searchQuery(), valueUpdate: 'afterkeydown'">
+                            <input class="input-medium" type="text" id="searchQuery" placeholder="Search" data-bind="value: searchQuery, valueUpdate: 'afterkeydown'">
                         </div>
                     </form>
                 </li>
@@ -80,11 +50,12 @@
                 </div>
             </div>
         </div>
-        <nav class="navbar navbar-inverse navbar-fixed-bottom col-md-10 col-md-offset-2 footer" data-bind="visible: graphs().length > 0 && mode() != 'gauge'">
+        <!-- ko if: graphs().length > 0 && mode() != 'gauge' -->
+        <nav class="navbar navbar-inverse navbar-fixed-bottom col-md-10 col-md-offset-2 footer">
             <div class="container-fluid">
                 <div class="row slider-gauge">
                     <div class="col-md-1">
-                        <i class="icon-pause" data-bind="visible: !paused(), click: togglePause"></i> <i class="icon-play" data-bind="visible: paused, click: togglePause"></i>
+                        <i class="glyphicon glyphicon-pause" data-bind="visible: !paused(), click: togglePause"></i> <i class="glyphicon glyphicon-play" data-bind="visible: paused, click: togglePause"></i>
                     </div>
                     <div class="col-md-10">
                         <div data-bind="slider: { arrows: false, defaultValues: {min: 570000, max: 600000}, range: {min: 15000, max: 600000}, bounds: {min: 0, max: 600000}, step: 500, slide: sliderChanged, valueLabels: 'hide' }" id="durationSlider"></div>
@@ -100,6 +71,7 @@
                 </div>
             </div>
         </nav>
+        <!-- /ko -->
     </div>
 
     <script type="text/html" id="folders_template">

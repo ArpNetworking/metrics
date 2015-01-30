@@ -1,6 +1,6 @@
 {
     "time": "1997-07-16T19:20:30.45Z",
-    "name": "aint-metrics",
+    "name": "aint.metrics",
     "level": "info",
     "data": {
         "version": "2e",

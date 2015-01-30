@@ -16,11 +16,10 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.google.common.base.Objects;
+import com.arpnetworking.tsdcore.model.Condition;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-
 import net.sf.oval.constraint.NotNull;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -40,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -54,12 +52,12 @@ public abstract class HttpPostSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final List<AggregatedData> data) {
+    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
         LOGGER.debug(getName() + ": Writing aggregated data; size=" + data.size() + " uri=" + _uri);
 
-        if (!data.isEmpty()) {
+        if (!data.isEmpty() || !conditions.isEmpty()) {
             // TODO(vkoskela): Support parallel post requests [MAI-97]
-            for (final HttpUriRequest request : createRequests(data)) {
+            for (final HttpUriRequest request : createRequests(data, conditions)) {
                 HttpEntity responseEntity = null;
                 try {
                     // TODO(vkoskela): Add logging to client [MAI-89]
@@ -106,7 +104,7 @@ public abstract class HttpPostSink extends BaseSink {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("super", super.toString())
                 .add("Uri", _uri)
                 .add("PostRequests", _postRequests)
@@ -132,32 +130,40 @@ public abstract class HttpPostSink extends BaseSink {
      *
      * @param data The <code>List</code> of <code>AggregatedData</code> to be
      * serialized.
+     * @param conditions The <code>List</code> of <code>Condition</code>
+     * instances to be published
      * @return The <code>HttpRequest</code> instance to execute.
      */
-    protected Collection<HttpUriRequest> createRequests(final List<AggregatedData> data) {
+    protected Collection<HttpUriRequest> createRequests(
+            final Collection<AggregatedData> data,
+            final Collection<Condition> conditions) {
         final Collection<HttpUriRequest> requests = Lists.newArrayList();
-        for (final String serializedData : serialize(data)) {
+        for (final String serializedData : serialize(data, conditions)) {
             requests.add(createRequest(serializedData));
         }
         return requests;
     }
 
     /**
-     * Serialize the <code>AggregatedData</code> instances for posting. The list
-     * is guaranteed to be non-empty.
+     * Serialize the <code>AggregatedData</code> and <code>Condition</code> instances
+     * for posting.
      *
      * @param data The <code>List</code> of <code>AggregatedData</code> to be
      * serialized.
+     * @param conditions The <code>List</code> of <code>Condition</code>
+     * instances to be published
      * @return The serialized representation of <code>AggregatedData</code>.
      */
-    protected abstract Collection<String> serialize(final List<AggregatedData> data);
+    protected abstract Collection<String> serialize(
+            final Collection<AggregatedData> data,
+            final Collection<Condition> conditions);
 
     /**
      * Protected constructor.
      *
      * @param builder Instance of <code>Builder</code>.
      */
-    protected HttpPostSink(final Builder<?> builder) {
+    protected HttpPostSink(final Builder<?, ?> builder) {
         super(builder);
         _uri = builder._uri;
     }
@@ -184,7 +190,7 @@ public abstract class HttpPostSink extends BaseSink {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public abstract static class Builder<B extends BaseSink.Builder<B>> extends BaseSink.Builder<B> {
+    public abstract static class Builder<B extends BaseSink.Builder<B, S>, S extends HttpPostSink> extends BaseSink.Builder<B, S> {
 
         /**
          * The <code>URI</code> to post the aggregated data to. Cannot be null.
@@ -203,7 +209,7 @@ public abstract class HttpPostSink extends BaseSink {
          * @param targetClass The concrete type to be created by the builder of
          * <code>AggregatedDataSink</code> implementation.
          */
-        protected Builder(final Class<? extends Sink> targetClass) {
+        protected Builder(final Class<S> targetClass) {
             super(targetClass);
         }
 

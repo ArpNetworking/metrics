@@ -19,9 +19,10 @@ logLevel := Level.Info
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.3.0")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.4.0-M2")
 
-addSbtPlugin("de.johoop" % "findbugs4sbt" % "1.3.0")
+// TODO(vkoskela): Enable Findbugs in Play [MAI-456]
+//addSbtPlugin("de.johoop" % "findbugs4sbt" % "1.3.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.1")
 

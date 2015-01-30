@@ -104,3 +104,9 @@ interface JQuery {
 
     affix(options?:AffixOptions): JQuery;
 }
+
+declare module "bootstrap" {
+    var bsjq: JQueryStatic;
+    export = bsjq;
+}
+

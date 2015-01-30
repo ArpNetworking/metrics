@@ -15,9 +15,12 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Quantity;
+import com.google.common.collect.Lists;
 
 import java.text.DecimalFormat;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -39,14 +42,29 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
      * {@inheritDoc}
      */
     @Override
-    public Double calculate(final List<Quantity> orderedValues) {
+    public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
+        final List<Quantity> allSamples = Lists.newArrayList();
+        for (final AggregatedData aggregation : aggregations) {
+            allSamples.addAll(aggregation.getSamples());
+        }
+        Collections.sort(allSamples);
+        final int index = (int) (Math.ceil((_percentile / 100) * (allSamples.size() - 1)));
+        final Quantity value = allSamples.get(index);
+        return new Quantity(value.getValue(), value.getUnit());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double calculate(final List<Quantity> orderedValues) {
         final int index = (int) (Math.ceil((_percentile / 100) * (orderedValues.size() - 1)));
-        return Double.valueOf(orderedValues.get(index).getValue());
+        return orderedValues.get(index).getValue();
     }
 
     /**
      * Protected constructor.
-     * 
+     *
      * @param percentile The percentile value to compute.
      */
     protected TPStatistic(final double percentile) {

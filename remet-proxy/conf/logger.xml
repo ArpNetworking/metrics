@@ -18,11 +18,11 @@
 
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
 
-  <!-- IMPORTANT: This logger is only used when debugging and testing -->
+  <!-- IMPORTANT: This logger should only used when debugging and testing -->
   <appender name="RemetProxyLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${application.home}/logs/remet_proxy.log</file>
+    <file>logs/remet_proxy.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${application.home}/logs/remet_proxy.%d{yyyyMMdd}.log.gz</fileNamePattern>
+      <fileNamePattern>logs/remet_proxy.%d{yyyyMMdd}.log.gz</fileNamePattern>
       <maxHistory>20</maxHistory>
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>

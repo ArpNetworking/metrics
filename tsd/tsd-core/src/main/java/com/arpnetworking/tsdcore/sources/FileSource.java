@@ -17,17 +17,20 @@ package com.arpnetworking.tsdcore.sources;
 
 import com.arpnetworking.tsdcore.parsers.Parser;
 import com.arpnetworking.tsdcore.parsers.exceptions.ParsingException;
+import com.arpnetworking.tsdcore.tailer.FilePositionStore;
+import com.arpnetworking.tsdcore.tailer.InitialPosition;
+import com.arpnetworking.tsdcore.tailer.NoPositionStore;
+import com.arpnetworking.tsdcore.tailer.PositionStore;
+import com.arpnetworking.tsdcore.tailer.StatefulTailer;
+import com.arpnetworking.tsdcore.tailer.Tailer;
+import com.arpnetworking.tsdcore.tailer.TailerListener;
 import com.google.common.base.Charsets;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
-
-import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-
-import org.apache.commons.io.input.Tailer;
-import org.apache.commons.io.input.TailerListener;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.joda.time.Period;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,9 +71,10 @@ public final class FileSource<T> extends BaseSource {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("super", super.toString())
-                .add("File", _file)
+                .add("SourceFile", _sourceFile)
+                .add("StateFile", _stateFile)
                 .add("Parser", _parser)
                 .toString();
     }
@@ -84,13 +88,28 @@ public final class FileSource<T> extends BaseSource {
     /*package private*/FileSource(final Builder<T> builder, final Logger logger) {
         super(builder);
         _logger = logger;
-        _file = new File(builder._filePath);
+        _sourceFile = builder._sourceFile;
+        _stateFile = builder._stateFile;
         _parser = builder._parser;
-        _tailer = new Tailer(_file, new LogTailerListener(), builder._interval.longValue(), false);
+        final PositionStore positionStore;
+        if (_stateFile == null) {
+            positionStore = NO_POSITION_STORE;
+        } else {
+            positionStore = new FilePositionStore.Builder().setFile(_stateFile).build();
+        }
+
+        _tailer = new StatefulTailer.Builder()
+                .setFile(_sourceFile)
+                .setListener(new LogTailerListener())
+                .setReadInterval(builder._interval)
+                .setPositionStore(positionStore)
+                .setInitialPosition(builder._initialPosition)
+                .build();
         _tailerExecutor = Executors.newSingleThreadExecutor();
     }
 
-    private final File _file;
+    private final File _sourceFile;
+    private final File _stateFile;
     private final Parser<T> _parser;
     private final Tailer _tailer;
     private final ExecutorService _tailerExecutor;
@@ -98,11 +117,12 @@ public final class FileSource<T> extends BaseSource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileSource.class);
     private static final Period FILE_NOT_FOUND_WARNING_INTERVAL = Period.minutes(1);
+    private static final NoPositionStore NO_POSITION_STORE = new NoPositionStore();
 
     private class LogTailerListener implements TailerListener {
 
         @Override
-        public void init(final Tailer tailer) {
+        public void initialize(final Tailer tailer) {
             _logger.debug(String.format("Tailer initialized; source=%s", FileSource.this));
         }
 
@@ -122,6 +142,11 @@ public final class FileSource<T> extends BaseSource {
         }
 
         @Override
+        public void fileOpened() {
+            _logger.info(String.format("Tailer file opened; source=%s", FileSource.this));
+        }
+
+        @Override
         public void handle(final String line) {
             _logger.trace(String.format("Tailer reading line; source=%s, line=%s", FileSource.this, line));
             T record;
@@ -131,12 +156,12 @@ public final class FileSource<T> extends BaseSource {
                 _logger.error("Failed to parse data", e);
                 return;
             }
-            FileSource.this.notify(FileSource.this, record);
+            FileSource.this.notify(record);
         }
 
         @Override
-        public void handle(final Exception e) {
-            _logger.error(String.format("Tailer exception; source=%s", FileSource.this), e);
+        public void handle(final Throwable t) {
+            _logger.error(String.format("Tailer exception; source=%s", FileSource.this), t);
         }
 
         private Optional<DateTime> _lastFileNotFoundWarning = Optional.absent();
@@ -157,36 +182,60 @@ public final class FileSource<T> extends BaseSource {
         }
 
         /**
-         * Sets file path. Cannot be null or empty.
-         * 
+         * Sets source file. Cannot be null.
+         *
          * @param value The file path.
          * @return This instance of <code>Builder</code>.
          */
-        public final Builder<T> setFilePath(final String value) {
-            _filePath = value;
+        public final Builder<T> setSourceFile(final File value) {
+            _sourceFile = value;
             return this;
         }
 
         /**
          * Sets file read interval in milliseconds. Cannot be null, minimum 1.
          * Default is 500 milliseconds.
-         * 
+         *
          * @param value The file read interval in milliseconds.
          * @return This instance of <code>Builder</code>.
          */
-        public final Builder<T> setInterval(final Long value) {
+        public final Builder<T> setInterval(final Duration value) {
             _interval = value;
             return this;
         }
 
         /**
+         * Sets whether to tail the file from its end or from its start.
+         * Default InitialPosition.START;
+         *
+         * @param value Initial position to tail from.
+         * @return This instance of <code>Builder</code>.
+         */
+        public final Builder<T> setInitialPosition(final InitialPosition value) {
+            _initialPosition = value;
+            return this;
+        }
+
+        /**
          * Sets <code>Parser</code>. Cannot be null.
-         * 
+         *
          * @param value The <code>Parser</code>.
          * @return This instance of <code>Builder</code>.
          */
         public final Builder<T> setParser(final Parser<T> value) {
             _parser = value;
+            return this;
+        }
+
+        /**
+         * Sets state file. Optional. Default is null.
+         * If null, uses a <code>NoPositionStore</code> in the underlying tailer.
+         *
+         * @param value The state file.
+         * @return This instance of <code>Builder</code>.
+         */
+        public final Builder<T> setStateFile(final File value) {
+            _stateFile = value;
             return this;
         }
 
@@ -200,11 +249,13 @@ public final class FileSource<T> extends BaseSource {
 
         @NotNull
         @NotEmpty
-        private String _filePath;
+        private File _sourceFile;
         @NotNull
-        @Min(value = 1)
-        private Long _interval = Long.valueOf(500);
+        private Duration _interval = Duration.millis(500);
         @NotNull
         private Parser<T> _parser;
+        private File _stateFile;
+        @NotNull
+        private InitialPosition _initialPosition = InitialPosition.START;
     }
 }

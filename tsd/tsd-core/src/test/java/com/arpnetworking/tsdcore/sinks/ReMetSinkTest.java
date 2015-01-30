@@ -17,6 +17,7 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Condition;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
@@ -52,8 +53,8 @@ public class ReMetSinkTest {
     public void testSerialize() throws IOException {
         final AggregatedData datum = TestBeanFactory.createAggregatedData();
         final List<AggregatedData> data = Collections.singletonList(datum);
-        final ReMetSink remetSink = (ReMetSink) _remetSinkBuilder.build();
-        final Collection<String> serializedData = remetSink.serialize(data);
+        final ReMetSink remetSink = _remetSinkBuilder.build();
+        final Collection<String> serializedData = remetSink.serialize(data, Collections.<Condition>emptyList());
         remetSink.close();
 
         Assert.assertEquals(1, serializedData.size());
@@ -69,8 +70,8 @@ public class ReMetSinkTest {
         final AggregatedData datumA = TestBeanFactory.createAggregatedData();
         final AggregatedData datumB = TestBeanFactory.createAggregatedData();
         final List<AggregatedData> data = Lists.newArrayList(datumA, datumB);
-        final ReMetSink remetSink = (ReMetSink) _remetSinkBuilder.build();
-        final Collection<String> serializedData = remetSink.serialize(data);
+        final ReMetSink remetSink = _remetSinkBuilder.build();
+        final Collection<String> serializedData = remetSink.serialize(data, Collections.<Condition>emptyList());
         remetSink.close();
 
         Assert.assertEquals(1, serializedData.size());
@@ -84,13 +85,13 @@ public class ReMetSinkTest {
     }
 
     private static void assertJsonEqualsDatum(final JsonNode jsonNode, final AggregatedData datum) {
-        Assert.assertEquals(datum.getValue(), jsonNode.get("value").asDouble(), 0.001);
-        Assert.assertEquals(datum.getMetric(), jsonNode.get("metric").asText());
-        Assert.assertEquals(datum.getService(), jsonNode.get("service").asText());
+        Assert.assertEquals(datum.getValue().getValue(), jsonNode.get("value").asDouble(), 0.001);
+        Assert.assertEquals(datum.getFQDSN().getMetric(), jsonNode.get("metric").asText());
+        Assert.assertEquals(datum.getFQDSN().getService(), jsonNode.get("service").asText());
         Assert.assertEquals(datum.getHost(), jsonNode.get("host").asText());
         Assert.assertEquals(datum.getPeriod(), Period.parse(jsonNode.get("period").asText()));
         Assert.assertEquals(datum.getPeriodStart().getMillis(), DateTime.parse(jsonNode.get("periodStart").asText()).getMillis());
-        Assert.assertEquals(datum.getStatistic().getName(), jsonNode.get("statistic").asText());
+        Assert.assertEquals(datum.getFQDSN().getStatistic().getName(), jsonNode.get("statistic").asText());
     }
 
     private ReMetSink.Builder _remetSinkBuilder;

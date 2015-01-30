@@ -14,8 +14,8 @@
 
 Gem::Specification.new do |s|
   s.name        = 'tsd_metrics'
-  s.version     = '0.2.0'
-  s.date        = '2014-02-18'
+  s.version     = '0.2.3'
+  s.date        = '2015-01-15'
   s.summary     = "TSD Metrics client for Ruby"
   s.description = "A client for logging to TSD-Aggregation-logging-compatible JSON files"
   s.authors     = ["Matthew Hayter"]
@@ -31,4 +31,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rspec', '2.14.1'
   s.add_development_dependency 'timecop', '0.7.1'
   s.add_development_dependency 'pry', '0.9.12.6'
+  s.add_development_dependency 'json-schema', '2.4.1'
 end

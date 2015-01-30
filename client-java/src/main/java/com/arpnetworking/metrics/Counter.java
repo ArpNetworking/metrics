@@ -25,7 +25,7 @@ package com.arpnetworking.metrics;
  * whatever value the sample has is recorded. To create another sample you
  * create a new <code>Counter</code> instance with the same name. 
  * 
- * Each timer instance is bound to a <code>Metrics</code> instance. After the 
+ * Each counter instance is bound to a <code>Metrics</code> instance. After the
  * <code>Metrics</code> instance is closed any modifications to the  
  * <code>Counter</code> instances bound to that <code>Metrics</code> instance
  * will be ignored. 

@@ -15,19 +15,31 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.Objects;
-
+import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Collection;
+import java.util.Collections;
+
 /**
- * Abstract base class for common functionality for publishing 
+ * Abstract base class for common functionality for publishing
  * <code>AggregatedData</code>. This class is thread safe.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
 public abstract class BaseSink implements Sink {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void recordAggregateData(final Collection<AggregatedData> data) {
+        recordAggregateData(data, Collections.<Condition>emptyList());
+    }
 
     public String getName() {
         return _name;
@@ -42,17 +54,17 @@ public abstract class BaseSink implements Sink {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Name", _name)
                 .toString();
     }
 
     /**
      * Protected constructor.
-     * 
+     *
      * @param builder Instance of <code>Builder</code>.
      */
-    protected BaseSink(final Builder<?> builder) {
+    protected BaseSink(final Builder<?, ?> builder) {
         _name = builder._name;
     }
 
@@ -63,11 +75,11 @@ public abstract class BaseSink implements Sink {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    protected abstract static class Builder<B extends Builder<B>> extends OvalBuilder<Sink> {
+    protected abstract static class Builder<B extends Builder<B, S>, S extends Sink> extends OvalBuilder<S> {
 
         /**
          * Sets name. Cannot be null or empty.
-         * 
+         *
          * @param value The name.
          * @return This instance of <code>Builder</code>.
          */
@@ -77,20 +89,20 @@ public abstract class BaseSink implements Sink {
         }
 
         /**
-         * Called by setters to always return appropriate subclass of 
+         * Called by setters to always return appropriate subclass of
          * <code>Builder</code>, even from setters of base class.
-         * 
+         *
          * @return instance with correct <code>Builder</code> class type.
          */
         protected abstract B self();
 
         /**
          * Protected constructor for subclasses.
-         * 
-         * @param targetClass The concrete type to be created by the builder of 
+         *
+         * @param targetClass The concrete type to be created by the builder of
          * <code>Sink</code> implementation.
          */
-        protected Builder(final Class<? extends Sink> targetClass) {
+        protected Builder(final Class<? extends S> targetClass) {
             super(targetClass);
         }
 

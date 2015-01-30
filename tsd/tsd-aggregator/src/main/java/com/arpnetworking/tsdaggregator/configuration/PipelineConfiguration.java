@@ -15,13 +15,14 @@
  */
 package com.arpnetworking.tsdaggregator.configuration;
 
+import com.arpnetworking.configuration.jackson.DynamicConfigurationFactory;
 import com.arpnetworking.jackson.BuilderDeserializer;
-import com.arpnetworking.tsdcore.exceptions.ConfigurationException;
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.tsdcore.parsers.Parser;
 import com.arpnetworking.tsdcore.sinks.Sink;
 import com.arpnetworking.tsdcore.sources.Source;
+import com.arpnetworking.tsdcore.statistics.CountStatistic;
 import com.arpnetworking.tsdcore.statistics.MeanStatistic;
-import com.arpnetworking.tsdcore.statistics.NStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.SumStatistic;
 import com.arpnetworking.tsdcore.statistics.TP0Statistic;
@@ -33,27 +34,21 @@ import com.arpnetworking.utility.InterfaceDatabase;
 import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.ReflectionsDatabase;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.module.guice.ObjectMapperModule;
-import com.google.common.base.Objects;
+import com.fasterxml.jackson.module.guice.GuiceAnnotationIntrospector;
+import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.inject.Binder;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import com.google.inject.name.Names;
-
+import com.google.inject.Injector;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import net.sf.oval.exception.ConstraintsViolatedException;
-
 import org.joda.time.Period;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -66,12 +61,67 @@ import java.util.Set;
  */
 public final class PipelineConfiguration {
 
+    /**
+     * Create an <code>ObjectMapper</code> for Pipeline configuration.
+     *
+     * @param injector The Guice <code>Injector</code> instance.
+     * @return An <code>ObjectMapper</code> for Pipeline configuration.
+     */
+    public static ObjectMapper createObjectMapper(final Injector injector) {
+        final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
+
+        final SimpleModule module = new SimpleModule("Pipeline");
+        BuilderDeserializer.addTo(module, PipelineConfiguration.class);
+
+        final Set<Class<? extends Sink>> sinkClasses = INTERFACE_DATABASE.findClassesWithInterface(Sink.class);
+        for (final Class<? extends Sink> sinkClass : sinkClasses) {
+            BuilderDeserializer.addTo(module, sinkClass);
+        }
+
+        final Set<Class<? extends Source>> sourceClasses = INTERFACE_DATABASE.findClassesWithInterface(Source.class);
+        for (final Class<? extends Source> sourceClass : sourceClasses) {
+            BuilderDeserializer.addTo(module, sourceClass);
+        }
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        final Set<Class<? extends Parser<?>>> parserClasses = INTERFACE_DATABASE.findClassesWithInterface((Class) Parser.class);
+        for (final Class<? extends Parser<?>> parserClass : parserClasses) {
+            BuilderDeserializer.addTo(module, parserClass);
+        }
+
+        final Set<Class<? extends DynamicConfigurationFactory>> dcFactoryClasses =
+                INTERFACE_DATABASE.findClassesWithInterface(DynamicConfigurationFactory.class);
+        for (final Class<? extends DynamicConfigurationFactory> dcFactoryClass : dcFactoryClasses) {
+            BuilderDeserializer.addTo(module, dcFactoryClass);
+        }
+
+        objectMapper.registerModules(module);
+
+        final GuiceAnnotationIntrospector guiceIntrospector = new GuiceAnnotationIntrospector();
+        objectMapper.setInjectableValues(new GuiceInjectableValues(injector));
+        objectMapper.setAnnotationIntrospectors(
+                new AnnotationIntrospectorPair(
+                        guiceIntrospector, objectMapper.getSerializationConfig().getAnnotationIntrospector()),
+                new AnnotationIntrospectorPair(
+                        guiceIntrospector, objectMapper.getDeserializationConfig().getAnnotationIntrospector()));
+
+        return objectMapper;
+    }
+
     public String getName() {
         return _name;
     }
 
-    public String getServiceName() {
-        return _serviceName;
+    public String getService() {
+        return _service;
+    }
+
+    public Optional<String> getHost() {
+        return _host;
+    }
+
+    public String getCluster() {
+        return _cluster;
     }
 
     public List<Source> getSources() {
@@ -103,9 +153,10 @@ public final class PipelineConfiguration {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Name", _name)
-                .add("ServiceName", _serviceName)
+                .add("Service", _service)
+                .add("Cluster", _cluster)
                 .add("Sources", _sources)
                 .add("Sinks", _sinks)
                 .add("Periods", _periods)
@@ -117,7 +168,9 @@ public final class PipelineConfiguration {
 
     private PipelineConfiguration(final Builder builder) {
         _name = builder._name;
-        _serviceName = builder._serviceName;
+        _service = builder._service;
+        _cluster = builder._cluster;
+        _host = Optional.fromNullable(builder._host);
         _sources = ImmutableList.copyOf(builder._sources);
         _sinks = ImmutableList.copyOf(builder._sinks);
         _periods = ImmutableSet.copyOf(builder._periods);
@@ -127,13 +180,31 @@ public final class PipelineConfiguration {
     }
 
     private final String _name;
-    private final String _serviceName;
+    private final String _service;
+    private final String _cluster;
+    private final Optional<String> _host;
     private final ImmutableList<Source> _sources;
     private final ImmutableList<Sink> _sinks;
     private final ImmutableSet<Period> _periods;
     private final ImmutableSet<Statistic> _timerStatistic;
     private final ImmutableSet<Statistic> _counterStatistic;
     private final ImmutableSet<Statistic> _gaugeStatistic;
+
+    private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
+
+    /**
+     * Factory interface for <code>PipelineConfiguration</code>.
+     */
+    public interface PipelineConfigurationFactory {
+
+        /**
+         * Create a new <code>PipelineConfiguration</code> instance.
+         *
+         * @param file The configuration file.
+         * @return New <code>PipelineConfiguration</code> instance
+         */
+        PipelineConfiguration create(final File file);
+    }
 
     /**
      * Implementation of builder pattern for <code>PipelineConfiguration</code>.
@@ -151,7 +222,7 @@ public final class PipelineConfiguration {
 
         /**
          * The name of the pipeline. Cannot be null or empty.
-         * 
+         *
          * @param value The name of the pipeline.
          * @return This instance of <code>Builder</code>.
          */
@@ -161,20 +232,42 @@ public final class PipelineConfiguration {
         }
 
         /**
+         * The name of the host. Optional. If not provided, it will be looked up at runtime.
+         *
+         * @param value The name of the host.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setHost(final String value) {
+            _host = value;
+            return this;
+        }
+
+        /**
          * The name of the service processed by this pipeline. Cannot be null or
          * empty.
-         * 
+         *
          * @param value The name of the service.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setServiceName(final String value) {
-            _serviceName = value;
+        public Builder setService(final String value) {
+            _service = value;
+            return this;
+        }
+        /**
+         * The name of the cluster processed by this pipeline. Cannot be null or
+         * empty.
+         *
+         * @param value The name of the cluster.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setCluster(final String value) {
+            _cluster = value;
             return this;
         }
 
         /**
          * The query log sources. Cannot be null.
-         * 
+         *
          * @param value The query log sources.
          * @return This instance of <code>Builder</code>.
          */
@@ -185,7 +278,7 @@ public final class PipelineConfiguration {
 
         /**
          * The sinks. Cannot be null.
-         * 
+         *
          * @param value The sinks.
          * @return This instance of <code>Builder</code>.
          */
@@ -195,9 +288,9 @@ public final class PipelineConfiguration {
         }
 
         /**
-         * The aggregation periods. Cannot be null or empty. Default is one 
+         * The aggregation periods. Cannot be null or empty. Default is one
          * second and five minute periods.
-         * 
+         *
          * @param value The sinks.
          * @return This instance of <code>Builder</code>.
          */
@@ -207,9 +300,9 @@ public final class PipelineConfiguration {
         }
 
         /**
-         * The statistics to compute for all timers. Cannot be null or empty. 
+         * The statistics to compute for all timers. Cannot be null or empty.
          * Default is TP50, TP90, TP99, Mean and Count.
-         * 
+         *
          * @param value The timer statistics.
          * @return This instance of <code>Builder</code>.
          */
@@ -219,9 +312,9 @@ public final class PipelineConfiguration {
         }
 
         /**
-         * The statistics to compute for all counters. Cannot be null or empty. 
+         * The statistics to compute for all counters. Cannot be null or empty.
          * Default is Mean, Sum and Count.
-         * 
+         *
          * @param value The counter statistics.
          * @return This instance of <code>Builder</code>.
          */
@@ -231,9 +324,9 @@ public final class PipelineConfiguration {
         }
 
         /**
-         * The statistics to compute for all gauges. Cannot be null or empty. 
+         * The statistics to compute for all gauges. Cannot be null or empty.
          * Default is Min, Max and Mean.
-         * 
+         *
          * @param value The gauge statistics.
          * @return This instance of <code>Builder</code>.
          */
@@ -247,115 +340,30 @@ public final class PipelineConfiguration {
         private String _name;
         @NotNull
         @NotEmpty
-        private String _serviceName;
+        private String _service;
+        @NotNull
+        @NotEmpty
+        private String _cluster;
+        @NotEmpty
+        private String _host;
         @NotNull
         private List<Source> _sources = Collections.emptyList();
         @NotNull
         private List<Sink> _sinks = Collections.emptyList();
         @NotNull
         @NotEmpty
-        private Set<Period> _periods = Sets.newHashSet(Period.seconds(1), Period.minutes(5));
+        private Set<Period> _periods = Sets.newHashSet(Period.seconds(1), Period.minutes(1));
         @NotNull
         @NotEmpty
         private Set<Statistic> _timerStatistics = Sets.<Statistic>newHashSet(
-                new TP50Statistic(), new TP90Statistic(), new TP99Statistic(), new MeanStatistic(), new NStatistic());
+                new TP50Statistic(), new TP90Statistic(), new TP99Statistic(), new MeanStatistic(), new CountStatistic());
         @NotNull
         @NotEmpty
         private Set<Statistic> _counterStatistics = Sets.<Statistic>newHashSet(
-                new MeanStatistic(), new SumStatistic(), new NStatistic());
+                new MeanStatistic(), new SumStatistic(), new CountStatistic());
         @NotNull
         @NotEmpty
         private Set<Statistic> _gaugeStatistics = Sets.<Statistic>newHashSet(
                 new TP0Statistic(), new TP100Statistic(), new MeanStatistic());
-    }
-
-    /**
-     * Guice <code>Module</code> for <code>PipelineConfiguration</code>.
-     *
-     * @author Ville Koskela (vkoskela at groupon dot com)
-     */
-    public static final class Module extends ObjectMapperModule {
-
-        /**
-         * Public constructor.
-         */
-        public Module() {
-            super(Names.named("PipelineConfigurationObjectMapper"));
-
-            final SimpleModule module = new SimpleModule("PipelineConfiguration");
-            BuilderDeserializer.addTo(module, PipelineConfiguration.class);
-
-            final Set<Class<? extends Sink>> sinkClasses = INTERFACE_DATABASE.findClassesWithInterface(Sink.class);
-            for (final Class<? extends Sink> sinkClass : sinkClasses) {
-                BuilderDeserializer.addTo(module, sinkClass);
-            }
-
-            final Set<Class<? extends Source>> sourceClasses = INTERFACE_DATABASE.findClassesWithInterface(Source.class);
-            for (final Class<? extends Source> sourceClass : sourceClasses) {
-                BuilderDeserializer.addTo(module, sourceClass);
-            }
-
-            @SuppressWarnings({ "rawtypes", "unchecked" })
-            final Set<Class<? extends Parser<?>>> parserClasses = INTERFACE_DATABASE.findClassesWithInterface((Class) Parser.class);
-            for (final Class<? extends Parser<?>> parserClass : parserClasses) {
-                BuilderDeserializer.addTo(module, parserClass);
-            }
-
-            registerModule(module);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void configure(final Binder binder) {
-            binder.bind(PipelineConfigurationFactory.class).to(DefaultPipelineConfigurationFactory.class);
-
-            super.configure(binder);
-        }
-
-        private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
-    }
-
-    /**
-     * Factory interface for <code>PipelineConfiguration</code>.
-     *
-     * @author Ville Koskela (vkoskela at groupon dot com)
-     */
-    public interface PipelineConfigurationFactory {
-
-        /**
-         * Create a new <code>PipelineConfiguration</code> instance.
-         * 
-         * @param uri The <code>URI</code> to load configuration from.
-         * @return New <code>PipelineConfiguration</code> instance.
-         * @throws ConfigurationException if configuration load/parse fails.
-         */
-        PipelineConfiguration create(URI uri) throws ConfigurationException;
-    }
-
-    private static final class DefaultPipelineConfigurationFactory implements PipelineConfigurationFactory {
-
-        @Inject
-        public DefaultPipelineConfigurationFactory(@Named("PipelineConfigurationObjectMapper") final ObjectMapper objectMapper) {
-            _objectMapper = objectMapper;
-        }
-
-        @Override
-        public PipelineConfiguration create(final URI uri) throws ConfigurationException {
-            try {
-                final URL url = uri.toURL();
-                try {
-                    return _objectMapper.readValue(url, PipelineConfiguration.class);
-                } catch (final IOException | ConstraintsViolatedException e) {
-                    throw new ConfigurationException(String.format("Unable to parse configuration; uri=%s", uri), e);
-                }
-
-            } catch (final MalformedURLException e) {
-                throw new ConfigurationException(String.format("Unable to parse configuration; uri=%s", uri), e);
-            }
-        }
-
-        private final ObjectMapper _objectMapper;
     }
 }

@@ -276,6 +276,51 @@ static void tsd_buffer_append_name(Buffer* buffer, const value_list_t *value_lis
   {
     data_set_name = "write";
   }
+  if (strcmp(plugin, "processes") == 0
+      && include_plugin_instance
+      && strcmp(type, "ps_disk_ops") == 0
+      && include_data_source_name
+      && strcmp(data_set_name, "read") == 0
+      && index == 1)
+  {
+    data_set_name = "write";
+  }
+  if (strcmp(plugin, "processes") == 0
+      && include_plugin_instance
+      && strcmp(type, "ps_cputime") == 0
+      && include_data_source_name
+      && strcmp(data_set_name, "user") == 0
+      && index == 1)
+  {
+    data_set_name = "system";
+  }
+  if (strcmp(plugin, "processes") == 0
+      && include_plugin_instance
+      && strcmp(type, "ps_count") == 0
+      && include_data_source_name
+      && strcmp(data_set_name, "processes") == 0
+      && index == 1)
+  {
+    data_set_name = "lwp";
+  }
+  if (strcmp(plugin, "processes") == 0
+        && include_plugin_instance
+        && strcmp(type, "ps_pagefaults") == 0
+        && include_data_source_name
+        && strcmp(data_set_name, "minflt")
+        && index == 1)
+  {
+    data_set_name = "majflt";
+  }
+  if (strcmp(plugin, "processes") == 0
+        && include_plugin_instance
+        && strcmp(type, "ps_disk_octets") == 0
+        && include_data_source_name
+        && strcmp(data_set_name, "read")
+        && index == 1)
+    {
+      data_set_name = "write";
+    }
 
   // Render the name
   tsd_buffer_append(buffer, plugin);

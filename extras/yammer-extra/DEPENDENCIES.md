@@ -10,11 +10,11 @@ Project              | License                    | Project link
 ---------------------|----------------------------|-------------
 Checkstyle           | LGPL 2                     | http://checkstyle.sourceforge.net/
 FindBugs             | LGPL                       | http://findbugs.sourceforge.net/
+Cobertura            | GPL2                       | http://cobertura.github.io/cobertura/
 Maven                | Apache License 2           | http://maven.apache.org/
 Hamcrest             | BSD 3                      | https://github.com/hamcrest/JavaHamcrest/
 jUnit                | Eclipse Public License 1.0 | https://github.com/junit-team/junit/
 Mockito              | MIT                        | https://code.google.com/p/mockito/
-PowerMock            | Apache License 2           | https://code.google.com/p/powermock/
 
 
 Compile Dependencies

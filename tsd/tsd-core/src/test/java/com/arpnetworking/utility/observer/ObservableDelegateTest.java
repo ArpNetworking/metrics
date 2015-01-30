@@ -52,14 +52,14 @@ public class ObservableDelegateTest {
     @Test
     public void testNotifyNoAttachedObservers() {
         final Object event = new Object();
-        final Observable observable = ObservableDelegate.newInstance();
+        final ObservableDelegate observable = ObservableDelegate.newInstance();
         observable.notify(observable, event);
     }
 
     @Test
     public void testNotifyOneAttachedObserver() {
         final Object event = new Object();
-        final Observable observable = ObservableDelegate.newInstance();
+        final ObservableDelegate observable = ObservableDelegate.newInstance();
         final Observer observer = Mockito.mock(Observer.class);
         observable.attach(observer);
         observable.notify(observable, event);
@@ -69,7 +69,7 @@ public class ObservableDelegateTest {
     @Test
     public void testNotifyDetachedObserver() {
         final Object event = new Object();
-        final Observable observable = ObservableDelegate.newInstance();
+        final ObservableDelegate observable = ObservableDelegate.newInstance();
         final Observer observer = Mockito.mock(Observer.class);
         observable.attach(observer);
         observable.detach(observer);
@@ -80,7 +80,7 @@ public class ObservableDelegateTest {
     @Test
     public void testNotifyMultipleAttachedObservers() {
         final Object event = new Object();
-        final Observable observable = ObservableDelegate.newInstance();
+        final ObservableDelegate observable = ObservableDelegate.newInstance();
         final Observer observer1 = Mockito.mock(Observer.class, "observer1");
         final Observer observer2 = Mockito.mock(Observer.class, "observer2");
         observable.attach(observer1);

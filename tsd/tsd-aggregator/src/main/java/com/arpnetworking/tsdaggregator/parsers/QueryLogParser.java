@@ -57,7 +57,6 @@ import java.util.Map;
  * object per line.
  * 
  * Specification for version 2e:
- * <code>
  * {@code
  *{
  *    "$schema": "http://json-schema.org/draft-04/schema#",
@@ -162,10 +161,8 @@ import java.util.Map;
  *    "required": ["time", "name", "level", "data"]
  *}
  * }
- * </code>
  * 
  * Specification for version 2d:
- * <code>
  * {@code
  *{
  *    "$schema": "http://json-schema.org/draft-04/schema#",
@@ -237,10 +234,8 @@ import java.util.Map;
  *    "required": ["annotations", "version"]
  *}
  * }
- * </code>
- * 
+ *
  * Specification for version 2c:
- * <code>
  * {@code
  *{
  *    "title": "Query Log 2c",
@@ -298,7 +293,6 @@ import java.util.Map;
  *    "required": ["annotations", "version"]
  *}
  * }
- * </code>
  *
  * @author Brandon Arp (barp at groupon dot com)
  */

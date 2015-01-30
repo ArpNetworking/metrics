@@ -15,25 +15,26 @@
  */
 package models;
 
+import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import akka.dispatch.ExecutionContexts;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import models.messages.Command;
-import models.messages.MetricReport;
-import models.messages.MetricsList;
-import models.messages.MetricsListRequest;
-import models.messages.NewMetric;
+import models.messages.Connect;
+import models.protocol.MessageProcessorsFactory;
+import models.protocol.MessagesProcessor;
 import play.Logger;
-import play.libs.Json;
+import play.libs.Akka;
 import play.mvc.WebSocket;
+import scala.concurrent.duration.FiniteDuration;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Actor class to hold the state for a single connection.
@@ -41,24 +42,46 @@ import java.util.Set;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class ConnectionContext extends UntypedActor {
-
     /**
      * Public constructor.
      *
-     * @param connection client connection
+     * @param metricsFactory Instance of <code>MetricsFactory</code>.
+     * @param connection Websocket connection to bind to.
+     * @param processorsFactory Factory for producing the protocol's <code>MessagesProcessor</code>
      */
-    public ConnectionContext(final WebSocket.Out<JsonNode> connection) {
+    public ConnectionContext(
+            final MetricsFactory metricsFactory,
+            final WebSocket.Out<JsonNode> connection,
+            final MessageProcessorsFactory processorsFactory) {
+        _metricsFactory = metricsFactory;
         _connection = connection;
+        _instrument = Akka.system().scheduler().schedule(
+                new FiniteDuration(0, TimeUnit.SECONDS), // Initial delay
+                new FiniteDuration(1, TimeUnit.SECONDS), // Interval
+                getSelf(),
+                "instrument",
+                ExecutionContexts.global(),
+                getSelf());
+        _messageProcessors = processorsFactory.create(this);
+        _metrics = createMetrics();
     }
 
     /**
      * Factory for creating a <code>Props</code> with strong typing.
      *
-     * @param connection connection to bind to
-     * @return a new Props object
+     * @param metricsFactory Instance of <code>MetricsFactory</code>.
+     * @param connectMessage Connect message.
+     * @return a new Props object to create a <code>ConnectionContext</code>.
      */
-    public static Props props(final WebSocket.Out<JsonNode> connection) {
-        return Props.create(ConnectionContext.class, connection);
+    public static Props props(
+            final MetricsFactory metricsFactory,
+            final Connect connectMessage
+            ) {
+        return Props.create(
+                ConnectionContext.class,
+                metricsFactory,
+                connectMessage.getOutputChannel(),
+                connectMessage.getMessageProcessorsFactory());
     }
 
     /**
@@ -66,156 +89,88 @@ public class ConnectionContext extends UntypedActor {
      */
     @Override
     public void onReceive(final Object message) throws Exception {
-        if (Logger.isDebugEnabled()) {
-            Logger.debug(String.format("received message on channel; message=%s, channel=%s", message, _connection));
+        if (Logger.isTraceEnabled()) {
+            Logger.trace(String.format("Received message on channel; message=%s, channel=%s", message, _connection));
         }
-        if (message instanceof Command) {
-            //TODO(barp): Map with a POJO mapper [MAI-184]
-            final Command command = (Command) message;
-            final ObjectNode commandNode = (ObjectNode) command.getCommand();
-            final String commandString = commandNode.get("command").asText();
-            if (Command.COMMAND_GET_METRICS.equals(commandString)) {
-                getContext().parent().tell(new MetricsListRequest(), getSelf());
-            } else if (Command.COMMAND_HEARTBEAT.equals(commandString)) {
-                _connection.write(OK_RESPONSE);
-            } else if (Command.COMMAND_SUBSCRIBE.equals(commandString)) {
-                final String service = commandNode.get("service").asText();
-                final String metric = commandNode.get("metric").asText();
-                final String statistic = commandNode.get("statistic").asText();
-                subscribe(service, metric, statistic);
-            } else if (Command.COMMAND_UNSUBSCRIBE.equals(commandString)) {
-                final String service = commandNode.get("service").asText();
-                final String metric = commandNode.get("metric").asText();
-                final String statistic = commandNode.get("statistic").asText();
-                unsubscribe(service, metric, statistic);
+        if ("instrument".equals(message)) {
+            periodicInstrumentation();
+            return;
+        }
+
+        boolean messageProcessed = false;
+        for (final MessagesProcessor messagesProcessor : _messageProcessors) {
+            messageProcessed = messagesProcessor.handleMessage(message);
+            if (messageProcessed) {
+                break;
+            }
+        }
+        if (!messageProcessed) {
+            _metrics.incrementCounter(UNKNOWN_COUNTER);
+            if (message instanceof Command) {
+                _metrics.incrementCounter(UNKONOWN_COMMAND_COUNTER);
+                final Command command = (Command) message;
+                final ObjectNode commandNode = (ObjectNode) command.getCommand();
+                final String commandString = commandNode.get("command").asText();
+                Logger.warn(String.format("channel command unsupported; command=%s, channel=%s", commandString, _connection));
+                unhandled(message);
             } else {
-                Logger.warn("channel command unsupported; command=" + commandString + ", channel=" + _connection);
+                Logger.warn(String.format("Unsupported message; message=%s", message));
+                unhandled(message);
             }
-        } else if (message instanceof NewMetric) {
-            //TODO(barp): Map with a POJO mapper [MAI-184]
-            final NewMetric newMetric = (NewMetric) message;
-            processNewMetric(newMetric);
-        } else if (message instanceof MetricReport) {
-            final MetricReport report = (MetricReport) message;
-            processMetricReport(report);
-        } else if (message instanceof MetricsList) {
-            final MetricsList metricsList = (MetricsList) message;
-            processMetricsList(metricsList);
-        } else {
-            Logger.warn("Got an unexpected message; message=" + message);
-            unhandled(message);
         }
     }
 
-    private void processNewMetric(final NewMetric newMetric) {
-        final ObjectNode n = Json.newObject();
-        n.put("service", newMetric.getService());
-        n.put("metric", newMetric.getMetric());
-        n.put("statistic", newMetric.getStatistic());
-        sendCommand("newMetric", n);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void postStop() throws Exception {
+        _instrument.cancel();
+        super.postStop();
     }
 
-    private void processMetricReport(final MetricReport report) {
-        final Map<String, Set<String>> metrics = _subscriptions.get(report.getService());
-        if (metrics == null) {
-            Logger.debug(String.format("Not sending MetricReport, service [%s] not found in _subscriptions", report.getService()));
-            return;
-        }
-        final Set<String> stats = metrics.get(report.getMetric());
-        if (stats == null) {
-            Logger.debug(String.format("Not sending MetricReport, metric [%s] not found in _subscriptions", report.getMetric()));
-            return;
-        }
-        if (!stats.contains(report.getStatistic())) {
-            Logger.debug(String.format("Not sending MetricReport, statistic [%s] not found in _subscriptions", report.getStatistic()));
-            return;
-        }
-
-        //TODO(barp): Map with a POJO mapper [MAI-184]
-        final ObjectNode event = Json.newObject();
-        event.put("server", report.getHost());
-        event.put("service", report.getService());
-        event.put("metric", report.getMetric());
-        event.put("timestamp", report.getPeriodStart().getMillis());
-        event.put("statistic", report.getStatistic());
-        event.put("data", report.getValue());
-
-        sendCommand("report", event);
-    }
-
-    private void processMetricsList(final MetricsList metricsList) {
-        //TODO(barp): Map with a POJO mapper [MAI-184]
-        final ObjectNode dataNode = JsonNodeFactory.instance.objectNode();
-        final ArrayNode services = JsonNodeFactory.instance.arrayNode();
-        for (final Map.Entry<String, Map<String, Set<String>>> service : metricsList.getMetrics().entrySet()) {
-            final ObjectNode serviceObject = JsonNodeFactory.instance.objectNode();
-            serviceObject.put("name", service.getKey());
-            final ArrayNode metrics = JsonNodeFactory.instance.arrayNode();
-            for (final Map.Entry<String, Set<String>> metric : service.getValue().entrySet()) {
-                final ObjectNode metricObject = JsonNodeFactory.instance.objectNode();
-                metricObject.put("name", metric.getKey());
-                final ArrayNode stats = JsonNodeFactory.instance.arrayNode();
-                for (final String statistic : metric.getValue()) {
-                    final ObjectNode statsObject = JsonNodeFactory.instance.objectNode();
-                    statsObject.put("name", statistic);
-                    statsObject.put("children", JsonNodeFactory.instance.arrayNode());
-                    stats.add(statsObject);
-                }
-                metricObject.put("children", stats);
-                metrics.add(metricObject);
-            }
-            serviceObject.put("children", metrics);
-            services.add(serviceObject);
-        }
-        dataNode.put("metrics", services);
-        sendCommand("metricsList", dataNode);
-    }
-
-    private void subscribe(final String service, final String metric, final String statistic) {
-        if (!_subscriptions.containsKey(service)) {
-            _subscriptions.put(service, Maps.<String, Set<String>>newHashMap());
-        }
-
-        final Map<String, Set<String>> metrics = _subscriptions.get(service);
-        if (!metrics.containsKey(metric)) {
-            metrics.put(metric, Sets.<String>newHashSet());
-        }
-
-        final Set<String> statistics = metrics.get(metric);
-        if (!statistics.contains(statistic)) {
-            statistics.add(statistic);
-        }
-    }
-
-    private void unsubscribe(final String service, final String metric, final String statistic) {
-        if (!_subscriptions.containsKey(service)) {
-            return;
-        }
-
-        final Map<String, Set<String>> metrics = _subscriptions.get(service);
-        if (!metrics.containsKey(metric)) {
-            return;
-        }
-
-        final Set<String> statistics = metrics.get(metric);
-        if (statistics.contains(statistic)) {
-            statistics.remove(statistic);
-        }
-    }
-
-    private void sendCommand(final String command, final ObjectNode data) {
+    /**
+     * Sends a command object to the connected client.
+     *
+     * @param command The command.
+     * @param data The data for the command.
+     */
+    public void sendCommand(final String command, final ObjectNode data) {
         //TODO(barp): Map with a POJO mapper [MAI-184]
         final ObjectNode node = JsonNodeFactory.instance.objectNode();
         node.put("command", command);
-        node.put("data", data);
+        node.set("data", data);
         _connection.write(node);
     }
 
+    private Metrics createMetrics() {
+        final Metrics metrics = _metricsFactory.create();
+        metrics.resetCounter(UNKONOWN_COMMAND_COUNTER);
+        metrics.resetCounter(UNKNOWN_COUNTER);
+        for (final MessagesProcessor messageProcessor : _messageProcessors) {
+            messageProcessor.initializeMetrics(metrics);
+        }
+        return metrics;
+    }
+
+    private void periodicInstrumentation() {
+        _metrics.close();
+        _metrics = createMetrics();
+    }
+
+    public WebSocket.Out<JsonNode> getConnection() {
+        return _connection;
+    }
+
+    private final MetricsFactory _metricsFactory;
+    private final Cancellable _instrument;
     private final WebSocket.Out<JsonNode> _connection;
-    private final Map<String, Map<String, Set<String>>> _subscriptions = Maps.newHashMap();
+    private final List<MessagesProcessor> _messageProcessors;
 
-    private static final ObjectNode OK_RESPONSE = JsonNodeFactory.instance.objectNode().put("response", "ok");
-
+    // Akka actors are single threaded execution so there are no race conditions keeping
+    // See: http://doc.akka.io/docs/akka/snapshot/general/jmm.html
+    private Metrics _metrics;
+    private static final String METRICS_PREFIX = "Actors/Connection/";
+    private static final String UNKONOWN_COMMAND_COUNTER = METRICS_PREFIX + "Command/UNKNOWN";
+    private static final String UNKNOWN_COUNTER = METRICS_PREFIX + "UNKNOWN";
 }
-
-

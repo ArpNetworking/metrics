@@ -18,15 +18,13 @@ package com.arpnetworking.tsdaggregator.model.querylog;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-
 import net.sf.oval.constraint.MatchPattern;
 import net.sf.oval.constraint.NotNull;
-
 import org.joda.time.DateTime;
 
 import java.util.Collections;
@@ -36,7 +34,7 @@ import java.util.regex.Pattern;
 
 /**
  * Model for the version 2e query log line.
- * 
+ *
  * Notes:
  * <ul>
  * <li>For optional fields null and unspecified are treated the same. Where
@@ -80,7 +78,7 @@ public final class Version2e {
         _level = builder._level;
         _data = builder._data;
         _id = Optional.fromNullable(builder._id);
-        _context = ImmutableMap.copyOf(Objects.firstNonNull(builder._context, Collections.<String, String>emptyMap()));
+        _context = ImmutableMap.copyOf(MoreObjects.firstNonNull(builder._context, Collections.<String, String>emptyMap()));
     }
 
     private final DateTime _time;
@@ -103,7 +101,7 @@ public final class Version2e {
 
         /**
          * Sets the time field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -114,7 +112,7 @@ public final class Version2e {
 
         /**
          * Sets the name field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -125,7 +123,7 @@ public final class Version2e {
 
         /**
          * Sets the level field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -136,7 +134,7 @@ public final class Version2e {
 
         /**
          * Sets the data field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -147,7 +145,7 @@ public final class Version2e {
 
         /**
          * Sets the id field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -158,7 +156,7 @@ public final class Version2e {
 
         /**
          * Sets the context field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -170,7 +168,7 @@ public final class Version2e {
         @NotNull
         private DateTime _time;
         @NotNull
-        @MatchPattern(pattern = "^aint-metrics$")
+        @MatchPattern(pattern = "^aint\\.metrics$")
         private String _name;
         @NotNull
         @MatchPattern(pattern = "^(debug|info|warn|crit|fatal|unknown)$")
@@ -209,9 +207,9 @@ public final class Version2e {
         private Data(final Builder builder) {
             _annotations = builder._annotations;
             _version = builder._version;
-            _timers = ImmutableMap.copyOf(Objects.firstNonNull(builder._timers, Collections.<String, Element>emptyMap()));
-            _gauges = ImmutableMap.copyOf(Objects.firstNonNull(builder._gauges, Collections.<String, Element>emptyMap()));
-            _counters = ImmutableMap.copyOf(Objects.firstNonNull(builder._counters, Collections.<String, Element>emptyMap()));
+            _timers = ImmutableMap.copyOf(MoreObjects.firstNonNull(builder._timers, Collections.<String, Element>emptyMap()));
+            _gauges = ImmutableMap.copyOf(MoreObjects.firstNonNull(builder._gauges, Collections.<String, Element>emptyMap()));
+            _counters = ImmutableMap.copyOf(MoreObjects.firstNonNull(builder._counters, Collections.<String, Element>emptyMap()));
         }
 
         private final Annotations _annotations;
@@ -233,7 +231,7 @@ public final class Version2e {
 
             /**
              * Sets the annotations field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -244,7 +242,7 @@ public final class Version2e {
 
             /**
              * Sets the version field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -255,7 +253,7 @@ public final class Version2e {
 
             /**
              * Sets the counters field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -266,7 +264,7 @@ public final class Version2e {
 
             /**
              * Sets the timers field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -277,7 +275,7 @@ public final class Version2e {
 
             /**
              * Sets the gauges field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -330,7 +328,7 @@ public final class Version2e {
 
             /**
              * Sets the unit field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -341,7 +339,7 @@ public final class Version2e {
 
             /**
              * Sets the value field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -357,7 +355,7 @@ public final class Version2e {
     }
 
     /**
-     * Represents a counter, timer, or gauge element.  Includes a list of 
+     * Represents a counter, timer, or gauge element.  Includes a list of
      * samples.
      */
     public static final class Element {
@@ -385,7 +383,7 @@ public final class Version2e {
 
             /**
              * Sets the value field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -438,7 +436,7 @@ public final class Version2e {
 
             /**
              * Sets the initTimestamp field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -449,7 +447,7 @@ public final class Version2e {
 
             /**
              * Sets the finalTimestamp field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -459,9 +457,9 @@ public final class Version2e {
             }
 
             /**
-             * Called by json deserialization to store non-member elements of 
+             * Called by json deserialization to store non-member elements of
              * the json object. Stores the value in the otherAnnotations field.
-             * 
+             *
              * @param key key
              * @param value value
              */

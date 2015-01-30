@@ -7,3 +7,4 @@ tmp
 .history
 .target
 dist
+app/assets/unmanaged/**

@@ -16,13 +16,12 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Condition;
 import com.google.common.base.Charsets;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
-
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -44,20 +43,27 @@ public final class FileSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final List<AggregatedData> data) {
+    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
         LOGGER.debug(getName() + ": Writing aggregated data; size=" + data.size() + " fileName=" + _fileName);
 
         if (!data.isEmpty()) {
             final StringBuilder stringBuilder = new StringBuilder();
             for (final AggregatedData datum : data) {
                 // TODO(vkoskela): Refactor into JSON serializer [MAI-88]
-                stringBuilder.append("{\"value\":\"").append(String.format("%f", Double.valueOf(datum.getValue())))
-                        .append("\",\"metric\":\"").append(datum.getMetric())
-                        .append("\",\"service\":\"").append(datum.getService())
+                final String unitName;
+                if (datum.getValue().getUnit().isPresent()) {
+                    unitName = "\"" + datum.getValue().getUnit().get().name() + "\"";
+                } else {
+                    unitName = "null";
+                }
+                stringBuilder.append("{\"value\":\"").append(String.format("%f", Double.valueOf(datum.getValue().getValue())))
+                        .append("\",\"unit\":").append(unitName)
+                        .append(",\"metric\":\"").append(datum.getFQDSN().getMetric())
+                        .append("\",\"service\":\"").append(datum.getFQDSN().getService())
                         .append("\",\"host\":\"").append(datum.getHost())
                         .append("\",\"period\":\"").append(datum.getPeriod())
                         .append("\",\"periodStart\":\"").append(datum.getPeriodStart())
-                        .append("\",\"statistic\":\"").append(datum.getStatistic().getName())
+                        .append("\",\"statistic\":\"").append(datum.getFQDSN().getStatistic().getName())
                         .append("\"}\n");
                 try {
                     _writer.append(stringBuilder.toString());
@@ -90,7 +96,7 @@ public final class FileSink extends BaseSink {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("super", super.toString())
                 .add("FileName", _fileName)
                 .add("RecordsWriten", _recordsWritten)
@@ -120,7 +126,7 @@ public final class FileSink extends BaseSink {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class Builder extends BaseSink.Builder<Builder> {
+    public static final class Builder extends BaseSink.Builder<Builder, FileSink> {
 
         /**
          * Public constructor.
@@ -132,7 +138,7 @@ public final class FileSink extends BaseSink {
         /**
          * The file path and name to write the aggregated data to. Cannot be
          * null or empty.
-         * 
+         *
          * @param value The file path and name to write the aggregated data to.
          * @return This instance of <code>Builder</code>.
          */

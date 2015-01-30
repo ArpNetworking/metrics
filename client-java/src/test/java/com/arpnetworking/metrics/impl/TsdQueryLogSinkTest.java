@@ -17,11 +17,11 @@ package com.arpnetworking.metrics.impl;
 
 import ch.qos.logback.classic.AsyncAppender;
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
 
+import com.arpnetworking.logback.StenoEncoder;
 import com.arpnetworking.metrics.Quantity;
 import com.arpnetworking.metrics.Sink;
 import com.arpnetworking.metrics.Unit;
@@ -29,6 +29,12 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.github.fge.jackson.JsonLoader;
+import com.github.fge.jsonschema.core.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.report.ProcessingReport;
+import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.github.fge.jsonschema.main.JsonValidator;
+import com.google.common.base.Throwables;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,8 +46,10 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 /**
  * Tests for <code>TsdMetrics</code>.
@@ -64,7 +72,7 @@ public class TsdQueryLogSinkTest {
         @SuppressWarnings("unchecked")
         final TimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = (TimeBasedRollingPolicy<ILoggingEvent>)
                 rollingAppender.getRollingPolicy();
-        final PatternLayoutEncoder encoder = (PatternLayoutEncoder) rollingAppender.getEncoder();
+        final StenoEncoder encoder = (StenoEncoder) rollingAppender.getEncoder();
 
         Assert.assertTrue(encoder.isImmediateFlush());
         Assert.assertEquals(expectedPath + "query.log", rollingAppender.getFile());
@@ -88,7 +96,7 @@ public class TsdQueryLogSinkTest {
         @SuppressWarnings("unchecked")
         final TimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = (TimeBasedRollingPolicy<ILoggingEvent>)
                 rollingAppender.getRollingPolicy();
-        final PatternLayoutEncoder encoder = (PatternLayoutEncoder) rollingAppender.getEncoder();
+        final StenoEncoder encoder = (StenoEncoder) rollingAppender.getEncoder();
 
         Assert.assertFalse(encoder.isImmediateFlush());
         Assert.assertEquals(expectedPath + "foo.bar", rollingAppender.getFile());
@@ -187,7 +195,7 @@ public class TsdQueryLogSinkTest {
                 .build();
 
         sink.record(
-                Collections.<String, String>emptyMap(),
+                ANNOTATIONS,
                 TEST_EMPTY_SERIALIZATION_TIMERS,
                 TEST_EMPTY_SERIALIZATION_COUNTERS,
                 TEST_EMPTY_SERIALIZATION_GAUGES);
@@ -195,7 +203,15 @@ public class TsdQueryLogSinkTest {
         // TODO(vkoskela): Add protected option to disable async [MAI-181].
         Thread.sleep(100);
 
-        final JsonNode actual = OBJECT_MAPPER.readTree(actualFile);
+        final String actualOriginalJson = fileToString(actualFile);
+        assertMatchesJsonSchema(actualOriginalJson);
+        final String actualComparableJson = actualOriginalJson
+                .replaceAll("\"time\":\"[^\"]*\"", "\"time\":\"<TIME>\"")
+                .replaceAll("\"host\":\"[^\"]*\"", "\"host\":\"<HOST>\"")
+                .replaceAll("\"processId\":\"[^\"]*\"", "\"processId\":\"<PROCESSID>\"")
+                .replaceAll("\"threadId\":\"[^\"]*\"", "\"threadId\":\"<THREADID>\"")
+                .replaceAll("\"id\":\"[^\"]*\"", "\"id\":\"<ID>\"");
+        final JsonNode actual = OBJECT_MAPPER.readTree(actualComparableJson);
         final JsonNode expected = OBJECT_MAPPER.readTree(EXPECTED_EMPTY_METRICS_JSON);
 
         Assert.assertEquals(
@@ -215,8 +231,10 @@ public class TsdQueryLogSinkTest {
                 .setImmediateFlush(Boolean.TRUE)
                 .build();
 
+        final Map<String, String> annotations = new LinkedHashMap<>(ANNOTATIONS);
+        annotations.put("foo", "bar");
         sink.record(
-                Collections.singletonMap("foo", "bar"),
+                annotations,
                 TEST_SERIALIZATION_TIMERS,
                 TEST_SERIALIZATION_COUNTERS,
                 TEST_SERIALIZATION_GAUGES);
@@ -224,7 +242,15 @@ public class TsdQueryLogSinkTest {
         // TODO(vkoskela): Add protected option to disable async [MAI-181].
         Thread.sleep(100);
 
-        final JsonNode actual = OBJECT_MAPPER.readTree(actualFile);
+        final String actualOriginalJson = fileToString(actualFile);
+        assertMatchesJsonSchema(actualOriginalJson);
+        final String actualComparableJson = actualOriginalJson
+                .replaceAll("\"time\":\"[^\"]*\"", "\"time\":\"<TIME>\"")
+                .replaceAll("\"host\":\"[^\"]*\"", "\"host\":\"<HOST>\"")
+                .replaceAll("\"processId\":\"[^\"]*\"", "\"processId\":\"<PROCESSID>\"")
+                .replaceAll("\"threadId\":\"[^\"]*\"", "\"threadId\":\"<THREADID>\"")
+                .replaceAll("\"id\":\"[^\"]*\"", "\"id\":\"<ID>\"");
+        final JsonNode actual = OBJECT_MAPPER.readTree(actualComparableJson);
         final JsonNode expected = OBJECT_MAPPER.readTree(EXPECTED_METRICS_JSON);
 
         Assert.assertEquals(
@@ -265,15 +291,51 @@ public class TsdQueryLogSinkTest {
         return Mockito.mock(org.slf4j.Logger.class);
     }
 
+    private void assertMatchesJsonSchema(final String json) {
+        try {
+            final JsonNode jsonNode = JsonLoader.fromString(json);
+            final ProcessingReport report = VALIDATOR.validate(STENO_SCHEMA, jsonNode);
+            Assert.assertTrue(report.toString(), report.isSuccess());
+        } catch (final IOException | ProcessingException e) {
+            Assert.fail("Failed with exception: " + e);
+        }
+    }
+
+    private String fileToString(final File file) {
+        try {
+            return new Scanner(file, "UTF-8").useDelimiter("\\Z").next();
+        } catch (final IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private static final JsonValidator VALIDATOR = JsonSchemaFactory.byDefault().getValidator();
+    private static final JsonNode STENO_SCHEMA;
+
+    private static final Map<String, String> ANNOTATIONS = new LinkedHashMap<>();
     private static final Map<String, List<Quantity>> TEST_EMPTY_SERIALIZATION_TIMERS = createQuantityMap();
     private static final Map<String, List<Quantity>> TEST_EMPTY_SERIALIZATION_COUNTERS = createQuantityMap();
     private static final Map<String, List<Quantity>> TEST_EMPTY_SERIALIZATION_GAUGES = createQuantityMap();
 
     private static final String EXPECTED_EMPTY_METRICS_JSON = "{"
-            + "  \"version\":\"2d\","
-            + "  \"annotations\":{}"
+            + "  \"time\":\"<TIME>\","
+            + "  \"name\":\"aint.metrics\","
+            + "  \"level\":\"info\","
+            + "  \"data\":{"
+            + "    \"version\":\"2e\","
+            + "    \"annotations\":{"
+            + "      \"initTimestamp\":\"1997-07-16T19:20:30Z\","
+            + "      \"finalTimestamp\":\"1997-07-16T19:20:31Z\""
+            + "    }"
+            + "  },"
+            + "  \"context\":{"
+            + "    \"host\":\"<HOST>\","
+            + "    \"processId\":\"<PROCESSID>\","
+            + "    \"threadId\":\"<THREADID>\""
+            + "  },"
+            + "  \"id\":\"<ID>\""
             + "}";
 
     private static final Map<String, List<Quantity>> TEST_SERIALIZATION_TIMERS = createQuantityMap(
@@ -400,60 +462,92 @@ public class TsdQueryLogSinkTest {
             TsdQuantity.newInstance(Double.valueOf(212.12), Unit.BYTE));
 
     private static final String EXPECTED_METRICS_JSON = "{"
-            + "  \"version\":\"2d\","
-            + "  \"annotations\":{"
-            + "    \"foo\":\"bar\""
+            + "  \"time\":\"<TIME>\","
+            + "  \"name\":\"aint.metrics\","
+            + "  \"level\":\"info\","
+            + "  \"data\":{"
+            + "    \"version\":\"2e\","
+            + "    \"annotations\":{"
+            + "      \"initTimestamp\":\"1997-07-16T19:20:30Z\","
+            + "      \"finalTimestamp\":\"1997-07-16T19:20:31Z\","
+            + "      \"foo\":\"bar\""
+            + "    },"
+            + "    \"counters\":{"
+            + "      \"counterA\":{\"values\":[]},"
+            + "      \"counterB\":{\"values\":[{\"value\":11}]},"
+            + "      \"counterC\":{\"values\":[{\"value\":12,\"unit\":\"millisecond\"}]},"
+            + "      \"counterD\":{\"values\":[{\"value\":13,\"unit\":\"second\"},{\"value\":14,\"unit\":\"second\"}]},"
+            + "      \"counterE\":{\"values\":[{\"value\":15,\"unit\":\"day\"},{\"value\":16,\"unit\":\"second\"}]},"
+            + "      \"counterF\":{\"values\":[{\"value\":17,\"unit\":\"day\"},{\"value\":18}]},"
+            + "      \"counterG\":{\"values\":[{\"value\":19},{\"value\":110}]},"
+            + "      \"counterH\":{\"values\":[{\"value\":111,\"unit\":\"day\"},{\"value\":112,\"unit\":\"byte\"}]},"
+            + "      \"counterI\":{\"values\":[{\"value\":11.12}]},"
+            + "      \"counterJ\":{\"values\":[{\"value\":12.12,\"unit\":\"millisecond\"}]},"
+            + "      \"counterK\":{\"values\":[{\"value\":13.12,\"unit\":\"second\"},{\"value\":14.12,\"unit\":\"second\"}]},"
+            + "      \"counterL\":{\"values\":[{\"value\":15.12,\"unit\":\"day\"},{\"value\":16.12,\"unit\":\"second\"}]},"
+            + "      \"counterM\":{\"values\":[{\"value\":17.12,\"unit\":\"day\"},{\"value\":18.12}]},"
+            + "      \"counterN\":{\"values\":[{\"value\":19.12},{\"value\":110.12}]},"
+            + "      \"counterO\":{\"values\":[{\"value\":111.12,\"unit\":\"day\"},{\"value\":112.12,\"unit\":\"byte\"}]}"
+            + "    },"
+            + "    \"gauges\":{"
+            + "      \"gaugeA\":{\"values\":[]},"
+            + "      \"gaugeB\":{\"values\":[{\"value\":21}]},"
+            + "      \"gaugeC\":{\"values\":[{\"value\":22,\"unit\":\"millisecond\"}]},"
+            + "      \"gaugeD\":{\"values\":[{\"value\":23,\"unit\":\"second\"},{\"value\":24,\"unit\":\"second\"}]},"
+            + "      \"gaugeE\":{\"values\":[{\"value\":25,\"unit\":\"day\"},{\"value\":26,\"unit\":\"second\"}]},"
+            + "      \"gaugeF\":{\"values\":[{\"value\":27,\"unit\":\"day\"},{\"value\":28}]},"
+            + "      \"gaugeG\":{\"values\":[{\"value\":29},{\"value\":210}]},"
+            + "      \"gaugeH\":{\"values\":[{\"value\":211,\"unit\":\"day\"},{\"value\":212,\"unit\":\"byte\"}]},"
+            + "      \"gaugeI\":{\"values\":[{\"value\":21.12}]},"
+            + "      \"gaugeJ\":{\"values\":[{\"value\":22.12,\"unit\":\"millisecond\"}]},"
+            + "      \"gaugeK\":{\"values\":[{\"value\":23.12,\"unit\":\"second\"},{\"value\":24.12,\"unit\":\"second\"}]},"
+            + "      \"gaugeL\":{\"values\":[{\"value\":25.12,\"unit\":\"day\"},{\"value\":26.12,\"unit\":\"second\"}]},"
+            + "      \"gaugeM\":{\"values\":[{\"value\":27.12,\"unit\":\"day\"},{\"value\":28.12}]},"
+            + "      \"gaugeN\":{\"values\":[{\"value\":29.12},{\"value\":210.12}]},"
+            + "      \"gaugeO\":{\"values\":[{\"value\":211.12,\"unit\":\"day\"},{\"value\":212.12,\"unit\":\"byte\"}]}"
+            + "    },"
+            + "    \"timers\":{"
+            + "     \"timerA\":{\"values\":[]},"
+            + "      \"timerB\":{\"values\":[{\"value\":1}]},"
+            + "      \"timerC\":{\"values\":[{\"value\":2,\"unit\":\"millisecond\"}]},"
+            + "      \"timerD\":{\"values\":[{\"value\":3,\"unit\":\"second\"},{\"value\":4,\"unit\":\"second\"}]},"
+            + "      \"timerE\":{\"values\":[{\"value\":5,\"unit\":\"day\"},{\"value\":6,\"unit\":\"second\"}]},"
+            + "      \"timerF\":{\"values\":[{\"value\":7,\"unit\":\"day\"},{\"value\":8}]},"
+            + "      \"timerG\":{\"values\":[{\"value\":9},{\"value\":10}]},"
+            + "      \"timerH\":{\"values\":[{\"value\":11,\"unit\":\"day\"},{\"value\":12,\"unit\":\"byte\"}]},"
+            + "      \"timerI\":{\"values\":[{\"value\":1.12}]},"
+            + "      \"timerJ\":{\"values\":[{\"value\":2.12,\"unit\":\"millisecond\"}]},"
+            + "      \"timerK\":{\"values\":[{\"value\":3.12,\"unit\":\"second\"},{\"value\":4.12,\"unit\":\"second\"}]},"
+            + "      \"timerL\":{\"values\":[{\"value\":5.12,\"unit\":\"day\"},{\"value\":6.12,\"unit\":\"second\"}]},"
+            + "      \"timerM\":{\"values\":[{\"value\":7.12,\"unit\":\"day\"},{\"value\":8.12}]},"
+            + "      \"timerN\":{\"values\":[{\"value\":9.12},{\"value\":10.12}]},"
+            + "      \"timerO\":{\"values\":[{\"value\":11.12,\"unit\":\"day\"},{\"value\":12.12,\"unit\":\"byte\"}]}"
+            + "    }"
             + "  },"
-            + "  \"counters\":{"
-            + "    \"counterA\":{\"values\":[]},"
-            + "    \"counterB\":{\"values\":[{\"value\":11}]},"
-            + "    \"counterC\":{\"values\":[{\"value\":12,\"unit\":\"millisecond\"}]},"
-            + "    \"counterD\":{\"values\":[{\"value\":13,\"unit\":\"second\"},{\"value\":14,\"unit\":\"second\"}]},"
-            + "    \"counterE\":{\"values\":[{\"value\":15,\"unit\":\"day\"},{\"value\":16,\"unit\":\"second\"}]},"
-            + "    \"counterF\":{\"values\":[{\"value\":17,\"unit\":\"day\"},{\"value\":18}]},"
-            + "    \"counterG\":{\"values\":[{\"value\":19},{\"value\":110}]},"
-            + "    \"counterH\":{\"values\":[{\"value\":111,\"unit\":\"day\"},{\"value\":112,\"unit\":\"byte\"}]},"
-            + "    \"counterI\":{\"values\":[{\"value\":11.12}]},"
-            + "    \"counterJ\":{\"values\":[{\"value\":12.12,\"unit\":\"millisecond\"}]},"
-            + "    \"counterK\":{\"values\":[{\"value\":13.12,\"unit\":\"second\"},{\"value\":14.12,\"unit\":\"second\"}]},"
-            + "    \"counterL\":{\"values\":[{\"value\":15.12,\"unit\":\"day\"},{\"value\":16.12,\"unit\":\"second\"}]},"
-            + "    \"counterM\":{\"values\":[{\"value\":17.12,\"unit\":\"day\"},{\"value\":18.12}]},"
-            + "    \"counterN\":{\"values\":[{\"value\":19.12},{\"value\":110.12}]},"
-            + "    \"counterO\":{\"values\":[{\"value\":111.12,\"unit\":\"day\"},{\"value\":112.12,\"unit\":\"byte\"}]}"
+            + "  \"context\":{"
+            + "    \"host\":\"<HOST>\","
+            + "    \"processId\":\"<PROCESSID>\","
+            + "    \"threadId\":\"<THREADID>\""
             + "  },"
-            + "  \"gauges\":{"
-            + "    \"gaugeA\":{\"values\":[]},"
-            + "    \"gaugeB\":{\"values\":[{\"value\":21}]},"
-            + "    \"gaugeC\":{\"values\":[{\"value\":22,\"unit\":\"millisecond\"}]},"
-            + "    \"gaugeD\":{\"values\":[{\"value\":23,\"unit\":\"second\"},{\"value\":24,\"unit\":\"second\"}]},"
-            + "    \"gaugeE\":{\"values\":[{\"value\":25,\"unit\":\"day\"},{\"value\":26,\"unit\":\"second\"}]},"
-            + "    \"gaugeF\":{\"values\":[{\"value\":27,\"unit\":\"day\"},{\"value\":28}]},"
-            + "    \"gaugeG\":{\"values\":[{\"value\":29},{\"value\":210}]},"
-            + "    \"gaugeH\":{\"values\":[{\"value\":211,\"unit\":\"day\"},{\"value\":212,\"unit\":\"byte\"}]},"
-            + "    \"gaugeI\":{\"values\":[{\"value\":21.12}]},"
-            + "    \"gaugeJ\":{\"values\":[{\"value\":22.12,\"unit\":\"millisecond\"}]},"
-            + "    \"gaugeK\":{\"values\":[{\"value\":23.12,\"unit\":\"second\"},{\"value\":24.12,\"unit\":\"second\"}]},"
-            + "    \"gaugeL\":{\"values\":[{\"value\":25.12,\"unit\":\"day\"},{\"value\":26.12,\"unit\":\"second\"}]},"
-            + "    \"gaugeM\":{\"values\":[{\"value\":27.12,\"unit\":\"day\"},{\"value\":28.12}]},"
-            + "    \"gaugeN\":{\"values\":[{\"value\":29.12},{\"value\":210.12}]},"
-            + "    \"gaugeO\":{\"values\":[{\"value\":211.12,\"unit\":\"day\"},{\"value\":212.12,\"unit\":\"byte\"}]}"
-            + "  },"
-            + "  \"timers\":{"
-            + "    \"timerA\":{\"values\":[]},"
-            + "    \"timerB\":{\"values\":[{\"value\":1}]},"
-            + "    \"timerC\":{\"values\":[{\"value\":2,\"unit\":\"millisecond\"}]},"
-            + "    \"timerD\":{\"values\":[{\"value\":3,\"unit\":\"second\"},{\"value\":4,\"unit\":\"second\"}]},"
-            + "    \"timerE\":{\"values\":[{\"value\":5,\"unit\":\"day\"},{\"value\":6,\"unit\":\"second\"}]},"
-            + "    \"timerF\":{\"values\":[{\"value\":7,\"unit\":\"day\"},{\"value\":8}]},"
-            + "    \"timerG\":{\"values\":[{\"value\":9},{\"value\":10}]},"
-            + "    \"timerH\":{\"values\":[{\"value\":11,\"unit\":\"day\"},{\"value\":12,\"unit\":\"byte\"}]},"
-            + "    \"timerI\":{\"values\":[{\"value\":1.12}]},"
-            + "    \"timerJ\":{\"values\":[{\"value\":2.12,\"unit\":\"millisecond\"}]},"
-            + "    \"timerK\":{\"values\":[{\"value\":3.12,\"unit\":\"second\"},{\"value\":4.12,\"unit\":\"second\"}]},"
-            + "    \"timerL\":{\"values\":[{\"value\":5.12,\"unit\":\"day\"},{\"value\":6.12,\"unit\":\"second\"}]},"
-            + "    \"timerM\":{\"values\":[{\"value\":7.12,\"unit\":\"day\"},{\"value\":8.12}]},"
-            + "    \"timerN\":{\"values\":[{\"value\":9.12},{\"value\":10.12}]},"
-            + "    \"timerO\":{\"values\":[{\"value\":11.12,\"unit\":\"day\"},{\"value\":12.12,\"unit\":\"byte\"}]}"
-            + "  }"
+            + "  \"id\":\"<ID>\""
             + "}";
+
+    static {
+        JsonNode jsonNode = null;
+        try {
+            // Normally this is being executed from the project directory (e.g. root/client-java)
+            jsonNode = JsonLoader.fromPath("../doc/query-log-schema-2e.json");
+        } catch (final IOException e1) {
+            try {
+                // Under some IDE setups this may be executed from the workspace root (e.g. root)
+                jsonNode = JsonLoader.fromPath("doc/query-log-schema-2e.json");
+            } catch (final IOException e2) {
+                Throwables.propagate(e2);
+            }
+        }
+        STENO_SCHEMA = jsonNode;
+
+        ANNOTATIONS.put("initTimestamp", "1997-07-16T19:20:30Z");
+        ANNOTATIONS.put("finalTimestamp", "1997-07-16T19:20:31Z");
+    }
 }

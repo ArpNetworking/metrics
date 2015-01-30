@@ -39,10 +39,12 @@
                     "type":"object",
                     "properties": {
                         "finalTimestamp": {
-                            "type":"string"
+                            "type":"string",
+                            "format": "date-time"
                         },
                         "initTimestamp": {
-                            "type":"string"
+                            "type":"string",
+                            "format": "date-time"
                         }
                     },
                     "required": ["initTimestamp", "finalTimestamp"],
@@ -79,7 +81,7 @@
         },
         "name":  {
             "type":"string",
-            "pattern": "^aint-metrics$"
+            "pattern": "^aint.metrics$"
         },
         "level":  {
             "type":"string",

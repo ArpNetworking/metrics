@@ -13,37 +13,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import sbt._
 import Keys._
-import de.johoop.findbugs4sbt.FindBugs._
-import de.johoop.findbugs4sbt.{Priority, Effort}
+//import de.johoop.findbugs4sbt.FindBugs._
+//import de.johoop.findbugs4sbt.{Priority, Effort}
 import play.Play.autoImport._
 import PlayKeys._
 
 object ApplicationBuild extends Build {
 
     val appName         = "remet-proxy"
-    val appVersion      = "0.2.1-SNAPSHOT"
-    
-    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask
+    val appVersion      = "0.3.0"
+
+    //val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask
+    val s = CheckstyleSettings.checkstyleTask
 
     val appDependencies = Seq(
-      javaCore,
-      "com.arpnetworking.metrics" % "tsd-core" % "0.2.1.GRPN.5"
+      "com.arpnetworking.metrics" % "tsd-core" % "0.3.0",
+      "com.arpnetworking.metrics" % "metrics-client" % "0.3.0",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % "2.5.0",
+      "com.google.guava" % "guava" % "18.0",
+      "com.google.inject" % "guice" % "3.0"
     )
 
     val main = Project(appName, file("."), settings = s).enablePlugins(play.PlayJava).settings(
-    version := appVersion,
-    libraryDependencies ++= appDependencies,
-    scalaVersion := "2.11.1",
+      version := appVersion,
+      libraryDependencies ++= appDependencies,
+      scalaVersion := "2.11.1",
+      resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
+      // Needed for play 2.4-M2
+      resolvers += "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases",
+
+      // Generated unmanaged assests
+      unmanagedResourceDirectories in Compile <+= baseDirectory( _ / "app/assets/unmanaged" ),
 
       // Compiler warnings as errors
       javacOptions ++= Seq(
         "-Xlint:all",
-        "-Werror"
-      ),
+        "-Werror",
+        "-Xlint:-try"
+      )
 
       // Findbugs
+      // TODO(vkoskela): Enable Findbugs in Play [MAI-456]
+      /*
       findbugsEffort := Effort.Maximum,
       findbugsPriority := Priority.Low,
       findbugsExcludeFilters := Some(
@@ -59,6 +73,7 @@ object ApplicationBuild extends Build {
           </Match>
         </FindBugsFilter>
       )
+      */
     )
 
 }

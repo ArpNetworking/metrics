@@ -31,7 +31,7 @@ module TsdMetrics
 
     def values
       @samples.map do |s|
-        s.value
+        s.sampleRepresentation
       end
     end
 

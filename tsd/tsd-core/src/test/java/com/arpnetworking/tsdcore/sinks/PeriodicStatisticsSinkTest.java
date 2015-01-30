@@ -19,11 +19,15 @@ import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.test.TestBeanFactory;
 
+import com.arpnetworking.tsdcore.model.Condition;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.Collections;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tests for the <code>PeriodicStatisticsSink</code> class.
@@ -56,23 +60,35 @@ public class PeriodicStatisticsSinkTest {
 
     @Test
     public void testPeriodicFlush() throws InterruptedException {
-        final long intervalInSeconds = 3;
-        final Sink statisticsSink = _statisticsSinkBuilder
-                .setIntervalInSeconds(Long.valueOf(intervalInSeconds))
-                .build();
+        final ScheduledExecutorService executor = Mockito.mock(ScheduledExecutorService.class);
+        final ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+        final Sink statisticsSink = new PeriodicStatisticsSink(_statisticsSinkBuilder, executor);
+        Mockito.verify(executor).scheduleAtFixedRate(
+                runnableCaptor.capture(),
+                Mockito.anyLong(),
+                Mockito.anyLong(),
+                Mockito.<TimeUnit>any());
+
+        final Runnable periodicRunnable = runnableCaptor.getValue();
+
         Mockito.verify(_mockMetricsFactory).create();
         Mockito.verify(_mockMetrics).resetCounter(COUNTER_NAME);
 
         statisticsSink.recordAggregateData(Collections.singletonList(TestBeanFactory.createAggregatedData()));
-        Mockito.verify(_mockMetrics).incrementCounter(COUNTER_NAME, 1);
-        Thread.sleep((intervalInSeconds + 1) * 1000);
+        periodicRunnable.run();
+        Mockito.verify(_mockMetrics, Mockito.times(1)).incrementCounter(COUNTER_NAME, 1);
+        Mockito.verify(_mockMetrics, Mockito.times(1)).close();
 
-        Mockito.verify(_mockMetrics).close();
-        Mockito.verify(_mockMetricsFactory, Mockito.times(2)).create();
-        Mockito.verify(_mockMetrics, Mockito.times(2)).resetCounter(COUNTER_NAME);
+        statisticsSink.recordAggregateData(Collections.singletonList(TestBeanFactory.createAggregatedData()));
+        periodicRunnable.run();
+        Mockito.verify(_mockMetrics, Mockito.times(2)).incrementCounter(COUNTER_NAME, 1);
+        Mockito.verify(_mockMetrics, Mockito.times(2)).close();
+
+        Mockito.verify(_mockMetricsFactory, Mockito.times(3)).create();
+        Mockito.verify(_mockMetrics, Mockito.times(3)).resetCounter(COUNTER_NAME);
 
         statisticsSink.close();
-        Mockito.verify(_mockMetrics, Mockito.times(2)).close();
+        Mockito.verify(_mockMetrics, Mockito.times(3)).close();
     }
 
     @Test
@@ -81,9 +97,11 @@ public class PeriodicStatisticsSinkTest {
         Mockito.verify(_mockMetricsFactory).create();
         Mockito.verify(_mockMetrics).resetCounter(COUNTER_NAME);
 
-        statisticsSink.recordAggregateData(Collections.singletonList(TestBeanFactory.createAggregatedData()));
-        Mockito.verify(_mockMetrics).incrementCounter(COUNTER_NAME, 1);
+        statisticsSink.recordAggregateData(
+                Collections.singletonList(TestBeanFactory.createAggregatedData()),
+                Collections.<Condition>emptyList());
         statisticsSink.close();
+        Mockito.verify(_mockMetrics).incrementCounter(COUNTER_NAME, 1);
         Mockito.verify(_mockMetrics).close();
     }
 

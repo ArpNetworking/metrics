@@ -1,4 +1,22 @@
+/*
+ * Copyright 2014 Groupon.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 ///<reference path="../libs/flotr2/flotr2.d.ts"/>
+
 import ConnectionVM = require('./ConnectionVM');
 import StatisticView = require('./StatisticView');
 import Series = require('./Series');
@@ -6,6 +24,18 @@ import ViewDuration = require('./ViewDuration');
 import GraphSpec = require('./GraphSpec');
 
 import Flotr = require('flotr2');
+
+// requestAnimFrame shim  with setTimeout fallback
+window.requestAnimationFrame = (function () {
+    return window.requestAnimationFrame ||
+        (<any>window).webkitRequestAnimationFrame ||
+        (<any>window).mozRequestAnimationFrame ||
+        (<any>window).oRequestAnimationFrame ||
+        (<any>window).msRequestAnimationFrame ||
+        function (callback) {
+            window.setTimeout(callback, 1000 / 60);
+        };
+})();
 
 class GraphVM implements StatisticView {
     id: string;
@@ -28,7 +58,21 @@ class GraphVM implements StatisticView {
     }
 
     disconnectConnection(cvm: ConnectionVM) {
+        var index = this.dataStreams[cvm.server];
+        if (index != undefined) {
+            delete this.dataStreams[cvm.server];
+            var series = this.data.splice(index, 1);
+            series[0].colorSubscription.dispose();
 
+            //we now need to re-index dataStreams
+            //any element with an index > the var index needs to be decremented
+            for (var i in this.dataStreams) {
+                var old = this.dataStreams[i];
+                if (old > index) {
+                    this.dataStreams[i] = old - 1;
+                }
+            }
+        }
     }
 
     shutdown() {
@@ -48,6 +92,7 @@ class GraphVM implements StatisticView {
     updateColor(cvm: ConnectionVM): void {
         var index = this.dataStreams[cvm.server];
         this.data[index].color = cvm.color();
+        this.data[index].points.fillOpacity = cvm.alpha();
     }
 
     postData(server: string, timestamp: number, dataValue: number, cvm: ConnectionVM) {
@@ -55,10 +100,11 @@ class GraphVM implements StatisticView {
         if (index == undefined) {
             index = this.data.length;
             this.dataStreams[cvm.server] = index;
-            cvm.color.subscribe((color: String) => {
+            var series = new Series(cvm.server, cvm.color());
+            series.colorSubscription = cvm.color.subscribe((color: String) => {
                 this.updateColor(cvm);
             });
-            this.data.push(new Series(cvm.server, cvm.color()));
+            this.data.push(series);
         }
 
 
@@ -80,7 +126,7 @@ class GraphVM implements StatisticView {
                 return;
             }
 
-            if (this.paused) {
+            if (this.paused || this.container.clientWidth == 0) {
                 // Animate
                 setTimeout(function() {
                     animate();
@@ -96,6 +142,11 @@ class GraphVM implements StatisticView {
             var graphEnd = now - this.endAt;
             var graphStart = graphEnd - this.duration;
             for (var series = 0; series < this.data.length; series++) {
+                //Deleted entries are not removed from the array in order to
+                //preserve the hash of name => index
+                if (this.data[series] === undefined) {
+                    continue;
+                }
                 //shift the data off the array that is too old
                 while (this.data[series].data[1] != undefined && this.data[series].data[1][0] < graphEnd - this.dataLength) {
                     this.data[series].data.shift();
@@ -164,8 +215,9 @@ class GraphVM implements StatisticView {
 
                 },
                 title: this.name,
+                HtmlText: false,
                 mouse: {
-                    track: true,
+                    track: false,
                     sensibility: 8,
                     radius: 15
                 },
@@ -175,10 +227,8 @@ class GraphVM implements StatisticView {
             });
 
             // Animate
-            setTimeout(function() {
-                animate();
-            }, tickTime);
-        }
+            window.requestAnimationFrame(animate);
+        };
         animate();
     }
 }
