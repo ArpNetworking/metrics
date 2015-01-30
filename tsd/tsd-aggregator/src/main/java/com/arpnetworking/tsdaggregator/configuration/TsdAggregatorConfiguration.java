@@ -16,29 +16,22 @@
 package com.arpnetworking.tsdaggregator.configuration;
 
 import com.arpnetworking.jackson.BuilderDeserializer;
-import com.arpnetworking.tsdcore.exceptions.ConfigurationException;
+import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.tsdcore.limiter.MetricsLimiter;
+import com.arpnetworking.utility.InterfaceDatabase;
 import com.arpnetworking.utility.OvalBuilder;
+import com.arpnetworking.utility.ReflectionsDatabase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.common.base.Objects;
-import com.google.common.base.Optional;
-
+import com.google.common.base.MoreObjects;
+import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import net.sf.oval.exception.ConstraintsViolatedException;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import net.sf.oval.constraint.Range;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.List;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Representation of TsdAggregator configuration.
@@ -48,41 +41,24 @@ import java.util.List;
 public final class TsdAggregatorConfiguration {
 
     /**
-     * Static factory for creating a <code>TsdAggregatorConfiguration</code>
-     * instance from command line arguments.
+     * Create an <code>ObjectMapper</code> for TsdAggregator configuration.
      *
-     * @param arguments The command line arguments to create the configuration
-     * from.
-     * @return Instance of <code>TsdAggregatorConfiguration</code>.
-     * @throws ConfigurationException If the configuration cannot be created
-     * for any reason.
+     * @return An <code>ObjectMapper</code> for TsdAggregator configuration.
      */
-    public static TsdAggregatorConfiguration create(final List<String> arguments) throws ConfigurationException {
-        final Options options = new Options().addOption(
-                Option.builder("c")
-                        .longOpt("config")
-                        .hasArg()
-                        .optionalArg(false)
-                        .argName("configuration file")
-                        .required(true)
-                        .build());
-        final CommandLineParser parser = new DefaultParser();
-        final CommandLine commandLine;
-        try {
-            commandLine = parser.parse(options, arguments.toArray(new String[arguments.size()]));
-        } catch (final ParseException e) {
-            throw new ConfigurationException(String.format("Unable to parse configuration; arguments=%s", arguments), e);
+    public static ObjectMapper createObjectMapper() {
+        final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
+
+        final SimpleModule module = new SimpleModule("TsdAggregator");
+        BuilderDeserializer.addTo(module, TsdAggregatorConfiguration.class);
+
+        final Set<Class<? extends MetricsLimiter>> limiterClasses = INTERFACE_DATABASE.findClassesWithInterface(MetricsLimiter.class);
+        for (final Class<? extends MetricsLimiter> limiterClass : limiterClasses) {
+            BuilderDeserializer.addTo(module, limiterClass);
         }
-        final Optional<String> configurationFile = Optional.fromNullable(commandLine.getOptionValue("config"));
-        if (configurationFile.isPresent()) {
-            try {
-                final URL url = new URI(configurationFile.get()).toURL();
-                return OBJECT_MAPPER.readValue(url, TsdAggregatorConfiguration.class);
-            } catch (final URISyntaxException | IllegalArgumentException | IOException | ConstraintsViolatedException e) {
-                throw new ConfigurationException(String.format("Unable to parse configuration; file=%s", configurationFile), e);
-            }
-        }
-        throw new ConfigurationException("No configuration file specified");
+
+        objectMapper.registerModules(module);
+
+        return objectMapper;
     }
 
     public File getLogDirectory() {
@@ -93,32 +69,54 @@ public final class TsdAggregatorConfiguration {
         return _pipelinesDirectory;
     }
 
+    public String getHttpHost() {
+        return _httpHost;
+    }
+
+    public int getHttpPort() {
+        return _httpPort;
+    }
+
+    public Map<String, MetricsLimiter> getLimiters() {
+        return Collections.unmodifiableMap(_limiters);
+    }
+
+    public Map<String, ?> getAkkaConfiguration() {
+        return Collections.unmodifiableMap(_akkaConfiguration);
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("LogDirectory", _logDirectory)
                 .add("PipelinesDirectory", _pipelinesDirectory)
+                .add("HttpHost", _httpHost)
+                .add("HttpPort", _httpPort)
+                .add("Limiters", _limiters)
+                .add("AkkaConfiguration", _akkaConfiguration)
                 .toString();
     }
 
     private TsdAggregatorConfiguration(final Builder builder) {
         _logDirectory = builder._logDirectory;
         _pipelinesDirectory = builder._pipelinesDirectory;
+        _httpHost = builder._httpHost;
+        _httpPort = builder._httpPort.intValue();
+        _limiters = builder._limiters;
+        _akkaConfiguration = builder._akkaConfiguration;
     }
 
     private final File _logDirectory;
     private final File _pipelinesDirectory;
+    private final String _httpHost;
+    private final int _httpPort;
+    private final Map<String, MetricsLimiter> _limiters;
+    private final Map<String, ?> _akkaConfiguration;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    static {
-        final SimpleModule module = new SimpleModule("TsdAggregatorConfiguration");
-        module.addDeserializer(TsdAggregatorConfiguration.class, BuilderDeserializer.of(TsdAggregatorConfiguration.Builder.class));
-        OBJECT_MAPPER.registerModules(module);
-    }
+    private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
 
     /**
      * Implementation of builder pattern for <code>TsdAggregatorConfiguration</code>.
@@ -156,9 +154,70 @@ public final class TsdAggregatorConfiguration {
             return this;
         }
 
+        /**
+         * The http host address to bind to. Cannot be null or empty.
+         *
+         * @param value The host address to bind to.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setHttpHost(final String value) {
+            _httpHost = value;
+            return this;
+        }
+
+        /**
+         * The http port to listen on. Cannot be null, must be between 1 and
+         * 65535 (inclusive).
+         *
+         * @param value The port to listen on.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setHttpPort(final Integer value) {
+            _httpPort = value;
+            return this;
+        }
+
+        /**
+         * The named limiters. Optional. Defaults to an empty map.
+         *
+         * @param value The port to listen on.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setLimiters(final Map<String, MetricsLimiter> value) {
+            _limiters = value;
+            return this;
+        }
+
+        /**
+         * Akka configuration. Cannot be null. By convention Akka configuration
+         * begins with a map containing a single key "akka" and a value of a
+         * nested map. For more information please see:
+         *
+         * http://doc.akka.io/docs/akka/snapshot/general/configuration.html
+         *
+         * NOTE: No validation is performed on the Akka configuration itself.
+         *
+         * @param value The Akka configuration.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setAkkaConfiguration(final Map<String, ?> value) {
+            _akkaConfiguration = value;
+            return this;
+        }
+
         @NotNull
         private File _logDirectory;
         @NotNull
         private File _pipelinesDirectory;
+        @NotNull
+        @NotEmpty
+        private String _httpHost;
+        @NotNull
+        @Range(min = 1, max = 65535)
+        private Integer _httpPort;
+        @NotNull
+        private Map<String, MetricsLimiter> _limiters = Collections.emptyMap();
+        @NotNull
+        private Map<String, ?> _akkaConfiguration;
     }
 }

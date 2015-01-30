@@ -16,11 +16,11 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.google.common.base.Objects;
+import com.arpnetworking.tsdcore.model.Condition;
+import com.google.common.base.MoreObjects;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Publishes to a ReMet endpoint. This class is thread safe.
@@ -34,7 +34,7 @@ public final class ReMetSink extends HttpPostSink {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("super", super.toString())
                 .toString();
     }
@@ -43,20 +43,21 @@ public final class ReMetSink extends HttpPostSink {
      * {@inheritDoc}
      */
     @Override
-    protected Collection<String> serialize(final List<AggregatedData> data) {
+    protected Collection<String> serialize(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+        // TODO(vkoskela): Send conditions to ReMet [MAI-451]
         final StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("[");
         for (final AggregatedData datum : data) {
             // TODO(vkoskela): Refactor into JSON serializer [MAI-88]
             // Question: We should consider carefully how to separate sinks and
             // data formats.
-            stringBuilder.append("{\"value\":\"").append(datum.getValue())
-                    .append("\",\"metric\":\"").append(datum.getMetric())
-                    .append("\",\"service\":\"").append(datum.getService())
+            stringBuilder.append("{\"value\":\"").append(datum.getValue().getValue())
+                    .append("\",\"metric\":\"").append(datum.getFQDSN().getMetric())
+                    .append("\",\"service\":\"").append(datum.getFQDSN().getService())
                     .append("\",\"host\":\"").append(datum.getHost())
                     .append("\",\"period\":\"").append(datum.getPeriod())
                     .append("\",\"periodStart\":\"").append(datum.getPeriodStart())
-                    .append("\",\"statistic\":\"").append(datum.getStatistic().getName())
+                    .append("\",\"statistic\":\"").append(datum.getFQDSN().getStatistic().getName())
                     .append("\"},");
         }
         stringBuilder.setCharAt(stringBuilder.length() - 1, ']');
@@ -72,7 +73,7 @@ public final class ReMetSink extends HttpPostSink {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static class Builder extends HttpPostSink.Builder<Builder> {
+    public static class Builder extends HttpPostSink.Builder<Builder, ReMetSink> {
 
         /**
          * Public constructor.

@@ -23,15 +23,14 @@ import com.arpnetworking.tsdaggregator.model.Record;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.sources.BaseSource;
 import com.arpnetworking.tsdcore.sources.Source;
+import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.observer.Observable;
 import com.arpnetworking.utility.observer.Observer;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import net.sf.oval.constraint.NotNull;
-
 import org.apache.log4j.Logger;
 
 import java.util.Collections;
@@ -71,7 +70,7 @@ public final class MappingSource extends BaseSource {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("super", super.toString())
                 .add("Source", _source)
                 .toString();
@@ -95,9 +94,9 @@ public final class MappingSource extends BaseSource {
     private static final Logger LOGGER = Logger.getLogger(MappingSource.class);
 
     // NOTE: Package private for testing
-    /* package private */static final class MappingObserver implements Observer {
+    /* package private */ static final class MappingObserver implements Observer {
 
-        public MappingObserver(final Source source, final Map<Pattern, List<String>> findAndReplace) {
+        public MappingObserver(final MappingSource source, final Map<Pattern, List<String>> findAndReplace) {
             _source = source;
             _findAndReplace = findAndReplace;
         }
@@ -120,6 +119,7 @@ public final class MappingSource extends BaseSource {
                         for (final String replacement : findAndReplace.getValue()) {
                             merge(metric.getValue(), matcher.replaceAll(replacement), mergedMetrics);
                         }
+                        //Having "found" set here means that mapping a metric to an empty list suppresses that metric
                         found = true;
                     }
                 }
@@ -131,13 +131,12 @@ public final class MappingSource extends BaseSource {
             // Raise the merged record event with this source's observers
             // NOTE: Do not leak instances of MergingMetric since it is mutable
             _source.notify(
-                    _source,
                     new DefaultRecord.Builder()
                             .setMetrics(
                                     Maps.transformEntries(mergedMetrics, new Maps.EntryTransformer<String, MergingMetric, Metric>() {
                                         @Override
                                         public Metric transformEntry(final String key, final MergingMetric mergingMetric) {
-                                            return new DefaultMetric.Builder(mergingMetric).build();
+                                            return OvalBuilder.clone(mergingMetric, new DefaultMetric.Builder()).build();
                                         }
                                     }))
                             .setTime(record.getTime())
@@ -159,7 +158,7 @@ public final class MappingSource extends BaseSource {
             }
         }
 
-        private final Source _source;
+        private final MappingSource _source;
         private final Map<Pattern, List<String>> _findAndReplace;
     }
 
@@ -194,7 +193,7 @@ public final class MappingSource extends BaseSource {
 
         @Override
         public String toString() {
-            return Objects.toStringHelper(this)
+            return MoreObjects.toStringHelper(this)
                     .add("Type", _type)
                     .add("Values", _values)
                     .toString();
@@ -220,7 +219,7 @@ public final class MappingSource extends BaseSource {
 
         /**
          * Sets the underlying source. Cannot be null.
-         * 
+         *
          * @param value The underlying source.
          * @return This instance of <code>Builder</code>.
          */
@@ -231,7 +230,7 @@ public final class MappingSource extends BaseSource {
 
         /**
          * Sets find and replace expression map. Cannot be null.
-         * 
+         *
          * @param value The find and replace expression map.
          * @return This instance of <code>Builder</code>.
          */

@@ -17,6 +17,7 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Condition;
 import com.google.common.collect.Lists;
 
 import org.junit.Before;
@@ -61,9 +62,9 @@ public class MultiSinkTest {
         final Sink multiSink = _multiSinkBuilder
                 .setSinks(Lists.newArrayList(mockSinkA, mockSinkB))
                 .build();
-        multiSink.recordAggregateData(data);
-        Mockito.verify(mockSinkA).recordAggregateData(Matchers.eq(data));
-        Mockito.verify(mockSinkB).recordAggregateData(Matchers.eq(data));
+        multiSink.recordAggregateData(data, Collections.<Condition>emptyList());
+        Mockito.verify(mockSinkA).recordAggregateData(Matchers.eq(data), Matchers.eq(Collections.<Condition>emptyList()));
+        Mockito.verify(mockSinkB).recordAggregateData(Matchers.eq(data), Matchers.eq(Collections.<Condition>emptyList()));
     }
 
     private MultiSink.Builder _multiSinkBuilder;

@@ -27,7 +27,7 @@ import java.util.Set;
 
 /**
  * Tests the TSAggregation class.
- * 
+ *
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class TSAggregationTest {
@@ -44,6 +44,7 @@ public class TSAggregationTest {
                         .build(),
                 "testHost",
                 "testService",
+                "cluster",
                 stats);
         Assert.assertNotNull(agg);
     }

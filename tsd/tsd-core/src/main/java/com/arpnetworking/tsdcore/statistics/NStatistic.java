@@ -15,7 +15,10 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Quantity;
+import com.arpnetworking.tsdcore.model.Unit;
+import com.google.common.base.Optional;
 
 import java.util.List;
 
@@ -23,15 +26,17 @@ import java.util.List;
  * Counts the entries.
  *
  * @author Brandon Arp (barp at groupon dot com)
+ * @deprecated Replaced with <code>CountStatistic</code>
  */
+@Deprecated
 public class NStatistic extends BaseStatistic {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Double calculate(final List<Quantity> unorderedValues) {
-        return Double.valueOf(unorderedValues.size());
+    public double calculate(final List<Quantity> unorderedValues) {
+        return unorderedValues.size();
     }
 
     /**
@@ -42,4 +47,17 @@ public class NStatistic extends BaseStatistic {
         return "n";
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
+        double samples = 0;
+        for (final AggregatedData aggregation : aggregations) {
+            samples += aggregation.getPopulationSize();
+        }
+        return new Quantity(samples, Optional.<Unit>absent());
+    }
+
+    private static final long serialVersionUID = 2983555675457569011L;
 }

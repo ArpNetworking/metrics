@@ -16,6 +16,7 @@
 package com.arpnetworking.tsdaggregator.model;
 
 import com.arpnetworking.utility.OvalBuilder;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
@@ -103,7 +104,7 @@ public final class DefaultRecord implements Record {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Metrics", _metrics)
                 .add("Time", _time)
                 .add("Annotations", _annotations)
@@ -134,19 +135,6 @@ public final class DefaultRecord implements Record {
          */
         public Builder() {
             super(DefaultRecord.class);
-        }
-
-        /**
-         * Public constructor. This constructor can be used for cloning.
-         * 
-         * @param record The <code>Record</code> instance to set all the builder
-         * fields from.
-         */
-        public Builder(final Record record) {
-            super(DefaultRecord.class);
-            setMetrics(record.getMetrics());
-            setTime(record.getTime());
-            setAnnotations(record.getAnnotations());
         }
 
         /**

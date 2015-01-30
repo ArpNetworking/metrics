@@ -30,9 +30,9 @@ object CheckstyleSettings {
       val outputDir = (target / "checkstyle").mkdirs
       val outputFile = (target / "checkstyle" / "checkstyle-report.xml").getAbsolutePath
       val inputDir = src.getAbsolutePath
-      val buildDir = (base / ".." / "build").toPath.normalize().toAbsolutePath.toFile
+      val buildDir = (base / ".." / "build").getAbsoluteFile
       val args = List(
-        "-c", (buildDir / "checkstyle.xml").toString,
+        "-c", (buildDir / "checkstyle.xml").getAbsolutePath,
         "-f", "xml",
         "-r", inputDir,
         "-o", outputFile

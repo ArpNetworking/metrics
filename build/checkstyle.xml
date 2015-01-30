@@ -6,9 +6,9 @@
 <!--
     Custom Checkstyle configuration for AINT. This is based heavily on
     the standard sun coding conventions as provided with Checkstyle in:
-    
+
     config/sun_checks.xml
-    
+
     Checkstyle is very configurable. Be sure to read the documentation at
     http://checkstyle.sf.net (or in your downloaded distribution).
 
@@ -18,7 +18,7 @@
     To completely disable a check in a particular context when it is not
     possible to meet the convention but the convention is otherwise accepted,
     simply surround the offending code with these comments:
-    
+
     // CHECKSTYLE.OFF: CHECKSTYLE_RULE_NAME - COMMENT DESCRIBING WHY
     Offensive Code Here
     // CHECKSTYLE.ON: CHECKSTYLE_RULE_NAME
@@ -38,7 +38,7 @@
     <!-- Checks whether files end with a new line.                        -->
     <!-- See http://checkstyle.sf.net/config_misc.html#NewlineAtEndOfFile -->
     <module name="NewlineAtEndOfFile"/>
-    
+
     <!-- Checks that there are no tab characters in the file. -->
     <module name="FileTabCharacter"/>
 
@@ -57,19 +57,19 @@
         <property name="format" value="((//.*)|(\*.*))TODO\([^)]*\):[^\[]*[^\[][^\]]*[^\]]$"/>
         <property name="message" value='All TODOs should be named with jira reference.  e.g. "TODO(johndoe): Refactor when v2 is released. [MAI-?]"'/>
     </module>
-    
+
     <!-- Checks that comments do not include date or time lines -->
     <module name="RegexpSingleline">
         <property name="format" value="((//)|(\*)) (Date|Time): "/>
         <property name="message" value="Date and time should not be added to comments; that's what source control is for."/>
     </module>
-    
+
     <!-- Checks that @author tags contain full name and email address -->
     <module name="RegexpSingleline">
         <property name="format" value="((//)|(\*)) @author [^ ]*$"/>
         <property name="message" value='All @author tags should contain first and last name with email. e.g. "@author First Last (flast at example dot com)"'/>
     </module>
-    
+
     <!-- Forbid shaded packages -->
     <module name="RegexpSingleline">
         <property name="format" value="^import com\.arpnetworking\.metrics\.com\.fasterxml\.jackson\..*"/>
@@ -91,18 +91,18 @@
     <module name="SuppressionFilter">
         <property name="file" value="${samedir}/checkstyle.exclude.xml"/>
     </module>
-    
+
     <!-- Turn checkstyle ON and OFF for a specified code block -->
     <module name="SuppressionCommentFilter">
         <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
         <property name="onCommentFormat" value="CHECKSTYLE.ON\: ([\w\|]+)"/>
         <property name="checkFormat" value="$1"/>
     </module>
-    
+
     <module name="FileLength">
         <property name="max" value="1000"/>
     </module>
-    
+
     <module name="StrictDuplicateCode">
         <!-- This counts lines including comments -->
         <property name="min" value="35"/>
@@ -121,8 +121,9 @@
         <!-- Checks for out of order import statements. -->
         <module name="ImportOrder">
             <property name="severity" value="error"/>
-            <property name="groups" value="akka,ch,com,io,junit,models,net,org,play,scala,java,javax"/>
+            <property name="groups" value="*,/^javax?\./"/>
             <!-- This ensures that static imports go first. -->
+            <property name="separated" value="true"/>
             <property name="option" value="top"/>
             <property name="tokens" value="STATIC_IMPORT, IMPORT"/>
         </module>
@@ -246,7 +247,7 @@
         <module name="WhitespaceAfter">
         </module>
         <module name="WhitespaceAround">
-            <!-- Tokens; includes all tokens except: 
+            <!-- Tokens; includes all tokens except:
                  1) LCURLY and RCURLY - To allow empty anonymous class definitions.
              -->
             <property name="tokens" value="ASSIGN, BAND, BAND_ASSIGN, BOR, BOR_ASSIGN, BSR, BSR_ASSIGN, BXOR, BXOR_ASSIGN, COLON, DIV, DIV_ASSIGN, EQUAL, GE, GT, LAND, LE, LITERAL_ASSERT, LITERAL_CATCH, LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_FOR, LITERAL_IF, LITERAL_RETURN, LITERAL_SYNCHRONIZED, LITERAL_TRY, LITERAL_WHILE, LOR, LT, MINUS, MINUS_ASSIGN, MOD, MOD_ASSIGN, NOT_EQUAL, PLUS, PLUS_ASSIGN, QUESTION, SL, SLIST, SL_ASSIGN, SR, SR_ASSIGN, STAR"/>
@@ -263,7 +264,9 @@
 
         <!-- Checks for blocks. You know, those {}'s         -->
         <!-- See http://checkstyle.sf.net/config_blocks.html -->
-        <module name="AvoidNestedBlocks"/>
+        <module name="AvoidNestedBlocks">
+          <property name="allowInSwitchCase" value="true"/>
+        </module>
         <module name="EmptyBlock"/>
         <module name="LeftCurly">
             <property name="option" value="eol"/>
@@ -306,7 +309,7 @@
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
         <module name="UnnecessaryParentheses"/>
-        
+
 
         <!-- Checks for class design                         -->
         <!-- See http://checkstyle.sf.net/config_design.html -->
@@ -332,7 +335,7 @@
         </module>
         <module name="OuterTypeFilename"/>
         <module name="UpperEll"/>
-        
+
         <!-- Disallow comparisons of this with null -->
         <module name="DescendantToken">
             <property name="tokens" value="EQUAL,NOT_EQUAL"/>
@@ -341,7 +344,7 @@
             <property name="maximumDepth" value="1"/>
             <property name="sumTokenCounts" value="true"/>
         </module>
-        
+
         <!-- Disallow string literal equality checks (use .equals!) -->
         <module name="DescendantToken">
             <property name="tokens" value="EQUAL,NOT_EQUAL"/>
@@ -349,21 +352,21 @@
             <property name="maximumNumber" value="0"/>
             <property name="maximumDepth" value="1"/>
         </module>
-        
+
         <!-- Uninitialized for loop (use while instead) -->
         <module name="DescendantToken">
             <property name="tokens" value="FOR_INIT"/>
             <property name="limitedTokens" value="EXPR"/>
             <property name="minimumNumber" value="1"/>
         </module>
-        
+
         <!-- Missing condition in for loop -->
         <module name="DescendantToken">
             <property name="tokens" value="FOR_CONDITION"/>
             <property name="limitedTokens" value="EXPR"/>
             <property name="minimumNumber" value="1"/>
         </module>
-        
+
         <!-- Additional Checks -->
         <module name="MissingDeprecated"/>
         <module name="AvoidStarImport">
@@ -374,5 +377,5 @@
         <module name="UnusedImports"/>
 
     </module>
-    
+
 </module>

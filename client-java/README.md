@@ -23,7 +23,7 @@ Add a dependency to your pom:
 </dependency>
 ```
 
-You may also need to add the Maven Central repository either to your *~/.m2/settings.xml* or into your project's *pom.xml*.
+The Maven Central repository is included by default.
 
 #### Gradle
 
@@ -60,12 +60,12 @@ Users of Vertx need to depend on the vertx-extra package instead of the metrics-
 Your application should instantiate a single instance of MetricsFactory.  For example: 
 
 ```java
-final MetricsFactory metricsFactory = new MetricsFactory.Builder()
+final MetricsFactory metricsFactory = new TsdMetricsFactory.Builder()
     .setSinks(Collections.singletonList(
         new TsdQueryLogSink.Builder()
             .setPath("/var/logs")
             .setName("myapp-query")
-            .build()));
+            .build()))
     .build();
 ```
 
@@ -179,12 +179,12 @@ Building
 --------
 
 Prerequisites:
-* [JDK7](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
-* [Maven 3.0.5+](http://maven.apache.org/download.cgi)
+* [JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+* [Maven 3.2.5+](http://maven.apache.org/download.cgi)
 
 Building:
 
-    client-java> mvn package
+    client-java> mvn verify
 
 To use the local version you must first install it locally:
 

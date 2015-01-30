@@ -26,6 +26,7 @@ import counterSamples = require("./counter-samples");
 import units = require("./tsd-units");
 import sample = require("./tsd-metric-sample");
 import metricsList = require("./tsd-metrics-list");
+import logEntry = require("./metrics-event");
 
 //aliases
 import TsdTimer = timers.TsdTimer;
@@ -36,16 +37,24 @@ import TimerSamples = timerSamples.TimerSamples;
 import Units = units.Units;
 import TsdMetricSample = sample.TsdMetricSample;
 import TsdMetricsList = metricsList.TsdMetricsList;
+import MetricsEvent = logEntry.MetricsEvent;
 
+/**
+ * The tsd module configuration parameters.
+ * @ignore
+ */
 class Options {
     /* istanbul ignore next */
-    constructor(){}
+    constructor() {
+    }
+
     /**
-     * Sets the maximums size of log in bytes before rolling a new file
+     * Sets the maximums size of log in bytes before rolling a new file.
      * Default: 32 MB
      * @type {number}
      */
     public static LOG_MAX_SIZE:number = 32 * 1024 * 1024;
+
     /**
      * Sets the maximum number of log files backup to retain.
      * Default: 10
@@ -61,7 +70,7 @@ class Options {
     public static LOG_FILE_NAME:string = "tsd-query.log";
 
     /**
-     * Sets a flag to output the metrics to console in addition to the query file (mainly for testing)
+     * Sets a flag to output the metrics to console in addition to the query file (mainly for testing).
      * Default: false
      * @type {boolean}
      */
@@ -72,13 +81,17 @@ class Options {
  * This class allows holds the open state of the metrics object and the event emitter used for logging error and test
  * event.
  * The motive for this class is to avoid passing TsdMetrics instance to timers and counters, and create a
- * circular reference that could be expensive to collect by the GC
+ * circular reference that could be expensive to collect by the GC.
  * The timers and counter needs to check the open state of the TsdMetrics instance and report error if an operation
- * is executed while the TsdMetrics instance is in closed state
+ * is executed while the TsdMetrics instance is in closed state.
+ *
+ * @class
+ * @ignore
  **/
 export class MetricsStateObject {
     private eventEmitter:events.EventEmitter = new events.EventEmitter();
-    constructor(public isOpen:boolean){
+
+    constructor(public isOpen:boolean) {
         //according to http://nodejs.org/docs/v0.3.5/api/events.html#events.EventEmitter
         //if an error event is emitted and nothing was listening, the process will exist, so we are adding this
         //do-nothing listener in order not to exit the process
@@ -89,25 +102,27 @@ export class MetricsStateObject {
     /**
      * Get an instance if the event emitter to be used to emit the metrics events.
      */
-    public getEventEmitter():events.EventEmitter{
+    public getEventEmitter():events.EventEmitter {
         return this.eventEmitter;
     }
 
     /**
      * Assert that the metrics object is not closed.
      *
+     * @method
      * @param message An optional message to prefix to error message if object is closed.
-     * @returns {boolean}
+     * @returns {boolean} True if the metric object is open, otherwise false.
      */
     public assertIsOpen(failMessage:string = ""):boolean {
         return this.assert(this.isOpen,
-             (failMessage == "" ? failMessage : failMessage + ": ") +
-             "Metrics object was not opened or it's already closed");
+                (failMessage == "" ? failMessage : failMessage + ": ") +
+                "Metrics object was not opened or it's already closed");
     }
 
     /**
      * Assert that a condition is true and emit an error event if not.
      *
+     * @method
      * @param condition The condition to assert.
      * @param message The message to set to the error if condition not met.
      * @returns {boolean}
@@ -122,9 +137,10 @@ export class MetricsStateObject {
     /**
      * Assert that an object is defined and its value is also defined.
      *
+     * @method
      * @param object The object to test.
-     * @param message The message to set to ther error if condition not met.
-     * @returns {boolean}
+     * @param message The message to set to the error if condition not met.
+     * @returns {boolean} True of the object is defined, otherwise false.
      */
     public assertDefined(object:any, message:string):boolean {
         return this.assert(typeof object !== "undefined", message);
@@ -133,62 +149,42 @@ export class MetricsStateObject {
     /**
      * Assert that an object is not defined or its value is undefined.
      *
+     * @method
      * @param object The object to test.
-     * @param message The message to set to ther error if condition not met.
-     * @returns {boolean}
+     * @param message The message to set to the error if condition not met.
+     * @returns {boolean} True of the object is undefined, otherwise false.
      */
     public assertUndefined(object:any, message:string):boolean {
         return this.assert(typeof object === "undefined", message);
     }
 }
 
-
 /**
- * This class holds all the metrics till serialization time.
- **/
-class LogEntry {
-    public annotations:{[name:string]: string} = {};
-    public counters:{[name:string]: CounterSamples} = {};
-    public gauges:{[name:string]: TsdMetricsList<tsdDef.MetricSample>} = {};
-    public timers:{[name:string]: TimerSamples} = {};
-    private static VERSION:string = "2d";
-
-    public constructor(private metricsStateObject:MetricsStateObject) {
-    }
-
-    public toJSON() {
-        var hash:any = {
-            annotations:this.annotations
-        };
-
-        if(!utils.isEmptyObject(this.counters)) {
-            hash.counters = this.counters;
-        }
-
-        if(!utils.isEmptyObject(this.gauges)) {
-            hash.gauges = this.gauges;
-        }
-
-        if(!utils.isEmptyObject(this.timers)) {
-            hash.timers = this.timers;
-        }
-
-        hash.version = LogEntry.VERSION;
-
-        return hash;
-    }
-}
-
+ * 'error' event. Emitted on errors or improper usage of API's
+ *
+ * @event TsdMetrics#error
+ * @type {Error}
+ */
+/**
+ * 'logEvent' event. Emitted after successful writing of the metric event to the query log file
+ *
+ * @event TsdMetrics.events()#logEvent
+ * @type {object}
+ * @property {Array.<{Object.<string, string>}>} annotations Array of hash annotations.
+ * @property {Object.<string, number[]>} counters Array of {"counter" : [samples]} hashes.
+ * @property {Object.<string, number[]>} timers Array of {"timer" : [samples]} hashes.
+ * @property {Object.<string, number[]>} gauges Array of {"gauge" : [samples]} hashes.
+ */
 /**
  * Node JS class for publishing metrics as time series data (TSD).
- * For more information see:
  *
- * https://github.com/ArpNetworking/metrics/blob/master/client-nodejs/README.md
+ * @class
+ * @author Mohammed Kamel (mkamel at groupon dot com)
  */
 export class TsdMetrics implements tsdDef.Metrics {
 
     /**
-     * Singleton instance of the
+     * Singleton instance of the logger.
      */
     private static LOGGER:Lazy<log4js.Logger> =
         new Lazy<log4js.Logger>(() => {
@@ -230,46 +226,52 @@ export class TsdMetrics implements tsdDef.Metrics {
     /**
      * Metrics state object that holds flag to the metrics open state along with common event emitter.
      */
-    private metricsStateObject:MetricsStateObject = new MetricsStateObject(true);
-    private timers:{[name:string]: tsdDef.Timer} = {};
-    private counters:{[name:string]: tsdDef.Counter} = {};
+    private _metricsStateObject:MetricsStateObject = new MetricsStateObject(true);
+    private _timers:{[name:string]: tsdDef.Timer} = {};
+    private _counters:{[name:string]: tsdDef.Counter} = {};
 
     /**
-     * LogEntry field that will be used to serialize the final metric event.
+     * MetricsEvent field that will be used to serialize the final metric event.
      */
-    private logEntry:LogEntry = new LogEntry(this.metricsStateObject);
+    private _metricsEvent:MetricsEvent = new MetricsEvent();
 
-    private static getOrCreateMetricsCollection<T>(name: string, collectionOfT:{[name:string]:T}, factory: () => T ){
+    private static getOrCreateMetricsCollection<T>(name:string, collectionOfT:{[name:string]:T}, factory:() => T) {
         if (collectionOfT[name] === undefined) {
             collectionOfT[name] = factory();
         }
         return collectionOfT[name];
     }
 
-    private getOrCreateCounterSamples(name:string): CounterSamples {
-      return TsdMetrics.getOrCreateMetricsCollection(
-        name, this.logEntry.counters, () => new CounterSamples(this.metricsStateObject));
+    private getOrCreateCounterSamples(name:string):CounterSamples {
+        return <CounterSamples>TsdMetrics.getOrCreateMetricsCollection(
+            name, this._metricsEvent.counters, () => new CounterSamples(this._metricsStateObject));
     }
 
-    private getOrCreateTimerSamples(name:string): TimerSamples {
-      return TsdMetrics.getOrCreateMetricsCollection(
-        name, this.logEntry.timers, () => new TimerSamples(name, this.metricsStateObject));
+    private getOrCreateTimerSamples(name:string):TimerSamples {
+        return <TimerSamples>TsdMetrics.getOrCreateMetricsCollection(
+            name, this._metricsEvent.timers, () => new TimerSamples(name, this._metricsStateObject));
     }
 
-    private getOrCreateGaugsSamples(name:string): TsdMetricsList < tsdDef.MetricSample > {
-      return TsdMetrics.getOrCreateMetricsCollection(
-        name, this.logEntry.gauges, () => new TsdMetricsList < tsdDef.MetricSample >());
+    private getOrCreateGaugesSamples(name:string):TsdMetricsList < tsdDef.MetricSample > {
+        return TsdMetrics.getOrCreateMetricsCollection(
+            name, this._metricsEvent.gauges, () => new TsdMetricsList < tsdDef.MetricSample >());
     }
 
+    /**
+     * Constructor.
+     */
     constructor() {
         this.annotate("initTimestamp", new Date().toISOString());
     }
 
     /**
-     * Get the event emitter to be used for emitting events and errors
+     * Get the event emitter to be used for emitting events and errors.
+     *
+     * @method
+     * @returns {EventEmitter} Event emitter instance
      */
-    public events() : events.EventEmitter {
-        return this.metricsStateObject.getEventEmitter();
+    public events():events.EventEmitter {
+        return this._metricsStateObject.getEventEmitter();
     }
 
     /**
@@ -277,29 +279,32 @@ export class TsdMetrics implements tsdDef.Metrics {
      * <code>Counter</code> instances with the same name, even concurrently,
      * each will record a unique sample for the counter of the specified name.
      *
-     * @param name The name of the counter.
-     * @return <code>Counter</code> instance for recording a counter sample.
+     * @method
+     * @param {string} name The name of the counter.
+     * @returns {Counter} TsdCounter instance for recording a counter sample.
      */
-    public createCounter(name:string): tsdDef.Counter {
-      if(this.metricsStateObject.assertIsOpen()) {
-        return this.getOrCreateCounterSamples(name).addCounter();
-      }
-      return new TsdCounter(this.metricsStateObject);
+    public createCounter(name:string):tsdDef.Counter {
+        if (this._metricsStateObject.assertIsOpen()) {
+            return this.getOrCreateCounterSamples(name).addCounter();
+        }
+        return new TsdCounter(this._metricsStateObject);
     }
 
     /**
      * Increment the specified counter by the specified amount. All counters are
      * initialized to zero.
      *
-     * @param name The name of the counter.
-     * @param value The amount to increment by.
+     * @method
+     * @param {string} name The name of the counter.
+     * @param {number} value The amount to increment by.
+     * @emits 'error' if the metrics object is closed
      */
     public incrementCounter(name:string, value:number = 1):void {
-        if(this.metricsStateObject.assertIsOpen()){
-          if(this.counters[name] === undefined) {
-            this.counters[name] = this.createCounter(name);
-          }
-          this.counters[name].increment(value);
+        if (this._metricsStateObject.assertIsOpen()) {
+            if (this._counters[name] === undefined) {
+                this._counters[name] = this.createCounter(name);
+            }
+            this._counters[name].increment(value);
         }
     }
 
@@ -307,8 +312,10 @@ export class TsdMetrics implements tsdDef.Metrics {
      * Decrement the specified counter by the specified amount. All counters are
      * initialized to zero.
      *
-     * @param name The name of the counter.
-     * @param value The amount to decrement by.
+     * @method
+     * @param {string} name The name of the counter.
+     * @param {number} value The amount to decrement by.
+     * @emits 'error' if the metrics object is closed
      */
     public decrementCounter(name:string, value:number = 1) {
         this.incrementCounter(name, -value);
@@ -320,11 +327,12 @@ export class TsdMetrics implements tsdDef.Metrics {
      * then all counters should be reset before conditionally invoking increment
      * and/or decrement.
      *
-     * @param name The name of the counter.
+     * @method
+     * @param {string} name The name of the counter.
      */
-    public resetCounter(name:string): void {
-        if (this.metricsStateObject.assertIsOpen()) {
-            this.counters[name] = this.createCounter(name);
+    public resetCounter(name:string):void {
+        if (this._metricsStateObject.assertIsOpen()) {
+            this._counters[name] = this.createCounter(name);
         }
     }
 
@@ -333,40 +341,45 @@ export class TsdMetrics implements tsdDef.Metrics {
      * instances with the same name, even concurrently, each will record a
      * unique sample for the timer of the specified name.
      *
+     * @method
      * @param name The name of the timer.
-     * @return <code>Timer</code> instance for recording a timing sample.
+     * @returns {Timer} TsdTimer instance for recording a timing sample.
      */
-    public createTimer(name:string): tsdDef.Timer {
-        if(this.metricsStateObject.assertIsOpen()) {
-          return this.getOrCreateTimerSamples(name).addTimer();
+    public createTimer(name:string):tsdDef.Timer {
+        if (this._metricsStateObject.assertIsOpen()) {
+            return this.getOrCreateTimerSamples(name).addTimer();
         }
-        return new TsdTimer(name, this.metricsStateObject);
+        return new TsdTimer(name, this._metricsStateObject);
     }
 
     /**
      * Start the specified timer measurement.
      *
-     * @param name The name of the timer.
+     * @method
+     * @param {string} name The name of the timer.
+     * @emits 'error' if the metrics object is closed or if the timer already started
      */
-    public startTimer(name:string): void {
-      if (this.metricsStateObject.assertIsOpen() &&
-          this.metricsStateObject.assertUndefined(this.timers[name],
-            "Timer '" + name + "' already started; to time the same event concurrently use createTimer")) {
-          this.timers[name] = this.createTimer(name);
-      }
+    public startTimer(name:string):void {
+        if (this._metricsStateObject.assertIsOpen() &&
+            this._metricsStateObject.assertUndefined(this._timers[name],
+                    "Timer '" + name + "' already started; to time the same event concurrently use createTimer")) {
+            this._timers[name] = this.createTimer(name);
+        }
     }
 
     /**
      * Stop the specified timer measurement.
      *
-     * @param name The name of the timer.
+     * @method
+     * @param {string} name The name of the timer.
+     * @emits 'error' if the metrics object is closed or if the timer already stopped.
      */
     public stopTimer(name:string):void {
-        if (this.metricsStateObject.assertIsOpen() &&
-            this.metricsStateObject.assertDefined(this.timers[name],
-                "Cannot stop timer '" + name + "'. No samples have currently started for the timer")) {
-            this.timers[name].stop();
-            this.timers[name] = undefined;
+        if (this._metricsStateObject.assertIsOpen() &&
+            this._metricsStateObject.assertDefined(this._timers[name],
+                    "Cannot stop timer '" + name + "'. No samples have currently started for the timer")) {
+            this._timers[name].stop();
+            this._timers[name] = undefined;
         }
     }
 
@@ -374,14 +387,16 @@ export class TsdMetrics implements tsdDef.Metrics {
      * Set the timer to the specified value. This is most commonly used to
      * record timers from external sources that are not integrated with metrics.
      *
-     * @param name The name of the timer.
-     * @param duration The duration of the timer.
-     * @param unit The unit of time of the duration.
+     * @method
+     * @param {string} name The name of the timer.
+     * @param {number} duration The duration of the timer.
+     * @param {Units} unit The unit of time of the duration.
+     * @emits 'error' if the metrics object is closed or if not unit specified
      */
     public setTimer(name:string, duration:number, unit:tsdDef.Unit) {
-        if (this.metricsStateObject.assertIsOpen()) {
-            if(!this.metricsStateObject.assertDefined(unit,
-                            "No unit specified for explicit timer. Assuming millisecond.")) {
+        if (this._metricsStateObject.assertIsOpen()) {
+            if (!this._metricsStateObject.assertDefined(unit,
+                "No unit specified for explicit timer. Assuming millisecond.")) {
                 unit = Units.MILLISECOND;
             }
             this.getOrCreateTimerSamples(name).addExplicitTimer(duration, unit);
@@ -391,25 +406,29 @@ export class TsdMetrics implements tsdDef.Metrics {
     /**
      * Set the specified gauge reading.
      *
-     * @param name  The name of the gauge.
-     * @param value The reading on the gauge
-     * @param unit The unit of the reading is recorded into. Default = undefined (no unit).
+     * @method
+     * @param {string} name  The name of the gauge.
+     * @param {number} value The reading on the gauge
+     * @param {Units} unit The unit of the reading is recorded into. Default = undefined (no unit).
+     * @emits 'error' if the metrics object is closed
      */
     public setGauge(name:string, value:number, unit:tsdDef.Unit = undefined) {
-        if (this.metricsStateObject.assertIsOpen()) {
-            this.getOrCreateGaugsSamples(name).push(TsdMetricSample.of(value, unit));
+        if (this._metricsStateObject.assertIsOpen()) {
+            this.getOrCreateGaugesSamples(name).push(TsdMetricSample.of(value, unit));
         }
     }
 
     /**
      * Add an attribute that describes the captured metrics or context.
      *
-     * @param key The name of the attribute.
-     * @param value The value of the attribute.
+     * @method
+     * @param {string} key The name of the attribute.
+     * @param {string} value The value of the attribute.
+     * @emits 'error' if the metrics object is closed
      */
     public annotate(key:string, value:string) {
-        if (this.metricsStateObject.assertIsOpen()) {
-            this.logEntry.annotations[key] = value;
+        if (this._metricsStateObject.assertIsOpen()) {
+            this._metricsEvent.annotations[key] = value;
         }
     }
 
@@ -417,49 +436,83 @@ export class TsdMetrics implements tsdDef.Metrics {
      * Close the metrics object. This should complete publication of metrics to
      * the underlying data store. Once the metrics object is closed, no further
      * metrics can be recorded.
+     *
+     * @method
+     * @emits 'error' if the metrics object is already closed
      */
     public close() {
-        if (this.metricsStateObject.assertIsOpen()) {
-            this.annotate("finalTimestamp", (utils.getMilliTime() / 1000.0).toString());
-            this.metricsStateObject.isOpen = false;
+        if (this._metricsStateObject.assertIsOpen()) {
+            this.annotate("finalTimestamp", new Date().toISOString());
+            this._metricsStateObject.isOpen = false;
+            var stenoMetricsEvent = utils.stenofy(this._metricsEvent);
 
             var emittedLogEvent = false;
             try {
-                var logEntryString = JSON.stringify(this.logEntry);
-                TsdMetrics.LOGGER.getValue().info(logEntryString);
+                var metricsEventString = JSON.stringify(stenoMetricsEvent);
+                TsdMetrics.LOGGER.getValue().info(metricsEventString);
                 emittedLogEvent = true;
             }
-            catch(err) {
-              this.metricsStateObject.getEventEmitter().emit("error", err);
+            catch (err) {
+                this._metricsStateObject.getEventEmitter().emit("error", err);
             }
 
-            if(emittedLogEvent) {
-              this.metricsStateObject.getEventEmitter().emit("logEvent", this.logEntry);
+            if (emittedLogEvent) {
+                this._metricsStateObject.getEventEmitter().emit("logEvent", this._metricsEvent, stenoMetricsEvent);
             }
         }
     }
+
+    /**
+     * Accessor to determine if this <code>Metrics</code> instance is open or
+     * closed. Once closed an instance will not record new data.
+     *
+     * @method
+     * @return True if and only if this <code>Metrics</code> instance is open.
+     */
+    isOpen(): boolean {
+        return this._metricsStateObject.isOpen;
+    }
 }
+/**
+ * Main modules for TSD Client
+ * @module tsd-metrics-client
+ */
 
-module.exports = function (options: any = {}) {
+/**
+ * The tsd-metrics-client module configuration parameters. See {@link module:tsd-metrics-client}
+ * @typedef {Object} options
+ * @property {number} LOG_MAX_SIZE - Sets the maximum number of log files backup to retain. Default: 33554432 (32 MB)
+ * @property {number} LOG_BACKUPS - Sets the maximum number of log files backup to retain. Default: 10
+ * @property {string} LOG_FILE_NAME - The name of the query log file. Default: "tsd-query.log"
+ * @property {string} LOG_CONSOLE_ECHO - Sets a flag to output the metrics to console in addition to the query file.
+ Default: false
+ */
 
-  if (typeof options.LOG_MAX_SIZE !== "undefined") {
-      Options.LOG_MAX_SIZE = options.LOG_MAX_SIZE;
-  }
+/**
+ * Set the global configuration of the tsd module. It should be specified once per application.
+ * @param {options} [options] A hash that specifies the configuration parameters
+ * @alias module:tsd-metrics-client
+ */
+module.exports = function (options:any = {}) {
 
-  if (typeof options.LOG_BACKUPS !== "undefined") {
-      Options.LOG_BACKUPS = options.LOG_BACKUPS;
-  }
+    if (typeof options.LOG_MAX_SIZE !== "undefined") {
+        Options.LOG_MAX_SIZE = options.LOG_MAX_SIZE;
+    }
 
-  if (typeof options.LOG_FILE_NAME !== "undefined") {
-      Options.LOG_FILE_NAME = options.LOG_FILE_NAME;
-  }
+    if (typeof options.LOG_BACKUPS !== "undefined") {
+        Options.LOG_BACKUPS = options.LOG_BACKUPS;
+    }
 
-  if (typeof options.LOG_CONSOLE_ECHO !== "undefined") {
-      Options.LOG_CONSOLE_ECHO = options.LOG_CONSOLE_ECHO;
-  }
+    if (typeof options.LOG_FILE_NAME !== "undefined") {
+        Options.LOG_FILE_NAME = options.LOG_FILE_NAME;
+    }
 
-  return module.exports;
-}
+    if (typeof options.LOG_CONSOLE_ECHO !== "undefined") {
+        Options.LOG_CONSOLE_ECHO = options.LOG_CONSOLE_ECHO;
+    }
+
+    return module.exports;
+};
 
 module.exports.TsdMetrics = TsdMetrics;
 module.exports.Units = Units;

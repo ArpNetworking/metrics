@@ -16,11 +16,9 @@
 package com.arpnetworking.tsdcore.sources;
 
 import com.arpnetworking.utility.OvalBuilder;
-import com.arpnetworking.utility.observer.Observable;
 import com.arpnetworking.utility.observer.ObservableDelegate;
 import com.arpnetworking.utility.observer.Observer;
-import com.google.common.base.Objects;
-
+import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
@@ -49,11 +47,12 @@ public abstract class BaseSource implements Source {
     }
 
     /**
-     * {@inheritDoc}
+     * Dispatch an event to all attached <code>Observer</code> instances.
+     *
+     * @param event The event to dispatch.
      */
-    @Override
-    public void notify(final Observable observable, final Object event) {
-        _observable.notify(observable, event);
+    protected void notify(final Object event) {
+        _observable.notify(this, event);
     }
 
     public String getName() {
@@ -69,7 +68,7 @@ public abstract class BaseSource implements Source {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Name", _name)
                 .toString();
     }
@@ -84,7 +83,7 @@ public abstract class BaseSource implements Source {
     }
 
     private final String _name;
-    private final Observable _observable = ObservableDelegate.newInstance();
+    private final ObservableDelegate _observable = ObservableDelegate.newInstance();
 
     /**
      * Base <code>Builder</code> implementation.

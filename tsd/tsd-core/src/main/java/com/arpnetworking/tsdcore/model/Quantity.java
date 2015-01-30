@@ -15,8 +15,12 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.utility.OvalBuilder;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
+import net.sf.oval.constraint.NotNull;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -24,14 +28,16 @@ import java.util.Objects;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public final class Quantity implements Comparable<Quantity> {
+public final class Quantity implements Comparable<Quantity>, Serializable {
 
     /**
-     * Constructor.
-     * 
+     * Public constructor.
+     *
      * @param value the value
      * @param unit the unit of the value
+     * @deprecated Replaced with <code>Builder</code>.
      */
+    @Deprecated
     public Quantity(final double value, final Optional<Unit> unit) {
         _value = value;
         _unit = unit;
@@ -43,6 +49,23 @@ public final class Quantity implements Comparable<Quantity> {
 
     public Optional<Unit> getUnit() {
         return _unit;
+    }
+
+    /**
+     * Convert this <code>Quantity</code> to one in the specified unit. This
+     * <code>Quantity</code> must also have a <code>Unit</code> and it must
+     * be in the same domain as the provided unit.
+     *
+     * @param unit <code>Unit</code> to convert to.
+     * @return <code>Quantity</code> in specified unit.
+     */
+    public Quantity convertTo(final Unit unit) {
+        if (!_unit.isPresent()) {
+            throw new IllegalStateException(String.format(
+                    "Cannot convert a quantity without a unit; this=%s",
+                    this));
+        }
+        return new Quantity(unit.convert(_value, _unit.get()), Optional.of(unit));
     }
 
     /**
@@ -58,8 +81,10 @@ public final class Quantity implements Comparable<Quantity> {
             final double otherConvertedValue = smallerUnit.convert(other._value, other._unit.get());
             return Double.compare(convertedValue, otherConvertedValue);
         }
-        throw new IllegalArgumentException(
-                "Cannot compare a sample with a unit to a sample without a unit; this=" + this + " other=" + other);
+        throw new IllegalArgumentException(String.format(
+                "Cannot compare a quantity with a unit to a quantity without a unit; this=%s, other=%s",
+                this,
+                other));
     }
 
     /**
@@ -93,12 +118,58 @@ public final class Quantity implements Comparable<Quantity> {
      */
     @Override
     public String toString() {
-        return com.google.common.base.Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Unit", _unit)
                 .add("Value", _value)
                 .toString();
     }
 
+    private Quantity(final Builder builder) {
+        _value = builder._value.doubleValue();
+        _unit = Optional.fromNullable(builder._unit);
+    }
+
     private final Optional<Unit> _unit;
     private final double _value;
+
+    private static final long serialVersionUID = -6339526234042605516L;
+
+    /**
+     * <code>Builder</code> implementation for <code>Quantity</code>.
+     */
+    public static final class Builder extends OvalBuilder<Quantity> {
+
+        /**
+         * Public constructor.
+         */
+        public Builder() {
+            super(Quantity.class);
+        }
+
+        /**
+         * Set the value. Required. Cannot be null.
+         *
+         * @param value The value.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setValue(final Double value) {
+            _value = value;
+            return this;
+        }
+
+        /**
+         * Set the unit. Optional. Default is no unit.
+         *
+         * @param value The unit.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setUnit(final Unit value) {
+            _unit = value;
+            return this;
+        }
+
+        @NotNull
+        private Double _value;
+        private Unit _unit;
+    }
 }

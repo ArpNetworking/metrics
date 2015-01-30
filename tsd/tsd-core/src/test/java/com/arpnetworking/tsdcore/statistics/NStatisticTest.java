@@ -29,7 +29,9 @@ import java.util.List;
  * Tests for the NStatistic class.
  *
  * @author Brandon Arp (barp at groupon dot com)
+ * @deprecated <code>NStatistic</code> has been replaced by <code>CountStatistic</code>.
  */
+@Deprecated
 public class NStatisticTest {
     @Test
     public void testConstruction() {

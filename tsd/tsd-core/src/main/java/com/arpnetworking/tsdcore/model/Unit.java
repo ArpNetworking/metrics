@@ -15,6 +15,10 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.google.common.collect.Maps;
+
+import java.util.Map;
+
 /**
  * Specifies the unit on a counter variable.
  *
@@ -118,6 +122,7 @@ public enum Unit {
     KELVIN(1L, Type.TEMPERATURE) {
         @Override
         public double convert(final double sourceValue, final Unit sourceUnit) {
+            assertSameType(this, sourceUnit);
             if (KELVIN.equals(sourceUnit)) {
                 return sourceValue;
             } else if (CELCIUS.equals(sourceUnit)) {
@@ -134,6 +139,7 @@ public enum Unit {
     CELCIUS(2L, Type.TEMPERATURE) {
         @Override
         public double convert(final double sourceValue, final Unit sourceUnit) {
+            assertSameType(this, sourceUnit);
             if (CELCIUS.equals(sourceUnit)) {
                 return sourceValue;
             } else if (FAHRENHEIT.equals(sourceUnit)) {
@@ -150,6 +156,7 @@ public enum Unit {
     FAHRENHEIT(3L, Type.TEMPERATURE) {
         @Override
         public double convert(final double sourceValue, final Unit sourceUnit) {
+            assertSameType(this, sourceUnit);
             if (FAHRENHEIT.equals(sourceUnit)) {
                 return sourceValue;
             } else if (CELCIUS.equals(sourceUnit)) {
@@ -174,26 +181,66 @@ public enum Unit {
 
     /**
      * Converts a value in one unit to another.
+     *
      * @param sourceValue the value to be converted
      * @param sourceUnit the unit of the source value
      * @return the value after conversion
      */
     public double convert(final double sourceValue, final Unit sourceUnit) {
-        return sourceUnit._scale / this._scale * sourceValue;
+        assertSameType(this, sourceUnit);
+        return sourceUnit._scale / _scale * sourceValue;
+    }
+
+    /**
+     * Gets the smallest unit for this unit's type.
+     *
+     * @return the smallest unit
+     */
+    public Unit getSmallestUnit() {
+        return SMALLEST_UNIT_BY_TYPE.get(_type);
     }
 
     /**
      * Gets the smaller unit of two.
+     *
      * @param otherUnit the unit to compare this against
      * @return the smaller unit
      */
     public Unit getSmallerUnit(final Unit otherUnit) {
-        if (this._type != otherUnit._type) {
-            throw new IllegalArgumentException("Units must be of the same kind");
+        return isSmallerThan(otherUnit) ? this : otherUnit;
+    }
+
+    /**
+     * Determines if the current unit is smaller than another.
+     *
+     * @param otherUnit The other unit.
+     * @return true if the current unit is smaller than otherUnit, otherwise false.
+     */
+    public boolean isSmallerThan(final Unit otherUnit) {
+        assertSameType(this, otherUnit);
+        return _scale < otherUnit._scale;
+    }
+
+    private static void assertSameType(final Unit unitA, final Unit unitB) {
+        if (!unitA._type.equals(unitB._type)) {
+            throw new IllegalArgumentException(String.format(
+                    "Units must be of the same type; unitA=%s, unitB=%s",
+                    unitA,
+                    unitB));
         }
-        return this._scale < otherUnit._scale ? this : otherUnit;
     }
 
     private final double _scale;
     private final Type _type;
+
+    private static final Map<Type, Unit> SMALLEST_UNIT_BY_TYPE = Maps.newHashMap();
+
+    static {
+        for (final Unit unit : Unit.values()) {
+            final Unit currentSmallest = SMALLEST_UNIT_BY_TYPE.get(unit._type);
+            if (currentSmallest == null || unit._scale < currentSmallest._scale) {
+                SMALLEST_UNIT_BY_TYPE.put(unit._type, unit);
+            }
+        }
+    }
 }

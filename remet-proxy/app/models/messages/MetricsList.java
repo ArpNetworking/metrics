@@ -16,7 +16,7 @@
 
 package models.messages;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 import java.util.Map;
 import java.util.Set;
@@ -45,7 +45,7 @@ public final class MetricsList {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Metrics", _metrics)
                 .toString();
     }

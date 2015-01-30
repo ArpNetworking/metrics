@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tests the <code>SharedMetrics</code> class.
  *
- * @author Gil Markham (gil@groupon.com)
+ * @author Gil Markham (gil at groupon dot com)
  * @since 0.2.1
  */
 public class SharedMetricsTest {

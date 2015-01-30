@@ -14,12 +14,15 @@
 
 module TsdMetrics
   class TimerSample
-    attr_accessor :duration
+    attr_reader :duration, :unit
+
     def initialize(metricStatusSupplier)
       @metricStatusSupplier = metricStatusSupplier
       @startTime = Time.now
       @duration = nil
+      @unit = :nanosecond
     end
+
     def stop
       if @startTime == nil
         TsdMetrics.errorLogger.warn("Stop called on already-stopped Timer sample")
@@ -30,12 +33,37 @@ module TsdMetrics
         return
       end
       now = Time.now
-      diff = (1000*(now-@startTime))
+      diffSecs = now.tv_sec - @startTime.tv_sec
+      diffNanoSecs = now.tv_nsec - @startTime.tv_nsec
+      diff = ((10**9) * diffSecs) + diffNanoSecs
       @duration = diff
       @startTime = nil
     end
+
+    # Deprecated: Instead use the more ruby-esque #running?
     def isRunning
+      return running?
+    end
+
+    def running?
       return @startTime != nil
+    end
+
+    def stopped?
+      return ! running?
+    end
+
+    def set(duration, unit)
+      @duration = duration
+      @unit = unit
+    end
+
+    def sampleRepresentation
+      if @unit == :noUnit
+        {value: @duration}
+      else
+        {value: @duration, unit: @unit}
+      end
     end
   end
 end

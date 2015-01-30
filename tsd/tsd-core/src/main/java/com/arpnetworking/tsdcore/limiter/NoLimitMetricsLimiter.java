@@ -34,6 +34,29 @@ public final class NoLimitMetricsLimiter implements MetricsLimiter {
     public boolean offer(
             final AggregatedData data,
             final DateTime time) {
+        if (!_isRunning) {
+            throw new IllegalStateException("Not launched!");
+        }
         return true;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void launch() {
+        _isRunning = true;
+        // Nothing to do
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void shutdown() {
+        _isRunning = false;
+        // Nothing to do
+    }
+
+    private volatile boolean _isRunning = false;
 }

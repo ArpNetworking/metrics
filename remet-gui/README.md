@@ -10,7 +10,7 @@ Setup
 ### Building
 
 Prerequisites:
-* [JDK7](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
+* [JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 * [Play 2.3.0](http://www.playframework.com/download)
 
 Building:

@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.tsdcore.model;
 
-import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.utility.OvalBuilder;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
@@ -27,6 +27,7 @@ import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -35,34 +36,50 @@ import java.util.List;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public final class AggregatedData {
+public final class AggregatedData implements Serializable {
 
+    public FQDSN getFQDSN() {
+        return _fqdsn;
+    }
+
+    /**
+     * @return Period.
+     * @deprecated Migrate to PeriodicData.
+     */
+    @Deprecated
     public Period getPeriod() {
         return _period;
     }
 
-    public Statistic getStatistic() {
-        return _statistic;
-    }
-
-    public String getService() {
-        return _service;
-    }
-
+    /**
+     * @return Host.
+     * @deprecated Migrate to PeriodicData.
+     */
+    @Deprecated
     public String getHost() {
         return _host;
     }
 
-    public double getValue() {
-        return _value;
-    }
-
+    /**
+     * @return Period Start.
+     * @deprecated Migrate to PeriodicData.
+     */
+    @Deprecated
     public DateTime getPeriodStart() {
-        return _periodStart;
+        return getStart();
     }
 
-    public String getMetric() {
-        return _metric;
+    /**
+     * @return Period Start.
+     * @deprecated Migrate to PeriodicData.
+     */
+    @Deprecated
+    public DateTime getStart() {
+        return _start;
+    }
+
+    public Quantity getValue() {
+        return _value;
     }
 
     public List<Quantity> getSamples() {
@@ -71,6 +88,37 @@ public final class AggregatedData {
 
     public long getPopulationSize() {
         return _populationSize;
+    }
+
+    /**
+     * Create a fully qualified statistic name (FQSN).
+     *
+     * @param data The <code>AggregatedData</code> instance.
+     * @return The FQSN.
+     */
+    public static FQSN createFQSN(final AggregatedData data) {
+        // TODO(vkoskela): This is a temporary measure to aid with migrating [MAI-448]
+        // away from FQSN data on the AggregatedData instance until FQSN
+        // instances are plumbed throughout the codebase.
+        return new FQSN.Builder()
+                .fromFQDSN(data._fqdsn)
+                .setPeriod(data._period)
+                .setStart(data._start)
+                //.addDimension("Host", data._host)
+                .build();
+    }
+
+    /**
+     * Create a fully qualified data space name (FQDSN).
+     *
+     * @param data The <code>AggregatedData</code> instance.
+     * @return The FQDSN.
+     */
+    public static FQDSN createFQDSN(final AggregatedData data) {
+        // TODO(vkoskela): This is a temporary measure to aid with migrating [MAI-448]
+        // away from FQDSN data on the AggregatedData instance until FQDSN
+        // instances are plumbed throughout the codebase.
+        return data._fqdsn;
     }
 
     /**
@@ -87,14 +135,12 @@ public final class AggregatedData {
 
         final AggregatedData other = (AggregatedData) object;
 
-        return Double.compare(other._value, _value) == 0
-                && Objects.equal(_host, other._host)
-                && Objects.equal(_metric, other._metric)
-                && Objects.equal(_period, other._period)
-                && Objects.equal(_periodStart, other._periodStart)
-                && Objects.equal(_service, other._service)
-                && Objects.equal(_statistic, other._statistic)
+        return Objects.equal(_value, other._value)
                 && Long.compare(_populationSize, other._populationSize) == 0
+                && Objects.equal(_start, other._start)
+                && Objects.equal(_period, other._period)
+                && Objects.equal(_fqdsn, other._fqdsn)
+                && Objects.equal(_host, other._host)
                 && Objects.equal(_samples, other._samples);
     }
 
@@ -104,13 +150,12 @@ public final class AggregatedData {
     @Override
     public int hashCode() {
         return Objects.hashCode(
-                getStatistic(),
-                getService(),
+                getFQDSN(),
                 getHost(),
-                getMetric(),
-                Double.valueOf(getValue()),
-                getPeriodStart(),
+                getValue(),
+                getStart(),
                 getPeriod(),
+                getHost(),
                 getSamples(),
                 Long.valueOf(getPopulationSize()));
     }
@@ -120,40 +165,36 @@ public final class AggregatedData {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
-                .add("Statistic", _statistic)
-                .add("Service", _service)
-                .add("Host", _host)
-                .add("Metric", _metric)
+        return MoreObjects.toStringHelper(this)
+                .add("FQDSN", _fqdsn)
                 .add("Value", _value)
-                .add("PeriodStart", _periodStart)
-                .add("Period", _period)
                 .add("Samples", _samples)
                 .add("PopulationSize", _populationSize)
+                .add("Period", _period)
+                .add("Start", _start)
+                .add("Host", _host)
                 .toString();
     }
 
     private AggregatedData(final Builder builder) {
-        _statistic = builder._statistic;
-        _service = builder._service;
-        _host = builder._host;
-        _metric = builder._metric;
-        _value = builder._value.doubleValue();
-        _periodStart = builder._periodStart;
-        _period = builder._period;
+        _fqdsn = builder._fqdsn;
+        _value = builder._value;
         _samples = ImmutableList.copyOf(builder._samples);
         _populationSize = builder._populationSize.longValue();
+        _period = builder._period;
+        _start = builder._start;
+        _host = builder._host;
     }
 
-    private final Statistic _statistic;
-    private final String _service;
-    private final String _host;
-    private final String _metric;
-    private final double _value;
-    private final DateTime _periodStart;
-    private final Period _period;
+    private final FQDSN _fqdsn;
+    private final Quantity _value;
     private final long _populationSize;
     private final ImmutableList<Quantity> _samples;
+    private final DateTime _start;
+    private final Period _period;
+    private final String _host;
+
+    private static final long serialVersionUID = 9124136139360447095L;
 
     /**
      * Implementation of builder pattern for <code>AggregatedData</code>.
@@ -170,84 +211,29 @@ public final class AggregatedData {
         }
 
         /**
-         * The <code>Statistic</code> instance. Cannot be null.
+         * The fully qualified data space name (<code>FQDSN</code>). Required. Cannot be null.
          *
-         * @param value The <code>Statistic</code> instance.
+         * @param value The <code>FQDSN</code>.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setStatistic(final Statistic value) {
-            _statistic = value;
+        public Builder setFQDSN(final FQDSN value) {
+            _fqdsn = value;
             return this;
         }
 
         /**
-         * The service. Cannot be null or empty.
-         *
-         * @param value The service.
-         * @return This instance of <code>Builder</code>.
-         */
-        public Builder setService(final String value) {
-            _service = value;
-            return this;
-        }
-
-        /**
-         * The host. Cannot be null or empty.
-         *
-         * @param value The host.
-         * @return This instance of <code>Builder</code>.
-         */
-        public Builder setHost(final String value) {
-            _host = value;
-            return this;
-        }
-
-        /**
-         * The metric. Cannot be null or empty.
-         *
-         * @param value The metric.
-         * @return This instance of <code>Builder</code>.
-         */
-        public Builder setMetric(final String value) {
-            _metric = value;
-            return this;
-        }
-
-        /**
-         * The value. Cannot be null.
+         * The value. Required. Cannot be null.
          *
          * @param value The value.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setValue(final Double value) {
+        public Builder setValue(final Quantity value) {
             _value = value;
             return this;
         }
 
         /**
-         * The period start. Cannot be null.
-         *
-         * @param value The period start.
-         * @return This instance of <code>Builder</code>.
-         */
-        public Builder setPeriodStart(final DateTime value) {
-            _periodStart = value;
-            return this;
-        }
-
-        /**
-         * The period. Cannot be null.
-         *
-         * @param value The period.
-         * @return This instance of <code>Builder</code>.
-         */
-        public Builder setPeriod(final Period value) {
-            _period = value;
-            return this;
-        }
-
-        /**
-         * The samples. Cannot be null.
+         * The samples. Required. Cannot be null.
          *
          * @param value The samples.
          * @return This instance of <code>Builder</code>.
@@ -258,7 +244,7 @@ public final class AggregatedData {
         }
 
         /**
-         * The population size. Cannot be null.
+         * The population size. Required. Cannot be null.
          *
          * @param value The samples.
          * @return This instance of <code>Builder</code>.
@@ -268,27 +254,54 @@ public final class AggregatedData {
             return this;
         }
 
+        /**
+         * The period start. Required. Cannot be null.
+         *
+         * @param value The period start.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setStart(final DateTime value) {
+            _start = value;
+            return this;
+        }
+
+        /**
+         * The period. Required. Cannot be null.
+         *
+         * @param value The period.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setPeriod(final Period value) {
+            _period = value;
+            return this;
+        }
+
+        /**
+         * The host. Required. Cannot be null or empty.
+         *
+         * @param value The host.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setHost(final String value) {
+            _host = value;
+            return this;
+        }
+
         @NotNull
-        private Statistic _statistic;
+        private FQDSN _fqdsn;
         @NotNull
-        @NotEmpty
-        private String _service;
-        @NotNull
-        @NotEmpty
-        private String _host;
-        @NotNull
-        @NotEmpty
-        private String _metric;
-        @NotNull
-        private Double _value;
-        @NotNull
-        private DateTime _periodStart;
-        @NotNull
-        private Period _period;
+        private Quantity _value;
         @NotNull
         private List<Quantity> _samples;
         @NotNull
         @Min(value = 0)
         private Long _populationSize;
+        @NotNull
+        private DateTime _start;
+        @NotNull
+        private Period _period;
+        @NotNull
+        @NotEmpty
+        private String _host;
     }
 }

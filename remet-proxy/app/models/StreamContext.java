@@ -16,31 +16,36 @@
 package models;
 
 import akka.actor.ActorRef;
+import akka.actor.Cancellable;
 import akka.actor.PoisonPill;
-import akka.actor.Props;
 import akka.actor.UntypedActor;
-import akka.pattern.Patterns;
+import akka.dispatch.ExecutionContexts;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import models.messages.Command;
 import models.messages.Connect;
+import models.messages.LogFileAppeared;
+import models.messages.LogFileDisappeared;
+import models.messages.LogLine;
+import models.messages.LogsList;
+import models.messages.LogsListRequest;
 import models.messages.MetricReport;
 import models.messages.MetricsList;
 import models.messages.MetricsListRequest;
+import models.messages.NewLog;
 import models.messages.NewMetric;
 import models.messages.Quit;
-import org.joda.time.DateTime;
 import play.Logger;
-import play.libs.Akka;
 import play.libs.F.Callback;
 import play.libs.F.Callback0;
 import play.mvc.WebSocket;
-import scala.concurrent.Await;
-import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
 
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -50,77 +55,26 @@ import java.util.concurrent.TimeUnit;
  * metrics to them.
  *
  * @author Brandon Arp (barp at groupon dot com)
+ * @author Mohammed Kamel (mkamel at groupon dot com)
  */
 public class StreamContext extends UntypedActor {
 
     /**
-     * Method to register a client that has connected.
+     * Public constructor.
      *
-     * @param in Incoming <code>WebSocket</code>.
-     * @param out Outgoing <code>WebSocket</code>.
-     * @throws Exception Thrown by <code>Await</code>.
+     * @param metricsFactory Instance of <code>MetricsFactory</code>.
      */
-    public static void connect(final WebSocket.In<JsonNode> in, final WebSocket.Out<JsonNode> out) throws Exception {
-
-        Logger.info("Connection on creation: " + out);
-        // Send the Join message to the room
-        final Object result = Await.result(
-                Patterns.ask(
-                        DEFAULT_CONTEXT,
-                        new Connect(out),
-                        1000),
-                Duration.apply(
-                        1,
-                        TimeUnit.SECONDS
-                        )
-                );
-
-        if (result instanceof ActorRef) {
-            //We were passed the reference to the child actor
-            final ActorRef child = (ActorRef) result;
-
-            in.onMessage(new Callback<JsonNode>() {
-                @Override
-                public void invoke(final JsonNode event) {
-                    // Send the command to the child actor
-                    child.tell(new Command(event), ActorRef.noSender());
-                }
-            });
-
-            in.onClose(new Callback0() {
-                @Override
-                public void invoke() {
-                    Logger.debug(String.format("Connection closed from channel %s", out));
-                    // Send a Quit message
-                    DEFAULT_CONTEXT.tell(new Quit(out), ActorRef.noSender());
-                }
-            });
-        }
-    }
-
-    /**
-     * Method to notify this actor that a MetricReport is ready to be sent to
-     * interested clients.
-     *
-     * @param node Instance of <code>JsonNode</code> describing new metrics.
-     */
-    public static void reportMetrics(final JsonNode node) {
-        Logger.info("got a metrics report");
-
-        //TODO(barp): Map with a POJO mapper [MAI-184]
-        final ArrayNode list = (ArrayNode) node;
-        for (final JsonNode objNode : list) {
-            final ObjectNode obj = (ObjectNode) objNode;
-            final String service = obj.get("service").asText();
-            final String host = obj.get("host").asText();
-            final String statistic = obj.get("statistic").asText();
-            final String metric = obj.get("metric").asText();
-            final double value = obj.get("value").asDouble();
-            final String periodStart = obj.get("periodStart").asText();
-            final DateTime startTime = DateTime.parse(periodStart);
-
-            DEFAULT_CONTEXT.tell(new MetricReport(service, host, statistic, metric, value, startTime), ActorRef.noSender());
-        }
+    @Inject
+    public StreamContext(final MetricsFactory metricsFactory) {
+        _metricsFactory = metricsFactory;
+        _metrics = metricsFactory.create();
+        _instrument = context().system().scheduler().schedule(
+                new FiniteDuration(0, TimeUnit.SECONDS), // Initial delay
+                new FiniteDuration(1, TimeUnit.SECONDS), // Interval
+                getSelf(),
+                "instrument",
+                ExecutionContexts.global(),
+                getSelf());
     }
 
     /**
@@ -128,26 +82,149 @@ public class StreamContext extends UntypedActor {
      */
     @Override
     public void onReceive(final Object message) throws Exception {
-        Logger.debug(String.format("received message %s", message));
-        if (message instanceof Connect) {
-            final Connect connect = (Connect) message;
-            final ActorRef context = context().actorOf(ConnectionContext.props(connect.getChannel()));
-            _members.put(connect.getChannel(), context);
-            Logger.info(String.format("adding new channel to streaming context; channel=%s", connect.getChannel()));
-            getSender().tell(context, getSelf());
+        if (Logger.isTraceEnabled()) {
+            Logger.trace(String.format("Received message; %s", message));
+        }
+
+        if ("instrument".equals(message)) {
+            periodicInstrumentation();
+        } else if (message instanceof Connect) {
+            executeConnect((Connect) message);
         } else if (message instanceof MetricReport) {
-            final MetricReport report = (MetricReport) message;
-            registerMetric(report.getService(), report.getMetric(), report.getStatistic());
-            broadcast(message);
+            executeMetricReport((MetricReport) message);
+        } else if (message instanceof LogLine) {
+            executeLogReport((LogLine) message);
         } else if (message instanceof Quit) {
-            Logger.info(String.format("removing channel from streaming context; channel=%s", ((Quit) message).getChannel()));
-            _members.remove(((Quit) message).getChannel()).tell(PoisonPill.getInstance(), getSelf());
+            executeQuit((Quit) message);
         } else if (message instanceof MetricsListRequest) {
-            getSender().tell(new MetricsList(_serviceMetrics), getSelf());
+            executeMetricsListRequest();
+        } else if (message instanceof LogsListRequest) {
+            executeLogsListRequest();
+        } else if (message instanceof LogFileAppeared) {
+            executeLogAdded((LogFileAppeared) message);
+        } else if (message instanceof LogFileDisappeared) {
+            executeLogRemoved((LogFileDisappeared) message);
         } else {
-            Logger.warn(String.format("Got an unexpected message; message=%s", message));
+            _metrics.incrementCounter(UNKNOWN_COUNTER);
+            Logger.warn(String.format("Unsupported message; message=%s", message));
             unhandled(message);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void postStop() throws Exception {
+        _instrument.cancel();
+        super.postStop();
+    }
+
+    private void executeLogRemoved(final LogFileDisappeared message) {
+        _metrics.incrementCounter(LOG_REMOVED_COUNTER);
+        if (_logs.contains(message.getFile())) {
+            _logs.remove(message.getFile());
+            broadcast(message);
+        }
+    }
+
+    private void executeLogAdded(final LogFileAppeared message) {
+        _metrics.incrementCounter(LOG_ADDED_COUNTER);
+        if (!_logs.contains(message.getFilePath())) {
+            _logs.add(message.getFilePath());
+            notifyNewLog(message.getFilePath());
+        }
+    }
+
+    private void executeLogsListRequest() {
+        _metrics.incrementCounter(METRICS_LIST_COUNTER);
+        if (Logger.isDebugEnabled()) {
+            Logger.debug("Metrics list request");
+        }
+        getSender().tell(new LogsList(_logs), getSelf());
+    }
+
+    private void executeLogReport(final LogLine message) {
+        _metrics.incrementCounter(LOG_LINE_COUNTER);
+        if (Logger.isTraceEnabled()) {
+            Logger.trace(String.format("Log report; report=%s", message));
+        }
+        registerLog(message.getFile());
+        broadcast(message);
+    }
+
+    private void executeConnect(final Connect message) {
+        _metrics.incrementCounter(CONNECT_COUNTER);
+        final WebSocket.Out<JsonNode> outputChannel = message.getOutputChannel();
+        if (Logger.isDebugEnabled()) {
+            Logger.debug(String.format("Adding new channel to streaming context; channel=%s", outputChannel));
+        }
+
+        final ActorRef context = context().actorOf(ConnectionContext.props(_metricsFactory, message));
+
+        // Add the connection to the pool to receive future metric reports
+        _members.put(message.getOutputChannel(), context);
+
+        message.getInputChannel().onClose(new Callback0() {
+            @Override
+            public void invoke() {
+                Logger.debug(String.format("Connection closed from channel; %s", outputChannel));
+                // Send a Quit message
+                getSelf().tell(new Quit(outputChannel), ActorRef.noSender());
+            }
+        });
+
+        message.getInputChannel().onMessage(new Callback<JsonNode>() {
+            @Override
+            public void invoke(final JsonNode event) {
+                // Send the command to the child actor
+                context.tell(new Command(event), ActorRef.noSender());
+            }
+        });
+    }
+
+    private void executeMetricReport(final MetricReport message) {
+        _metrics.incrementCounter(METRIC_REPORT_COUNTER);
+        if (Logger.isTraceEnabled()) {
+            Logger.trace(String.format("Metric report; report=%s", message));
+        }
+
+        // Ensure the metric is in the registry
+        registerMetric(message.getService(), message.getMetric(), message.getStatistic());
+
+        // Transmit the report to all members
+        broadcast(message);
+    }
+
+    private void executeQuit(final Quit message) {
+        _metrics.incrementCounter(QUIT_COUNTER);
+        if (Logger.isDebugEnabled()) {
+            Logger.debug(String.format("Quit; message=%s", message));
+        }
+
+        // Remove the connection from the pool
+        _members.remove(message.getChannel()).tell(PoisonPill.getInstance(), getSelf());
+    }
+
+    private void executeMetricsListRequest() {
+        _metrics.incrementCounter(METRICS_LIST_REQUEST);
+        if (Logger.isDebugEnabled()) {
+            Logger.debug("Metrics list request");
+        }
+
+        // Transmit a list of all registered metrics
+        getSender().tell(new MetricsList(_serviceMetrics), getSelf());
+    }
+
+    private void registerLog(final Path logPath) {
+        if (!_logs.contains(logPath)) {
+            _logs.add(logPath);
+            notifyNewLog(logPath);
+        }
+    }
+
+    private void notifyNewLog(final Path logPath) {
+        broadcast(new NewLog(logPath));
     }
 
     private void broadcast(final Object message) {
@@ -178,9 +255,28 @@ public class StreamContext extends UntypedActor {
         broadcast(newMetric);
     }
 
+    private void periodicInstrumentation() {
+        _metrics.close();
+        _metrics = _metricsFactory.create();
+    }
+
+
+    private final Cancellable _instrument;
+    private final Set<Path> _logs = Sets.newTreeSet();
+    private final MetricsFactory _metricsFactory;
     private final Map<WebSocket.Out<JsonNode>, ActorRef> _members = Maps.newHashMap();
     private final Map<String, Map<String, Set<String>>> _serviceMetrics = Maps.newHashMap();
 
-    private static final ActorRef DEFAULT_CONTEXT = Akka.system().actorOf(Props.create(StreamContext.class));
+    private Metrics _metrics;
 
+    private static final String METRIC_PREFIX = "Actors/StreamContext/";
+    private static final String METRICS_LIST_REQUEST = METRIC_PREFIX + "MetricsListRequest";
+    private static final String QUIT_COUNTER = METRIC_PREFIX + "Quit";
+    private static final String METRIC_REPORT_COUNTER = METRIC_PREFIX + "MetricReport";
+    private static final String CONNECT_COUNTER = METRIC_PREFIX + "Connect";
+    private static final String LOG_LINE_COUNTER = METRIC_PREFIX + "LogReport";
+    private static final String METRICS_LIST_COUNTER = METRIC_PREFIX + "MetricsList";
+    private static final String LOG_ADDED_COUNTER = METRIC_PREFIX + "LogAdded";
+    private static final String LOG_REMOVED_COUNTER = METRIC_PREFIX + "LogRemoved";
+    private static final String UNKNOWN_COUNTER = METRIC_PREFIX + "UNKNOWN";
 }

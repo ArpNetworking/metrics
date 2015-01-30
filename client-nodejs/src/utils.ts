@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
+import tsdDef = require("tsdDef");
+import uuid = require('node-uuid');
+
 /**
- * Get the current time in nanoseconds
+ * Get the current time in nanoseconds.
+ *
+ * @ignore
+ * @returns {number} value of high resolution real time in nanosecond.
  */
 export function getNanoTime() {
     var time = process.hrtime();
@@ -23,7 +29,10 @@ export function getNanoTime() {
 }
 
 /**
- * Get the current time in milliseconds
+ * Get the current time in milliseconds.
+ *
+ * @ignore
+ * @returns {number} current time in millisecond.
  */
 export function getMilliTime() {
     return getNanoTime() / 1e6;
@@ -32,27 +41,65 @@ export function getMilliTime() {
 /**
  * Determines if an object has not properties defined.
  *
- * @param obj The object to tested.
+ * @ignore
+ * @param {object} obj The object to tested.
  */
 export function isEmptyObject(obj) {
-  return !Object.keys(obj).length;
+    return !Object.keys(obj).length;
 }
 
 /**
- * Wrapper class for lazy initialized values
+ * Wraps a MetricsEvent object into a Steno envelope.
+ *
+ * @param {MetricsEvent} logEntry log entry to be enveloped.
+ * @returns {{time: string, name: string, level: string, data: tsdDef.MetricsEvent, id: string, context: {}}} the log entry
+ * in Steno envelope
+ */
+export function stenofy(logEntry:tsdDef.MetricsEvent) {
+    var buffer = new Buffer(16);
+    uuid.v4(null, buffer, 0);
+
+    return {
+        "time": new Date().toISOString(),
+        "name": "aint.metrics",
+        "level": "info",
+        "data": logEntry,
+        "id": buffer.toString("base64"),
+        "context": {}
+    };
+}
+
+/**
+ * Wrapper class for lazy initialized values.
+ *
+ * @class
+ * @alias Lazy
+ * @ignore
  */
 export class Lazy<T> {
-    private factory:()=>T;
-    private value:T;
+    private _factory:()=>T;
+    private _value:T;
 
+    /**
+     * Constructor.
+     *
+     * @param {function} factory Factory function to be used to initialize the value.
+     */
     constructor(factory:()=>T) {
-        this.factory = factory;
+        this._factory = factory;
     }
 
+    /**
+     * Get the initialized value, or create it if not initialized already.
+     *
+     * @memberof Lazy
+     * @method
+     * @return {Object} The initialized wrapped value
+     */
     public getValue():T {
-        if (this.value === undefined) {
-            this.value = this.factory();
+        if (this._value === undefined) {
+            this._value = this._factory();
         }
-        return this.value;
+        return this._value;
     }
 }

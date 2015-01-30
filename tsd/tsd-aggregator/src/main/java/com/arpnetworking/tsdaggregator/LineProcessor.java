@@ -21,7 +21,6 @@ import com.arpnetworking.tsdcore.sinks.Sink;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.utility.observer.Observable;
 import com.arpnetworking.utility.observer.Observer;
-
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -31,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-
 import javax.annotation.Nonnull;
 
 /**
@@ -43,12 +41,13 @@ public class LineProcessor implements Observer {
 
     /**
      * Public constructor.
-     * 
+     *
      * @param timerStatisticsClasses The statistics to use for timers.
      * @param counterStatisticsClasses The statistics to use for counters.
      * @param gaugeStatisticsClasses The statistics to use for gauges.
      * @param hostName The name of the host.
      * @param serviceName The name of the service.
+     * @param cluster The name of the cluster.
      * @param periods The periods to aggregate over.
      * @param listener The destination for completed metric period aggregates.
      */
@@ -59,18 +58,20 @@ public class LineProcessor implements Observer {
             final Set<Statistic> gaugeStatisticsClasses,
             final String hostName,
             final String serviceName,
+            final String cluster,
             final Set<Period> periods,
             final Sink listener) {
         // CHECKSTYLE.ON: ParameterNumber - Needs to be refactored.
-        this._timerStatisticsClasses = timerStatisticsClasses;
-        this._counterStatisticsClasses = counterStatisticsClasses;
-        this._gaugeStatisticsClasses = gaugeStatisticsClasses;
-        this._hostName = hostName;
-        this._serviceName = serviceName;
-        this._periods = periods;
-        this._listener = listener;
-        this._aggregations = new ConcurrentHashMap<String, TSData>();
-        this._lastLineReadTime = new AtomicReference<DateTime>(DateTime.now());
+        _timerStatisticsClasses = timerStatisticsClasses;
+        _counterStatisticsClasses = counterStatisticsClasses;
+        _gaugeStatisticsClasses = gaugeStatisticsClasses;
+        _hostName = hostName;
+        _serviceName = serviceName;
+        _cluster = cluster;
+        _periods = periods;
+        _listener = listener;
+        _aggregations = new ConcurrentHashMap<String, TSData>();
+        _lastLineReadTime = new AtomicReference<DateTime>(DateTime.now());
         startAggregationCloser();
     }
 
@@ -111,31 +112,35 @@ public class LineProcessor implements Observer {
             if (tsdata == null) {
                 switch (entry.getValue().getType()) {
                     case COUNTER:
-                        tsdata = new TSData(entry.getKey(), _periods, _listener, _hostName, _serviceName,
+                        tsdata = new TSData(entry.getKey(), _periods, _listener, _hostName, _serviceName, _cluster,
                                 _counterStatisticsClasses);
                     break;
                     case TIMER:
-                        tsdata = new TSData(entry.getKey(), _periods, _listener, _hostName, _serviceName,
+                        tsdata = new TSData(entry.getKey(), _periods, _listener, _hostName, _serviceName, _cluster,
                                 _timerStatisticsClasses);
                     break;
                     case GAUGE:
-                        tsdata = new TSData(entry.getKey(), _periods, _listener, _hostName, _serviceName,
+                        tsdata = new TSData(entry.getKey(), _periods, _listener, _hostName, _serviceName, _cluster,
                                 _gaugeStatisticsClasses);
                     break;
                     default:
                         LOGGER.warn("unknown metric kind, defaulting to counter statistics. metricKind = "
                                 + entry.getValue().getType().toString());
-                        tsdata = new TSData(entry.getKey(), _periods, _listener, _hostName, _serviceName,
+                        tsdata = new TSData(entry.getKey(), _periods, _listener, _hostName, _serviceName, _cluster,
                                 _counterStatisticsClasses);
                     break;
+                }
+                if (tsdata != null) {
+                    final TSData existingTsdata = _aggregations.putIfAbsent(entry.getKey(), tsdata);
+                    if (existingTsdata != null) {
+                        tsdata = existingTsdata;
+                    }
                 }
             }
 
             // If there's a place to record it, remember the values & update the
             // last written time
-            if (tsdata != null) {
-                tsdata.addMetric(entry.getValue().getValues(), data.getTime());
-            }
+            tsdata.addMetric(entry.getValue().getValues(), data.getTime());
         }
     }
 
@@ -154,6 +159,7 @@ public class LineProcessor implements Observer {
     private final Set<Statistic> _gaugeStatisticsClasses;
     private final String _hostName;
     private final String _serviceName;
+    private final String _cluster;
     private final Set<Period> _periods;
     private final Sink _listener;
     private final ConcurrentHashMap<String, TSData> _aggregations;

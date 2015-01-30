@@ -15,6 +15,10 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.tsdcore.model.Quantity;
+
+import java.util.List;
+
 /**
  * Top 100th percentile statistic (aka max).
  *
@@ -36,4 +40,14 @@ public class TP100Statistic extends TPStatistic {
     public String getName() {
         return "max";
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double calculate(final List<Quantity> orderedValues) {
+        return Double.valueOf(orderedValues.get(orderedValues.size() - 1).getValue()).doubleValue();
+    }
+
+    private static final long serialVersionUID = 4788356950823429496L;
 }

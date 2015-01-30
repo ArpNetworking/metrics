@@ -1,13 +1,16 @@
 ///<reference path="../libs/jqueryui/jqueryui.d.ts"/>
-///<amd-dependency path="jquery.ui"/>
-///<amd-dependency path="jqrangeslider"/>
 ///<reference path="../libs/jqueryui/jqrangeslider.d.ts"/>
 ///<reference path="../libs/knockout/knockout.d.ts"/>
+///<reference path="../libs/typeahead/typeahead.d.ts" />
 ///<reference path="./BrowseNode.ts"/>
-import $ = require('jquery');
-import ko = require('knockout');
+///<amd-dependency path="jquery.ui"/>
+///<amd-dependency path="jqrangeslider"/>
+///<amd-dependency path="typeahead" />
 
-function setupBindings() {
+import ko = require('knockout');
+import $ = require('jquery');
+
+module kobindings {
     ko.bindingHandlers['slider'] = {
         init: function(element, valueAccessor) {
             // First get the latest data that we're bound to
@@ -37,6 +40,14 @@ function setupBindings() {
                 $(element).hide("slide", effectOptions, duration, after);
             }
 
+        }
+    };
+
+    ko.bindingHandlers['tooltip'] = {
+        init: function(element, valueAccessor) {
+            var value = valueAccessor();
+            var valueUnwrapped = ko.utils.unwrapObservable(value);
+            //TODO: tooltip this
         }
     };
 
@@ -86,6 +97,36 @@ function setupBindings() {
             context.stroke();
         }
     };
+
+    ko.bindingHandlers["typeahead"] = {
+        init: function(element, valueAccessor, allValuesAccessor) {
+            var value = valueAccessor();
+            var valueUnwrapped: any = ko.utils.unwrapObservable(value);
+
+            var ta = $(element).typeahead(valueUnwrapped.options.opt, valueUnwrapped.options.source);
+
+            if (valueUnwrapped.value !== undefined) {
+                ta.data().ttTypeahead.input.onSync("queryChanged", () => {
+                    valueUnwrapped.value(ta.typeahead('val'));
+                });
+
+                ta.on('typeahead:autocompleted', () => {
+                    valueUnwrapped.value(ta.typeahead('val'));
+                });
+
+                ta.on('typeahead:selected', () => {
+                    valueUnwrapped.value(ta.typeahead('val'));
+                });
+
+                //Hack to handle the clearing of the query
+                valueUnwrapped.value.subscribe((newValue) => {
+                    if (newValue == "") {
+                        ta.typeahead('val', '');
+                    }
+                });
+            }
+        }
+    }
 }
 
-export = setupBindings;
+export = kobindings;

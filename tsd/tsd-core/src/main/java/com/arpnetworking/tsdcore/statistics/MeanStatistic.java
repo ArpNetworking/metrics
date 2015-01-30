@@ -15,7 +15,10 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Quantity;
+import com.arpnetworking.tsdcore.model.Unit;
+import com.google.common.base.Optional;
 
 import java.util.List;
 
@@ -26,21 +29,44 @@ import java.util.List;
  */
 public class MeanStatistic extends BaseStatistic {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public Double calculate(final List<Quantity> orderedValues) {
+    public double calculate(final List<Quantity> orderedValues) {
         if (orderedValues.size() == 0) {
-            return Double.valueOf(0d);
+            return 0d;
         }
         double sum = 0;
         for (final Quantity sample : orderedValues) {
             sum += sample.getValue();
         }
-        return Double.valueOf(sum / orderedValues.size());
+        return sum / orderedValues.size();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getName() {
         return "mean";
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
+        double weighted = 0D;
+        long samples = 0L;
+        Optional<Unit> unit = Optional.absent();
+        for (final AggregatedData aggregation : aggregations) {
+            weighted += aggregation.getValue().getValue() * aggregation.getPopulationSize();
+            samples += aggregation.getPopulationSize();
+            unit = unit.or(aggregation.getValue().getUnit());
+        }
+        return new Quantity(weighted / samples, unit);
+    }
+
+    private static final long serialVersionUID = 2943082617025777130L;
 }

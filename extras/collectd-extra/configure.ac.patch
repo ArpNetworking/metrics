@@ -1,0 +1,6 @@
+1909d1908
+< 		AM_PATH_LIBGCRYPT(1:1.2.0,,with_libgcrypt="no (version 1.2.0+ required)")
+5138a5138
+> AC_PLUGIN([tsd],         [yes],                [TSD output plugin])
+5484a5485
+>     tsd . . . . . . . . . $enable_tsd

@@ -17,7 +17,7 @@
 package models.messages;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 /**
  * Message class to hold general command data.
@@ -44,28 +44,11 @@ public final class Command {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Command", _command)
                 .toString();
     }
 
     private final JsonNode _command;
-
-    /**
-     * Command string for a getMetrics call.
-     */
-    public static final String COMMAND_GET_METRICS = "getMetrics";
-    /**
-     * Command string for a heartbeat.
-     */
-    public static final String COMMAND_HEARTBEAT = "heartbeat";
-    /**
-     * Command string for a subscribe call.
-     */
-    public static final String COMMAND_SUBSCRIBE = "subscribe";
-    /**
-     * Command string for an unsubscribe call.
-     */
-    public static final String COMMAND_UNSUBSCRIBE = "unsubscribe";
 
 }

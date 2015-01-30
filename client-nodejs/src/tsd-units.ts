@@ -19,12 +19,12 @@ import tsdDef = require("tsdDef");
 
 class UnitImpl implements tsdDef.Unit {
 
-  constructor(public name:string){
-  }
+    constructor(public name:string) {
+    }
 
-  public toJSON() {
-    return this.name;
-  }
+    public toJSON() {
+        return this.name;
+    }
 }
 
 /**
@@ -37,69 +37,68 @@ class UnitImpl implements tsdDef.Unit {
  * aggregation can occur across Metric instances, processes and even hosts.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
+ * @enum
  */
-export class Units {
-    /* istanbul ignore next */
-    constructor(){}
+export var Units = {
     // Time
     /**
      * Nanoseconds.
      */
-    public static NANOSECOND:tsdDef.Unit = new UnitImpl("nanosecond");
+    NANOSECOND: <tsdDef.Unit>new UnitImpl("nanosecond"),
 
     /**
      * Microseconds.
      */
-    public static MICROSECOND:tsdDef.Unit = new UnitImpl("microsecond");
+    MICROSECOND: <tsdDef.Unit>new UnitImpl("microsecond"),
 
     /**
      * Milliseconds.
      */
-    public static MILLISECOND:tsdDef.Unit = new UnitImpl("millisecond");
+    MILLISECOND: <tsdDef.Unit>new UnitImpl("millisecond"),
 
     /**
      * Seconds.
      */
-    public static SECOND:tsdDef.Unit = new UnitImpl("second");
+    SECOND: <tsdDef.Unit>new UnitImpl("second"),
 
     /**
      * Minutes.
      */
-    public static MINUTE:tsdDef.Unit = new UnitImpl("minute");
+    MINUTE: <tsdDef.Unit>new UnitImpl("minute"),
 
     /**
      * Hours.
      */
-    public static HOUR:tsdDef.Unit = new UnitImpl("hour");
+    HOUR: <tsdDef.Unit>new UnitImpl("hour"),
 
     /**
      * Days.
      */
-    public static DAY:tsdDef.Unit = new UnitImpl("day");
+    DAY: <tsdDef.Unit>new UnitImpl("day"),
 
     /**
      * Weeks.
      */
-    public static WEEK:tsdDef.Unit = new UnitImpl("week");
+    WEEK: <tsdDef.Unit>new UnitImpl("week"),
 
     // Size
     /**
      * Bytes.
      */
-    public static BYTE:tsdDef.Unit = new UnitImpl("byte");
+    BYTE: <tsdDef.Unit>new UnitImpl("byte"),
 
     /**
      * Kilobytes.
      */
-    public static KILOBYTE:tsdDef.Unit = new UnitImpl("kilobyte");
+    KILOBYTE: <tsdDef.Unit>new UnitImpl("kilobyte"),
 
     /**
      * Megabytes.
      */
-    public static MEGABYTE:tsdDef.Unit = new UnitImpl("megabyte");
+    MEGABYTE: <tsdDef.Unit>new UnitImpl("megabyte"),
 
     /**
      * Gigabytes.
      */
-    public static GIGABYTE:tsdDef.Unit = new UnitImpl("gigabyte");
- }
+    GIGABYTE: <tsdDef.Unit>new UnitImpl("gigabyte")
+};

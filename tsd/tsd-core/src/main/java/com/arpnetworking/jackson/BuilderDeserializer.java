@@ -36,10 +36,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Deserialize JSON into an instance of a specified type <code>T</code> given a 
+ * Deserialize JSON into an instance of a specified type <code>T</code> given a
  * builder that creates instances of that type (or a subtype). In order to use
  * this deserializer with an <code>ObjectMapper</code> be sure to register the
- * transitive closure of builder deserializers (e.g. type-builder pairs) that 
+ * transitive closure of builder deserializers (e.g. type-builder pairs) that
  * are required to deserialize an instance of the root type.
  *
  * @param <T> The type this deserializer supports.
@@ -63,7 +63,7 @@ public final class BuilderDeserializer<T> extends JsonDeserializer<T> {
     /**
      * Register builder deserializers for the the transitive closure of builders
      * anchored by the target class in the provided <code>SimpleModule</code>.
-     * 
+     *
      * @param targetModule The <code>SimpleModule</code> to register in.
      * @param targetClass The root of the type tree to traverse.
      */
@@ -138,7 +138,7 @@ public final class BuilderDeserializer<T> extends JsonDeserializer<T> {
                 }
             } catch (final ClassNotFoundException e) {
                 // Log that the class is not build-able
-                LOGGER.debug("Ingoring class without builder; targetClass=" + targetClass);
+                LOGGER.debug("Ignoring class without builder; targetClass=" + targetClass);
             }
 
             // Support for JsonSubTypes annotation

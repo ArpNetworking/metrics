@@ -16,7 +16,7 @@
 
 package models.messages;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import org.joda.time.DateTime;
 
 /**
@@ -36,12 +36,13 @@ public final class MetricReport {
      * @param value value
      * @param periodStart start of the period
      */
-    public MetricReport(final String service,
-                        final String host,
-                        final String statistic,
-                        final String metric,
-                        final double value,
-                        final DateTime periodStart) {
+    public MetricReport(
+            final String service,
+            final String host,
+            final String statistic,
+            final String metric,
+            final double value,
+            final DateTime periodStart) {
         _service = service;
         _host = host;
         _statistic = statistic;
@@ -79,7 +80,7 @@ public final class MetricReport {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("Service", _service)
                 .add("Host", _host)
                 .add("Statistic", _statistic)

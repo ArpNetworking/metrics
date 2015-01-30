@@ -19,7 +19,6 @@ import ch.qos.logback.classic.AsyncAppender;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.FileAppender;
@@ -27,21 +26,27 @@ import ch.qos.logback.core.encoder.Encoder;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
 
+import com.arpnetworking.logback.StenoEncoder;
+import com.arpnetworking.logback.StenoMarker;
 import com.arpnetworking.metrics.Quantity;
 import com.arpnetworking.metrics.Sink;
 import com.arpnetworking.metrics.Unit;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -64,13 +69,33 @@ public class TsdQueryLogSink implements Sink {
             final Map<String, List<Quantity>> gaugeSamples) {
 
         try {
-            final String jsonString = _objectMapper.writeValueAsString(
+            //final String jsonString = _objectMapper.writeValueAsString(
+            final JsonNode jsonNode = _objectMapper.valueToTree(
                     new Entry(
                             annotations,
                             timerSamples,
                             counterSamples,
                             gaugeSamples));
-            _queryLogger.info(jsonString);
+
+            if (!(jsonNode instanceof ObjectNode)) {
+                throw new IOException("Unexpected serialization into non-object node");
+            }
+            final ObjectNode objectNode = (ObjectNode) jsonNode;
+
+            final List<String> keys = new ArrayList<>(5);
+            final List<String> values = new ArrayList<>(5);
+            for (final Iterator<Map.Entry<String, JsonNode>> iterator = objectNode.fields(); iterator.hasNext();) {
+                final Map.Entry<String, JsonNode> field = iterator.next();
+                keys.add(field.getKey());
+                values.add(_objectMapper.writeValueAsString(field.getValue()));
+            }
+
+            // TODO(vkoskela): Simplify with JSON_OBJECT_MARKER [MAI-250]
+            _queryLogger.info(
+                    StenoMarker.ARRAY_JSON_MARKER,
+                    "aint.metrics",
+                    keys.toArray(new String[keys.size()]),
+                    values.toArray(new String[values.size()]));
 
         } catch (final IOException e) {
             // This is in place of an exception; see class Javadoc
@@ -92,11 +117,10 @@ public class TsdQueryLogSink implements Sink {
         return rollingPolicy;
     }
 
-    private PatternLayoutEncoder createEncoder(final boolean immediateFlush) {
-        final PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+    private Encoder<ILoggingEvent> createEncoder(final boolean immediateFlush) {
+        final StenoEncoder encoder = new StenoEncoder();
         encoder.setContext(_loggerContext);
         encoder.setImmediateFlush(immediateFlush);
-        encoder.setPattern("%msg%n");
         return encoder;
     }
 
@@ -151,7 +175,7 @@ public class TsdQueryLogSink implements Sink {
         final String fileName = fileNameBuilder.toString();
 
         final TimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = createRollingPolicy(extension, fileNameWithoutExtension);
-        final PatternLayoutEncoder encoder = createEncoder(immediateFlush);
+        final Encoder<ILoggingEvent> encoder = createEncoder(immediateFlush);
         final FileAppender<ILoggingEvent> rollingAppender = createRollingAppender(fileName, rollingPolicy, encoder);
         final Appender<ILoggingEvent> asyncAppender = createAsyncAppender(rollingAppender);
 
@@ -239,7 +263,7 @@ public class TsdQueryLogSink implements Sink {
                 throws IOException {
 
             jsonGenerator.writeStartObject();
-            jsonGenerator.writeStringField("version", "2d");
+            jsonGenerator.writeStringField("version", "2e");
             jsonGenerator.writeObjectField("annotations", entry.getAnnotations());
             if (!entry.getCounterSamples().isEmpty()) {
                 jsonGenerator.writeObjectFieldStart("counters");

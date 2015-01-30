@@ -5,3 +5,12 @@
 build
 */bin
 gradle-app.setting
+
+# Netbeans
+.nb-gradle
+
+# Projects
+**/src/main/resources/status.json
+cluster-aggregator/journal
+cluster-aggregator/log
+cluster-aggregator/snapshots

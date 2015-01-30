@@ -27,6 +27,10 @@ AC_PLUGIN([tsd],         [yes],                [TSD output plugin])
 tsd . . . . . . . . . $enable_tsd
 ```
 
+You may do this by applying the included patch:
+
+    collectd-5.4.1> patch configure.ac < ~/metrics/extras/collectd-extra/configure.ac.patch
+
 3) Add the following lines to *collectd-5.4.1/src/Makefile.am*:
 
 ```
@@ -39,11 +43,15 @@ collectd_DEPENDENCIES += tsd.la
 endif
 ```
 
+You may do this by applying the included patch:
+
+    collectd-5.4.1> patch src/Makefile.am < ~/metrics/extras/collectd-extra/src.Makefile.am.patch 
+
 #### Patch for Plugin Symlinks (Optional)
 
 The base version of CollectD 5.4.1 does not load plugins through symlinks.  This may present problems when running through certain deployment systems.  Included in the extra is a patch which removes this restriction in CollectD.  Use the following to apply the patch:
 
-    collectd-5.4.1/src> patch < ~/metrics/extras/collectd-extra/plugin.c.patch
+    collectd-5.4.1> patch src/plugin.c < ~/metrics/extras/collectd-extra/src.plugin.c.patch
 
 #### Compiling
 

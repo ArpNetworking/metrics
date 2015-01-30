@@ -16,21 +16,22 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.google.common.base.Objects;
+import com.arpnetworking.tsdcore.model.Condition;
+import com.google.common.base.MoreObjects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
-
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  * A publisher that wraps another, filters the metrics with regular expressions,
- * and forwards included metrics to the wrapped sink. This  class is thread 
+ * and forwards included metrics to the wrapped sink. This  class is thread
  * safe.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
@@ -41,18 +42,28 @@ public final class FilteringSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final List<AggregatedData> data) {
+    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
         // This is optimistic that most/all of the data will pass the filters.
         final List<AggregatedData> filteredData = Lists.newArrayListWithCapacity(data.size());
         for (final AggregatedData datum : data) {
-            final String metric = datum.getMetric();
+            final String metric = datum.getFQDSN().getMetric();
             final Boolean cachedResult = _cachedFilterResult.getUnchecked(metric);
             if (cachedResult.booleanValue()) {
                 filteredData.add(datum);
             }
         }
-        if (!filteredData.isEmpty()) {
-            _sink.recordAggregateData(filteredData);
+
+        final List<Condition> filteredConditions = Lists.newArrayListWithCapacity(conditions.size());
+        for (final Condition condition : conditions) {
+            final String metric = condition.getFQDSN().getMetric();
+            final Boolean cachedResult = _cachedFilterResult.getUnchecked(metric);
+            if (cachedResult.booleanValue()) {
+                filteredConditions.add(condition);
+            }
+        }
+
+        if (!filteredData.isEmpty() || !filteredConditions.isEmpty()) {
+            _sink.recordAggregateData(filteredData, filteredConditions);
         }
     }
 
@@ -69,7 +80,7 @@ public final class FilteringSink extends BaseSink {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("super", super.toString())
                 .add("ExcludeFilters", _excludeFilters)
                 .add("IncludeFilters", _includeFilters)
@@ -101,7 +112,7 @@ public final class FilteringSink extends BaseSink {
 
     /**
      * Protected constructor.
-     * 
+     *
      * @param builder Instance of <code>Builder</code>.
      */
     protected FilteringSink(final Builder builder) {
@@ -129,7 +140,7 @@ public final class FilteringSink extends BaseSink {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class Builder extends BaseSink.Builder<Builder> {
+    public static final class Builder extends BaseSink.Builder<Builder, FilteringSink> {
 
         /**
          * Public constructor.
@@ -140,10 +151,10 @@ public final class FilteringSink extends BaseSink {
 
         /**
          * Sets exclude filters. Exclude filters are regular expressions matched
-         * against metric names. Include filters take precedence over exclude 
-         * filters and the default is to include if neither applies. Cannot be 
+         * against metric names. Include filters take precedence over exclude
+         * filters and the default is to include if neither applies. Cannot be
          * null.
-         * 
+         *
          * @param value The exclude filters.
          * @return This instance of <code>Builder</code>.
          */
@@ -154,10 +165,10 @@ public final class FilteringSink extends BaseSink {
 
         /**
          * Sets include filters. Include filters are regular expressions matched
-         * against metric names. Include filters take precedence over exclude 
-         * filters and the default is to include if neither applies. Cannot be 
+         * against metric names. Include filters take precedence over exclude
+         * filters and the default is to include if neither applies. Cannot be
          * null.
-         * 
+         *
          * @param value The include filters.
          * @return This instance of <code>Builder</code>.
          */
@@ -168,7 +179,7 @@ public final class FilteringSink extends BaseSink {
 
         /**
          * The aggregated data sink to buffer. Cannot be null.
-         * 
+         *
          * @param value The aggregated data sink to buffer.
          * @return This instance of <code>Builder</code>.
          */

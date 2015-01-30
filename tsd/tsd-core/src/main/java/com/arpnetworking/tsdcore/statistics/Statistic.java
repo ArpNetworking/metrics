@@ -15,8 +15,11 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Quantity;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -24,26 +27,38 @@ import java.util.List;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public interface Statistic {
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type")
+public interface Statistic extends Serializable {
 
     /**
-     * Compute the statistic from the list of values. By default the list of 
-     * values is not guaranteed to be in any particular order; however, 
+     * Compute the statistic from the list of values. By default the list of
+     * values is not guaranteed to be in any particular order; however,
      * <code>Statistic</code> subclasses may implement the marker interface
-     * <code>OrderedStatistic</code> to ensure they are provided with values 
+     * <code>OrderedStatistic</code> to ensure they are provided with values
      * that are sorted from smallest to largest.
-     * 
+     *
      * TODO(vkoskela): Return primitive double instead [MAI-132]
-     * 
+     *
      * @param values List of input values.
      * @return Computed statistic value.
      */
-    Double calculate(List<Quantity> values);
+    double calculate(List<Quantity> values);
 
     /**
      * Accessor for the name of the statistic.
-     * 
+     *
      * @return The name of the statistic.
      */
     String getName();
+
+    /**
+     * Compute the cluster-level statistic from a list of aggregations.
+     *
+     * @param aggregations Aggregations to combine.
+     * @return Computed statistic value.
+     */
+    Quantity calculateAggregations(List<AggregatedData> aggregations);
 }

@@ -16,7 +16,7 @@
 
 package models.messages;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 /**
  * Message class to request a list of known metrics.
@@ -34,7 +34,7 @@ public final class MetricsListRequest {
      */
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .toString();
     }
 }

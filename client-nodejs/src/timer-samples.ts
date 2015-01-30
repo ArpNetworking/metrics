@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* istanbul ignore next */ //ignores inheritance snippet emitted by the TS compiler
 
 import tsdDef = require("tsdDef");
 import timers = require("./tsd-timer");
@@ -30,38 +31,49 @@ import TsdMetricsList = metricsList.TsdMetricsList;
 
 /**
  * Class for creating duration sample for a timer.
+ *
+ * @class
+ * @alias TimerSamples
+ * @ignore
  */
-export class TimerSamples {
-    private samples:TsdMetricsList<tsdDef.Timer> = new TsdMetricsList < tsdDef.Timer >();
+export class TimerSamples extends TsdMetricsList<tsdDef.MetricSample> {
 
-    public constructor(private name:string, private metricsStateObject:MetricsStateObject) {
+    /**
+     * Constructor.
+     *
+     * @param {string} _name Name of the timer.
+     * @param {MetricsStateObject} _metricsStateObject Object holding state of the original metrics object.
+     */
+    public constructor(private _name:string, private _metricsStateObject:MetricsStateObject) {
+        super();
     }
 
     /**
      * Create a new timer sample.
      *
-     * @param name The name of the timer to be added.
-     * @param metricsStateObject Object holding state of the original meterics object.
+     * @method
+     * @return {Timer} The new timer sample instance added to the samples.
      */
-    public addTimer(): tsdDef.Timer {
-        var tsdTimer = new TsdTimer(this.name, this.metricsStateObject);
-        this.samples.push(tsdTimer);
+    public addTimer():tsdDef.Timer {
+        var tsdTimer = new TsdTimer(this._name, this._metricsStateObject);
+        this.push(tsdTimer);
         return tsdTimer;
     }
 
     /**
      * Create a timer sample with explicit value.
      *
-     * @param duration The duration to be recorded
-     * @param unit The unit of the duration
+     * @method
+     * @param {number} duration The duration to be recorded.
+     * @param {Units} unit The unit of the duration.
      */
-    public addExplicitTimer(duration:number, unit:tsdDef.Unit): void {
-        this.samples.push(new ExplicitTimer(duration, unit, this.name, this.metricsStateObject));
+    public addExplicitTimer(duration:number, unit:tsdDef.Unit):void {
+        this.push(new ExplicitTimer(duration, unit, this._name, this._metricsStateObject));
     }
 
     public toJSON() {
-      return this.samples.filter((timer) =>
-            this.metricsStateObject.assert(timer.isStopped(),
-                                            "Skipping unstopped sample for timer '" + this.name + "'"));
+        return this.filter((timer) =>
+            this._metricsStateObject.assert(timer.isStopped(),
+                    "Skipping unstopped sample for timer '" + this._name + "'")).toJSON();
     }
 }

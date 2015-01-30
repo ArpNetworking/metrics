@@ -15,8 +15,9 @@
  */
 
 apply plugin: 'build-dashboard'
+apply plugin: 'idea'
 
-version = '0.2.1-SNAPSHOT'
+version = '0.3.0'
 group = 'com.arpnetworking.metrics'
 
 subprojects {
@@ -31,12 +32,16 @@ subprojects {
     version = rootProject.version
     group = rootProject.group
 
-    generatedSources = ['com/arpnetworking/tsdcore/Messages*']
+    def generatedSources = ['com/arpnetworking/tsdcore/Messages*']
+
+    sourceSets {
+        perf {
+            java.srcDir file('src/perf/java')
+            resources.srcDir file('src/perf/resources')
+        }
+    }
 
     repositories {
-        maven {
-            url "http://repository.apache.org/snapshots/"
-        }
         mavenCentral()
         mavenLocal()
     }
@@ -50,7 +55,8 @@ subprojects {
         ignoreFailures = false
         effort = 'max'
         excludeFilter = file("$rootProject.projectDir/config/findbugs/excludeFilter.xml")
-        sourceSets = [sourceSets.main, sourceSets.test]
+        sourceSets = [sourceSets.main, sourceSets.test, sourceSets.perf]
+        toolVersion = "3.0.0"
     }
 
     tasks.withType(FindBugs) {
@@ -91,6 +97,21 @@ subprojects {
         configProperties = [samedir:"${rootProject.projectDir}/../build/"]
     }
 
+    checkstylePerf {
+        reports {
+            include('**/*.java')
+            xml {
+                destination "${buildDir}/reports/checkstyle/perf.xml"
+            }
+        }
+        showViolations = false
+        ignoreFailures = false
+        classpath = configurations.runtime
+        classpath += sourceSets.main.output
+        configFile = file("${rootProject.projectDir}/../build/checkstyle.xml")
+        configProperties = [samedir:"${rootProject.projectDir}/../build/"]
+    }
+
     sourceSets.each { ss ->
             def cap = ss.name.capitalize()
             def t = tasks.find { it.name == "checkstyle$cap" }
@@ -109,13 +130,23 @@ subprojects {
     }
 
     jacoco {
-        toolVersion = "0.7.0.201403182114"
+        toolVersion = "0.7.2.201409121644"
     }
 
     check.dependsOn jacocoTestReport
 
     task releasePrep(dependsOn: [test,check,javadoc]) << {
 
+    }
+
+    task perfDir << {
+        file("build/reports/perf").mkdirs()
+    }
+
+    task perf(type: Test, dependsOn: perfDir) {
+        testClassesDir = sourceSets.perf.output.classesDir
+        classpath = sourceSets.perf.runtimeClasspath
+        jvmArgs '-agentlib:hprof=cpu=samples,depth=15,interval=5,file=build/reports/perf/profile.hprof.txt'
     }
 
     releasePrep {
@@ -125,6 +156,7 @@ subprojects {
 
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        options.incremental = true
         // TODO(vkoskela): Send different arguments to different source groups
         //options.compilerArgs << "-Werror" << "-Xlint:all"
     }
@@ -147,25 +179,30 @@ subprojects {
             excludes = ["Messages.class"]
         }
     }
-    
+
     task sourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
         from sourceSets.main.allJava
     }
-    
+
     task javadocJar(type: Jar, dependsOn: javadoc) {
         classifier = 'javadoc'
         from javadoc.destinationDir
     }
-    
+
     artifacts {
         archives sourcesJar
         archives javadocJar
     }
+
+    idea.module {
+        excludeDirs -= file(buildDir)
+        buildDir.listFiles({ d, f -> f != 'generated-sources' } as FilenameFilter).each { excludeDirs += it }
+    }
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.11'
+    gradleVersion = '2.2.1'
 }
 
 buildscript {
@@ -174,7 +211,7 @@ buildscript {
     }
 
     dependencies {
-        classpath group: 'ws.antonov.gradle.plugins', name: 'gradle-plugin-protobuf', version: '0.8'
+        classpath group: 'ws.antonov.gradle.plugins', name: 'gradle-plugin-protobuf', version: '0.9.1'
     }
 }
 

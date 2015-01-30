@@ -40,12 +40,4 @@ public interface Observable {
      * @param observer The observer to remove.
      */
     void detach(final Observer observer);
-
-    /**
-     * Notify all registered observers of an event.
-     * 
-     * @param observable The observable raising the event.
-     * @param event The even being raised.
-     */
-    void notify(final Observable observable, final Object event);
 }

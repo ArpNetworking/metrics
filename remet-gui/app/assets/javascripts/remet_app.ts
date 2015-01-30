@@ -20,15 +20,17 @@
 import system = require('durandal/system');
 import app = require('durandal/app');
 import viewLocator = require('durandal/viewLocator');
+import KnockoutBindings = require('./classes/KnockoutBindings');
 
 app.title = "ReMet";
 app.configurePlugins({
     router: true,
-    dialog: true
+    dialog: true,
+    widget: true
 });
 
 viewLocator.useConvention('classes', '/assets/html');
 
 app.start().then(function() {
-    app.setRoot("../classes/GraphViewModel");
+    app.setRoot("../classes/shell");
 });

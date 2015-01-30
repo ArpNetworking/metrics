@@ -17,9 +17,10 @@ package com.arpnetworking.tsdcore.sources;
 
 import com.arpnetworking.tsdcore.parsers.Parser;
 import com.arpnetworking.tsdcore.parsers.exceptions.ParsingException;
+import com.arpnetworking.tsdcore.tailer.InitialPosition;
 import com.arpnetworking.utility.observer.Observer;
 import com.google.common.base.Charsets;
-
+import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -38,6 +39,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Tests for the FileSource class.
@@ -58,20 +60,22 @@ public class FileSourceTest {
     public void testParseData() throws IOException, InterruptedException, ParsingException {
         final long interval = 500;
         final long sleepInterval = 600;
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testParseData.log");
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testParseData.log");
+        final File state = new File(_directory, "testParseData.log.state");
         Files.deleteIfExists(file.toPath());
         Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
 
         final String expectedData = "Expected Data";
         Mockito.when(_parser.parse(expectedData.getBytes(Charsets.UTF_8))).thenReturn(expectedData);
 
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
+                        .setSourceFile(file)
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(interval)),
+                        .setInterval(Duration.millis(interval)),
                 _logger);
 
         source.attach(_observer);
@@ -91,12 +95,61 @@ public class FileSourceTest {
     }
 
     @Test
-    public void testTailerFileNotFound() throws InterruptedException {
+    public void testTailFromEnd() throws IOException, InterruptedException, ParsingException {
+        final long interval = 500;
+        final long sleepInterval = 600;
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailFromEnd.log");
+        Files.deleteIfExists(file.toPath());
+        Files.createFile(file.toPath());
+
+        final String expectedData = "Expected Data";
+        final String unexpectedData = "Unexpected Data";
+        Files.write(
+                file.toPath(),
+                (unexpectedData + "\n").getBytes(Charsets.UTF_8),
+                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+
+        Mockito.when(_parser.parse(unexpectedData.getBytes(Charsets.UTF_8)))
+               .thenThrow(new AssertionError("should not tail from beginning of file"));
+
+        Mockito.when(_parser.parse(expectedData.getBytes(Charsets.UTF_8))).thenReturn(expectedData);
+
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath("/path/does/not/exist.log")
+                        .setSourceFile(file)
+                        .setInitialPosition(InitialPosition.END)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(INTERVAL)),
+                        .setInterval(Duration.millis(interval)),
+                _logger);
+
+        source.attach(_observer);
+        source.start();
+
+        Thread.sleep(sleepInterval);
+        Mockito.reset(_logger);
+        Files.write(
+                file.toPath(),
+                (expectedData + "\n").getBytes(Charsets.UTF_8),
+                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+        Thread.sleep(sleepInterval);
+
+        Mockito.verify(_parser, Mockito.never()).parse(unexpectedData.getBytes(Charsets.UTF_8));
+        Mockito.verify(_parser).parse(expectedData.getBytes(Charsets.UTF_8));
+        Mockito.verify(_observer).notify(source, expectedData);
+        source.stop();
+    }
+
+    @Test
+    public void testTailerFileNotFound() throws InterruptedException, IOException {
+        final File state = new File(_directory, "testTailerFileNotFound.log.state");
+        Files.deleteIfExists(state.toPath());
+        final FileSource<Object> source = new FileSource<Object>(
+                new FileSource.Builder<Object>()
+                        .setSourceFile(new File("/dne/" + UUID.randomUUID().toString() + ".log"))
+                        .setStateFile(state)
+                        .setParser(_parser)
+                        .setInterval(Duration.millis(INTERVAL)),
                 _logger);
 
         source.start();
@@ -106,12 +159,15 @@ public class FileSourceTest {
     }
 
     @Test
-    public void testTailerFileNotFoundInterval() throws InterruptedException {
+    public void testTailerFileNotFoundInterval() throws InterruptedException, IOException {
+        final File state = new File(_directory, "testTailerFileNotFoundInterval.log.state");
+        Files.deleteIfExists(state.toPath());
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath("/path/does/not/exist.log")
+                        .setSourceFile(new File("/dne/" + UUID.randomUUID().toString() + ".log"))
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(INTERVAL)),
+                        .setInterval(Duration.millis(INTERVAL)),
                 _logger);
 
         Mockito.reset(_logger);
@@ -126,19 +182,21 @@ public class FileSourceTest {
 
     @Test
     public void testTailerLogRotationRename() throws IOException, InterruptedException {
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogRotationRename.log");
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationRename.log");
+        final File state = new File(_directory, "testTailerLogRotationRename.log.state");
         Files.deleteIfExists(file.toPath());
         Files.createFile(file.toPath());
-        // TODO(vkoskela): Rotation not detected on empty file [MAI-189]
+        Files.deleteIfExists(state.toPath());
+
         Files.write(file.toPath(), "Existing data in the log file\n".getBytes(Charsets.UTF_8));
 
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
+                        .setSourceFile(file)
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(INTERVAL)),
+                        .setInterval(Duration.millis(INTERVAL)),
                 _logger);
 
         source.start();
@@ -146,8 +204,36 @@ public class FileSourceTest {
         Mockito.reset(_logger);
         renameRotate(file);
         Files.createFile(file.toPath());
-        // Two writes across a file rotation are always processed in separate
-        // intervals by the Apache IO Tailer.
+        Thread.sleep(2 * SLEEP_INTERVAL);
+
+        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        source.stop();
+    }
+
+    // TODO(vkoskela): Rotation from empty file to empty file not supported [MAI-189]
+    @Ignore
+    @Test
+    public void testTailerLogRotationRenameFromEmpty() throws IOException, InterruptedException {
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationRenameFromEmpty.log");
+        final File state = new File(_directory, "testTailerLogRotationRenameFromEmpty.log.state");
+        Files.deleteIfExists(file.toPath());
+        Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
+
+        final FileSource<Object> source = new FileSource<Object>(
+                new FileSource.Builder<Object>()
+                        .setSourceFile(file)
+                        .setStateFile(state)
+                        .setParser(_parser)
+                        .setInterval(Duration.millis(INTERVAL)),
+                _logger);
+
+        source.start();
+        Thread.sleep(SLEEP_INTERVAL);
+        Mockito.reset(_logger);
+        renameRotate(file);
+        Files.createFile(file.toPath());
         Thread.sleep(2 * SLEEP_INTERVAL);
 
         Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
@@ -156,19 +242,21 @@ public class FileSourceTest {
 
     @Test
     public void testTailerLogRotationCopyTruncate() throws IOException, InterruptedException {
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogRotationCopyTruncate.log");
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationCopyTruncate.log");
+        final File state = new File(_directory, "testTailerLogRotationCopyTruncate.log.state");
         Files.deleteIfExists(file.toPath());
         Files.createFile(file.toPath());
-        // TODO(vkoskela): Rotation not detected on empty file [MAI-189]
+        Files.deleteIfExists(state.toPath());
+
         Files.write(file.toPath(), "Existing data in the log file\n".getBytes(Charsets.UTF_8));
 
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
+                        .setSourceFile(file)
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(INTERVAL)),
+                        .setInterval(Duration.millis(INTERVAL)),
                 _logger);
 
         source.start();
@@ -176,34 +264,63 @@ public class FileSourceTest {
         Mockito.reset(_logger);
         copyRotate(file);
         truncate(file);
-        // Two writes across a file rotation are always processed in separate
-        // intervals by the Apache IO Tailer.
         Thread.sleep(2 * SLEEP_INTERVAL);
 
         Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
-    // TODO(vkoskela): Intermittent failures caused by race condition [MAI-190]
+    // TODO(vkoskela): Rotation from empty file to empty file not supported [MAI-189]
+    // TODO(vkoskela): Copy truncate not supported [MAI-188]
     @Ignore
+    @Test
+    public void testTailerLogRotationCopyTruncateFromEmpty() throws IOException, InterruptedException {
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationCopyTruncate.log");
+        final File state = new File(_directory, "testTailerLogRotationCopyTruncate.log.state");
+        Files.deleteIfExists(file.toPath());
+        Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
+
+        final FileSource<Object> source = new FileSource<Object>(
+                new FileSource.Builder<Object>()
+                        .setSourceFile(file)
+                        .setStateFile(state)
+                        .setParser(_parser)
+                        .setInterval(Duration.millis(INTERVAL)),
+                _logger);
+
+        source.start();
+        Thread.sleep(SLEEP_INTERVAL);
+        Mockito.reset(_logger);
+        copyRotate(file);
+        truncate(file);
+        Thread.sleep(2 * SLEEP_INTERVAL);
+
+        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        source.stop();
+    }
+
     @Test
     public void testTailerLogRotationRenameWithData() throws IOException, InterruptedException, ParsingException {
         final long interval = 500;
         final long sleepInterval = 600;
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogRotationRenameWithData.log");
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationRenameWithData.log");
+        final File state = new File(_directory, "testTailerLogRotationRenameWithData.log.state");
         Files.deleteIfExists(file.toPath());
         Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
 
         final String expectedData = "Expected Data";
         Mockito.when(_parser.parse(expectedData.getBytes(Charsets.UTF_8))).thenReturn(expectedData);
 
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
+                        .setSourceFile(file)
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(interval)),
+                        .setInterval(Duration.millis(interval)),
                 _logger);
 
         source.attach(_observer);
@@ -219,36 +336,39 @@ public class FileSourceTest {
         Files.createFile(file.toPath());
         Mockito.verifyZeroInteractions(_parser);
         Mockito.verifyZeroInteractions(_observer);
-        // Two writes across a file rotation are always processed in separate
-        // intervals by the Apache IO Tailer.
-        Thread.sleep(2 * sleepInterval);
+        Thread.sleep(3 * sleepInterval);
 
         Mockito.verify(_parser).parse(expectedData.getBytes(Charsets.UTF_8));
         Mockito.verify(_observer).notify(source, expectedData);
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger, Mockito.timeout(10000)).info(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
-    // TODO(vkoskela): FileSource support reopen reads [MAI-188]
+    // TODO(vkoskela): Copy truncate not supported [MAI-188]
+    // In this case the file is copied and truncated before the tailer is able
+    // to read the data.  Since the tailer does not understand where the file
+    // is copied to it has no chance to read it.
     @Ignore
     @Test
     public void testTailerLogRotationCopyTruncateWithData() throws IOException, InterruptedException, ParsingException {
         final long interval = 500;
         final long sleepInterval = 600;
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogRotationCopyTruncateWithData.log");
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationCopyTruncateWithData.log");
+        final File state = new File(_directory, "testTailerLogRotationCopyTruncateWithData.log.state");
         Files.deleteIfExists(file.toPath());
         Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
 
         final String expectedData = "Expected Data";
         Mockito.when(_parser.parse(expectedData.getBytes(Charsets.UTF_8))).thenReturn(expectedData);
 
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
+                        .setSourceFile(file)
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(interval)),
+                        .setInterval(Duration.millis(interval)),
                 _logger);
 
         source.attach(_observer);
@@ -264,7 +384,7 @@ public class FileSourceTest {
         truncate(file);
         Mockito.verifyZeroInteractions(_parser);
         Mockito.verifyZeroInteractions(_observer);
-        Thread.sleep(2 * sleepInterval);
+        Thread.sleep(3 * sleepInterval);
 
         Mockito.verify(_parser).parse(expectedData.getBytes(Charsets.UTF_8));
         Mockito.verify(_observer).notify(source, expectedData);
@@ -276,11 +396,12 @@ public class FileSourceTest {
     public void testTailerLogRotationRenameWithDataToOldAndNew() throws IOException, InterruptedException, ParsingException {
         final long interval = 500;
         final long sleepInterval = 600;
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogRotationRenameWithDataToOldAndNew.log");
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationRenameWithDataToOldAndNew.log");
+        final File state = new File(_directory, "testTailerLogRotationRenameWithDataToOldAndNew.log.state");
         Files.deleteIfExists(file.toPath());
         Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
 
         final String expectedData1 = "Expected Data 1 must be larger";
         final String expectedData2 = "Expected Data 2";
@@ -289,9 +410,10 @@ public class FileSourceTest {
 
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
+                        .setSourceFile(file)
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(interval)),
+                        .setInterval(Duration.millis(interval)),
                 _logger);
 
         source.attach(_observer);
@@ -311,9 +433,7 @@ public class FileSourceTest {
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
         Mockito.verifyZeroInteractions(_parser);
         Mockito.verifyZeroInteractions(_observer);
-        // Two writes across a file rotation are always processed in separate
-        // intervals by the Apache IO Tailer.
-        Thread.sleep(2 * sleepInterval);
+        Thread.sleep(3 * sleepInterval);
 
         final ArgumentCaptor<byte[]> parserCapture = ArgumentCaptor.forClass(byte[].class);
         final ArgumentCaptor<Object> notifyCapture = ArgumentCaptor.forClass(Object.class);
@@ -336,17 +456,23 @@ public class FileSourceTest {
         source.stop();
     }
 
-    // TODO(vkoskela): FileSource support reopen reads [MAI-188]
+    // TODO(vkoskela): Copy truncate not supported [MAI-188]
+    // The tailer has no opportunity to see the data block written immediately
+    // before the copy-truncate. This is probably the most difficult case to
+    // fix for copy-truncate. Unfortunately, either the tailer needs knowledge
+    // of the file rotation scheme (to look for the copied file) or may be able
+    // to discover this file with a file system watcher.
     @Ignore
     @Test
     public void testTailerLogRotationCopyTruncateWithDataToOldAndNew() throws IOException, InterruptedException, ParsingException {
         final long interval = 500;
         final long sleepInterval = 600;
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogRotationCopyTruncateWithDataToOldAndNew.log");
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationCopyTruncateWithDataToOldAndNew.log");
+        final File state = new File(_directory, "testTailerLogRotationCopyTruncateWithDataToOldAndNew.log.state");
         Files.deleteIfExists(file.toPath());
         Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
 
         final String expectedData1 = "Expected Data 1 must be larger";
         final String expectedData2 = "Expected Data 2";
@@ -355,9 +481,10 @@ public class FileSourceTest {
 
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
+                        .setSourceFile(file)
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(interval)),
+                        .setInterval(Duration.millis(interval)),
                 _logger);
 
         source.attach(_observer);
@@ -377,9 +504,7 @@ public class FileSourceTest {
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
         Mockito.verifyZeroInteractions(_parser);
         Mockito.verifyZeroInteractions(_observer);
-        // Two writes across a file rotation are always processed in separate
-        // intervals by the Apache IO Tailer.
-        Thread.sleep(2 * sleepInterval);
+        Thread.sleep(3 * sleepInterval);
 
         final ArgumentCaptor<byte[]> parserCapture = ArgumentCaptor.forClass(byte[].class);
         final ArgumentCaptor<Object> notifyCapture = ArgumentCaptor.forClass(Object.class);
@@ -402,18 +527,17 @@ public class FileSourceTest {
         source.stop();
     }
 
-    // TODO(vkoskela): Premature log rotation [MAI-187]
-    @Ignore
     @SuppressWarnings("unchecked")
     @Test
     public void testTailerLogRotationRenameDroppedData() throws IOException, InterruptedException, ParsingException {
         final long interval = 500;
         final long sleepInterval = 600;
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogRotationRenameDroppedData.log");
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationRenameDroppedData.log");
+        final File state = new File(_directory, "testTailerLogRotationRenameDroppedData.log.state");
         Files.deleteIfExists(file.toPath());
         Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
 
         final String expectedData1 = "Expected Data 1 must be larger";
         final String expectedData2 = "Expected Data 2 plus";
@@ -424,9 +548,10 @@ public class FileSourceTest {
 
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
+                        .setSourceFile(file)
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(interval)),
+                        .setInterval(Duration.millis(interval)),
                 _logger);
 
         source.attach(_observer);
@@ -438,8 +563,6 @@ public class FileSourceTest {
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
         Thread.sleep(sleepInterval);
         Mockito.reset(_logger);
-        Mockito.reset(_parser);
-        Mockito.reset(_observer);
         Files.write(
                 file.toPath(),
                 (expectedData2 + "\n").getBytes(Charsets.UTF_8),
@@ -450,45 +573,50 @@ public class FileSourceTest {
                 file.toPath(),
                 (expectedData3 + "\n").getBytes(Charsets.UTF_8),
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
-        Mockito.verifyZeroInteractions(_parser);
-        Mockito.verifyZeroInteractions(_observer);
-        // Two writes across a file rotation are always processed in separate
-        // intervals by the Apache IO Tailer.
-        Thread.sleep(2 * sleepInterval);
+        Thread.sleep(3 * sleepInterval);
 
         final ArgumentCaptor<byte[]> parserCapture = ArgumentCaptor.forClass(byte[].class);
         final ArgumentCaptor<Object> notifyCapture = ArgumentCaptor.forClass(Object.class);
 
-        Mockito.verify(_parser, Mockito.times(2)).parse(parserCapture.capture());
+        Mockito.verify(_parser, Mockito.times(3)).parse(parserCapture.capture());
         final List<byte[]> parserValues = parserCapture.getAllValues();
         // CHECKSTYLE.OFF: IllegalInstantiation - This is ok for String from byte[]
         Assert.assertTrue("actual=" + new String(parserValues.get(0), Charsets.UTF_8),
-                Arrays.equals(expectedData2.getBytes(Charsets.UTF_8), parserValues.get(0)));
+                Arrays.equals(expectedData1.getBytes(Charsets.UTF_8), parserValues.get(0)));
         Assert.assertTrue("actual=" + new String(parserValues.get(1), Charsets.UTF_8),
-                Arrays.equals(expectedData3.getBytes(Charsets.UTF_8), parserValues.get(1)));
+                Arrays.equals(expectedData2.getBytes(Charsets.UTF_8), parserValues.get(1)));
+        Assert.assertTrue("actual=" + new String(parserValues.get(2), Charsets.UTF_8),
+                Arrays.equals(expectedData3.getBytes(Charsets.UTF_8), parserValues.get(2)));
         // CHECKSTYLE.ON: IllegalInstantiation
 
-        Mockito.verify(_observer, Mockito.times(2)).notify(Matchers.eq(source), notifyCapture.capture());
+        Mockito.verify(_observer, Mockito.times(3)).notify(Matchers.eq(source), notifyCapture.capture());
         final List<Object> notifyValues = notifyCapture.getAllValues();
-        Assert.assertEquals(expectedData2, notifyValues.get(0));
-        Assert.assertEquals(expectedData3, notifyValues.get(1));
+        Assert.assertEquals(expectedData1, notifyValues.get(0));
+        Assert.assertEquals(expectedData2, notifyValues.get(1));
+        Assert.assertEquals(expectedData3, notifyValues.get(2));
 
         Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
-    // TODO(vkoskela): Premature log rotation [MAI-187]
+    // TODO(vkoskela): Copy truncate not supported [MAI-188]
+    // The tailer has no opportunity to see the data block written immediately
+    // before the copy-truncate. This is probably the most difficult case to
+    // fix for copy-truncate. Unfortunately, either the tailer needs knowledge
+    // of the file rotation scheme (to look for the copied file) or may be able
+    // to discover this file with a file system watcher.
     @Ignore
     @SuppressWarnings("unchecked")
     @Test
     public void testTailerLogCopyTruncateRenameDroppedData() throws IOException, InterruptedException, ParsingException {
         final long interval = 500;
         final long sleepInterval = 600;
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogCopyTruncateRenameDroppedData.log");
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogCopyTruncateRenameDroppedData.log");
+        final File state = new File(_directory, "testTailerLogCopyTruncateRenameDroppedData.log.state");
         Files.deleteIfExists(file.toPath());
         Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
 
         final String expectedData1 = "Expected Data 1 must be larger";
         final String expectedData2 = "Expected Data 2 plus";
@@ -499,9 +627,10 @@ public class FileSourceTest {
 
         final FileSource<Object> source = new FileSource<Object>(
                 new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
+                        .setSourceFile(file)
+                        .setStateFile(state)
                         .setParser(_parser)
-                        .setInterval(Long.valueOf(interval)),
+                        .setInterval(Duration.millis(interval)),
                 _logger);
 
         source.attach(_observer);
@@ -513,8 +642,6 @@ public class FileSourceTest {
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
         Thread.sleep(sleepInterval);
         Mockito.reset(_logger);
-        Mockito.reset(_parser);
-        Mockito.reset(_observer);
         Files.write(
                 file.toPath(),
                 (expectedData2 + "\n").getBytes(Charsets.UTF_8),
@@ -525,11 +652,146 @@ public class FileSourceTest {
                 file.toPath(),
                 (expectedData3 + "\n").getBytes(Charsets.UTF_8),
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
-        Mockito.verifyZeroInteractions(_parser);
-        Mockito.verifyZeroInteractions(_observer);
-        // Two writes across a file rotation are always processed in separate
-        // intervals by the Apache IO Tailer.
-        Thread.sleep(2 * sleepInterval);
+        Thread.sleep(3 * sleepInterval);
+
+        final ArgumentCaptor<byte[]> parserCapture = ArgumentCaptor.forClass(byte[].class);
+        final ArgumentCaptor<Object> notifyCapture = ArgumentCaptor.forClass(Object.class);
+
+        Mockito.verify(_parser, Mockito.times(3)).parse(parserCapture.capture());
+        final List<byte[]> parserValues = parserCapture.getAllValues();
+        // CHECKSTYLE.OFF: IllegalInstantiation - This is ok for String from byte[]
+        Assert.assertTrue("actual=" + new String(parserValues.get(0), Charsets.UTF_8),
+                Arrays.equals(expectedData1.getBytes(Charsets.UTF_8), parserValues.get(0)));
+        Assert.assertTrue("actual=" + new String(parserValues.get(1), Charsets.UTF_8),
+                Arrays.equals(expectedData2.getBytes(Charsets.UTF_8), parserValues.get(1)));
+        Assert.assertTrue("actual=" + new String(parserValues.get(2), Charsets.UTF_8),
+                Arrays.equals(expectedData3.getBytes(Charsets.UTF_8), parserValues.get(2)));
+        // CHECKSTYLE.ON: IllegalInstantiation
+
+        Mockito.verify(_observer, Mockito.times(3)).notify(Matchers.eq(source), notifyCapture.capture());
+        final List<Object> notifyValues = notifyCapture.getAllValues();
+        Assert.assertEquals(expectedData1, notifyValues.get(0));
+        Assert.assertEquals(expectedData2, notifyValues.get(1));
+        Assert.assertEquals(expectedData3, notifyValues.get(2));
+
+        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        source.stop();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTailerLogRotationRenameSmallToLarge() throws IOException, InterruptedException, ParsingException {
+        final long interval = 500;
+        final long sleepInterval = 600;
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationRenameSmallToLarge.log");
+        final File state = new File(_directory, "testTailerLogRotationRenameSmallToLarge.log.state");
+        Files.deleteIfExists(file.toPath());
+        Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
+
+        final String expectedData1 = "Expected Data 1 small";
+        final String expectedData2 = "Expected Data 2 must be larger";
+        Mockito.when(_parser.parse(expectedData1.getBytes(Charsets.UTF_8))).thenReturn(expectedData1);
+        Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
+
+        final FileSource<Object> source = new FileSource<Object>(
+                new FileSource.Builder<Object>()
+                        .setSourceFile(file)
+                        .setStateFile(state)
+                        .setParser(_parser)
+                        .setInterval(Duration.millis(interval)),
+                _logger);
+
+        source.attach(_observer);
+        source.start();
+
+        Files.write(
+                file.toPath(),
+                (expectedData1 + "\n").getBytes(Charsets.UTF_8),
+                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+        Thread.sleep(sleepInterval);
+        Mockito.reset(_logger);
+        renameRotate(file);
+        Files.createFile(file.toPath());
+        Files.write(
+                file.toPath(),
+                (expectedData2 + "\n").getBytes(Charsets.UTF_8),
+                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+        Thread.sleep(3 * sleepInterval);
+
+        final ArgumentCaptor<byte[]> parserCapture = ArgumentCaptor.forClass(byte[].class);
+        final ArgumentCaptor<Object> notifyCapture = ArgumentCaptor.forClass(Object.class);
+
+        Mockito.verify(_parser, Mockito.times(2)).parse(parserCapture.capture());
+        final List<byte[]> parserValues = parserCapture.getAllValues();
+        // CHECKSTYLE.OFF: IllegalInstantiation - This is ok for String from byte[]
+        Assert.assertTrue("actual=" + new String(parserCapture.getValue(), Charsets.UTF_8),
+                Arrays.equals(expectedData1.getBytes(Charsets.UTF_8), parserValues.get(0)));
+        Assert.assertTrue("actual=" + new String(parserCapture.getValue(), Charsets.UTF_8),
+                Arrays.equals(expectedData2.getBytes(Charsets.UTF_8), parserValues.get(1)));
+        // CHECKSTYLE.ON: IllegalInstantiation
+
+        Mockito.verify(_observer, Mockito.times(2)).notify(Matchers.eq(source), notifyCapture.capture());
+        final List<Object> notifyValues = notifyCapture.getAllValues();
+        Assert.assertEquals(expectedData1, notifyValues.get(0));
+        Assert.assertEquals(expectedData2, notifyValues.get(1));
+
+        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        source.stop();
+    }
+
+    // TODO(vkoskela): Copy truncate not supported [MAI-188]
+    // The small data block is read but the larger block which replaces it
+    // immediately after the copy-truncate operation appears to the tailer
+    // to just be more data. There is a relatively simple fix to this problem,
+    // add a check if the character just before the read position is not a new
+    // line character then the file was rotated. This will not cover all cases
+    // but should cover a large majority. Beyond this fix the only ways to
+    // detect the copy truncate are hash prefix comparison or inode comparison
+    // before every read.
+    @Ignore
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTailerLogRotationCopyTruncateSmallToLarge() throws IOException, InterruptedException, ParsingException {
+        final long interval = 500;
+        final long sleepInterval = 600;
+        Files.createDirectories(_directory.toPath());
+        final File file = new File(_directory, "testTailerLogRotationCopyTruncateSmallToLarge.log");
+        final File state = new File(_directory, "testTailerLogRotationCopyTruncateSmallToLarge.log.state");
+        Files.deleteIfExists(file.toPath());
+        Files.createFile(file.toPath());
+        Files.deleteIfExists(state.toPath());
+
+        final String expectedData1 = "Expected Data 1 small";
+        final String expectedData2 = "Expected Data 2 must be larger";
+        Mockito.when(_parser.parse(expectedData1.getBytes(Charsets.UTF_8))).thenReturn(expectedData1);
+        Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
+
+        final FileSource<Object> source = new FileSource<Object>(
+                new FileSource.Builder<Object>()
+                        .setSourceFile(file)
+                        .setStateFile(state)
+                        .setParser(_parser)
+                        .setInterval(Duration.millis(interval)),
+                _logger);
+
+        source.attach(_observer);
+        source.start();
+
+        Files.write(
+                file.toPath(),
+                (expectedData1 + "\n").getBytes(Charsets.UTF_8),
+                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+        Thread.sleep(sleepInterval);
+        Mockito.reset(_logger);
+        copyRotate(file);
+        truncate(file);
+        Files.write(
+                file.toPath(),
+                (expectedData2 + "\n").getBytes(Charsets.UTF_8),
+                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+        Thread.sleep(3 * sleepInterval);
 
         final ArgumentCaptor<byte[]> parserCapture = ArgumentCaptor.forClass(byte[].class);
         final ArgumentCaptor<Object> notifyCapture = ArgumentCaptor.forClass(Object.class);
@@ -538,144 +800,15 @@ public class FileSourceTest {
         final List<byte[]> parserValues = parserCapture.getAllValues();
         // CHECKSTYLE.OFF: IllegalInstantiation - This is ok for String from byte[]
         Assert.assertTrue("actual=" + new String(parserValues.get(0), Charsets.UTF_8),
-                Arrays.equals(expectedData2.getBytes(Charsets.UTF_8), parserValues.get(0)));
+                Arrays.equals(expectedData1.getBytes(Charsets.UTF_8), parserValues.get(0)));
         Assert.assertTrue("actual=" + new String(parserValues.get(1), Charsets.UTF_8),
-                Arrays.equals(expectedData3.getBytes(Charsets.UTF_8), parserValues.get(1)));
+                Arrays.equals(expectedData2.getBytes(Charsets.UTF_8), parserValues.get(1)));
         // CHECKSTYLE.ON: IllegalInstantiation
 
         Mockito.verify(_observer, Mockito.times(2)).notify(Matchers.eq(source), notifyCapture.capture());
         final List<Object> notifyValues = notifyCapture.getAllValues();
-        Assert.assertEquals(expectedData2, notifyValues.get(0));
-        Assert.assertEquals(expectedData3, notifyValues.get(1));
-
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
-        source.stop();
-    }
-
-    // TODO(vkoskela): Misses rotation on small file to larger file [MAI-189]
-    @Ignore
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testTailerLogRotationRenameSmallToLarge() throws IOException, InterruptedException, ParsingException {
-        final long interval = 500;
-        final long sleepInterval = 600;
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogRotationRenameSmallToLarge.log");
-        Files.deleteIfExists(file.toPath());
-        Files.createFile(file.toPath());
-
-        final String expectedData1 = "Expected Data 1 small";
-        final String expectedData2 = "Expected Data 2 must be larger";
-        Mockito.when(_parser.parse(expectedData1.getBytes(Charsets.UTF_8))).thenReturn(expectedData1);
-        Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
-
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
-                        .setParser(_parser)
-                        .setInterval(Long.valueOf(interval)),
-                _logger);
-
-        source.attach(_observer);
-        source.start();
-
-        Files.write(
-                file.toPath(),
-                (expectedData1 + "\n").getBytes(Charsets.UTF_8),
-                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
-        Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
-        Mockito.reset(_parser);
-        Mockito.reset(_observer);
-        renameRotate(file);
-        Files.createFile(file.toPath());
-        Files.write(
-                file.toPath(),
-                (expectedData2 + "\n").getBytes(Charsets.UTF_8),
-                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
-        Mockito.verifyZeroInteractions(_parser);
-        Mockito.verifyZeroInteractions(_observer);
-        // Two writes across a file rotation are always processed in separate
-        // intervals by the Apache IO Tailer.
-        Thread.sleep(2 * sleepInterval);
-
-        final ArgumentCaptor<byte[]> parserCapture = ArgumentCaptor.forClass(byte[].class);
-        final ArgumentCaptor<Object> notifyCapture = ArgumentCaptor.forClass(Object.class);
-
-        Mockito.verify(_parser).parse(parserCapture.capture());
-        // CHECKSTYLE.OFF: IllegalInstantiation - This is ok for String from byte[]
-        Assert.assertTrue("actual=" + new String(parserCapture.getValue(), Charsets.UTF_8),
-                Arrays.equals(expectedData2.getBytes(Charsets.UTF_8), parserCapture.getValue()));
-        // CHECKSTYLE.ON: IllegalInstantiation
-
-        Mockito.verify(_observer).notify(Matchers.eq(source), notifyCapture.capture());
-        Assert.assertEquals(expectedData2, notifyCapture.getValue());
-
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
-        source.stop();
-    }
-
-    // TODO(vkoskela): FileSource support reopen reads [MAI-188]
-    // TODO(vkoskela): Misses rotation on small file to larger file [MAI-189]
-    @Ignore
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testTailerLogRotationCopyTruncateSmallToLarge() throws IOException, InterruptedException, ParsingException {
-        final long interval = 500;
-        final long sleepInterval = 600;
-        final File directory = new File("./target/FileSourceTest");
-        Files.createDirectories(directory.toPath());
-        final File file = new File(directory, "testTailerLogRotationCopyTruncateSmallToLarge.log");
-        Files.deleteIfExists(file.toPath());
-        Files.createFile(file.toPath());
-
-        final String expectedData1 = "Expected Data 1 small";
-        final String expectedData2 = "Expected Data 2 must be larger";
-        Mockito.when(_parser.parse(expectedData1.getBytes(Charsets.UTF_8))).thenReturn(expectedData1);
-        Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
-
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
-                        .setFilePath(file.getAbsolutePath())
-                        .setParser(_parser)
-                        .setInterval(Long.valueOf(interval)),
-                _logger);
-
-        source.attach(_observer);
-        source.start();
-
-        Files.write(
-                file.toPath(),
-                (expectedData1 + "\n").getBytes(Charsets.UTF_8),
-                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
-        Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
-        Mockito.reset(_parser);
-        Mockito.reset(_observer);
-        copyRotate(file);
-        truncate(file);
-        Files.write(
-                file.toPath(),
-                (expectedData2 + "\n").getBytes(Charsets.UTF_8),
-                StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
-        Mockito.verifyZeroInteractions(_parser);
-        Mockito.verifyZeroInteractions(_observer);
-        // Two writes across a file rotation are always processed in separate
-        // intervals by the Apache IO Tailer.
-        Thread.sleep(2 * sleepInterval);
-
-        final ArgumentCaptor<byte[]> parserCapture = ArgumentCaptor.forClass(byte[].class);
-        final ArgumentCaptor<Object> notifyCapture = ArgumentCaptor.forClass(Object.class);
-
-        Mockito.verify(_parser).parse(parserCapture.capture());
-        // CHECKSTYLE.OFF: IllegalInstantiation - This is ok for String from byte[]
-        Assert.assertTrue("actual=" + new String(parserCapture.getValue(), Charsets.UTF_8),
-                Arrays.equals(expectedData2.getBytes(Charsets.UTF_8), parserCapture.getValue()));
-        // CHECKSTYLE.ON: IllegalInstantiation
-
-        Mockito.verify(_observer).notify(Matchers.eq(source), notifyCapture.capture());
-        Assert.assertEquals(expectedData2, notifyCapture.getValue());
+        Assert.assertEquals(expectedData1, notifyValues.get(0));
+        Assert.assertEquals(expectedData2, notifyValues.get(1));
 
         Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
         source.stop();
@@ -709,7 +842,7 @@ public class FileSourceTest {
         try {
             new FileOutputStream(file).getChannel().truncate(0).close();
         } catch (final IOException e) {
-            // Ignore 
+            // Ignore
         }
     }
 
@@ -717,6 +850,7 @@ public class FileSourceTest {
     private Logger _logger;
     private Parser<Object> _parser;
     private final SimpleDateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH");
+    private final File _directory = new File("./target/tmp/test/FileSourceTest");
 
     private static final long INTERVAL = 50;
     private static final long SLEEP_INTERVAL = INTERVAL + 25;

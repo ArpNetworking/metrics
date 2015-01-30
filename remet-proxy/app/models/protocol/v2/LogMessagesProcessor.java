@@ -1,0 +1,218 @@
+/**
+ * Copyright 2014 Groupon.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package models.protocol.v2;
+
+import com.arpnetworking.metrics.Metrics;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import models.ConnectionContext;
+import models.messages.Command;
+import models.messages.LogLine;
+import models.messages.LogReport;
+import models.messages.LogsList;
+import models.messages.LogsListRequest;
+import models.messages.NewLog;
+import models.protocol.MessagesProcessor;
+import play.Logger;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+/**
+ * Processes log-based messages.
+ *
+ * @author Brandon Arp (barp at groupon dot com)
+ */
+public class LogMessagesProcessor implements MessagesProcessor {
+    /**
+     * Public constructor.
+     *
+     * @param connectionContext ConnectionContext where processing takes place
+     */
+    public LogMessagesProcessor(final ConnectionContext connectionContext) {
+        _connectionContext = connectionContext;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean handleMessage(final Object message) {
+        if (message instanceof Command) {
+            //TODO(barp): Map with a POJO mapper [MAI-184]
+            final Command command = (Command) message;
+            final ObjectNode commandNode = (ObjectNode) command.getCommand();
+            final String commandString = commandNode.get("command").asText();
+            switch (commandString) {
+                case COMMAND_GET_LOGS:
+                    _metrics.incrementCounter(GET_LOGS_COUNTER);
+                    _connectionContext.getContext().parent().tell(new LogsListRequest(), _connectionContext.getSelf());
+                    break;
+                case COMMAND_SUBSCRIBE_LOG: {
+                    _metrics.incrementCounter(SUBSCRIBE_COUNTER);
+                    final Path log = Paths.get(commandNode.get("log").asText());
+                    final ArrayNode regexes = commandNode.withArray("regexes");
+                    subscribe(log, regexes);
+                    break;
+                }
+                case COMMAND_UNSUBSCRIBE_LOG: {
+                    _metrics.incrementCounter(UNSUBSCRIBE_COUNTER);
+                    final Path log = Paths.get(commandNode.get("log").asText());
+                    final ArrayNode regexes = commandNode.withArray("regexes");
+                    unsubscribe(log, regexes);
+                    break;
+                }
+                default:
+                    return false;
+            }
+        } else if (message instanceof LogLine) {
+            final LogLine logReport = (LogLine) message;
+            processLogReport(logReport);
+        } else if (message instanceof NewLog) {
+            final NewLog newLog = (NewLog) message;
+            processNewLog(newLog);
+        } else if (message instanceof LogsList) {
+            final LogsList logsList = (LogsList) message;
+            processLogsList(logsList);
+
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void initializeMetrics(final Metrics metrics) {
+        _metrics = metrics;
+        _metrics.resetCounter(GET_LOGS_COUNTER);
+        _metrics.resetCounter(SUBSCRIBE_COUNTER);
+        _metrics.resetCounter(UNSUBSCRIBE_COUNTER);
+        _metrics.resetCounter(LOG_REPORT_COUNTER);
+        _metrics.resetCounter(NEW_LOG_COUNTER);
+        _metrics.resetCounter(LOGS_LIST_COUNTER);
+    }
+
+    private void processLogsList(final LogsList logsList) {
+        _metrics.incrementCounter(LOGS_LIST_COUNTER);
+        _connectionContext.sendCommand(COMMAND_LOGS_LIST, OBJECT_MAPPER.convertValue(logsList, ObjectNode.class));
+    }
+
+    private void processLogReport(final LogLine rawReport) {
+        final Path logFile = rawReport.getFile();
+
+        _metrics.incrementCounter(LOG_REPORT_COUNTER);
+        final Set<String> regexes = _logsSubscriptions.get(logFile);
+        if (regexes == null) {
+            if (Logger.isTraceEnabled()) {
+                Logger.trace(String.format("Not sending LogReport, log [%s] not found in _logsSubscriptions", logFile));
+            }
+            return;
+        }
+
+        if (regexes.isEmpty()) {
+            if (Logger.isTraceEnabled()) {
+                Logger.trace(String.format("Not sending LogReport, log [%s] has not subscribed regexes in  _logsSubscriptions", logFile));
+            }
+            return;
+        }
+
+        final List<String> matchingRegexes = new ArrayList<>();
+        for (final String regex : regexes) {
+            final Pattern pattern = PATTERNS_MAP.get(regex);
+            if (pattern.matcher(rawReport.getLine()).matches()) {
+                matchingRegexes.add(regex);
+            }
+        }
+
+        if (matchingRegexes.size() > 0) {
+            final LogReport logReport = new LogReport(
+                    matchingRegexes,
+                    logFile,
+                    rawReport.getLine(),
+                    rawReport.getTimestamp());
+            _connectionContext.sendCommand(COMMAND_REPORT_LOG, OBJECT_MAPPER.convertValue(logReport, ObjectNode.class));
+        }
+    }
+
+    private void processNewLog(final NewLog newLog) {
+        _metrics.incrementCounter(NEW_LOG_COUNTER);
+        _connectionContext.sendCommand(COMMAND_NEW_LOG, OBJECT_MAPPER.convertValue(newLog, ObjectNode.class));
+    }
+
+    private void subscribe(final Path log, final ArrayNode regexes) {
+        if (!_logsSubscriptions.containsKey(log)) {
+            _logsSubscriptions.put(log, Sets.<String>newHashSet());
+        }
+        final Set<String> logsRegexes = _logsSubscriptions.get(log);
+        for (JsonNode node : regexes) {
+            final String regex = node.asText();
+            logsRegexes.add(regex);
+            if (!PATTERNS_MAP.containsKey(regex)) {
+                PATTERNS_MAP.put(regex, Pattern.compile(regex));
+            }
+        }
+    }
+
+    private void unsubscribe(final Path log, final ArrayNode regexes) {
+        if (!_logsSubscriptions.containsKey(log)) {
+            return;
+        }
+        final Set<String> logsRegexes = _logsSubscriptions.get(log);
+        for (JsonNode node : regexes) {
+            logsRegexes.remove(node.asText());
+        }
+    }
+
+    private final Map<Path, Set<String>> _logsSubscriptions = Maps.newHashMap();
+    private final ConnectionContext _connectionContext;
+    private Metrics _metrics;
+
+    private static final Map<String, Pattern> PATTERNS_MAP = Maps.newHashMap();
+    private static final String COMMAND_GET_LOGS = "getLogs";
+    private static final String COMMAND_SUBSCRIBE_LOG = "subscribeLog";
+    private static final String COMMAND_UNSUBSCRIBE_LOG = "unsubscribeLog";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String COMMAND_LOGS_LIST = "logsList";
+    private static final String COMMAND_REPORT_LOG = "reportLog";
+    private static final String COMMAND_NEW_LOG = "newLog";
+    private static final String METRICS_PREFIX = "MessageProcessor/Log/";
+    private static final String LOGS_LIST_COUNTER = METRICS_PREFIX + "ListLog";
+    private static final String NEW_LOG_COUNTER = METRICS_PREFIX + "NewLog";
+    private static final String LOG_REPORT_COUNTER = METRICS_PREFIX + "LogReport";
+    private static final String SUBSCRIBE_COUNTER = METRICS_PREFIX + "Subscribe";
+    private static final String UNSUBSCRIBE_COUNTER = METRICS_PREFIX + "Unsubscribe";
+    private static final String GET_LOGS_COUNTER = METRICS_PREFIX + "Command/GetLogs";
+
+    static {
+        OBJECT_MAPPER.registerModule(new JodaModule());
+        OBJECT_MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
+}

@@ -78,10 +78,12 @@ public class RrdSinkTest {
     public void testMultipleRecordProcessedAggregateData() throws IOException {
         final Sink rrdSink = _rrdSinkBuilder.build();
         final AggregatedData datumA = TestBeanFactory.createAggregatedDataBuilder()
+                .setFQDSN(TestBeanFactory.createFQDSNBuilder()
+                        .setMetric("metric")
+                        .setStatistic(new MeanStatistic())
+                        .build())
                 .setHost("localhost")
-                .setMetric("metric")
                 .setPeriod(Period.minutes(5))
-                .setStatistic(new MeanStatistic())
                 .build();
         rrdSink.recordAggregateData(Collections.singletonList(datumA));
 
@@ -89,10 +91,12 @@ public class RrdSinkTest {
         Assert.assertTrue(getRrdFile(datumA).createNewFile());
 
         final AggregatedData datumB = TestBeanFactory.createAggregatedDataBuilder()
+                .setFQDSN(TestBeanFactory.createFQDSNBuilder()
+                        .setMetric("metric")
+                        .setStatistic(new MeanStatistic())
+                        .build())
                 .setHost("localhost")
-                .setMetric("metric")
                 .setPeriod(Period.minutes(5))
-                .setStatistic(new MeanStatistic())
                 .build();
         rrdSink.recordAggregateData(Collections.singletonList(datumB));
 
@@ -121,9 +125,9 @@ public class RrdSinkTest {
         return new File(_path.getAbsolutePath()
                 + File.separator
                 + (datum.getHost() + "."
-                        + datum.getMetric() + "."
+                        + datum.getFQDSN().getMetric() + "."
                         + datum.getPeriod().toString()
-                        + datum.getStatistic().getName()
+                        + datum.getFQDSN().getStatistic().getName()
                         + ".rrd").replace("/", "-"));
     }
 

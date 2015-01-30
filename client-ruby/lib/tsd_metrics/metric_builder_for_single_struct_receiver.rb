@@ -18,7 +18,7 @@ module TsdMetrics
       @structReceiver = structReceiver
     end
     def build
-      TsdMetric2c.new(Time.now, @structReceiver, Mutex.new)
+      TsdMetric.new(Time.now, @structReceiver, Mutex.new)
     end
   end
 end

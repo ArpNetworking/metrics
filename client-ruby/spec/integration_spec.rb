@@ -15,6 +15,7 @@
 require "tsd_metrics"
 require "thread"
 require "pry"
+require "json-schema"
 
 describe "creating metrics" do
   before(:each) do
@@ -30,8 +31,7 @@ describe "creating metrics" do
       count = 0
       while true
         line = file.readline rescue break
-        line[0].should == '{'
-        line[-2].should == '}'
+        JSON::Validator.validate!("../doc/query-log-schema-2e.json", line)
         count += 1
       end
       count.should == n
@@ -40,10 +40,13 @@ describe "creating metrics" do
 
   it "writes three metrics to the file" do
     # init
-    TsdMetrics.init(filename)
+    TsdMetrics.init(filename: filename)
     # build metric, close
     metric = TsdMetrics.buildMetric
+    metric.startTimer("myTimer")
     metric.setGauge("myGauge", 20)
+    metric.incrementCounter("myCounter", 20)
+    metric.stopTimer("myTimer")
     metric.close
     # metric, close
     metric = TsdMetrics.buildMetric
@@ -60,7 +63,7 @@ describe "creating metrics" do
   end
 
   it "does not write empty metrics to the file" do
-    TsdMetrics.init(filename)
+    TsdMetrics.init(filename: filename)
     # build metric, close
     metric = TsdMetrics.buildMetric
     metric.setGauge("myGauge", 20)
@@ -68,11 +71,6 @@ describe "creating metrics" do
     # metric, close
     metric = TsdMetrics.buildMetric
     metric.setGauge("myGauge", 20)
-    metric.close
-
-    # EMPTY metric; one unstopped timer, close
-    metric = TsdMetrics.buildMetric
-    metric.startTimer("myUnstoppedTimer")
     metric.close
 
     # EMPTY metric

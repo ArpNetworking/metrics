@@ -36,15 +36,13 @@ public class CarbonSinkTest {
     public void before() {
         _carbonSinkBuilder = new CarbonSink.Builder()
                 .setName("carbon_sink_test")
-                .setCluster("cluster")
-                .setHost("localhost")
                 .setServerAddress("my-carbon-server.example.com")
                 .setServerPort(Integer.valueOf(9999));
     }
 
     @Test
     public void testConnect() {
-        final CarbonSink carbonSink = (CarbonSink) _carbonSinkBuilder.build();
+        final CarbonSink carbonSink = _carbonSinkBuilder.build();
         final NetSocket socket = Mockito.mock(NetSocket.class);
         carbonSink.onConnect(socket);
         Mockito.verifyZeroInteractions(socket);
@@ -52,7 +50,7 @@ public class CarbonSinkTest {
 
     @Test
     public void testSerialize() {
-        final CarbonSink carbonSink = (CarbonSink) _carbonSinkBuilder.build();
+        final CarbonSink carbonSink = _carbonSinkBuilder.build();
         final AggregatedData datum = TestBeanFactory.createAggregatedData();
         final Buffer buffer = carbonSink.serialize(datum);
         Assert.assertNotNull(buffer);
@@ -61,16 +59,16 @@ public class CarbonSinkTest {
         bufferString = bufferString.substring(0, bufferString.length() - 1);
         final String[] keyValueParts = bufferString.split(" ");
         Assert.assertEquals("Buffer=" + bufferString, 3, keyValueParts.length);
-        Assert.assertEquals("Buffer=" + bufferString, String.format("%f", Double.valueOf(datum.getValue())), keyValueParts[1]);
+        Assert.assertEquals("Buffer=" + bufferString, String.format("%f", Double.valueOf(datum.getValue().getValue())), keyValueParts[1]);
         Assert.assertEquals("Buffer=" + bufferString, String.valueOf(datum.getPeriodStart().getMillis() / 1000), keyValueParts[2]);
         final String[] keyParts = keyValueParts[0].split("\\.");
         Assert.assertEquals("Buffer=" + bufferString, 6, keyParts.length);
-        Assert.assertEquals("Buffer=" + bufferString, "cluster", keyParts[0]);
-        Assert.assertEquals("Buffer=" + bufferString, "localhost", keyParts[1]);
-        Assert.assertEquals("Buffer=" + bufferString, datum.getService(), keyParts[2]);
-        Assert.assertEquals("Buffer=" + bufferString, datum.getMetric(), keyParts[3]);
+        Assert.assertEquals("Buffer=" + bufferString, datum.getFQDSN().getCluster(), keyParts[0]);
+        Assert.assertEquals("Buffer=" + bufferString, datum.getHost(), keyParts[1]);
+        Assert.assertEquals("Buffer=" + bufferString, datum.getFQDSN().getService(), keyParts[2]);
+        Assert.assertEquals("Buffer=" + bufferString, datum.getFQDSN().getMetric(), keyParts[3]);
         Assert.assertEquals("Buffer=" + bufferString, datum.getPeriod().toString(), keyParts[4]);
-        Assert.assertEquals("Buffer=" + bufferString, datum.getStatistic().getName(), keyParts[5]);
+        Assert.assertEquals("Buffer=" + bufferString, datum.getFQDSN().getStatistic().getName(), keyParts[5]);
     }
 
     private CarbonSink.Builder _carbonSinkBuilder;

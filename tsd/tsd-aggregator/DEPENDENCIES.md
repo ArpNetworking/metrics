@@ -6,15 +6,18 @@ The following table lists the dependencies of the tsd aggregator and their licen
 Build Tool Dependencies
 ------------------
 
-Project              | License                    | Project link
----------------------|----------------------------|-------------
-Checkstyle           | LGPL 2                     | http://checkstyle.sourceforge.net/
-FindBugs             | LGPL                       | http://findbugs.sourceforge.net/ 
-Gradle               | Apache License 2           | http://www.gradle.org/ 
-Hamcreset            | BSD 3                      | https://github.com/hamcrest/JavaHamcrest
-jUnit                | Eclipse Public License 1.0 | https://github.com/junit-team/junit/
-Mockito              | MIT                        | https://code.google.com/p/mockito/
-Protocol Buffers     | BSD 3                      | https://code.google.com/p/protobuf/
+Project                    | License                    | Project link
+---------------------------|----------------------------|-------------
+Checkstyle                 | LGPL 2                     | http://checkstyle.sourceforge.net/
+FindBugs                   | LGPL                       | http://findbugs.sourceforge.net/ 
+Gradle                     | Apache License 2           | http://www.gradle.org/ 
+Hamcreset                  | BSD 3                      | https://github.com/hamcrest/JavaHamcrest
+Jacoco                     | Eclipse Public License 1.0 | http://www.eclemma.org/jacoco/
+jUnit                      | Eclipse Public License 1.0 | https://github.com/junit-team/junit/
+jUnit Benchmarks           | Apache License 2           | http://labs.carrotsearch.com/junit-benchmarks.html
+jUnit Params               | Apache License 2           | https://github.com/Pragmatists/junitparams
+Mockito                    | MIT                        | https://code.google.com/p/mockito/
+Protocol Buffers           | BSD 3                      | https://code.google.com/p/protobuf/
 
 
 Compile Dependencies
@@ -22,6 +25,7 @@ Compile Dependencies
 
 Project                    | License                    | Project link
 ---------------------------|----------------------------|-------------
+Akka                       | Apache License 2           | http://akka.io
 Apache Commons Collections | Apache License 2           | http://commons.apache.org/proper/commons-collections/
 Apache Commons CLI         | Apache License 2           | http://commons.apache.org/proper/commons-cli/
 Apache Commons IO          | Apache License 2           | http://commons.apache.org/proper/commons-io/

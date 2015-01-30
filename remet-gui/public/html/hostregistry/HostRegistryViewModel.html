@@ -1,0 +1,44 @@
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="col-md-12">
+            <h2>Host Registry</h2>
+
+            <!--<form role="form" class="form-horizontal col-md-4 col-sm-6 col-lg-3">-->
+            <div class="col-md-12 col-sm-12 col-lg-12 search-header">
+                <form role="form" class="container-fluid form-inline col-md-8 col-sm-12 col-lg-6">
+                    <div class="form-group has-feedback">
+                        <input class="form-control" data-bind="value: searchHost, valueUpdate: 'keyup'" type="text" placeholder="Search">
+                        <span class="glyphicon glyphicon-search form-control-feedback"></span>
+                    </div>
+                    <div class="form-group">
+                        <select class="form-control" data-bind="value: versionFilter">
+                            <option value="" selected disabled>Software State</option>
+                            <option value="">Any</option>
+                            <option value="LATEST_VERSION_INSTALLED">Latest Version</option>
+                            <option value="OLD_VERSION_INSTALLED">Old Version</option>
+                            <option value="NOT_INSTALLED">Not Installed</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div style="font-size: large; overflow-style: scrollbar; overflow-y: auto" class="container-fluid col-md-12 col-sm-12 col-lg-12">
+                <div data-bind="foreach: filteredHosts" class="row">
+                    <div style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap" class="col-md-4 col-lg-3 col-sm-6">
+                        <button class="btn btn-default btn-xs" data-bind="enable: connectable, click: $parent.click">
+                        <!--<button class="btn btn-default btn-xs" data-bind="click: $parent.click">-->
+                            <i class="glyphicon" data-bind="css: connectionStyle"></i>
+                        </button>
+                        <span data-bind="text: hostName, tooltip:{ title: hostName, tooltipClass: 'host-tip'}, attr: {title: hostName}"></span>
+                    </div>
+                </div>
+            </div>
+            <nav class="navbar navbar-inverse navbar-fixed-bottom col-md-12 footer">
+                <div class="text-center">
+                    <ul class="pagination" data-bind="foreach: pagerElements">
+                        <li data-bind="css: {active: active, disabled: disabled}"><a href="#" data-bind="text: name, click: $parent.gotoPage"></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+</div>

@@ -23,10 +23,10 @@
     <suppress checks="." files=".*\.js"/>
     <suppress checks="." files=".*\.ts"/>
     <suppress checks="." files=".*\.html"/>
-    
+
     <!-- Exclude generated Java files -->
     <suppress checks="." files="com[\\/]arpnetworking[\\/]tsdcore[\\/]Messages\.java"/>
-    
+
     <!-- Exclude certain checks from test code -->
     <suppress checks="JavadocVariable" files=".*Test\.java"/>
     <suppress checks="JavadocVariable" files=".*IT\.java"/>
@@ -38,10 +38,20 @@
     <suppress checks="ExecutableStatementCount" files=".*IT\.java"/>
     <suppress checks="ThrowsCount" files=".*Test\.java"/>
     <suppress checks="ThrowsCount" files=".*IT\.java"/>
-    
+    <suppress checks="FileLength" files=".*Test\.java"/>
+    <suppress checks="FileLength" files=".*IT\.java"/>
+
     <!-- Exclude files temporarily copied from other projects -->
     <suppress checks=".*" files="org[\\/]hamcrest[\\/]collection[\\/]IsMapWithSize\.java"/>
-    
+
     <!-- Similar independent object trees for each version allow independent fixes -->
     <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]tsdaggregator[\\/]model[\\/]querylog[\\/]Version[^\.]*\.java"/>
+
+    <!-- Parallel trigger and source classes have similar builders -->
+    <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]configuration[\\/]DirectoryTrigger.java"/>
+    <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]configuration[\\/]jackson[\\/]JsonNodeDirectorySource.java"/>
+
+    <!-- Parallel alert and expression classes have similar builders -->
+    <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]tsdcore[\\/]sinks[\\/]ExpressionSink.java"/>
+    <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]tsdcore[\\/]sinks[\\/]AlertSink.java"/>
 </suppressions>

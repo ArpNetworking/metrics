@@ -15,6 +15,21 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.test.TestBeanFactory;
+import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.google.common.collect.Lists;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+
 /**
  * Tests for the <code>AggregationServerSink</code> class.
  *
@@ -22,4 +37,105 @@ package com.arpnetworking.tsdcore.sinks;
  */
 public class AggregationServerSinkTest {
 
+    @Before
+    public void setUp() throws IOException {
+        _serverChannel = ServerSocketChannel.open();
+        _serverChannel.bind(new InetSocketAddress(_port)).configureBlocking(false);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        if (_serverChannel != null) {
+            _serverChannel.close();
+        }
+    }
+
+    @Test
+    public void connectTest() throws IOException, InterruptedException {
+        AggregationServerSink sink = null;
+        try {
+
+            sink = new AggregationServerSink.Builder()
+                    .setName("foo-name")
+                    .setServerAddress("localhost")
+                    .setServerPort(_port)
+                    .build();
+
+            final AggregatedData datum = TestBeanFactory.createAggregatedData();
+            sink.recordAggregateData(Lists.newArrayList(datum));
+
+            final SocketChannel connectedSocket = listenForConnection(_serverChannel, Duration.standardSeconds(5));
+            Assert.assertNotNull(connectedSocket);
+        } finally {
+            if (sink != null) {
+                sink.close();
+            }
+        }
+    }
+
+    @Test
+    public void reconnectTest() throws IOException, InterruptedException {
+        AggregationServerSink sink = null;
+        try {
+            sink = new AggregationServerSink.Builder()
+                    .setName("foo-name")
+                    .setServerAddress("localhost")
+                    .setServerPort(_port)
+                    .build();
+
+            final AggregatedData datum = TestBeanFactory.createAggregatedData();
+            sink.recordAggregateData(Lists.newArrayList(datum));
+
+            SocketChannel connectedSocket = listenForConnection(_serverChannel, Duration.standardSeconds(5));
+            Thread.sleep(1000);
+            connectedSocket.close();
+            _serverChannel.close();
+
+
+            spammyWait(3000, sink);
+            _serverChannel = ServerSocketChannel.open();
+            _serverChannel.bind(new InetSocketAddress(_port)).configureBlocking(false);
+
+            //Wait for reconnect
+            connectedSocket = listenForConnection(_serverChannel, Duration.standardSeconds(10));
+            Assert.assertNotNull(connectedSocket);
+
+        } finally {
+            if (sink != null) {
+                sink.close();
+            }
+        }
+    }
+
+    private void spammyWait(final int wait, final AggregationServerSink sink) throws InterruptedException {
+        final DateTime start = DateTime.now();
+
+        while (DateTime.now().isBefore(start.plusMillis(wait))) {
+            sink.recordAggregateData(Lists.newArrayList(TestBeanFactory.createAggregatedData()));
+            Thread.sleep(500);
+        }
+    }
+
+    private SocketChannel listenForConnection(final ServerSocketChannel serverChannel,
+                                              final Duration timeout) throws IOException, InterruptedException {
+        SocketChannel connectedSocket = null;
+        boolean connected = false;
+        final DateTime start = DateTime.now();
+        while (!connected) {
+            if (DateTime.now().isAfter(start.plus(timeout))) {
+                throw new RuntimeException("Connection not established within timeout");
+            }
+            final SocketChannel socketChannel = serverChannel.accept();
+            if (socketChannel != null) {
+                connected = true;
+                connectedSocket = socketChannel;
+            } else {
+                Thread.sleep(20);
+            }
+        }
+        return connectedSocket;
+    }
+
+    private ServerSocketChannel _serverChannel;
+    private int _port = 17065;
 }

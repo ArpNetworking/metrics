@@ -153,6 +153,38 @@ public class OvalBuilderTest {
         }
     }
 
+    @Test
+    public void testClone() {
+        final TestBean beanA = new TestBean.Builder()
+                .setInt(Integer.valueOf(0))
+                .setRangeInt(Integer.valueOf(1))
+                .build();
+        Assert.assertEquals(0, beanA.getInt());
+        Assert.assertEquals(Optional.of(1), beanA.getRangeInt());
+
+        final TestBean beanB = OvalBuilder.<TestBean, TestBean.Builder>clone(beanA)
+                .build();
+        Assert.assertNotSame(beanA, beanB);
+        Assert.assertEquals(0, beanB.getInt());
+        Assert.assertEquals(Optional.of(1), beanB.getRangeInt());
+    }
+
+    @Test
+    public void testCloneWithBuilder() {
+        final TestBean beanA = new TestBean.Builder()
+                .setInt(Integer.valueOf(0))
+                .setRangeInt(Integer.valueOf(1))
+                .build();
+        Assert.assertEquals(0, beanA.getInt());
+        Assert.assertEquals(Optional.of(1), beanA.getRangeInt());
+
+        final TestBean beanB = OvalBuilder.<TestBean, TestBean.Builder>clone(beanA, new TestBean.Builder())
+                .build();
+        Assert.assertNotSame(beanA, beanB);
+        Assert.assertEquals(0, beanB.getInt());
+        Assert.assertEquals(Optional.of(1), beanB.getRangeInt());
+    }
+
     private static final class TestBean {
 
         public int getInt() {

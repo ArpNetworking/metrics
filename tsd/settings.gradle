@@ -14,4 +14,5 @@
  * limitations under the License.
  */
 
-include "tsd-aggregator", "tsd-core", "cluster-aggregator"
+include "tsd-aggregator", "tsd-core", "cluster-aggregator", "generator", "performance-test"
+
