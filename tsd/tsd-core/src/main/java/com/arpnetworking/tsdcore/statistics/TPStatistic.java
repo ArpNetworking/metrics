@@ -42,24 +42,23 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
      * {@inheritDoc}
      */
     @Override
-    public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
-        final List<Quantity> allSamples = Lists.newArrayList();
-        for (final AggregatedData aggregation : aggregations) {
-            allSamples.addAll(aggregation.getSamples());
-        }
-        Collections.sort(allSamples);
-        final int index = (int) (Math.ceil((_percentile / 100) * (allSamples.size() - 1)));
-        final Quantity value = allSamples.get(index);
-        return new Quantity(value.getValue(), value.getUnit());
+    public Quantity calculate(final List<Quantity> orderedValues) {
+        final int index = (int) (Math.ceil((_percentile / 100.0) * (orderedValues.size() - 1)));
+        return orderedValues.get(index);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public double calculate(final List<Quantity> orderedValues) {
-        final int index = (int) (Math.ceil((_percentile / 100) * (orderedValues.size() - 1)));
-        return orderedValues.get(index).getValue();
+    public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
+        final List<Quantity> allSamples = Lists.newArrayList();
+        for (final AggregatedData aggregation : aggregations) {
+            allSamples.addAll(aggregation.getSamples());
+        }
+        Collections.sort(allSamples);
+        final int index = (int) (Math.ceil((_percentile / 100.0) * (allSamples.size() - 1)));
+        return allSamples.get(index);
     }
 
     /**

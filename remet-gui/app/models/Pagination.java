@@ -49,13 +49,13 @@ public class Pagination {
             final Map<String, String> conditions) {
         _total = total;
         _size = size;
-        _offset = offset.isPresent() ? offset.get().intValue() : 0;
+        _offset = offset.isPresent() ? offset.get() : 0;
 
         Optional<URI> previous = Optional.absent();
         Optional<URI> next = Optional.absent();
         if (_offset + _size < _total) {
             final int newOffset = _offset + _size;
-            final int newLimit = limit.isPresent() ? limit.get().intValue() : _size;
+            final int newLimit = limit.isPresent() ? limit.get() : _size;
             next = Optional.of(createReference(path, newLimit, newOffset, conditions));
         }
         if (_offset > 0) {
@@ -67,8 +67,8 @@ public class Pagination {
             int newOffset = Math.max(_offset - _size, 0);
             int newLimit = _offset - newOffset;
             if (limit.isPresent()) {
-                newOffset = Math.max(_offset - limit.get().intValue(), 0);
-                newLimit = Math.min(_offset - newOffset, limit.get().intValue());
+                newOffset = Math.max(_offset - limit.get(), 0);
+                newLimit = Math.min(_offset - newOffset, limit.get());
             }
             previous = Optional.of(createReference(path, newLimit, newOffset, conditions));
         }
@@ -102,6 +102,7 @@ public class Pagination {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Total", _total)
                 .add("Size", _size)
                 .add("Offset", _offset)

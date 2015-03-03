@@ -44,7 +44,7 @@ public class PeriodicStatisticsSinkTest {
         _statisticsSinkBuilder = new PeriodicStatisticsSink.Builder()
                 .setName("periodic_statistics_sink_test")
                 .setMetricsFactory(_mockMetricsFactory)
-                .setIntervalInSeconds(Long.valueOf(60));
+                .setIntervalInMilliseconds(60L);
     }
 
     @Test

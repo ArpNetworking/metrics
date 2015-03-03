@@ -42,13 +42,13 @@ public class UnitMappingSinkTest {
 
         final AggregatedData.Builder dataBuilder = TestBeanFactory.createAggregatedDataBuilder();
         sink.recordAggregateData(Collections.singletonList(dataBuilder
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1f)).setUnit(Unit.NANOSECOND).build())
+                .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.NANOSECOND).build())
                 .build()));
         Mockito.verify(_target).recordAggregateData((List<AggregatedData>) Matchers.argThat(
                         org.hamcrest.Matchers.allOf(
                                 org.hamcrest.Matchers.<AggregatedData>iterableWithSize(1),
                                 org.hamcrest.Matchers.<AggregatedData>contains(dataBuilder
-                                        .setValue(new Quantity.Builder().setValue(Double.valueOf(0.000000001)).setUnit(Unit.SECOND).build())
+                                        .setValue(new Quantity.Builder().setValue(0.000000001).setUnit(Unit.SECOND).build())
                                         .build()))),
                 Matchers.eq(Collections.<Condition>emptyList()));
     }
@@ -59,13 +59,13 @@ public class UnitMappingSinkTest {
 
         final AggregatedData.Builder dataBuilder = TestBeanFactory.createAggregatedDataBuilder();
         sink.recordAggregateData(Collections.singletonList(dataBuilder
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(2f)).setUnit(Unit.MICROSECOND).build())
+                .setValue(new Quantity.Builder().setValue(2d).setUnit(Unit.MICROSECOND).build())
                 .build()));
         Mockito.verify(_target).recordAggregateData((List<AggregatedData>) Matchers.argThat(
                         org.hamcrest.Matchers.allOf(
                                 org.hamcrest.Matchers.<AggregatedData>iterableWithSize(1),
                                 org.hamcrest.Matchers.contains(dataBuilder
-                                        .setValue(new Quantity.Builder().setValue(Double.valueOf(0.000002)).setUnit(Unit.SECOND).build())
+                                        .setValue(new Quantity.Builder().setValue(0.000002).setUnit(Unit.SECOND).build())
                                         .build()))),
                 Matchers.eq(Collections.<Condition>emptyList()));
     }
@@ -76,13 +76,13 @@ public class UnitMappingSinkTest {
 
         final AggregatedData.Builder dataBuilder = TestBeanFactory.createAggregatedDataBuilder();
         sink.recordAggregateData(Collections.singletonList(dataBuilder
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(3f)).setUnit(Unit.MILLISECOND).build())
+                .setValue(new Quantity.Builder().setValue(3d).setUnit(Unit.MILLISECOND).build())
                 .build()));
         Mockito.verify(_target).recordAggregateData((List<AggregatedData>) Matchers.argThat(
                         org.hamcrest.Matchers.allOf(
                                 org.hamcrest.Matchers.<AggregatedData>iterableWithSize(1),
                                 org.hamcrest.Matchers.contains(dataBuilder
-                                        .setValue(new Quantity.Builder().setValue(Double.valueOf(0.003)).setUnit(Unit.SECOND).build())
+                                        .setValue(new Quantity.Builder().setValue(0.003).setUnit(Unit.SECOND).build())
                                         .build()))),
                 Matchers.eq(Collections.<Condition>emptyList()));
     }
@@ -93,13 +93,13 @@ public class UnitMappingSinkTest {
 
         final AggregatedData.Builder dataBuilder = TestBeanFactory.createAggregatedDataBuilder();
         sink.recordAggregateData(Collections.singletonList(dataBuilder
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(4f)).setUnit(Unit.SECOND).build())
+                .setValue(new Quantity.Builder().setValue(4d).setUnit(Unit.SECOND).build())
                 .build()));
         Mockito.verify(_target).recordAggregateData((List<AggregatedData>) Matchers.argThat(
                         org.hamcrest.Matchers.allOf(
                                 org.hamcrest.Matchers.<AggregatedData>iterableWithSize(1),
                                 org.hamcrest.Matchers.contains(dataBuilder
-                                        .setValue(new Quantity.Builder().setValue(Double.valueOf(4f)).setUnit(Unit.SECOND).build())
+                                        .setValue(new Quantity.Builder().setValue(4d).setUnit(Unit.SECOND).build())
                                         .build()))),
                 Matchers.eq(Collections.<Condition>emptyList()));
 
@@ -111,13 +111,13 @@ public class UnitMappingSinkTest {
 
         final AggregatedData.Builder dataBuilder = TestBeanFactory.createAggregatedDataBuilder();
         sink.recordAggregateData(Collections.singletonList(dataBuilder
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(5f)).setUnit(Unit.MINUTE).build())
+                .setValue(new Quantity.Builder().setValue(5d).setUnit(Unit.MINUTE).build())
                 .build()));
         Mockito.verify(_target).recordAggregateData((List<AggregatedData>) Matchers.argThat(
                         org.hamcrest.Matchers.allOf(
                                 org.hamcrest.Matchers.<AggregatedData>iterableWithSize(1),
                                 org.hamcrest.Matchers.contains(dataBuilder
-                                        .setValue(new Quantity.Builder().setValue(Double.valueOf(5f)).setUnit(Unit.MINUTE).build())
+                                        .setValue(new Quantity.Builder().setValue(5d).setUnit(Unit.MINUTE).build())
                                         .build()))),
                 Matchers.eq(Collections.<Condition>emptyList()));
     }
@@ -128,13 +128,13 @@ public class UnitMappingSinkTest {
 
         final AggregatedData.Builder dataBuilder = TestBeanFactory.createAggregatedDataBuilder();
         sink.recordAggregateData(Collections.singletonList(dataBuilder
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(8f)).setUnit(Unit.BIT).build())
+                .setValue(new Quantity.Builder().setValue(8d).setUnit(Unit.BIT).build())
                 .build()));
         Mockito.verify(_target).recordAggregateData((List<AggregatedData>) Matchers.argThat(
                 org.hamcrest.Matchers.allOf(
                         org.hamcrest.Matchers.<AggregatedData>iterableWithSize(1),
                         org.hamcrest.Matchers.contains(dataBuilder
-                                .setValue(new Quantity.Builder().setValue(Double.valueOf(1f)).setUnit(Unit.BYTE).build())
+                                .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.BYTE).build())
                                 .build()))),
                 Matchers.eq(Collections.<Condition>emptyList()));
     }

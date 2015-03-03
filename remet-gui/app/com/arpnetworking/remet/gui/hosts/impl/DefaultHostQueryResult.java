@@ -61,6 +61,7 @@ public class DefaultHostQueryResult implements HostQueryResult {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Hosts", _hosts)
                 .add("Total", _total)
                 .toString();

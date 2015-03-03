@@ -33,20 +33,22 @@ public class SumStatistic extends BaseStatistic {
      * {@inheritDoc}
      */
     @Override
-    public double calculate(final List<Quantity> unorderedValues) {
-        double sum = 0d;
-        for (final Quantity sample : unorderedValues) {
-            sum += sample.getValue();
-        }
-        return sum;
+    public String getName() {
+        return "sum";
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getName() {
-        return "sum";
+    public Quantity calculate(final List<Quantity> unorderedValues) {
+        double sum = 0d;
+        Optional<Unit> unit = Optional.absent();
+        for (final Quantity sample : unorderedValues) {
+            sum += sample.getValue();
+            unit = unit.or(sample.getUnit());
+        }
+        return new Quantity.Builder().setValue(sum).setUnit(unit.orNull()).build();
     }
 
     /**
@@ -60,7 +62,7 @@ public class SumStatistic extends BaseStatistic {
             sum += aggregation.getValue().getValue();
             unit = unit.or(aggregation.getValue().getUnit());
         }
-        return new Quantity(sum, unit);
+        return new Quantity.Builder().setValue(sum).setUnit(unit.orNull()).build();
     }
 
     private static final long serialVersionUID = -1534109546290882210L;

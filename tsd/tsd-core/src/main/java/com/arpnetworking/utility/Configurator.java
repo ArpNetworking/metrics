@@ -19,10 +19,6 @@ import com.arpnetworking.configuration.Configuration;
 import com.arpnetworking.configuration.Listener;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Manages configuration and reconfiguration of a <code>Launchable</code> instance
@@ -30,31 +26,22 @@ import java.lang.reflect.InvocationTargetException;
  * is instantiated with each new configuration. The configuration must validate
  * on construction and throw an exception if the configuration is invalid.
  *
- * @param <L> The <code>Launchable</code> type to configure.
- * @param <C> The type representing the validated configuration.
+ * @param <T> The <code>Launchable</code> type to configure.
+ * @param <S> The type representing the validated configuration.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class Configurator<L extends Launchable, C> implements Launchable, Listener {
+public class Configurator<T extends Launchable, S> implements Launchable, Listener {
 
     /**
      * Public constructor.
      *
-     * @param launchableClass The <code>Launchable</code> class.
+     * @param factory The factory to create a launchable.
      * @param configurationClass The configuration class.
      */
-    public Configurator(final Class<L> launchableClass, final Class<? extends C> configurationClass) {
-        _launchableClass = launchableClass;
+    public Configurator(final ConfiguredLaunchableFactory<T, S> factory, final Class<? extends S> configurationClass) {
+        _factory = factory;
         _configurationClass = configurationClass;
-
-        Constructor launchableConstructor;
-        try {
-            launchableConstructor = launchableClass.getConstructor(_configurationClass);
-        } catch (final NoSuchMethodException e) {
-            Throwables.propagate(e);
-            launchableConstructor = null;
-        }
-        _launchableConstructor = launchableConstructor;
     }
 
     /**
@@ -76,11 +63,7 @@ public class Configurator<L extends Launchable, C> implements Launchable, Listen
 
         // Swap configurations
         _configuration = _offeredConfiguration;
-        try {
-            _launchable = Optional.<L>of((L) _launchableConstructor.newInstance(_configuration.get()));
-        } catch (final InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            Throwables.propagate(e);
-        }
+        _launchable = Optional.of(_factory.create(_configuration.get()));
 
         // (Re)launch
         launch();
@@ -112,29 +95,28 @@ public class Configurator<L extends Launchable, C> implements Launchable, Listen
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(Configurator.class)
-                .add("LaunchableClass", _launchableClass)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("ConfigurationClass", _configurationClass)
                 .toString();
     }
 
-    /* package private */ Optional<L> getLaunchable() {
+    /* package private */ Optional<T> getLaunchable() {
         return _launchable;
     }
 
-    /* package private */ Optional<C> getConfiguration() {
+    /* package private */ Optional<S> getConfiguration() {
         return _configuration;
     }
 
-    /* package private */ Optional<C> getOfferedConfiguration() {
+    /* package private */ Optional<S> getOfferedConfiguration() {
         return _offeredConfiguration;
     }
 
-    private final Class<L> _launchableClass;
-    private final Constructor _launchableConstructor;
-    private final Class<? extends C> _configurationClass;
+    private final ConfiguredLaunchableFactory<T, S> _factory;
+    private final Class<? extends S> _configurationClass;
 
-    private Optional<L> _launchable = Optional.absent();
-    private Optional<C> _configuration = Optional.absent();
-    private Optional<C> _offeredConfiguration = Optional.absent();
+    private Optional<T> _launchable = Optional.absent();
+    private Optional<S> _configuration = Optional.absent();
+    private Optional<S> _offeredConfiguration = Optional.absent();
 }

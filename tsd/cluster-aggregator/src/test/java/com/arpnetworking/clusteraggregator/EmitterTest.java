@@ -21,15 +21,16 @@ import akka.actor.ActorRef;
 import akka.actor.UnhandledMessage;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
+import com.arpnetworking.clusteraggregator.configuration.EmitterConfiguration;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
-import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.sinks.Sink;
-import com.arpnetworking.tsdcore.statistics.TP50Statistic;
-import com.google.common.base.Optional;
+import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import org.joda.time.Period;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -47,9 +48,14 @@ import java.util.concurrent.TimeUnit;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class EmitterTest extends BaseActorTest {
+    @Before
+    public void setup() {
+        _config = new EmitterConfiguration.Builder().setSinks(Collections.singletonList(_sink)).build();
+    }
+
     @Test
     public void propsCreation() {
-        TestActorRef.create(getSystem(), Emitter.props(_sink));
+        TestActorRef.create(getSystem(), Emitter.props(_config));
     }
 
     @Test
@@ -59,19 +65,21 @@ public class EmitterTest extends BaseActorTest {
                     .setCluster("TestCluster")
                     .setMetric("TestMetric")
                     .setService("TestService")
-                    .setStatistic(new TP50Statistic())
+                    .setStatistic(new MedianStatistic())
                     .build())
                 .setHost("TestHost")
                 .setPeriod(Period.minutes(1))
                 .setStart(org.joda.time.DateTime.now().hourOfDay().roundFloorCopy())
                 .setPopulationSize(0L)
                 .setSamples(Collections.<Quantity>emptyList())
-                .setValue(new Quantity(14.0, Optional.<Unit>absent()))
+                .setValue(new Quantity.Builder()
+                        .setValue(14.0)
+                        .build())
                 .build();
-        final TestActorRef<Actor> ref = TestActorRef.create(getSystem(), Emitter.props(_sink));
+        final TestActorRef<Actor> ref = TestActorRef.create(getSystem(), Emitter.props(_config));
 
         ref.tell(data, ActorRef.noSender());
-        Mockito.verify(_sink).recordAggregateData(_aggregatedData.capture());
+        Mockito.verify(_sink).recordAggregateData(_aggregatedData.capture(), Mockito.anyCollectionOf(Condition.class));
         final List<AggregatedData> dataList = _aggregatedData.getValue();
         Assert.assertNotNull(dataList);
         Assert.assertEquals(1, dataList.size());
@@ -81,7 +89,7 @@ public class EmitterTest extends BaseActorTest {
     @Test
     public void doesNotSwallowUnhandled() {
         final TestProbe probe = TestProbe.apply(getSystem());
-        final TestActorRef<Actor> ref = TestActorRef.create(getSystem(), Emitter.props(_sink));
+        final TestActorRef<Actor> ref = TestActorRef.create(getSystem(), Emitter.props(_config));
         getSystem().eventStream().subscribe(probe.ref(), UnhandledMessage.class);
         ref.tell("notAValidMessage", ActorRef.noSender());
         probe.expectMsgClass(FiniteDuration.apply(3, TimeUnit.SECONDS), UnhandledMessage.class);
@@ -89,7 +97,7 @@ public class EmitterTest extends BaseActorTest {
 
     @Captor
     private ArgumentCaptor<List<AggregatedData>> _aggregatedData;
-
+    private EmitterConfiguration _config = null;
     @Mock
-    private Sink _sink;
+    private Sink _sink = null;
 }

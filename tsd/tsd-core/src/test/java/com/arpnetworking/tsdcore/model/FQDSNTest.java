@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.tsdcore.statistics.TP50Statistic;
 import com.arpnetworking.tsdcore.statistics.TP99Statistic;
 import com.arpnetworking.utility.test.BuildableEqualsAndHashCodeTester;
 import org.junit.Assert;
@@ -62,7 +62,7 @@ public class FQDSNTest {
                         .setCluster("MyClusterB")
                         .setService("MyServiceB")
                         .setMetric("MyMetricB")
-                        .setStatistic(new TP50Statistic()));
+                        .setStatistic(new MedianStatistic()));
     }
 
     @Test

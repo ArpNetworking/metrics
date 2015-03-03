@@ -90,8 +90,14 @@ final class TsdTimer implements Timer, Quantity {
      */
     @Override
     public String toString() {
-        return String.format("TsdTimer{Name=%s, StartTime=%s, ElapsedTime=%s, IsStopped=%s, IsOpen=%s}",
-                _name, Long.valueOf(_startTime), Long.valueOf(_elapsedTime), _isStopped, _isOpen);
+        return String.format(
+                "TsdTimer{id=%s, Name=%s, StartTime=%s, ElapsedTime=%s, IsStopped=%s, IsOpen=%s}",
+                Integer.toHexString(System.identityHashCode(this)),
+                _name,
+                _startTime,
+                _elapsedTime,
+                _isStopped,
+                _isOpen);
     }
 
     /**

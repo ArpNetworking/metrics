@@ -159,7 +159,7 @@ public final class RrdSink extends BaseSink {
         public void storeData(final AggregatedData data) {
             final long startTimeEpochInSeconds = data.getPeriodStart().getMillis() / 1000;
             createRRDFile(data.getPeriod(), startTimeEpochInSeconds);
-            final String value = startTimeEpochInSeconds + ":" + String.format("%f", Double.valueOf(data.getValue().getValue()));
+            final String value = startTimeEpochInSeconds + ":" + String.format("%f", data.getValue().getValue());
             final String[] arguments = new String[] {
                 _rrdTool,
                 "update",

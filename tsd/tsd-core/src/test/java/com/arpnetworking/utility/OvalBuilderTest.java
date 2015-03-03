@@ -41,22 +41,22 @@ public class OvalBuilderTest {
     @Test
     public void testSuccess() {
         final int intValue = 1;
-        final int rangeIntValue = 50;
+        final Integer rangeIntValue = 50;
         final TestBean testBean = TestBean.Builder.newInstance()
-                .setInt(Integer.valueOf(intValue))
-                .setRangeInt(Integer.valueOf(rangeIntValue))
+                .setInt(intValue)
+                .setRangeInt(rangeIntValue)
                 .build();
         Assert.assertNotNull(testBean);
         Assert.assertEquals(intValue, testBean.getInt());
         Assert.assertTrue(testBean.getRangeInt().isPresent());
-        Assert.assertEquals(rangeIntValue, testBean.getRangeInt().get().intValue());
+        Assert.assertEquals(rangeIntValue, testBean.getRangeInt().get());
     }
 
     @Test
     public void testSuccessRangeIntOptional() {
         final int intValue = 1;
         final TestBean testBean = TestBean.Builder.newInstance()
-                .setInt(Integer.valueOf(intValue))
+                .setInt(intValue)
                 .build();
         Assert.assertNotNull(testBean);
         Assert.assertEquals(intValue, testBean.getInt());
@@ -82,7 +82,7 @@ public class OvalBuilderTest {
     public void testFailureImplicitNull() {
         try {
             TestBean.Builder.newInstance()
-                    .setRangeInt(Integer.valueOf(50))
+                    .setRangeInt(50)
                     .build();
             Assert.fail("Expected exception not thrown");
         } catch (final ConstraintsViolatedException e) {
@@ -101,7 +101,7 @@ public class OvalBuilderTest {
         try {
             TestBean.Builder.newInstance()
                     .setInt(null)
-                    .setRangeInt(Integer.valueOf(50))
+                    .setRangeInt(50)
                     .build();
             Assert.fail("Expected exception not thrown");
         } catch (final ConstraintsViolatedException e) {
@@ -119,8 +119,8 @@ public class OvalBuilderTest {
     public void testFailureMinViolation() {
         try {
             TestBean.Builder.newInstance()
-                    .setInt(Integer.valueOf(0))
-                    .setRangeInt(Integer.valueOf(-1))
+                    .setInt(0)
+                    .setRangeInt(-1)
                     .build();
             Assert.fail("Expected exception not thrown");
         } catch (final ConstraintsViolatedException e) {
@@ -130,7 +130,7 @@ public class OvalBuilderTest {
             Assert.assertEquals("net.sf.oval.constraint.MinCheck", cv.getCheckName());
             Assert.assertThat(cv.getContext().toString(),
                     Matchers.containsString("OvalBuilderTest$TestBean$Builder._rangeInt"));
-            Assert.assertEquals(Integer.valueOf(-1), cv.getInvalidValue());
+            Assert.assertEquals(-1, cv.getInvalidValue());
         }
     }
 
@@ -138,8 +138,8 @@ public class OvalBuilderTest {
     public void testFailureMaxViolation() {
         try {
             TestBean.Builder.newInstance()
-                    .setInt(Integer.valueOf(0))
-                    .setRangeInt(Integer.valueOf(101))
+                    .setInt(0)
+                    .setRangeInt(101)
                     .build();
             Assert.fail("Expected exception not thrown");
         } catch (final ConstraintsViolatedException e) {
@@ -149,15 +149,15 @@ public class OvalBuilderTest {
             Assert.assertEquals("net.sf.oval.constraint.MaxCheck", cv.getCheckName());
             Assert.assertThat(cv.getContext().toString(),
                     Matchers.containsString("OvalBuilderTest$TestBean$Builder._rangeInt"));
-            Assert.assertEquals(Integer.valueOf(101), cv.getInvalidValue());
+            Assert.assertEquals(101, cv.getInvalidValue());
         }
     }
 
     @Test
     public void testClone() {
         final TestBean beanA = new TestBean.Builder()
-                .setInt(Integer.valueOf(0))
-                .setRangeInt(Integer.valueOf(1))
+                .setInt(0)
+                .setRangeInt(1)
                 .build();
         Assert.assertEquals(0, beanA.getInt());
         Assert.assertEquals(Optional.of(1), beanA.getRangeInt());
@@ -172,8 +172,8 @@ public class OvalBuilderTest {
     @Test
     public void testCloneWithBuilder() {
         final TestBean beanA = new TestBean.Builder()
-                .setInt(Integer.valueOf(0))
-                .setRangeInt(Integer.valueOf(1))
+                .setInt(0)
+                .setRangeInt(1)
                 .build();
         Assert.assertEquals(0, beanA.getInt());
         Assert.assertEquals(Optional.of(1), beanA.getRangeInt());
@@ -196,7 +196,7 @@ public class OvalBuilderTest {
         }
 
         private TestBean(final Builder builder) {
-            _int = builder._int.intValue();
+            _int = builder._int;
             _rangeInt = Optional.fromNullable(builder._rangeInt);
         }
 

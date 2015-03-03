@@ -149,6 +149,7 @@ public abstract class BaseJacksonConfiguration extends com.arpnetworking.configu
      */
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("ObjectMapper", _objectMapper)
                 .toString();
     }

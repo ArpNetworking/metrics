@@ -37,7 +37,7 @@ public class CarbonSinkTest {
         _carbonSinkBuilder = new CarbonSink.Builder()
                 .setName("carbon_sink_test")
                 .setServerAddress("my-carbon-server.example.com")
-                .setServerPort(Integer.valueOf(9999));
+                .setServerPort(9999);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class CarbonSinkTest {
         bufferString = bufferString.substring(0, bufferString.length() - 1);
         final String[] keyValueParts = bufferString.split(" ");
         Assert.assertEquals("Buffer=" + bufferString, 3, keyValueParts.length);
-        Assert.assertEquals("Buffer=" + bufferString, String.format("%f", Double.valueOf(datum.getValue().getValue())), keyValueParts[1]);
+        Assert.assertEquals("Buffer=" + bufferString, String.format("%f", datum.getValue().getValue()), keyValueParts[1]);
         Assert.assertEquals("Buffer=" + bufferString, String.valueOf(datum.getPeriodStart().getMillis() / 1000), keyValueParts[2]);
         final String[] keyParts = keyValueParts[0].split("\\.");
         Assert.assertEquals("Buffer=" + bufferString, 6, keyParts.length);

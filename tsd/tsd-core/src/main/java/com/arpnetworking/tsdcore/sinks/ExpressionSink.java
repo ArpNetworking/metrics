@@ -26,6 +26,7 @@ import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.scripting.Expression;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
 import com.arpnetworking.utility.InterfaceDatabase;
@@ -36,6 +37,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.internal.MoreTypes;
 import net.sf.oval.constraint.NotNull;
@@ -52,6 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Intermediate publisher which computes additional <code>AggregatedData</code>
@@ -66,7 +69,7 @@ public final class ExpressionSink extends BaseSink implements Sink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        final List<AggregatedData> newData = Lists.newArrayList();
+        Collection<AggregatedData> newData = data;
 
         try (final Metrics metrics = _metricsFactory.create()) {
             // Check for new clusters or services
@@ -103,16 +106,11 @@ public final class ExpressionSink extends BaseSink implements Sink {
             metrics.setGauge("Sinks/ExpressionSink/" + getMetricSafeName() + "/ClusterServices", _clusterServices.size());
 
             // Evaluate all expressions currently loaded
-            evaluateExpressions(data, newData, metrics);
+            newData = evaluateExpressions(data, metrics);
         }
 
         // Invoke nested sink
-        if (newData.isEmpty()) {
-            _sink.recordAggregateData(data, conditions);
-        } else {
-            newData.addAll(data);
-            _sink.recordAggregateData(newData, conditions);
-        }
+        _sink.recordAggregateData(newData, conditions);
     }
 
     /**
@@ -126,9 +124,8 @@ public final class ExpressionSink extends BaseSink implements Sink {
         }
     }
 
-    private void evaluateExpressions(
+    private Collection<AggregatedData> evaluateExpressions(
             final Collection<AggregatedData> data,
-            final Collection<AggregatedData> newData,
             final Metrics metrics) {
 
         // ** HACK ** HACK ** HACK ** HACK **
@@ -164,6 +161,7 @@ public final class ExpressionSink extends BaseSink implements Sink {
         final Counter evaluations = metrics.createCounter("Sinks/ExpressionSink/" + getMetricSafeName() + "/Evaluations");
         final Counter failures = metrics.createCounter("Sinks/ExpressionSink/" + getMetricSafeName() + "/Failures");
         final Counter missing = metrics.createCounter("Sinks/ExpressionSink/" + getMetricSafeName() + "/Missing");
+        final Collection<AggregatedData> newData = Lists.newArrayList(data);
         final List<Expression> expressions = _expressions.get();
         if (expressions != null) {
             for (final Expression expression : expressions) {
@@ -173,7 +171,7 @@ public final class ExpressionSink extends BaseSink implements Sink {
                             host,
                             period,
                             periodStart,
-                            data);
+                            newData);
                     if (!result.isPresent()) {
                         missing.increment();
                     } else {
@@ -185,18 +183,19 @@ public final class ExpressionSink extends BaseSink implements Sink {
                             String.format(
                                     "Expression evaluation failed; expression=%s, data=%s",
                                     expression,
-                                    data),
+                                    newData),
                             e);
                 }
             }
         }
+        return newData;
     }
 
     private ExpressionSink(final Builder builder) {
         super(builder);
         _metricsFactory = builder._metricsFactory;
         _dynamicConfigurationFactory = builder._dynamicConfigurationFactory;
-        _configurationListener = new ConfigurationListener();
+        _configurationListener = new ConfigurationListener(_expressions);
         _sink = builder._sink;
     }
 
@@ -231,29 +230,85 @@ public final class ExpressionSink extends BaseSink implements Sink {
         OBJECT_MAPPER.registerModules(module);
     }
 
-    private final class ConfigurationListener implements Listener {
+    /* package private */ static class ConfigurationListener implements Listener {
+
+        public ConfigurationListener(final AtomicReference<List<Expression>> acceptedExpressions) {
+            _acceptedExpressions = acceptedExpressions;
+        }
 
         @Override
         public void offerConfiguration(final Configuration configuration) throws Exception {
-            final Map<String, List<Expression>> expressions = configuration.getAs(
+            // Deserialize all expressions
+            final Map<String, List<Expression>> expressionsBySource = configuration.getAs(
                     EXPRESSION_TYPE,
                     Collections.<String, List<Expression>>emptyMap());
-            _offeredExpressions = Lists.newArrayList();
-            for (final List<Expression> list : expressions.values()) {
-                _offeredExpressions.addAll(list);
+
+            // Index all expressions by target FQDSN
+            // NOTE: This will throw an IllegalArgumentException if more than
+            // one expression targets the same FQDSN.
+            final Map<FQDSN, Expression> expressionsByFqdsn = Maps.uniqueIndex(
+                    expressionsBySource.values().stream().flatMap(l -> l.stream()).collect(Collectors.toList()),
+                    Expression::getTargetFQDSN);
+
+            // Build the ordered set of expressions from bottom-up
+            // NOTE: This will throw an IllegalArgumentException if any
+            // expression depends on a parent expression.
+            final Set<FQDSN> orderedExpressions = Sets.newLinkedHashSet();
+            for (final Expression expression : expressionsByFqdsn.values()) {
+                final Set<FQDSN> parentExpressions = Sets.newHashSet();
+                insertExpression(expression, expressionsByFqdsn, parentExpressions, orderedExpressions);
             }
-            // TODO(vkoskela): Resolve expression dependencies [MAI-445]
-            // 1) Ensure expressions are ordered such that dependents are evaluated first
-            // 2) Detect any cycles in expression dependencies and throw exception
-            // 3) Clone data proactively and pass newData to each successive evaluation
+
+            // Map the ordered expression FQDSNs back to expressions
+            _offeredExpressions = orderedExpressions.stream().map(
+                    expressionsByFqdsn::get).collect(Collectors.toList());
         }
 
         @Override
         public void applyConfiguration() {
-            _expressions.set(_offeredExpressions);
-            LOGGER.debug(String.format("Updated expressions; expressions=%s", _expressions));
+            _acceptedExpressions.set(_offeredExpressions);
+            LOGGER.debug(String.format("Updated expressions; expressions=%s", _acceptedExpressions));
         }
 
+        private void insertExpression(
+                final Expression expression,
+                final Map<FQDSN, Expression> expressionsByFqdsn,
+                final Set<FQDSN> parentExpressions,
+                final Set<FQDSN> orderedExpressions) {
+            final FQDSN fqdsn = expression.getTargetFQDSN();
+            if (!parentExpressions.contains(fqdsn)) {
+                // Evaluate the sub-graph only if it has not been processed
+                if (!orderedExpressions.contains(fqdsn)) {
+                    // Add yourself as a parent
+                    parentExpressions.add(fqdsn);
+
+                    // Process all your dependencies. If any transitive dependency
+                    // references a parent then there is a cycle.
+                    for (final FQDSN dependency : expression.getDependencies()) {
+                        insertExpression(
+                                expressionsByFqdsn.get(dependency),
+                                expressionsByFqdsn,
+                                parentExpressions,
+                                orderedExpressions);
+                    }
+
+                    // Record yourself in the expression evaluation order. At this
+                    // point all your dependencies are already in the list and none
+                    // of them depend on you or your parents.
+                    orderedExpressions.add(fqdsn);
+
+                    // Remove yourself as a parent
+                    parentExpressions.remove(fqdsn);
+                }
+            } else {
+                throw new IllegalArgumentException(String.format(
+                        "Expression dependency cycle detected; expression=%s, parents=%s",
+                        expression,
+                        parentExpressions));
+            }
+        }
+
+        private final AtomicReference<List<Expression>> _acceptedExpressions;
         private List<Expression> _offeredExpressions = Collections.emptyList();
     }
 

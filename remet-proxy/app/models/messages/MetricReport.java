@@ -81,6 +81,7 @@ public final class MetricReport {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Service", _service)
                 .add("Host", _host)
                 .add("Statistic", _statistic)

@@ -137,6 +137,7 @@ public class DefaultHostQuery implements HostQuery {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Repository", _repository)
                 .add("HostName", _hostName)
                 .add("MetricsSoftwareState", _metricsSoftwareState)

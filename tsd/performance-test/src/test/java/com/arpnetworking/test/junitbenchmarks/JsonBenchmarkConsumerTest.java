@@ -16,6 +16,7 @@
 
 package com.arpnetworking.test.junitbenchmarks;
 
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.carrotsearch.junitbenchmarks.DataCreator;
 import com.carrotsearch.junitbenchmarks.Result;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -49,7 +50,7 @@ public class JsonBenchmarkConsumerTest {
         consumer.close();
 
         // Read the file back in as json
-        final ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = ObjectMapperFactory.getInstance();
         final JsonNode readBack = mapper.readTree(path.toFile());
         Assert.assertTrue(readBack.isObject());
         Assert.assertTrue(readBack.get("results").isArray());

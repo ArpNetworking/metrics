@@ -309,7 +309,7 @@ public final class Version2e {
 
         private Sample(final Builder builder) {
             _unit = Optional.fromNullable(builder._unit);
-            _value = builder._value.doubleValue();
+            _value = builder._value;
         }
 
         private final Optional<Unit> _unit;

@@ -24,8 +24,7 @@ import tsdUtils = require("./utils");
  * to imply scalar values.
  *
  * @class
- * @alias TsdMetricSample
- * @ignore
+ * @alias MetricSample
  */
 export class TsdMetricSample implements tsdDef.MetricSample {
     /**
@@ -33,6 +32,7 @@ export class TsdMetricSample implements tsdDef.MetricSample {
      *
      * @param {number} value The magnitude of the sample.
      * @param {Units} unit The unit that the magnitude is expressed in. Default = undefined (i.e. has not unit).
+     * @ignore
      */
     public static of(value:number, unit:tsdDef.Unit = undefined):tsdDef.MetricSample {
         return new TsdMetricSample(value, unit);
@@ -41,10 +41,11 @@ export class TsdMetricSample implements tsdDef.MetricSample {
     /**
      * Constructor.
      *
-     * @param {number} value The magnitude of the sample.
-     * @param {Units} unit The unit that the magnitude is expressed in.
+     * @param {number} _value The magnitude of the sample.
+     * @param {Units} _unit The unit that the magnitude is expressed in.
+     * @ignore
      */
-    constructor(private value:number, private unit:tsdDef.Unit) {
+    constructor(private _value:number, private _unit:tsdDef.Unit) {
     }
 
     /**
@@ -54,7 +55,7 @@ export class TsdMetricSample implements tsdDef.MetricSample {
      * @return {number} The magnitude.
      */
     public getValue():number {
-        return this.value;
+        return this._value;
     }
 
     /**
@@ -64,10 +65,6 @@ export class TsdMetricSample implements tsdDef.MetricSample {
      * @return {number} The units of the magnitude.
      */
     public getUnit():tsdDef.Unit {
-        return this.unit;
-    }
-
-    public toJSON() {
-        return { value: this.value, unit: this.unit }
+        return this._unit;
     }
 }

@@ -22,12 +22,15 @@
   <appender name="RemetGuiLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>logs/remet_gui.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>logs/remet_gui.%d{yyyyMMdd}.log.gz</fileNamePattern>
+      <fileNamePattern>logs/remet_gui.%d{yyyy-MM-dd_HH}.log.gz</fileNamePattern>
       <maxHistory>20</maxHistory>
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
-    <encoder>
-      <pattern>%date %t RequestId=%mdc{request_id} [%level] %logger : %message %ex%n</pattern>
+    <encoder class="com.arpnetworking.logback.KeyValueEncoder">
+      <injectContextLogger>true</injectContextLogger>
+      <layout class="ch.qos.logback.classic.PatternLayout">
+        <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
+      </layout>
     </encoder>
   </appender>
 

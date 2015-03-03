@@ -46,6 +46,7 @@ public final class Quit {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Channel", _channel)
                 .toString();
     }

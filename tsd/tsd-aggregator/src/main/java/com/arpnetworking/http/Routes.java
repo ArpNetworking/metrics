@@ -35,9 +35,10 @@ import akka.util.Timeout;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
+import com.arpnetworking.steno.LogBuilder;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.runtime.AbstractFunction1;
 
@@ -68,9 +69,14 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
     public Future<HttpResponse> apply(final akka.http.model.HttpRequest request) {
         final Metrics metrics = _metricsFactory.create();
         final Timer timer = metrics.createTimer(createTimerName(request));
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("Request; %s", request));
-        }
+        // TODO(vkoskela): Add a request UUID and include in MDC. [MAI-462]
+        LOGGER.trace()
+                .setEvent("http.in.start")
+                .addData("method", request.method())
+                .addData("url", request.uri())
+                .addData("headers", request.headers())
+                .addData("cookies", request.cookies())
+                .log();
         final Future<HttpResponse> futureResponse = process(request);
         futureResponse.onComplete(
                 new OnComplete<HttpResponse>() {
@@ -78,9 +84,17 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                     public void onComplete(final Throwable failure, final HttpResponse response) {
                         timer.close();
                         metrics.close();
-                        if (LOGGER.isTraceEnabled()) {
-                            LOGGER.trace(String.format("Response; %s", response));
+                        final LogBuilder log = LOGGER.trace()
+                                .setEvent("http.in")
+                                .addData("method", request.method())
+                                .addData("url", request.uri())
+                                .addData("status", response.status().intValue())
+                                .addData("headers", request.headers())
+                                .addData("cookies", request.cookies());
+                        if (failure != null) {
+                            log.setEvent("http.in.error").addData("exception", failure);
                         }
+                        log.log();
                     }
                 },
                 _actorSystem.dispatcher());
@@ -97,12 +111,12 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                                     public HttpResponse apply(final Boolean isHealthy) {
                                         return (HttpResponse) response()
                                                 .withStatus(isHealthy ? StatusCodes.OK : StatusCodes.INTERNAL_SERVER_ERROR)
-                                                .addHeader(
-                                                        PING_CACHE_CONTROL_HEADER)
-                                                .withEntity(JSON_CONTENT_TYPE,
-                                                            "{\"status\":\""
-                                                                    + (isHealthy ? HEALTHY_STATE : UNHEALTHY_STATE)
-                                                                    + "\"}");
+                                                .addHeader(PING_CACHE_CONTROL_HEADER)
+                                                .withEntity(
+                                                        JSON_CONTENT_TYPE,
+                                                        "{\"status\":\""
+                                                                + (isHealthy ? HEALTHY_STATE : UNHEALTHY_STATE)
+                                                                + "\"}");
                                     }
                                 },
                                 _actorSystem.dispatcher()

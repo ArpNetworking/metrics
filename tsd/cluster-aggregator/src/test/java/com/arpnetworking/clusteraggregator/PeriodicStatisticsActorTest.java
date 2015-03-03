@@ -27,9 +27,7 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
-import com.arpnetworking.tsdcore.model.Unit;
-import com.arpnetworking.tsdcore.statistics.TP50Statistic;
-import com.google.common.base.Optional;
+import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.Before;
@@ -273,7 +271,7 @@ public class PeriodicStatisticsActorTest extends BaseActorTest {
                 .setPeriod(period)
                 .setStart(start)
                 .setHost("testhost")
-                .setValue(new Quantity(0, Optional.<Unit>absent()))
+                .setValue(new Quantity.Builder().setValue(0d).build())
                 .setSamples(Collections.<Quantity>emptyList())
                 .setPopulationSize(0L);
     }
@@ -283,7 +281,7 @@ public class PeriodicStatisticsActorTest extends BaseActorTest {
                 .setCluster("testcluster")
                 .setService("testservice")
                 .setMetric("testmetric")
-                .setStatistic(new TP50Statistic());
+                .setStatistic(new MedianStatistic());
     }
 
     @Captor

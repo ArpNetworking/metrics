@@ -56,7 +56,7 @@ public class AggDataUnifierTest {
     public void testNoValueUnit() {
         final List<AggregatedData> data = Lists.newArrayList();
         final AggregatedData.Builder builder = getDataBuilder();
-        builder.setValue(new Quantity(10d, Optional.<Unit>absent()));
+        builder.setValue(new Quantity.Builder().setValue(10d).build());
         data.add(builder.build());
         final List<AggregatedData> unified = AggDataUnifier.unify(data);
         Assert.assertEquals(1, unified.size());
@@ -69,8 +69,8 @@ public class AggDataUnifierTest {
     public void testNoUnits() {
         final List<AggregatedData> data = Lists.newArrayList();
         final AggregatedData.Builder builder = getDataBuilder();
-        builder.setValue(new Quantity(10d, Optional.<Unit>absent()));
-        builder.setSamples(Collections.singletonList(new Quantity(10d, Optional.<Unit>absent())));
+        builder.setValue(new Quantity.Builder().setValue(10d).build());
+        builder.setSamples(Collections.singletonList(new Quantity.Builder().setValue(10d).build()));
         data.add(builder.build());
         final List<AggregatedData> unified = AggDataUnifier.unify(data);
         Assert.assertEquals(1, unified.size());
@@ -83,7 +83,10 @@ public class AggDataUnifierTest {
     public void testOnlyValueUnit() {
         final List<AggregatedData> data = Lists.newArrayList();
         final AggregatedData.Builder builder = getDataBuilder();
-        builder.setValue(new Quantity(10d, Optional.of(Unit.MILLISECOND)));
+        builder.setValue(new Quantity.Builder()
+                .setValue(10d)
+                .setUnit(Unit.MILLISECOND)
+                .build());
         data.add(builder.build());
         final List<AggregatedData> unified = AggDataUnifier.unify(data);
         Assert.assertEquals(1, unified.size());
@@ -100,9 +103,15 @@ public class AggDataUnifierTest {
     public void testSingleSampleUnified() {
         final List<AggregatedData> data = Lists.newArrayList();
         //This should get converted to 1k milliseconds
-        final Quantity sample = new Quantity(1000d, Optional.of(Unit.MILLISECOND));
+        final Quantity sample = new Quantity.Builder()
+                .setValue(1000d)
+                .setUnit(Unit.MILLISECOND)
+                .build();
         final AggregatedData.Builder builder = getDataBuilder();
-        builder.setValue(new Quantity(10d, Optional.of(Unit.MILLISECOND)));
+        builder.setValue(new Quantity.Builder()
+                .setValue(10d)
+                .setUnit(Unit.MILLISECOND)
+                .build());
         builder.setSamples(Collections.singletonList(sample));
         data.add(builder.build());
         final List<AggregatedData> unified = AggDataUnifier.unify(data);
@@ -123,9 +132,15 @@ public class AggDataUnifierTest {
     public void testSingleSampleMismatch() {
         final List<AggregatedData> data = Lists.newArrayList();
         //This should get converted to 1k milliseconds
-        final Quantity sample = new Quantity(1000d, Optional.of(Unit.MILLISECOND));
+        final Quantity sample = new Quantity.Builder()
+                .setValue(1000d)
+                .setUnit(Unit.MILLISECOND)
+                .build();
         final AggregatedData.Builder builder = getDataBuilder();
-        builder.setValue(new Quantity(10d, Optional.of(Unit.BYTE)));
+        builder.setValue(new Quantity.Builder()
+                .setValue(10d)
+                .setUnit(Unit.BYTE)
+                .build());
         builder.setSamples(Collections.singletonList(sample));
         data.add(builder.build());
         final List<AggregatedData> unified = AggDataUnifier.unify(data);
@@ -139,10 +154,18 @@ public class AggDataUnifierTest {
     public void testSampleMissingUnit() {
         final List<AggregatedData> data = Lists.newArrayList();
         //This should get converted to 1k milliseconds
-        final Quantity sample = new Quantity(1000d, Optional.of(Unit.MILLISECOND));
-        final Quantity sample2 = new Quantity(1200d, Optional.<Unit>absent());
+        final Quantity sample = new Quantity.Builder()
+                .setValue(1000d)
+                .setUnit(Unit.MILLISECOND)
+                .build();
+        final Quantity sample2 = new Quantity.Builder()
+                .setValue(1200d)
+                .build();
         final AggregatedData.Builder builder = getDataBuilder();
-        builder.setValue(new Quantity(10d, Optional.of(Unit.MILLISECOND)));
+        builder.setValue(new Quantity.Builder()
+                .setValue(10d)
+                .setUnit(Unit.MILLISECOND)
+                .build());
         builder.setSamples(Lists.newArrayList(sample, sample2));
         data.add(builder.build());
         final List<AggregatedData> unified = AggDataUnifier.unify(data);
@@ -157,9 +180,15 @@ public class AggDataUnifierTest {
     public void testSingleSampleValueDifferenceValueConvert() {
         final List<AggregatedData> data = Lists.newArrayList();
         //This should get converted to 1k milliseconds
-        final Quantity sample = new Quantity(10d, Optional.of(Unit.MILLISECOND));
+        final Quantity sample = new Quantity.Builder()
+                .setValue(10d)
+                .setUnit(Unit.MILLISECOND)
+                .build();
         final AggregatedData.Builder builder = getDataBuilder();
-        builder.setValue(new Quantity(1d, Optional.of(Unit.SECOND)));
+        builder.setValue(new Quantity.Builder()
+                .setValue(1d)
+                .setUnit(Unit.SECOND)
+                .build());
         builder.setSamples(Collections.singletonList(sample));
         final AggregatedData aggregatedData = builder.build();
         final List<Quantity> samples = aggregatedData.getSamples();
@@ -186,9 +215,15 @@ public class AggDataUnifierTest {
     public void testSingleSampleValueDifferenceSampleConvert() {
         final List<AggregatedData> data = Lists.newArrayList();
         //This should get converted to 1k milliseconds
-        final Quantity sample = new Quantity(1d, Optional.of(Unit.SECOND));
+        final Quantity sample = new Quantity.Builder()
+                .setValue(1d)
+                .setUnit(Unit.SECOND)
+                .build();
         final AggregatedData.Builder builder = getDataBuilder();
-        builder.setValue(new Quantity(10d, Optional.of(Unit.MILLISECOND)));
+        builder.setValue(new Quantity.Builder()
+                .setValue(10d)
+                .setUnit(Unit.MILLISECOND)
+                .build());
         builder.setSamples(Collections.singletonList(sample));
         data.add(builder.build());
         final List<AggregatedData> unified = AggDataUnifier.unify(data);
@@ -209,9 +244,15 @@ public class AggDataUnifierTest {
     public void testCrossAggDataDifferenceSampleConvert() {
         final List<AggregatedData> data = Lists.newArrayList();
         //This should get converted to 1k milliseconds
-        final Quantity sample = new Quantity(1d, Optional.of(Unit.MILLISECOND));
+        final Quantity sample = new Quantity.Builder()
+                .setValue(1d)
+                .setUnit(Unit.MILLISECOND)
+                .build();
         final AggregatedData.Builder builder = getDataBuilder();
-        builder.setValue(new Quantity(10d, Optional.of(Unit.MILLISECOND)));
+        builder.setValue(new Quantity.Builder()
+                .setValue(10d)
+                .setUnit(Unit.MILLISECOND)
+                .build());
         builder.setSamples(Collections.singletonList(sample));
         data.add(builder.build());
 
@@ -219,7 +260,10 @@ public class AggDataUnifierTest {
         // in milliseconds but a sample in seconds.  We expect that the sample
         // will be converted to milliseconds
 
-        builder.setSamples(Collections.singletonList(new Quantity(1, Optional.of(Unit.SECOND))));
+        builder.setSamples(Collections.singletonList(new Quantity.Builder()
+                .setValue(1d)
+                .setUnit(Unit.SECOND)
+                .build()));
         data.add(builder.build());
 
         final List<AggregatedData> unified = AggDataUnifier.unify(data);
@@ -255,6 +299,8 @@ public class AggDataUnifierTest {
                 .setHost("testhost")
                 .setPopulationSize(0L)
                 .setSamples(Collections.<Quantity>emptyList())
-                .setValue(new Quantity(0d, Optional.<Unit>absent()));
+                .setValue(new Quantity.Builder()
+                        .setValue(0d)
+                        .build());
     }
 }

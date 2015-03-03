@@ -15,10 +15,11 @@
  */
 package com.arpnetworking.tsdcore.model;
 
-import com.google.common.base.Optional;
-
+import com.google.common.collect.ImmutableList;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.List;
 
 /**
  * Tests for the Quantity class.
@@ -31,7 +32,10 @@ public class QuantityTest {
     public void testConstructor() {
         final double expectedValue = 3.14f;
         final Unit expectedUnit = Unit.GIGABYTE;
-        final Quantity sample = new Quantity(expectedValue, Optional.of(expectedUnit));
+        final Quantity sample = new Quantity.Builder()
+                .setValue(expectedValue)
+                .setUnit(expectedUnit)
+                .build();
         Assert.assertEquals(expectedValue, sample.getValue(), 0.001);
         Assert.assertTrue(sample.getUnit().isPresent());
         Assert.assertEquals(expectedUnit, sample.getUnit().get());
@@ -39,19 +43,37 @@ public class QuantityTest {
 
     @Test
     public void testCompare() {
-        final Quantity sample1 = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
-        final Quantity sample2 = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
-        final Quantity sample3 = new Quantity(3.14f, Optional.of(Unit.GIGABIT));
-        final Quantity sample4 = new Quantity(3.14f, Optional.of(Unit.TERABYTE));
+        final Quantity sample1 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
+        final Quantity sample2 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
+        final Quantity sample3 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABIT)
+                .build();
+        final Quantity sample4 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.TERABYTE)
+                .build();
 
         Assert.assertEquals(0, sample1.compareTo(sample1));
         Assert.assertEquals(0, sample1.compareTo(sample2));
         Assert.assertEquals(1, sample1.compareTo(sample3));
         Assert.assertEquals(-1, sample1.compareTo(sample4));
 
-        final Quantity sample5 = new Quantity(3.14f, Optional.<Unit>absent());
-        final Quantity sample6 = new Quantity(3.14f, Optional.<Unit>absent());
-        final Quantity sample7 = new Quantity(6.28f, Optional.<Unit>absent());
+        final Quantity sample5 = new Quantity.Builder()
+                .setValue(3.14d)
+                .build();
+        final Quantity sample6 = new Quantity.Builder()
+                .setValue(3.14d)
+                .build();
+        final Quantity sample7 = new Quantity.Builder()
+                .setValue(6.28d)
+                .build();
 
         Assert.assertEquals(0, sample5.compareTo(sample6));
         Assert.assertEquals(-1, sample5.compareTo(sample7));
@@ -60,40 +82,76 @@ public class QuantityTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCompareFailureAbsent() {
-        final Quantity sample1 = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
-        final Quantity sample2 = new Quantity(3.14f, Optional.<Unit>absent());
+        final Quantity sample1 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
+        final Quantity sample2 = new Quantity.Builder()
+                .setValue(3.14d)
+                .build();
         sample1.compareTo(sample2);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCompareFailureAbsentReverse() {
-        final Quantity sample1 = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
-        final Quantity sample2 = new Quantity(3.14f, Optional.<Unit>absent());
+        final Quantity sample1 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
+        final Quantity sample2 = new Quantity.Builder()
+                .setValue(3.14d)
+                .build();
         sample2.compareTo(sample1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCompareFailureDifferentDomains() {
-        final Quantity sample1 = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
-        final Quantity sample2 = new Quantity(3.14f, Optional.of(Unit.SECOND));
+        final Quantity sample1 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
+        final Quantity sample2 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.SECOND)
+                .build();
         sample1.compareTo(sample2);
     }
 
     @Test
     public void testHash() {
-        final Quantity sample1 = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
-        final Quantity sample2 = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
+        final Quantity sample1 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
+        final Quantity sample2 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
 
         Assert.assertEquals(sample1.hashCode(), sample2.hashCode());
     }
 
     @Test
     public void testEquality() {
-        final Quantity sample1 = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
-        final Quantity sample2 = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
-        final Quantity sample3 = new Quantity(3.14f, Optional.of(Unit.GIGABIT));
-        final Quantity sample4 = new Quantity(6.28f, Optional.of(Unit.GIGABYTE));
-        final Quantity sample5 = new Quantity(3.14f, Optional.<Unit>absent());
+        final Quantity sample1 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
+        final Quantity sample2 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
+        final Quantity sample3 = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABIT)
+                .build();
+        final Quantity sample4 = new Quantity.Builder()
+                .setValue(6.28d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
+        final Quantity sample5 = new Quantity.Builder()
+                .setValue(3.14d)
+                .build();
 
         Assert.assertTrue(sample1.equals(sample1));
         Assert.assertFalse(sample1.equals("Not a sample"));
@@ -107,8 +165,84 @@ public class QuantityTest {
 
     @Test
     public void testToString() {
-        final Quantity sample = new Quantity(3.14f, Optional.of(Unit.GIGABYTE));
+        final Quantity sample = new Quantity.Builder()
+                .setValue(3.14d)
+                .setUnit(Unit.GIGABYTE)
+                .build();
         Assert.assertNotNull(sample.toString());
         Assert.assertFalse(sample.toString().isEmpty());
+    }
+
+    @Test
+    public void testUnify() {
+        final List<Quantity> unified = Quantity.unify(
+                ImmutableList.of(
+                        new Quantity.Builder()
+                                .setValue(120.0)
+                                .setUnit(Unit.MINUTE)
+                                .build(),
+                        new Quantity.Builder()
+                                .setValue(1.0)
+                                .setUnit(Unit.HOUR)
+                                .build(),
+                        new Quantity.Builder()
+                                .setValue(1800.0)
+                                .setUnit(Unit.SECOND)
+                                .build()));
+        Assert.assertEquals(
+                ImmutableList.of(
+                        new Quantity.Builder()
+                                .setValue(7200.0)
+                                .setUnit(Unit.SECOND)
+                                .build(),
+                        new Quantity.Builder()
+                                .setValue(3600.0)
+                                .setUnit(Unit.SECOND)
+                                .build(),
+                        new Quantity.Builder()
+                                .setValue(1800.0)
+                                .setUnit(Unit.SECOND)
+                                .build()),
+                unified);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUnifyMissingAfter() {
+        Quantity.unify(
+                ImmutableList.of(
+                        new Quantity.Builder()
+                                .setValue(60.0)
+                                .setUnit(Unit.MINUTE)
+                                .build(),
+                        new Quantity.Builder()
+                                .setValue(1.0)
+                                .build()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUnifyMissingBefore() {
+        Quantity.unify(
+                ImmutableList.of(
+                        new Quantity.Builder()
+                                .setValue(60.0)
+                                .build(),
+                        new Quantity.Builder()
+                                .setValue(1.0)
+                                .setUnit(Unit.HOUR)
+                                .build()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUnifyMismatchedTypes() {
+        Quantity.unify(
+                ImmutableList.of(
+                        new Quantity.Builder()
+                                .setValue(60.0)
+                                .setUnit(Unit.BYTE)
+                                .build(),
+                        new Quantity.Builder()
+                                .setValue(1.0)
+                                .setUnit(Unit.SECOND)
+                                .build()));
     }
 }

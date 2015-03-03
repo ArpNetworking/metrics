@@ -16,13 +16,13 @@
 
 package com.arpnetworking.metrics.generator.client;
 
-import com.arpnetworking.logback.StenoEncoder;
 import com.arpnetworking.metrics.Quantity;
 import com.arpnetworking.metrics.Sink;
 // CHECKSTYLE.OFF: RegexpSingleline - We are replacing shaded classes, so we need these
 import com.arpnetworking.metrics.ch.qos.logback.classic.LoggerContext;
 import com.arpnetworking.metrics.ch.qos.logback.classic.spi.ILoggingEvent;
 import com.arpnetworking.metrics.ch.qos.logback.core.FileAppender;
+import com.arpnetworking.metrics.com.arpnetworking.logback.StenoEncoder;
 // CHECKSTYLE.ON: RegexpSingleline
 import com.arpnetworking.metrics.impl.TsdQueryLogSink;
 import com.google.common.base.Throwables;
@@ -122,7 +122,7 @@ public class GeneratorSink implements Sink {
             queryLogger.detachAppender("query-log-async");
             queryLogger.addAppender(fileAppender);
         } catch (final NoSuchFieldException | IllegalAccessException e) {
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
     }
 

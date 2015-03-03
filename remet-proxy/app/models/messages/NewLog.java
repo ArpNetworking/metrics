@@ -41,7 +41,8 @@ public class NewLog {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("_log", _log)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("Log", _log)
                 .toString();
     }
 

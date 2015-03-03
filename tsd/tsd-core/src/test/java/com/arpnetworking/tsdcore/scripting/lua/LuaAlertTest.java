@@ -54,7 +54,7 @@ public class LuaAlertTest {
                 .setHost("MyHost")
                 .setPeriod(Period.minutes(1))
                 .setStart(NOW)
-                .setPopulationSize(Long.valueOf(1))
+                .setPopulationSize(1L)
                 .setSamples(Collections.<Quantity>emptyList());
     }
 
@@ -69,12 +69,12 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder.build());
         Assert.assertEquals("testAlertMissing", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -97,16 +97,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                        .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithEquals", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -116,7 +116,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertTrue(result.isTriggered().get().booleanValue());
+        Assert.assertTrue(result.isTriggered().get());
     }
 
     @Test
@@ -130,16 +130,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(0)).build())
+                        .setValue(new Quantity.Builder().setValue(0d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseWithEquals", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -149,7 +149,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertFalse(result.isTriggered().get().booleanValue());
+        Assert.assertFalse(result.isTriggered().get());
     }
 
     @Test
@@ -163,16 +163,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.NOT_EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(0)).build())
+                        .setValue(new Quantity.Builder().setValue(0d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithNotEquals", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -182,7 +182,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertTrue(result.isTriggered().get().booleanValue());
+        Assert.assertTrue(result.isTriggered().get());
     }
 
     @Test
@@ -196,16 +196,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.NOT_EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                        .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseWithNotEquals", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -215,7 +215,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertFalse(result.isTriggered().get().booleanValue());
+        Assert.assertFalse(result.isTriggered().get());
     }
 
     @Test
@@ -229,16 +229,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.LESS_THAN)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(0)).build())
+                        .setValue(new Quantity.Builder().setValue(0d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithLessThan", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -248,7 +248,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertTrue(result.isTriggered().get().booleanValue());
+        Assert.assertTrue(result.isTriggered().get());
     }
 
     @Test
@@ -262,16 +262,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.LESS_THAN)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(2)).build())
+                        .setValue(new Quantity.Builder().setValue(2d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseLessThan", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -281,7 +281,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertFalse(result.isTriggered().get().booleanValue());
+        Assert.assertFalse(result.isTriggered().get());
     }
 
     @Test
@@ -295,16 +295,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.LESS_THAN_OR_EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                        .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithLessThanOrEqual", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -314,7 +314,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertTrue(result.isTriggered().get().booleanValue());
+        Assert.assertTrue(result.isTriggered().get());
     }
 
     @Test
@@ -328,16 +328,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.LESS_THAN_OR_EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(2)).build())
+                        .setValue(new Quantity.Builder().setValue(2d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseLessThanOrEqual", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -347,7 +347,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertFalse(result.isTriggered().get().booleanValue());
+        Assert.assertFalse(result.isTriggered().get());
     }
 
     @Test
@@ -361,16 +361,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.GREATER_THAN)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(0)).build())
+                .setValue(new Quantity.Builder().setValue(0d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                        .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithGreaterThan", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(0)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(0d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -380,7 +380,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertTrue(result.isTriggered().get().booleanValue());
+        Assert.assertTrue(result.isTriggered().get());
     }
 
     @Test
@@ -394,16 +394,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.GREATER_THAN)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(2)).build())
+                .setValue(new Quantity.Builder().setValue(2d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                        .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseGreaterThan", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(2)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(2d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -413,7 +413,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertFalse(result.isTriggered().get().booleanValue());
+        Assert.assertFalse(result.isTriggered().get());
     }
 
     @Test
@@ -427,16 +427,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.GREATER_THAN_OR_EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                        .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithGreaterThanOrEqual", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(1)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -446,7 +446,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertTrue(result.isTriggered().get().booleanValue());
+        Assert.assertTrue(result.isTriggered().get());
     }
 
     @Test
@@ -460,16 +460,16 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.GREATER_THAN_OR_EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(2)).build())
+                .setValue(new Quantity.Builder().setValue(2d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                        .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseGreaterThanOrEqual", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
-        Assert.assertEquals(new Quantity.Builder().setValue(Double.valueOf(2)).build(), result.getThreshold());
+        Assert.assertEquals(new Quantity.Builder().setValue(2d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
                         .setCluster("MyCluster")
@@ -479,7 +479,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertFalse(result.isTriggered().get().booleanValue());
+        Assert.assertFalse(result.isTriggered().get());
     }
 
     @Test(expected = ScriptingException.class)
@@ -493,11 +493,11 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).setUnit(Unit.SECOND).build())
+                .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.SECOND).build())
                 .build();
         alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                        .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
     }
@@ -513,11 +513,11 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).build())
+                .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).setUnit(Unit.SECOND).build())
+                        .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.SECOND).build())
                         .build()))
                 .build());
     }
@@ -533,11 +533,11 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).setUnit(Unit.MEGABIT).build())
+                .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.MEGABIT).build())
                 .build();
         alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).setUnit(Unit.SECOND).build())
+                        .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.SECOND).build())
                         .build()))
                 .build());
     }
@@ -553,18 +553,18 @@ public class LuaAlertTest {
                 .setPeriod(Period.minutes(1))
                 .setSeverity("critical")
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
-                .setValue(new Quantity.Builder().setValue(Double.valueOf(1)).setUnit(Unit.MINUTE).build())
+                .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.MINUTE).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
                 .setData(Collections.singletonList(_aggregatedDataBuilder
-                        .setValue(new Quantity.Builder().setValue(Double.valueOf(60)).setUnit(Unit.SECOND).build())
+                        .setValue(new Quantity.Builder().setValue(60d).setUnit(Unit.SECOND).build())
                         .build()))
                 .build());
         Assert.assertEquals("testUnitConversion", result.getName());
         Assert.assertEquals("critical", result.getSeverity());
         Assert.assertEquals(
                 new Quantity.Builder()
-                        .setValue(Double.valueOf(1))
+                        .setValue(1d)
                         .setUnit(Unit.MINUTE)
                         .build(),
                 result.getThreshold());
@@ -577,7 +577,7 @@ public class LuaAlertTest {
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
-        Assert.assertTrue(result.isTriggered().get().booleanValue());
+        Assert.assertTrue(result.isTriggered().get());
     }
 
     private PeriodicData.Builder _periodicDataBuilder;

@@ -38,9 +38,10 @@ export class CounterSamples extends TsdMetricsList<tsdDef.MetricSample> {
     /**
      * Constructor.
      *
-     * @param {MetricsStateObject} _metricsStateObject Object holding state of the original metrics object.
+     * @param {MetricsStateObject} _metricsStateObject Object holding state of the parent metrics object.
+     * @param _name Name of the counter that these samples belongs to.
      */
-     public constructor(private _metricsStateObject:MetricsStateObject) {
+    public constructor(private _name:string, private _metricsStateObject:MetricsStateObject) {
         super();
     }
 
@@ -51,7 +52,7 @@ export class CounterSamples extends TsdMetricsList<tsdDef.MetricSample> {
      * @return {Counter} The new counter sample instance added to the counter samples.
      */
     public addCounter():tsdDef.Counter {
-        var tsdCounter = new TsdCounter(this._metricsStateObject);
+        var tsdCounter = new TsdCounter(this._name, this._metricsStateObject);
         this.push(tsdCounter);
         return tsdCounter;
     }

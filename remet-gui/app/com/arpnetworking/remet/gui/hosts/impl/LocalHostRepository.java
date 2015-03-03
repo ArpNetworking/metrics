@@ -20,11 +20,12 @@ import com.arpnetworking.remet.gui.hosts.HostQuery;
 import com.arpnetworking.remet.gui.hosts.HostQueryResult;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import play.Logger;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -52,7 +53,7 @@ public class LocalHostRepository implements HostRepository {
     @Override
     public void open() {
         assertIsOpen(false);
-        Logger.debug("Opening host repository");
+        LOGGER.debug().setMessage("Opening host repository").log();
         _isOpen.set(true);
     }
 
@@ -62,7 +63,7 @@ public class LocalHostRepository implements HostRepository {
     @Override
     public void close() {
         assertIsOpen();
-        Logger.debug("Closing host repository");
+        LOGGER.debug().setMessage("Closing host repository").log();
         _isOpen.set(false);
     }
 
@@ -72,7 +73,10 @@ public class LocalHostRepository implements HostRepository {
     @Override
     public void addOrUpdateHost(final Host host) {
         assertIsOpen();
-        Logger.debug(String.format("Adding or updating host; host=%s", host));
+        LOGGER.debug()
+                .setMessage("Adding or updating host")
+                .addData("host", host)
+                .log();
         _temporaryStorage.put(host.getHostName(), host.getMetricsSoftwareState());
     }
 
@@ -82,7 +86,10 @@ public class LocalHostRepository implements HostRepository {
     @Override
     public void deleteHost(final String hostName) {
         assertIsOpen();
-        Logger.debug(String.format("Deleting host; hostName=%s", hostName));
+        LOGGER.debug()
+                .setMessage("Deleting host")
+                .addData("hostname", hostName)
+                .log();
         _temporaryStorage.remove(hostName);
     }
 
@@ -92,7 +99,7 @@ public class LocalHostRepository implements HostRepository {
     @Override
     public HostQuery createQuery() {
         assertIsOpen();
-        Logger.debug("Preparing query");
+        LOGGER.debug().setMessage("Preparing query").log();
         return new DefaultHostQuery(this);
     }
 
@@ -102,7 +109,10 @@ public class LocalHostRepository implements HostRepository {
     @Override
     public HostQueryResult query(final HostQuery query) {
         assertIsOpen();
-        Logger.debug(String.format("Querying; query=%s", query));
+        LOGGER.debug()
+                .setMessage("Querying")
+                .addData("query", query)
+                .log();
 
         // Find all matching hosts
         final List<Host> hosts = Lists.newLinkedList();
@@ -135,12 +145,12 @@ public class LocalHostRepository implements HostRepository {
         // Apply pagination
         final long total = hosts.size();
         if (query.getOffset().isPresent()) {
-            for (long i = 0; i < query.getOffset().get().longValue() && !hosts.isEmpty(); ++i) {
+            for (long i = 0; i < query.getOffset().get() && !hosts.isEmpty(); ++i) {
                 hosts.remove(0);
             }
         }
         if (query.getLimit().isPresent()) {
-            while (hosts.size() > query.getLimit().get().longValue() && !hosts.isEmpty()) {
+            while (hosts.size() > query.getLimit().get() && !hosts.isEmpty()) {
                 hosts.remove(hosts.size() - 1);
             }
         }
@@ -154,7 +164,7 @@ public class LocalHostRepository implements HostRepository {
     @Override
     public long getHostCount() {
         assertIsOpen();
-        Logger.debug("Getting host count");
+        LOGGER.debug().setMessage("Getting host count").log();
         return _temporaryStorage.size();
     }
 
@@ -164,7 +174,10 @@ public class LocalHostRepository implements HostRepository {
     @Override
     public long getHostCount(final MetricsSoftwareState metricsSoftwareState) {
         assertIsOpen();
-        Logger.debug(String.format("Getting host count in state; metricsSoftwareState=%s", metricsSoftwareState));
+        LOGGER.debug()
+                .setMessage("Getting host count in state")
+                .addData("state", metricsSoftwareState)
+                .log();
         long count = 0;
         for (final MetricsSoftwareState state : _temporaryStorage.values()) {
             if (!metricsSoftwareState.equals(state)) {
@@ -180,6 +193,7 @@ public class LocalHostRepository implements HostRepository {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("TemporaryStorage", _temporaryStorage)
                 .toString();
     }
@@ -197,6 +211,8 @@ public class LocalHostRepository implements HostRepository {
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final Map<String, MetricsSoftwareState> _temporaryStorage = Maps.newConcurrentMap();
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalHostRepository.class);
+
     private static class HostComparator implements Comparator<Host> {
 
         public HostComparator(final HostQuery query) {
@@ -211,7 +227,10 @@ public class LocalHostRepository implements HostRepository {
                 } else if (HostQuery.Field.METRICS_SOFTWARE_STATE.equals(_query.getSortBy().get())) {
                     return h1.getMetricsSoftwareState().compareTo(h2.getMetricsSoftwareState());
                 } else {
-                    Logger.warn(String.format("Unsupported sort by field; field=%s", _query.getSortBy().get()));
+                    LOGGER.warn()
+                            .setMessage("Unsupported sort by field")
+                            .addData("field", _query.getSortBy().get())
+                            .log();
                 }
             } else {
                 double s1 = 0.0;
@@ -239,7 +258,7 @@ public class LocalHostRepository implements HostRepository {
                     }
                 }
 
-                return Double.valueOf(s1).compareTo(Double.valueOf(s2));
+                return Double.compare(s1, s2);
             }
             return 0;
         }

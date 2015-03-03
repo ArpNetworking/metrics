@@ -47,8 +47,8 @@ public final class FileTrigger implements Trigger {
             LOGGER.debug(String.format(
                     "File created or removed; file=%s previousExists=%s newExists=%s",
                     _file,
-                    Boolean.valueOf(_exists),
-                    Boolean.valueOf(exists)));
+                    _exists,
+                    exists));
 
             _exists = exists;
             _lastModified = _file.lastModified();
@@ -83,6 +83,7 @@ public final class FileTrigger implements Trigger {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(FileTrigger.class)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("File", _file)
                 .toString();
     }

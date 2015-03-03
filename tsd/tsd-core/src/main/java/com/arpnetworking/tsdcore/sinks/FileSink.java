@@ -56,7 +56,7 @@ public final class FileSink extends BaseSink {
                 } else {
                     unitName = "null";
                 }
-                stringBuilder.append("{\"value\":\"").append(String.format("%f", Double.valueOf(datum.getValue().getValue())))
+                stringBuilder.append("{\"value\":\"").append(String.format("%f", datum.getValue().getValue()))
                         .append("\",\"unit\":").append(unitName)
                         .append(",\"metric\":\"").append(datum.getFQDSN().getMetric())
                         .append("\",\"service\":\"").append(datum.getFQDSN().getService())
@@ -110,7 +110,7 @@ public final class FileSink extends BaseSink {
         try {
             fileOutputStream = new FileOutputStream(_fileName, true);
         } catch (final IOException e) {
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
         _writer = new OutputStreamWriter(fileOutputStream, Charsets.UTF_8);
     }

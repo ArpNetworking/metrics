@@ -180,7 +180,7 @@ declare module "tsdDef" {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    export interface Timer {
+    export interface Timer extends MetricSample {
 
         /**
          * Stop the timer and record timing data in the associated.
@@ -211,7 +211,7 @@ declare module "tsdDef" {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    export interface Counter {
+    export interface Counter extends MetricSample {
 
         /**
          * Increment the counter sample by 1.
@@ -260,6 +260,72 @@ declare module "tsdDef" {
         getUnit(): Unit;
     }
 
+    /**
+     *
+     */
+    export interface MetricsList<T extends MetricSample> {
+
+        /**
+         * An array holding metrics samples.
+         *
+         * @method
+         * @returns {T[]}
+         */
+        getValues():T[];
+
+        /**
+         * Push a value to the list.
+         *
+         * @method
+         * @param {T} value The value to be pushed
+         */
+        push(value:T):void;
+
+        /**
+         * Creates a new MetricsList with all elements that pass the test implemented by the provided predicate.
+         *
+         * @method
+         * @param predicate The function to test if element should be taken.
+         * @return {MetricsList<T>} new MetricsList list containing only the items matching the filter predicate
+         */
+        filter(predicate:(sample:T) => boolean):MetricsList<T>;
+    }
+
+    /**
+     * An interface for an instance holding all the recorded metrics to be serialized.
+     */
+    export interface MetricsEvent {
+        /**
+         * The annotations represented as hash of arrays indexed by annotation name.
+         * @type {{Object.<string, MetricsList>}}
+         */
+        annotations:{[name:string]: string};
+
+        /**
+         * Counters and their samples recorded represented as hash of counter name to
+         * [MetricSample]{@linkcode MetricSample}
+         * @type {{Object.<string, MetricsList>}}
+         */
+        counters:{[name:string]: MetricsList<MetricSample>};
+
+        /**
+         * Gauges and their samples recorded represented as hash of counter name to
+         * [MetricSample]{@linkcode MetricSample}
+         * @type {{Object.<string, MetricsList>}}
+         */
+        gauges:{[name:string]: MetricsList<MetricSample>};
+
+        /**
+         * Timers and their samples recorded represented as hash of counter name to
+         * [MetricSample]{@linkcode MetricSample}
+         * @type {{Object.<string, MetricsList>}}
+         */
+        timers:{[name:string]: MetricsList<MetricSample>};
+    }
+
+    /**
+     * Class for holding a list of samples.
+     */
     export interface MetricsList<T extends MetricSample> {
         /**
          * Push a value to the list.
@@ -270,41 +336,27 @@ declare module "tsdDef" {
         push(value:T):void;
 
         /**
-         * Creates a new TsdMetricsList with all elements that pass the test implemented by the provided predicate.
+         * Creates a new MetricsList with all elements that pass the test implemented by the provided predicate.
          *
          * @method
          * @param predicate The function to test if element should be taken.
-         * @return {TsdMetricsList<T>} new TsdMetricsList list containing only the items matching the filter predicate
+         * @return {MetricsList<T>} new MetricsList list containing only the items matching the filter predicate
          */
         filter(predicate:(T) => boolean):MetricsList<T>;
     }
 
     /**
-     * An interface for an instance holding all the recorded metrics to be serialized.
+     * Interface representing a destination to record metrics to.
+     *
+     * @author Mohammed Kamel (mkamel at groupon dot com)
      */
-    export interface MetricsEvent {
+    export interface Sink {
+
         /**
-         * The annotations represented as hash of arrays indexed by annotation name.
-         * @type {{Object.<string, TsdMetricsList>}}
+         * Invoked by <code>Metrics</code> to record data to this <code>Sink</code>.
+         *
+         * @param metricsEvent metrics event to be recorded by the sync.
          */
-        annotations:{[name:string]: string};
-        /**
-         * Counters and their samples recorded represented as hash of counter name to
-         * [TsdMetricSample]{@linkcode TsdMetricSample}
-         * @type {{Object.<string, TsdMetricsList>}}
-         */
-        counters:{[name:string]: MetricsList<MetricSample>};
-        /**
-         * Gauges and their samples recorded represented as hash of counter name to
-         * [TsdMetricSample]{@linkcode TsdMetricSample}
-         * @type {{Object.<string, TsdMetricsList>}}
-         */
-        gauges:{[name:string]: MetricsList<MetricSample>};
-        /**
-         * Timers and their samples recorded represented as hash of counter name to
-         * [TsdMetricSample]{@linkcode TsdMetricSample}
-         * @type {{Object.<string, TsdMetricsList>}}
-         */
-        timers:{[name:string]: MetricsList<MetricSample>};
+        record(metricsEvent:MetricsEvent): void;
     }
 }

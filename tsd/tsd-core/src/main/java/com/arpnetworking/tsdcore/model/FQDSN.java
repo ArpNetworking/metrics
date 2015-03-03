@@ -92,6 +92,7 @@ public final class FQDSN implements Serializable {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Cluster", _cluster)
                 .add("Service", _service)
                 .add("Metric", _metric)

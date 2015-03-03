@@ -18,20 +18,17 @@ package models;
 
 import com.arpnetworking.tsdcore.parsers.Parser;
 import models.messages.LogLine;
-import org.joda.time.DateTime;
 import play.Logger;
 
 import java.nio.file.Path;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * Parses logs to extract LogLines.
+ * Represents raw log lines read from a file.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class LogLineParser implements Parser<LogLine> {
-    //TODO(barp): Rework this class [MAI-409]
+
     /**
      * Public constructor.
      *
@@ -51,30 +48,8 @@ public class LogLineParser implements Parser<LogLine> {
             return null;
         }
 
-        // CHECKSTYLE.OFF: IllegalInstantiation - we need to turn the bytes into a String
-        final String logLine = new String(data);
-        // CHECKSTYLE.ON: IllegalInstantiation
-        final Matcher timestampMatcher = CONCAT_PATTERN.matcher(logLine);
-
-        if (timestampMatcher.find()) {
-            final String timestamp = timestampMatcher.group(1); //print out the timestamp
-            return new LogLine(_logFile, logLine, DateTime.parse(timestamp));
-        }
-
-        return new LogLine(_logFile, logLine, DateTime.now());
+        return new LogLine(_logFile, data);
     }
 
     private final Path _logFile;
-
-    //private static Pattern _timeStampPattern = Pattern.compile("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} [+-]\\d{4}");
-    //private static Pattern _ios8601Patter = Pattern.compile(
-            // "^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])
-                    // (\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]\\d|6[1-6])))
-                    // ([T\\s]((([01]\\d|2[0-3])((:?)[0-5]\\d)?|24\\:?00)([\\.,]\\d+(?!:))?)?(\\17[0-5]\\d([\\.,]\\d+)?)?([zZ]|
-                    // ([\\+-])([01]\\d|2[0-3]):?([0-5]\\d)?)?)?)?$");
-    private static final Pattern CONCAT_PATTERN = Pattern.compile(
-            "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} [+-]\\d{4}| ^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])"
-                    + "(\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]"
-                    + "\\d|6[1-6])))([T\\s]((([01]\\d|2[0-3])((:?)[0-5]\\d)?|24\\:?00)([\\.,]\\d+(?!:))?)?(\\17[0-5]"
-                    + "\\d([\\.,]\\d+)?)?([zZ]|([\\+-])([01]\\d|2[0-3]):?([0-5]\\d)?)?)?)?$");
 }

@@ -16,8 +16,9 @@
 package com.arpnetworking.remet.gui.hosts.impl;
 
 import akka.actor.UntypedActor;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
-import play.Logger;
 
 /**
  * This is a placeholder actor that does not actually find any hosts.
@@ -40,8 +41,13 @@ public class NoHostProvider extends UntypedActor {
     @Override
     public void onReceive(final Object message) throws Exception {
         if ("tick".equals(message)) {
-            Logger.trace(String.format("Searching for added/updated/deleted hosts; hostProvider=%s", this));
-            Logger.debug("No hosts found!");
+            LOGGER.trace()
+                    .setMessage("Searching for added/updated/deleted hosts")
+                    .addData("hostProvider", this)
+                    .log();
+            LOGGER.debug().setMessage("No hosts found!").log();
         }
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NoHostProvider.class);
 }

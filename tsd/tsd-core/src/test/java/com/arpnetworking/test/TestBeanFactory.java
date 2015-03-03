@@ -16,6 +16,7 @@
 package com.arpnetworking.test;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
@@ -38,6 +39,29 @@ import java.util.UUID;
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
 public final class TestBeanFactory {
+
+    /**
+     * Create a builder for pseudo-random <code>Condition</code>.
+     *
+     * @return New builder for pseudo-random <code>Condition</code>.
+     */
+    public static Condition.Builder createConditionBuilder() {
+        return new Condition.Builder()
+                .setFQDSN(createFQDSN())
+                .setName("condition-" + UUID.randomUUID())
+                .setSeverity("severity-" + UUID.randomUUID())
+                .setThreshold(createSample())
+                .setTriggered(Boolean.TRUE);
+    }
+
+    /**
+     * Create a new reasonable pseudo-random <code>Condition</code>.
+     *
+     * @return New reasonable pseudo-random <code>Condition</code>.
+     */
+    public static Condition createCondition() {
+        return createConditionBuilder().build();
+    }
 
     /**
      * Create a builder for pseudo-random <code>FQDSN</code>.
@@ -74,7 +98,7 @@ public final class TestBeanFactory {
                 .setStart(DateTime.now())
                 .setPeriod(Period.minutes(5))
                 .setSamples(Lists.newArrayList(createSample()))
-                .setPopulationSize(Long.valueOf((long) (Math.random() * 100)));
+                .setPopulationSize((long) (Math.random() * 100));
     }
 
     /**
@@ -92,7 +116,7 @@ public final class TestBeanFactory {
      * @return New builder for reasonable pseudo-random <code>Quantity</code>.
      */
     public static Quantity.Builder createSampleBuilder() {
-        return new Quantity.Builder().setValue(Double.valueOf(Math.random())).setUnit(Unit.BIT);
+        return new Quantity.Builder().setValue(Math.random()).setUnit(Unit.BIT);
     }
 
     /**
@@ -101,7 +125,7 @@ public final class TestBeanFactory {
      * @return New reasonable pseudo-random <code>Quantity</code>.
      */
     public static Quantity createSample() {
-        return new Quantity.Builder().setValue(Double.valueOf(Math.random())).setUnit(Unit.BIT).build();
+        return new Quantity.Builder().setValue(Math.random()).setUnit(Unit.BIT).build();
     }
 
     /**

@@ -27,9 +27,7 @@ import com.arpnetworking.clusteraggregator.AggregatorLifecycle;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
-import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -90,6 +88,7 @@ public class Aggregator extends UntypedActor {
                 getSelf());
         _emitter = emitter;
     }
+
     /**
      * {@inheritDoc}
      */
@@ -158,7 +157,7 @@ public class Aggregator extends UntypedActor {
                     .setPopulationSize(1L)
                     .setSamples(Collections.<Quantity>emptyList())
                     .setStart(DateTime.now().hourOfDay().roundFloorCopy())
-                    .setValue(new Quantity(0, Optional.<Unit>absent()));
+                    .setValue(new Quantity.Builder().setValue(0d).build());
 
             _lifecycleTracker.tell(new AggregatorLifecycle.NotifyAggregatorStarted(_resultBuilder.build()), getSelf());
 

@@ -17,6 +17,8 @@
 package models.protocol.v1;
 
 import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -29,7 +31,6 @@ import models.messages.MetricsList;
 import models.messages.MetricsListRequest;
 import models.messages.NewMetric;
 import models.protocol.MessagesProcessor;
-import play.Logger;
 import play.libs.Json;
 
 import java.util.Map;
@@ -128,16 +129,28 @@ public class MetricMessagesProcessor implements MessagesProcessor {
     private void processMetricReport(final MetricReport report) {
         final Map<String, Set<String>> metrics = _subscriptions.get(report.getService());
         if (metrics == null) {
-            Logger.debug(String.format("Not sending MetricReport, service [%s] not found in _subscriptions", report.getService()));
+            LOGGER.trace()
+                    .setMessage("Not sending MetricReport")
+                    .addData("reason", "service not found in subscriptions")
+                    .addData("service", report.getService())
+                    .log();
             return;
         }
         final Set<String> stats = metrics.get(report.getMetric());
         if (stats == null) {
-            Logger.debug(String.format("Not sending MetricReport, metric [%s] not found in _subscriptions", report.getMetric()));
+            LOGGER.trace()
+                    .setMessage("Not sending MetricReport")
+                    .addData("reason", "metric not found in subscriptions")
+                    .addData("metric", report.getMetric())
+                    .log();
             return;
         }
         if (!stats.contains(report.getStatistic())) {
-            Logger.debug(String.format("Not sending MetricReport, statistic [%s] not found in _subscriptions", report.getStatistic()));
+            LOGGER.trace()
+                    .setMessage("Not sending MetricReport")
+                    .addData("reason", "statistic not found in subscriptions")
+                    .addData("statistic", report.getStatistic())
+                    .log();
             return;
         }
 
@@ -232,4 +245,5 @@ public class MetricMessagesProcessor implements MessagesProcessor {
     private static final String UNSUBSCRIBE_COUNTER = METRICS_PREFIX + "Command/Unsubscribe";
     private static final String SUBSCRIBE_COUNTER = METRICS_PREFIX + "Command/Subscribe";
     private static final String GET_METRICS_COUNTER = METRICS_PREFIX + "Command/GetMetrics";
+    private static final Logger LOGGER = LoggerFactory.getLogger(MetricMessagesProcessor.class);
 }

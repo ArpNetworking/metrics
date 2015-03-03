@@ -73,9 +73,8 @@ public final class ConfigurationHelper {
             final Class<? extends T> clazz = (Class<? extends T>) Class.forName(configuration.getString(key));
             return clazz;
         } catch (final ClassNotFoundException e) {
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
-        return null;
     }
 
     private ConfigurationHelper() {}

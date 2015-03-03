@@ -38,7 +38,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     public void setUp() {
         _builder = new DefaultMetricsLimiter.Builder()
                 .setEnableStateAutoWriter(Boolean.FALSE)
-                .setMaxAggregations(Long.valueOf(1000))
+                .setMaxAggregations(1000L)
                 .setStateManagerBuilder(
                         new MetricsLimiterStateManager.Builder()
                                 .setStateFile(STATE_FILE)
@@ -48,7 +48,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     @Test
     public void singleAggregationFits() throws Exception {
         final DefaultMetricsLimiter limiter = _builder
-                .setMaxAggregations(Long.valueOf(6L))
+                .setMaxAggregations(6L)
                 .build();
 
         // Fits exactly
@@ -72,7 +72,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     public void aggregationsThatDontFitReturnFalse() throws Exception {
         // Only room for TSD_1
         final DefaultMetricsLimiter limiter = _builder
-                .setMaxAggregations(Long.valueOf(6L))
+                .setMaxAggregations(6L)
                 .build();
 
         final DateTime now = new DateTime();
@@ -91,7 +91,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     @Test
     public void aggregationsAddAlreadyAdded() throws Exception {
         final DefaultMetricsLimiter limiter = _builder
-                .setMaxAggregations(Long.valueOf(1L))
+                .setMaxAggregations(1L)
                 .build();
 
         final DateTime now = new DateTime();
@@ -106,7 +106,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     public void aggregationsAgeOut() throws Exception {
         // Only room for TSD_1
         final DefaultMetricsLimiter limiter = _builder
-                .setMaxAggregations(Long.valueOf(1L))
+                .setMaxAggregations(1L)
                 .build();
 
         limiter.offer(TSD_1A, new DateTime(60 * 1000L)); // 1 minutes after the epoch -- a long time ago
@@ -123,7 +123,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     @Test
     public void nAggregationsIncrementAndDecrementConsistently() {
         final DefaultMetricsLimiter limiter = _builder
-                .setMaxAggregations(Long.valueOf(100L))
+                .setMaxAggregations(100L)
                 .setAgeOutThreshold(Duration.standardDays(3))
                 .build();
 
@@ -203,7 +203,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     @Test
     public void stateAffectsCurrentInstanceLimits() throws Exception {
         final long nAggregations = 6;
-        final DefaultMetricsLimiter limiter = _builder.setMaxAggregations(Long.valueOf(nAggregations)).build();
+        final DefaultMetricsLimiter limiter = _builder.setMaxAggregations(nAggregations).build();
 
         // Simulate stateFile load
         limiter.updateMarksAndAggregationCount(

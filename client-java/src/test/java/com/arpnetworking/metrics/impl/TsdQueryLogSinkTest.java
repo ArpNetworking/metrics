@@ -75,6 +75,7 @@ public class TsdQueryLogSinkTest {
         final StenoEncoder encoder = (StenoEncoder) rollingAppender.getEncoder();
 
         Assert.assertTrue(encoder.isImmediateFlush());
+        Assert.assertEquals(24, rollingPolicy.getMaxHistory());
         Assert.assertEquals(expectedPath + "query.log", rollingAppender.getFile());
         Assert.assertEquals(expectedPath + "query.%d{yyyy-MM-dd-HH}.log.gz", rollingPolicy.getFileNamePattern());
     }
@@ -85,6 +86,7 @@ public class TsdQueryLogSinkTest {
         final TsdQueryLogSink metricsFactory = (TsdQueryLogSink) new TsdQueryLogSink.Builder()
                 .setPath(expectedPath)
                 .setImmediateFlush(Boolean.FALSE)
+                .setMaxHistory(Integer.valueOf(48))
                 .setName("foo")
                 .setExtension(".bar")
                 .build();
@@ -99,6 +101,7 @@ public class TsdQueryLogSinkTest {
         final StenoEncoder encoder = (StenoEncoder) rollingAppender.getEncoder();
 
         Assert.assertFalse(encoder.isImmediateFlush());
+        Assert.assertEquals(48, rollingPolicy.getMaxHistory());
         Assert.assertEquals(expectedPath + "foo.bar", rollingAppender.getFile());
         Assert.assertEquals(expectedPath + "foo.%d{yyyy-MM-dd-HH}.bar.gz", rollingPolicy.getFileNamePattern());
     }
@@ -135,6 +138,20 @@ public class TsdQueryLogSinkTest {
     public void testBuilderEmptyName() {
         new TsdQueryLogSink.Builder()
                 .setName("")
+                .build();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilderNullMaxHistory() {
+        new TsdQueryLogSink.Builder()
+                .setMaxHistory(null)
+                .build();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilderNegativeMaxHistory() {
+        new TsdQueryLogSink.Builder()
+                .setMaxHistory(Integer.valueOf(-1))
                 .build();
     }
 
@@ -301,7 +318,9 @@ public class TsdQueryLogSinkTest {
         }
     }
 
-    private String fileToString(final File file) {
+    private String fileToString(final File file) throws InterruptedException {
+        // TODO(vkoskela): Need to work around async flushes to disk [MAI-458]
+        Thread.sleep(500);
         try {
             return new Scanner(file, "UTF-8").useDelimiter("\\Z").next();
         } catch (final IOException ioe) {
@@ -542,7 +561,7 @@ public class TsdQueryLogSinkTest {
                 // Under some IDE setups this may be executed from the workspace root (e.g. root)
                 jsonNode = JsonLoader.fromPath("doc/query-log-schema-2e.json");
             } catch (final IOException e2) {
-                Throwables.propagate(e2);
+                throw Throwables.propagate(e2);
             }
         }
         STENO_SCHEMA = jsonNode;

@@ -46,8 +46,8 @@ public class TP0Statistic extends TPStatistic {
      * {@inheritDoc}
      */
     @Override
-    public double calculate(final List<Quantity> orderedValues) {
-        return Double.valueOf(orderedValues.get(0).getValue()).doubleValue();
+    public Quantity calculate(final List<Quantity> orderedValues) {
+        return orderedValues.get(0);
     }
 
     private static final long serialVersionUID = 107620025236661457L;

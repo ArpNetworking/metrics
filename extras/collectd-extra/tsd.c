@@ -334,6 +334,117 @@ static void tsd_buffer_append_name(Buffer* buffer, const value_list_t *value_lis
   tsd_buffer_append(buffer, include_data_source_name == true ? data_set_name : "");
 }
 
+static void tsd_buffer_append_value(Buffer* buffer, const value_list_t *value_list, const data_set_t *data_set, const unsigned int index, gauge_t* rates)
+{
+  // Extract the state and data
+  bool include_plugin_instance = (value_list->plugin_instance != NULL) && (value_list->plugin_instance[0] != 0);
+  // Uncomment when needed for value modification:
+  //bool include_type_instance = (value_list->type_instance != NULL) && (value_list->type_instance[0] != 0);
+  bool include_data_source_name = (data_set->ds != NULL) && (data_set->ds->name != NULL) && (data_set->ds->name[0] != 0);
+
+  const char* plugin = value_list->plugin;
+  // Uncomment when needed for value modification:
+  //const char* plugin_instance = value_list->plugin_instance;
+  const char* type = value_list->type;
+  // Uncomment when needed for value modification:
+  //const char* type_instance = value_list->type_instance;
+  const char* data_set_name = data_set->ds->name;
+
+  value_t value = value_list->values[index];
+  int value_type = data_set->ds[index].type;
+  bool use_rate = is_rate_enabled(data_set, value_list);
+
+  if (strcmp(plugin, "processes") == 0
+        && include_plugin_instance
+        && strcmp(type, "ps_cputime") == 0
+        && include_data_source_name
+        && strcmp(data_set_name, "user") == 0)
+  {
+
+    if (value_type == DS_TYPE_DERIVE)
+    {
+      // Process cpu time is reported in micro-seconds; convert it to
+      // a percentage of the reporting time interval from 0 to 100.
+      value.gauge = rates[index] / 10000.0;
+      value_type = DS_TYPE_GAUGE;
+    }
+  }
+
+  bool is_nan = false;
+  const char* value_type_name = "unknown";
+  if (value_type == DS_TYPE_GAUGE)
+  {
+    // Requires fast math optimization is disabled
+    is_nan = !(value.gauge == value.gauge);
+    value_type_name = "gauge";
+    if (!is_nan)
+    {
+      tsd_buffer_sprintf(buffer, "%lf", value.gauge);
+    }
+  }
+  else
+  {
+    // Output rates or bare value
+    if (use_rate && rates == NULL)
+    {
+      WARNING("tsd plugin: uc_get_rate failed");
+    }
+    else if (use_rate)
+    {
+      // Requires fast math optimization is disabled
+      is_nan = !(rates[index] == rates[index]);
+      value_type_name = "rate";
+      if (!is_nan)
+      {
+        tsd_buffer_sprintf(buffer, "%lf", rates[index]);
+      }
+    }
+    // TODO: Record the counters as counters instead of as gauges (MAI-50)
+    else if (value_type == DS_TYPE_COUNTER)
+    {
+      // Requires fast math optimization is disabled
+      is_nan = !(value.counter == value.counter);
+      value_type_name = "counter";
+      if (!is_nan)
+      {
+        tsd_buffer_sprintf(buffer, "%llu", value.counter);
+      }
+    }
+    else if (value_type == DS_TYPE_DERIVE)
+    {
+      // Requires fast math optimization is disabled
+      is_nan = !(value.derive == value.derive);
+      value_type_name = "derived";
+      if (!is_nan)
+      {
+        tsd_buffer_sprintf(buffer, "%"PRIi64, value.derive);
+      }
+    }
+    else if (value_type == DS_TYPE_ABSOLUTE)
+    {
+      // Requires fast math optimization is disabled
+      is_nan = !(value.absolute == value.absolute);
+      value_type_name = "absolute";
+      if (!is_nan)
+      {
+        tsd_buffer_sprintf(buffer, "%"PRIi64, value.absolute);
+      }
+    }
+  }
+
+  // TODO: Add suppression of warning for the first time each rate metric is
+  // encountered since a rate cannot be computed for a single data point.
+  // (MAI-200)
+  if (is_nan)
+  {
+    Buffer name_buffer;
+    tsd_buffer_initialize(&name_buffer, 256);
+    tsd_buffer_append_name(&name_buffer, value_list, data_set, index);
+    WARNING("tsd plugin: suppressed %s sample as it is not a number: %s", value_type_name, name_buffer.data);
+    tsd_buffer_free(&name_buffer);
+  }
+}
+
 static void tsd_format_2e(Buffer* buffer, const data_set_t *data_set, const value_list_t *value_list)
 {
   // TODO: Implement me. (MAI-48)
@@ -353,13 +464,13 @@ static void tsd_format_2c(Buffer* buffer, const data_set_t *data_set, const valu
   tsd_buffer_sprintf(
       buffer,
       "\"annotations\":{\"finalTimestamp\":\"%5.3f\",\"initTimestamp\":\"%5.3f\"},",
-      CDTIME_T_TO_MS(value_list->time + value_list->interval) / 1000.0,
-      CDTIME_T_TO_MS(value_list->time) / 1000.0);
+      CDTIME_T_TO_MS(value_list->time) / 1000.0,
+      CDTIME_T_TO_MS(value_list->time - value_list->interval) / 1000.0);
 
   // Record everything as a gauge
   tsd_buffer_append(buffer, "\"gauges\":{");
   unsigned int i = 0;   // Declaration inside for loop not supported pre-C99
-  gauge_t* rates = NULL;
+  gauge_t* rates = uc_get_rate(data_set, value_list);
   for (; i < data_set->ds_num; ++i)
   {
     if (i > 0)
@@ -369,91 +480,8 @@ static void tsd_format_2c(Buffer* buffer, const data_set_t *data_set, const valu
     tsd_buffer_append(buffer, "\"");
     tsd_buffer_append_name(buffer, value_list, data_set, i);
     tsd_buffer_append(buffer, "\":[");
-
-    bool is_nan = false;
-    const char* type = "unknown";
-    if (data_set->ds[i].type == DS_TYPE_GAUGE)
-    {
-      // Requires fast math optimization is disabled
-      is_nan = !(value_list->values[i].gauge == value_list->values[i].gauge);
-      type = "gauge";
-      if (!is_nan)
-      {
-        tsd_buffer_sprintf(buffer, "%lf", value_list->values[i].gauge);
-      }
-    }
-    else
-    {
-      // Compute rates if required and not already computed
-      const bool use_rate = is_rate_enabled(data_set, value_list);
-      if (use_rate)
-      {
-        if (rates == NULL)
-        {
-          rates = uc_get_rate(data_set, value_list);
-        }
-        if (rates == NULL)
-        {
-          WARNING("tsd plugin: uc_get_rate failed");
-        }
-      }
-
-      // Output rates or bare value
-      if (use_rate && rates != NULL)
-      {
-        // Requires fast math optimization is disabled
-        is_nan = !(rates[i] == rates[i]);
-        type = "rate";
-        if (!is_nan)
-        {
-          tsd_buffer_sprintf(buffer, "%lf", rates[i]);
-        }
-      }
-      // TODO: Record the counters as counters instead of as gauges (MAI-50)
-      else if (data_set->ds[i].type == DS_TYPE_COUNTER)
-      {
-        // Requires fast math optimization is disabled
-        is_nan = !(value_list->values[i].counter == value_list->values[i].counter);
-        type = "counter";
-        if (!is_nan)
-        {
-          tsd_buffer_sprintf(buffer, "%llu", value_list->values[i].counter);
-        }
-      }
-      else if (data_set->ds[i].type == DS_TYPE_DERIVE)
-      {
-        // Requires fast math optimization is disabled
-        is_nan = !(value_list->values[i].derive == value_list->values[i].derive);
-        type = "derived";
-        if (!is_nan)
-        {
-          tsd_buffer_sprintf(buffer, "%"PRIi64, value_list->values[i].derive);
-        }
-      }
-      else if (data_set->ds[i].type == DS_TYPE_ABSOLUTE)
-      {
-        // Requires fast math optimization is disabled
-        is_nan = !(value_list->values[i].absolute == value_list->values[i].absolute);
-        type = "absolute";
-        if (!is_nan)
-        {
-          tsd_buffer_sprintf(buffer, "%"PRIi64, value_list->values[i].absolute);
-        }
-      }
-    }
+    tsd_buffer_append_value(buffer, value_list, data_set, i, rates);
     tsd_buffer_append(buffer, "]");
-
-    // TODO: Add suppression of warning for the first time each rate metric is
-    // encountered since a rate cannot be computed for a single data point.
-    // (MAI-200)
-    if (is_nan)
-    {
-      Buffer name_buffer;
-      tsd_buffer_initialize(&name_buffer, 256);
-      tsd_buffer_append_name(&name_buffer, value_list, data_set, i);
-      WARNING("tsd plugin: suppressed %s sample as it is not a number: %s", type, name_buffer.data);
-      tsd_buffer_free(&name_buffer);
-    }
   }
   sfree(rates);
 
@@ -540,11 +568,8 @@ static FILE* tsd_get_file() {
         return NULL;
       }
 
-      // Set the file buffer
-      // NOTE: There's no point in using line buffering since we output one
-      // record at a time in order for tsd_write to be thread safe and each
-      // record is defined as a line.
-      setvbuf(file, file_buffer, _IOFBF, file_buffer_size);
+      // Set the file line buffer
+      setvbuf(file, file_buffer, _IOLBF, file_buffer_size);
 
       // Set the timestamp
       file_timestamp = current_timestamp;

@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public final class FilteringSink extends BaseSink {
+public final class MetricNameFilteringSink extends BaseSink {
 
     /**
      * {@inheritDoc}
@@ -48,7 +48,7 @@ public final class FilteringSink extends BaseSink {
         for (final AggregatedData datum : data) {
             final String metric = datum.getFQDSN().getMetric();
             final Boolean cachedResult = _cachedFilterResult.getUnchecked(metric);
-            if (cachedResult.booleanValue()) {
+            if (cachedResult) {
                 filteredData.add(datum);
             }
         }
@@ -57,7 +57,7 @@ public final class FilteringSink extends BaseSink {
         for (final Condition condition : conditions) {
             final String metric = condition.getFQDSN().getMetric();
             final Boolean cachedResult = _cachedFilterResult.getUnchecked(metric);
-            if (cachedResult.booleanValue()) {
+            if (cachedResult) {
                 filteredConditions.add(condition);
             }
         }
@@ -115,14 +115,14 @@ public final class FilteringSink extends BaseSink {
      *
      * @param builder Instance of <code>Builder</code>.
      */
-    protected FilteringSink(final Builder builder) {
+    protected MetricNameFilteringSink(final Builder builder) {
         super(builder);
         _cachedFilterResult = CacheBuilder.newBuilder()
                 .maximumSize(1000)
                 .build(new CacheLoader<String, Boolean>() {
                     @Override
                     public Boolean load(final String key) throws Exception {
-                        return Boolean.valueOf(includeMetric(key));
+                        return includeMetric(key);
                     }
                 });
         _excludeFilters = compileExpressions(builder._excludeFilters);
@@ -140,13 +140,13 @@ public final class FilteringSink extends BaseSink {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class Builder extends BaseSink.Builder<Builder, FilteringSink> {
+    public static final class Builder extends BaseSink.Builder<Builder, MetricNameFilteringSink> {
 
         /**
          * Public constructor.
          */
         public Builder() {
-            super(FilteringSink.class);
+            super(MetricNameFilteringSink.class);
         }
 
         /**

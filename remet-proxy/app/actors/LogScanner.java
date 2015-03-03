@@ -19,6 +19,8 @@ package actors;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
@@ -28,7 +30,6 @@ import com.google.inject.name.Named;
 import models.messages.LogFileAppeared;
 import models.messages.LogFileDisappeared;
 import play.Configuration;
-import play.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,8 +55,6 @@ public class LogScanner extends UntypedActor {
     public LogScanner(final Configuration configuration, @Named("FileSourceManager") final ActorRef fileSourceManager) {
 
         _fileSourceManagerActor = fileSourceManager;
-        Logger.debug(String.format("_fileSourceManagerActor = %s", _fileSourceManagerActor.path()));
-
         _logs = FluentIterable
                 .from(configuration.getStringList("logs"))
                 .transform(new Function<String, Path>() {
@@ -66,7 +65,12 @@ public class LogScanner extends UntypedActor {
                     }
                 })
                 .toList();
-        Logger.debug(String.format("_logs = %d", _logs.size()));
+
+        LOGGER.debug()
+                .setMessage("Created log scanner")
+                .addData("fileSourceManagerActor", _fileSourceManagerActor.toString())
+                .addData("logs", _logs)
+                .log();
 
         _nonExistingLogs.addAll(_logs);
 
@@ -91,15 +95,24 @@ public class LogScanner extends UntypedActor {
     @Override
     public void onReceive(final Object message) throws Exception {
         if ("tick".equals(message)) {
-            Logger.debug(String.format("Searching for created/deleted logs; logScanner=%s", this));
+            LOGGER.debug()
+                    .setMessage("Searching for created/deleted logs")
+                    .addData("scanner", this.toString())
+                    .log();
             for (final Path logFile : _logs) {
                 if (_nonExistingLogs.contains(logFile) && Files.exists(logFile)) {
-                    Logger.info(String.format("Log file came to existence: %s", logFile));
+                    LOGGER.info()
+                            .setMessage("Log file materialized")
+                            .addData("file", logFile)
+                            .log();
                     _fileSourceManagerActor.tell(new LogFileAppeared(logFile), getSelf());
                     _nonExistingLogs.remove(logFile);
                     _existingLogs.add(logFile);
                 } else if (_existingLogs.contains(logFile) && Files.notExists(logFile)) {
-                    Logger.info(String.format("Log file vanished : %s", logFile));
+                    LOGGER.info()
+                            .setMessage("Log file vanished")
+                            .addData("file", logFile)
+                            .log();
                     _fileSourceManagerActor.tell(new LogFileDisappeared(logFile), getSelf());
                     _existingLogs.remove(logFile);
                     _nonExistingLogs.add(logFile);
@@ -114,4 +127,6 @@ public class LogScanner extends UntypedActor {
     private final List<Path> _logs;
     private final Set<Path> _existingLogs = Sets.newHashSet();
     private final Set<Path> _nonExistingLogs = Sets.newHashSet();
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogScanner.class);
 }

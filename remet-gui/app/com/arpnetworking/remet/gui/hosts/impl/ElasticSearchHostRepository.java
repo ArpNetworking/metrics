@@ -16,12 +16,15 @@
 package com.arpnetworking.remet.gui.hosts.impl;
 
 import com.arpnetworking.jackson.BuilderDeserializer;
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostQuery;
 import com.arpnetworking.remet.gui.hosts.HostQueryResult;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -50,7 +53,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import play.Configuration;
-import play.Logger;
 
 import java.io.IOException;
 import java.util.List;
@@ -102,7 +104,7 @@ public class ElasticSearchHostRepository implements HostRepository {
     @Override
     public void open() {
         assertIsOpen(false);
-        Logger.debug("Opening host repository");
+        LOGGER.debug().setMessage("Opening host repository").log();
 
         // Initialize Elastic Search
         _node = new NodeBuilder()
@@ -143,7 +145,7 @@ public class ElasticSearchHostRepository implements HostRepository {
         }
 
         _isOpen.set(true);
-        Logger.info("ElasticSearchHostRepository up and healthy.");
+        LOGGER.info().setMessage("ElasticSearchHostRepository up and healthy").log();
     }
 
     /**
@@ -152,7 +154,7 @@ public class ElasticSearchHostRepository implements HostRepository {
     @Override
     public void close() {
         assertIsOpen();
-        Logger.debug("Closing host repository");
+        LOGGER.debug().setMessage("Closing host repository").log();
         _isOpen.set(false);
 
         // Shutdown Elastic Search
@@ -166,7 +168,10 @@ public class ElasticSearchHostRepository implements HostRepository {
     @Override
     public void addOrUpdateHost(final Host host) {
         assertIsOpen();
-        Logger.debug(String.format("Add or update host; host=%s", host));
+        LOGGER.debug()
+                .setMessage("Adding or updating host")
+                .addData("host", host)
+                .log();
 
         final String hostJson;
         try {
@@ -183,7 +188,11 @@ public class ElasticSearchHostRepository implements HostRepository {
                 .upsert(indexRequest);
 
         final UpdateResponse response = _client.update(updateRequest).actionGet();
-        Logger.info(String.format("Upserted host: %s, isCreated=%b", host, Boolean.valueOf(response.isCreated())));
+        LOGGER.info()
+                .setMessage("Upserted host")
+                .addData("host", host)
+                .addData("isCreated", response.isCreated())
+                .log();
     }
 
     /**
@@ -192,16 +201,25 @@ public class ElasticSearchHostRepository implements HostRepository {
     @Override
     public void deleteHost(final String hostName) {
         assertIsOpen();
-        Logger.debug(String.format("Deleting host; hostName=%s", hostName));
+        LOGGER.debug()
+                .setMessage("Deleting host")
+                .addData("hostname", hostName)
+                .log();
 
         final DeleteResponse response = _client.prepareDelete(INDEX, TYPE, hostName)
                 .setRefresh(true)
                 .execute()
                 .actionGet();
         if (response.isFound()) {
-            Logger.info(String.format("Deleted host; hostName=%s", hostName));
+            LOGGER.info()
+                    .setMessage("Deleted host")
+                    .addData("hostname", hostName)
+                    .log();
         } else {
-            Logger.info(String.format("Host not found; hostName=%s", hostName));
+            LOGGER.info()
+                    .setMessage("Host not found")
+                    .addData("hostname", hostName)
+                    .log();
         }
     }
 
@@ -211,7 +229,7 @@ public class ElasticSearchHostRepository implements HostRepository {
     @Override
     public HostQuery createQuery() {
         assertIsOpen();
-        Logger.debug("Preparing query");
+        LOGGER.debug().setMessage("Preparing query").log();
         return new DefaultHostQuery(this);
     }
 
@@ -221,7 +239,10 @@ public class ElasticSearchHostRepository implements HostRepository {
     @Override
     public HostQueryResult query(final HostQuery query) {
         assertIsOpen();
-        Logger.debug(String.format("Querying; query=%s", query));
+        LOGGER.debug()
+                .setMessage("Querying")
+                .addData("query", query)
+                .log();
 
         QueryBuilder esQuery = null;
         if (query.getHostName().isPresent()) {
@@ -246,10 +267,10 @@ public class ElasticSearchHostRepository implements HostRepository {
             request.addSort(new ScoreSortBuilder());
         }
         if (query.getLimit().isPresent()) {
-            request.setSize(query.getLimit().get().intValue());
+            request.setSize(query.getLimit().get());
         }
         if (query.getOffset().isPresent()) {
-            request.setFrom(query.getOffset().get().intValue());
+            request.setFrom(query.getOffset().get());
         }
 
         return deserializeHits(request.execute().actionGet());
@@ -261,7 +282,7 @@ public class ElasticSearchHostRepository implements HostRepository {
     @Override
     public long getHostCount() {
         assertIsOpen();
-        Logger.debug("Getting host count");
+        LOGGER.debug().setMessage("Getting host count").log();
 
         final CountResponse response = _client.prepareCount(INDEX)
                 .execute()
@@ -275,7 +296,10 @@ public class ElasticSearchHostRepository implements HostRepository {
     @Override
     public long getHostCount(final MetricsSoftwareState metricsSoftwareState) {
         assertIsOpen();
-        Logger.debug(String.format("Getting host count in state; metricsSoftwareState=%s", metricsSoftwareState));
+        LOGGER.debug()
+                .setMessage("Getting host count in state")
+                .addData("state", metricsSoftwareState)
+                .log();
 
         final QueryBuilder queryState = QueryBuilders.matchQuery("metricsSoftwareState", metricsSoftwareState.toString());
 
@@ -292,6 +316,7 @@ public class ElasticSearchHostRepository implements HostRepository {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Client", _client)
                 .toString();
     }
@@ -313,8 +338,15 @@ public class ElasticSearchHostRepository implements HostRepository {
             try {
                 hosts.add(OBJECT_MAPPER.readValue(hit.getSourceAsString(), Host.class));
             } catch (final IOException e) {
-                Logger.error(String.format("Unable to deserialize host; json=%s", hit.getSourceAsString()), e);
-                Logger.warn(String.format("Deleting malformed host; id=%s", hit.id()));
+                LOGGER.error()
+                        .setMessage("Unable to deserialize host")
+                        .addData("json", hit.getSourceAsString())
+                        .setThrowable(e)
+                        .log();
+                LOGGER.warn()
+                        .setMessage("Deleting malformed host")
+                        .addData("id", hit.id())
+                        .log();
                 deleteHost(hit.getId());
             }
         }
@@ -344,7 +376,8 @@ public class ElasticSearchHostRepository implements HostRepository {
 
     private static final String INDEX = "hosts";
     private static final String TYPE = "host";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchHostRepository.class);
 
     static {
         final SimpleModule module = new SimpleModule("ElasticSearchHostRepository");

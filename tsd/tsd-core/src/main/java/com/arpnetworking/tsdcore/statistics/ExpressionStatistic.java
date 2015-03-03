@@ -33,16 +33,16 @@ public class ExpressionStatistic extends BaseStatistic {
      * {@inheritDoc}
      */
     @Override
-    public double calculate(final List<Quantity> unorderedValues) {
-        throw new UnsupportedOperationException("Calculation of ExpressionStatistic instances is not supported");
+    public String getName() {
+        return "expression";
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getName() {
-        return "expression";
+    public Quantity calculate(final List<Quantity> unorderedValues) {
+        throw new UnsupportedOperationException("Calculation of ExpressionStatistic instances is not supported");
     }
 
     /**

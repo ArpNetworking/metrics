@@ -115,7 +115,10 @@ public final class AggDataUnifier {
                                 _unit,
                                 oldSample));
             } else {
-                return new Quantity(_unit.get().convert(oldSample.getValue(), oldSample.getUnit().get()), _unit);
+                return new Quantity.Builder()
+                        .setValue(_unit.get().convert(oldSample.getValue(), oldSample.getUnit().get()))
+                        .setUnit(_unit.get())
+                        .build();
             }
         }
 

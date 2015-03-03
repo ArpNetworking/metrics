@@ -23,11 +23,11 @@ import com.arpnetworking.tsdcore.sinks.Sink;
 import com.arpnetworking.tsdcore.sources.Source;
 import com.arpnetworking.tsdcore.statistics.CountStatistic;
 import com.arpnetworking.tsdcore.statistics.MeanStatistic;
+import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.SumStatistic;
 import com.arpnetworking.tsdcore.statistics.TP0Statistic;
 import com.arpnetworking.tsdcore.statistics.TP100Statistic;
-import com.arpnetworking.tsdcore.statistics.TP50Statistic;
 import com.arpnetworking.tsdcore.statistics.TP90Statistic;
 import com.arpnetworking.tsdcore.statistics.TP99Statistic;
 import com.arpnetworking.utility.InterfaceDatabase;
@@ -48,7 +48,6 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -154,6 +153,7 @@ public final class PipelineConfiguration {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Name", _name)
                 .add("Service", _service)
                 .add("Cluster", _cluster)
@@ -191,20 +191,6 @@ public final class PipelineConfiguration {
     private final ImmutableSet<Statistic> _gaugeStatistic;
 
     private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
-
-    /**
-     * Factory interface for <code>PipelineConfiguration</code>.
-     */
-    public interface PipelineConfigurationFactory {
-
-        /**
-         * Create a new <code>PipelineConfiguration</code> instance.
-         *
-         * @param file The configuration file.
-         * @return New <code>PipelineConfiguration</code> instance
-         */
-        PipelineConfiguration create(final File file);
-    }
 
     /**
      * Implementation of builder pattern for <code>PipelineConfiguration</code>.
@@ -356,7 +342,7 @@ public final class PipelineConfiguration {
         @NotNull
         @NotEmpty
         private Set<Statistic> _timerStatistics = Sets.<Statistic>newHashSet(
-                new TP50Statistic(), new TP90Statistic(), new TP99Statistic(), new MeanStatistic(), new CountStatistic());
+                new MedianStatistic(), new TP90Statistic(), new TP99Statistic(), new MeanStatistic(), new CountStatistic());
         @NotNull
         @NotEmpty
         private Set<Statistic> _counterStatistics = Sets.<Statistic>newHashSet(

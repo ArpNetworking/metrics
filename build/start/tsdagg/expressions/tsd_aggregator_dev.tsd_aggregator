@@ -1,0 +1,9 @@
+[
+    {
+        "type": "com.arpnetworking.tsdcore.scripting.lua.LuaExpression",
+        "name": "TestExpression",
+        "cluster": "tsd_aggregator_dev",
+        "service": "tsd_aggregator",
+        "script": "return metrics[\"test_cluster\"][\"tsd_aggregator\"][\"Sinks/ExpressionSink/tsd_aggregator_expression_sink/Evaluations\"][\"sum\"]:getValue() / 100.0"
+    }
+]

@@ -21,6 +21,7 @@ import tsd = require("tsd-metrics-client");
 import tsdUtils = require("./utils");
 import sample = require("./tsd-metric-sample");
 import units = require("./tsd-units");
+import errors = require("./error-reporting");
 
 //aliases
 import TsdMetricSample = sample.TsdMetricSample;
@@ -36,21 +37,23 @@ import Units = units.Units;
  * be discarded.
  *
  * @class
+ * @extends MetricSample
  * @alias Timer
  * @author Mohammed Kamel (mkamel at groupon dot com)
  */
 export class TsdTimer extends TsdMetricSample implements tsdDef.Timer {
 
-    private isStoppedFlag:boolean = false;
-    private startTime:number = tsdUtils.getNanoTime();
+    private _isStoppedFlag:boolean = false;
+    private _startTime:number = tsdUtils.getNanoTime();
 
     /**
      * Constructor.
      *
-     * @param {string} name Name of the timer
-     * @param {MetricsStateObject} metricsStateObject Object holding state of the original metrics object.
+     * @param {string} _name Name of the timer
+     * @param {MetricsStateObject} _metricsStateObject Object holding state of the parent metrics object.
+     * @ignore
      */
-    constructor(private name:string, private metricsStateObject:tsd.MetricsStateObject) {
+    constructor(private _name:string, private _metricsStateObject:tsd.MetricsStateObject) {
         super(0, Units.NANOSECOND)
     }
 
@@ -61,7 +64,7 @@ export class TsdTimer extends TsdMetricSample implements tsdDef.Timer {
      * @return {boolean} Whether the timer was stopped or not.
      */
     public isStopped():boolean {
-        return this.isStoppedFlag;
+        return this._isStoppedFlag;
     }
 
     /**
@@ -72,26 +75,41 @@ export class TsdTimer extends TsdMetricSample implements tsdDef.Timer {
      */
     public stop():void {
         var canStop =
-            this.metricsStateObject.assertIsOpen("Cannot stop timer '" + this.name + "'") &&
-            this.metricsStateObject.assert(!this.isStopped(), "Timer '" + this.name + "' stopped multiple times")
+            this._metricsStateObject.assertIsOpen("Cannot stop timer '" + this._name + "'") &&
+            errors.assert(!this.isStopped(), "Timer '" + this._name + "' stopped multiple times");
 
         if (canStop) {
-            this.isStoppedFlag = true;
-            (<any>this).value = tsdUtils.getNanoTime() - this.startTime;
+            this._isStoppedFlag = true;
+            (<any>this)._value = tsdUtils.getNanoTime() - this._startTime;
         }
     }
 }
 
+/**
+ * Internal class for explicit timers created by [TsdMetrics]{@linkcode module:tsd-metrics-client~TsdMetrics#setTimer}.
+ *
+ * @class
+ * @extends MetricSample
+ * @alias ExplicitTimer
+ * @author Mohammed Kamel (mkamel at groupon dot com)
+ * @ignore
+ */
 export class ExplicitTimer extends TsdMetricSample implements tsdDef.Timer {
 
     /**
      * Constructor.
      *
-     * @param name name of the timer
-     * @param {MetricsStateObject} metricsStateObject Metrics state object.
+     * @param {number} duration The duration of the timer.
+     * @param {Units} unit The unit of time of the duration.
+     * @param _name name of the timer
+     * @param {MetricsStateObject} _metricsStateObject Metrics state object.
      */
-    constructor(value:number, unit:tsdDef.Unit, private name:string, private metricsStateObject:tsd.MetricsStateObject) {
-        super(value, unit);
+    constructor(
+        duration:number,
+        unit:tsdDef.Unit,
+        private _name:string,
+        private _metricsStateObject:tsd.MetricsStateObject) {
+        super(duration, unit);
     }
 
     /**
@@ -100,7 +118,7 @@ export class ExplicitTimer extends TsdMetricSample implements tsdDef.Timer {
     /* istanbul ignore next */
     public stop():void {
         //Do nothing
-        this.metricsStateObject.assert(false, "cannot stop and explicitly set timer");
+        errors.assert(false, "cannot stop and explicitly set timer");
     }
 
     /**

@@ -28,6 +28,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Period;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -157,7 +158,7 @@ public final class AggregatedData implements Serializable {
                 getPeriod(),
                 getHost(),
                 getSamples(),
-                Long.valueOf(getPopulationSize()));
+                getPopulationSize());
     }
 
     /**
@@ -166,6 +167,7 @@ public final class AggregatedData implements Serializable {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("FQDSN", _fqdsn)
                 .add("Value", _value)
                 .add("Samples", _samples)
@@ -180,7 +182,7 @@ public final class AggregatedData implements Serializable {
         _fqdsn = builder._fqdsn;
         _value = builder._value;
         _samples = ImmutableList.copyOf(builder._samples);
-        _populationSize = builder._populationSize.longValue();
+        _populationSize = builder._populationSize;
         _period = builder._period;
         _start = builder._start;
         _host = builder._host;
@@ -238,7 +240,7 @@ public final class AggregatedData implements Serializable {
          * @param value The samples.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setSamples(final List<Quantity> value) {
+        public Builder setSamples(final Collection<Quantity> value) {
             _samples = value;
             return this;
         }
@@ -292,7 +294,7 @@ public final class AggregatedData implements Serializable {
         @NotNull
         private Quantity _value;
         @NotNull
-        private List<Quantity> _samples;
+        private Collection<Quantity> _samples;
         @NotNull
         @Min(value = 0)
         private Long _populationSize;

@@ -17,8 +17,9 @@ package com.arpnetworking.play.metrics;
 
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Strings;
-import play.Logger;
 import play.libs.F;
 import play.mvc.Action;
 import play.mvc.Http;
@@ -98,7 +99,10 @@ public class MetricsActionWrapper extends Action.Simple {
             metrics = _metricsFactory.create();
             context.args.put(METRICS_KEY, metrics);
         } else {
-            Logger.warn("Found metrics in request context; possible issue");
+            LOGGER.warn()
+                    .setMessage("Found metrics in request context; possible issue")
+                    .addData("metrics", metrics)
+                    .log();
         }
         return metrics;
     }
@@ -106,4 +110,5 @@ public class MetricsActionWrapper extends Action.Simple {
     private final MetricsFactory _metricsFactory;
 
     private static final String METRICS_KEY = "metrics";
+    private static final Logger LOGGER = LoggerFactory.getLogger(MetricsActionWrapper.class);
 }

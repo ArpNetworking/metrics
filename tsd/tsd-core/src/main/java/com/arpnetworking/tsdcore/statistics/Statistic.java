@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Interface for a statistic calculator.
@@ -34,20 +35,6 @@ import java.util.List;
 public interface Statistic extends Serializable {
 
     /**
-     * Compute the statistic from the list of values. By default the list of
-     * values is not guaranteed to be in any particular order; however,
-     * <code>Statistic</code> subclasses may implement the marker interface
-     * <code>OrderedStatistic</code> to ensure they are provided with values
-     * that are sorted from smallest to largest.
-     *
-     * TODO(vkoskela): Return primitive double instead [MAI-132]
-     *
-     * @param values List of input values.
-     * @return Computed statistic value.
-     */
-    double calculate(List<Quantity> values);
-
-    /**
      * Accessor for the name of the statistic.
      *
      * @return The name of the statistic.
@@ -55,7 +42,33 @@ public interface Statistic extends Serializable {
     String getName();
 
     /**
-     * Compute the cluster-level statistic from a list of aggregations.
+     * Accessor for any aliases of the statistic.
+     *
+     * @return The aliases of the statistic.
+     */
+    Set<String> getAliases();
+
+    /**
+     * Compute the statistic from the <code>list</code> of <code>Quantity</code>
+     * instances. By default the <code>List</code> of samples is not assumed to
+     * be in any particular order. However, any <code>Statistic</code> subclass
+     * may implement the marker interface <code>OrderedStatistic</code>
+     * indicating a requirement to be provided with samples that are sorted from
+     * smallest to largest. In all cases the samples are required to be unified
+     * into the same unit (or no unit).
+     *
+     * @param values <code>List</code> of samples <code>Quantity</code> instances.
+     * @return Computed statistic <code>Quantity</code> instance.
+     */
+    Quantity calculate(List<Quantity> values);
+
+    /**
+     * Compute the statistic from the <code>List</code> of <code>AggregatedData</code>
+     * instances. By default the <code>List</code> of samples is not assumed to be in
+     * any particular order. However, any <code>Statistic</code> subclass may implement
+     * the marker interface <code>OrderedStatistic</code> indicating a requirement to
+     * be provided with samples that are sorted from smallest to largest. In all cases
+     * the samples are required to be unified into the same unit (or no unit).
      *
      * @param aggregations Aggregations to combine.
      * @return Computed statistic value.

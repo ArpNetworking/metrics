@@ -19,6 +19,7 @@ import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.Min;
+import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -76,7 +77,8 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
      * {@inheritDoc}
      */
     public String toString() {
-        return MoreObjects.toStringHelper(DefaultMetricsLimiter.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("MaximumAggregations", _maximumAggregations)
                 .add("StateFile", _stateFile)
                 .add("StateFlushInterval", _stateFlushInterval)
@@ -85,7 +87,7 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
     }
 
     private DefaultMetricsLimiter(final Builder builder) {
-        _maximumAggregations = builder._maximumAggregations.longValue();
+        _maximumAggregations = builder._maximumAggregations;
         _stateFile = builder._stateFile;
         _stateFlushInterval = builder._stateFlushInterval;
         _ageOutThreshold = builder._ageOutThreshold;
@@ -113,7 +115,8 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
         }
 
         /**
-         * Set the maximum aggregations.
+         * Set the maximum aggregations. Required. Cannot be null; must be
+         * greater than or equal to zero.
          *
          * @param value The maximum aggregations.
          * @return This instance of <code>Builder</code>.
@@ -124,7 +127,7 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
         }
 
         /**
-         * Set the state file.
+         * Set the state file. Required. Cannot be null or empty.
          *
          * @param value The state file.
          * @return This instance of <code>Builder</code>.
@@ -136,6 +139,7 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
 
         /**
          * Set the state flush interval. Optional. The default is five minutes.
+         * Cannot be null.
          *
          * @param value The state flush interval.
          * @return This instance of <code>Builder</code>.
@@ -147,6 +151,7 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
 
         /**
          * Set the age out threshold. Optional. The default is seven days.
+         * Cannot be null.
          *
          * @param value The age out threshold.
          * @return This instance of <code>Builder</code>.
@@ -160,6 +165,7 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
         @Min(0)
         private Long _maximumAggregations;
         @NotNull
+        @NotEmpty
         private File _stateFile;
         @NotNull
         private Period _stateFlushInterval = Period.minutes(5);

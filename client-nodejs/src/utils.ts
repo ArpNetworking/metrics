@@ -54,6 +54,7 @@ export function isEmptyObject(obj) {
  * @param {MetricsEvent} logEntry log entry to be enveloped.
  * @returns {{time: string, name: string, level: string, data: tsdDef.MetricsEvent, id: string, context: {}}} the log entry
  * in Steno envelope
+ * @ignore
  */
 export function stenofy(logEntry:tsdDef.MetricsEvent) {
     var buffer = new Buffer(16);
@@ -69,6 +70,7 @@ export function stenofy(logEntry:tsdDef.MetricsEvent) {
     };
 }
 
+/* istanbul ignore next */ //The class is not currently used.
 /**
  * Wrapper class for lazy initialized values.
  *

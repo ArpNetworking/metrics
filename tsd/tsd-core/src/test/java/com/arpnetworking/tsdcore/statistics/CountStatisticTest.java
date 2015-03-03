@@ -17,6 +17,7 @@ package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.Quantity;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -42,12 +43,19 @@ public class CountStatisticTest {
     }
 
     @Test
+    public void testAliases() {
+        final CountStatistic statistic = new CountStatistic();
+        Assert.assertEquals(1, statistic.getAliases().size());
+        Assert.assertEquals("n", Iterables.getFirst(statistic.getAliases(), null));
+    }
+
+    @Test
     public void testCalculate() {
         final CountStatistic stat = new CountStatistic();
-        final List<Double> doubleVals = Lists.newArrayList(Double.valueOf(12d), Double.valueOf(18d), Double.valueOf(5d));
+        final List<Double> doubleVals = Lists.newArrayList(12d, 18d, 5d);
         final List<Quantity> vals = TestBeanFactory.createSamples(doubleVals);
-        final Double calculated = stat.calculate(vals);
-        Assert.assertThat(calculated, Matchers.equalTo(Double.valueOf(3d)));
+        final Quantity calculated = stat.calculate(vals);
+        Assert.assertThat(calculated, Matchers.equalTo(new Quantity.Builder().setValue(3.0).build()));
     }
 
     @Test

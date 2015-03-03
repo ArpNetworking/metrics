@@ -69,6 +69,7 @@ public abstract class BaseSource implements Source {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Name", _name)
                 .toString();
     }

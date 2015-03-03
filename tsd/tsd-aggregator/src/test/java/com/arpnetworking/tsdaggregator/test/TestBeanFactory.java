@@ -21,8 +21,6 @@ import com.arpnetworking.tsdaggregator.model.Metric;
 import com.arpnetworking.tsdaggregator.model.MetricType;
 import com.arpnetworking.tsdaggregator.model.Record;
 import com.arpnetworking.tsdcore.model.Quantity;
-import com.arpnetworking.tsdcore.model.Unit;
-import com.google.common.base.Optional;
 
 import org.joda.time.DateTime;
 
@@ -68,7 +66,9 @@ public final class TestBeanFactory {
     public static DefaultMetric.Builder createMetricBuilder() {
         return new DefaultMetric.Builder()
                 .setType(MetricType.COUNTER)
-                .setValues(Collections.singletonList(new Quantity(3.14f, Optional.<Unit>absent())));
+                .setValues(Collections.singletonList(new Quantity.Builder()
+                        .setValue(3.14d)
+                        .build()));
     }
 
     /**

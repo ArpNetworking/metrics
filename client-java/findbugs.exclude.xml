@@ -40,14 +40,5 @@
             <Class name="~.*\.[^\.]+Test\$.*" />
          </Or>
      </Match>
-     
-     <!-- Ignore all bugs in files temporarily copied from other projects. 
-     -->
-     <Match>
-         <Or>
-             <Class name="~.*\.IsMapWithSize" />
-             <Class name="~.*\.IsMapWithSize\$.*" />
-         </Or>
-     </Match>
 
 </FindBugsFilter>

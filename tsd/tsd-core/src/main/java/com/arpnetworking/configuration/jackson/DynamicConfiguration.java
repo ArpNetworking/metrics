@@ -23,6 +23,8 @@ import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,14 +107,14 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
                 LOGGER.debug(String.format("Offering configuration; listener=%s", listener));
                 listener.offerConfiguration(snapshot);
                 // CHECKSTYLE.OFF: IllegalCatch - Any exception is considered validation failure.
-            } catch (final Throwable t) {
+            } catch (final Exception e) {
                 // CHECKSTYLE.ON: IllegalCatch
                 LOGGER.error(
                         String.format(
                                 "Validation of offered configuration failed; listener=%s, configuration=%s",
                                 listener,
                                 snapshot),
-                        t);
+                        e);
 
                 // TODO(vkoskela): Persist "good" configuration across restarts [MAI-?]
                 // The code will leave the good configuration in the running instance
@@ -131,14 +133,14 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
                 LOGGER.debug(String.format("Applying configuration; listener=%s", listener));
                 listener.applyConfiguration();
                 // CHECKSTYLE.OFF: IllegalCatch - Apply configuration to all instances.
-            } catch (final Throwable t) {
+            } catch (final Exception e) {
                 // CHECKSTYLE.ON: IllegalCatch
                 LOGGER.warn(
                         String.format(
                                 "Applying new configuration failed; listener=%s, configuration=%s",
                                 listener,
                                 _snapshot),
-                        t);
+                        e);
             }
         }
     }
@@ -158,7 +160,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
     private final TriggerEvaluator _triggerEvaluator;
     private final ExecutorService _triggerEvaluatorExecutor;
 
-    private static final long TRIGGER_EVALUATION_INTERVAL_IN_MILLISECONDS = 60000;
+    private static final Duration TRIGGER_EVALUATION_INTERVAL = Duration.standardSeconds(60);
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamicConfiguration.class);
 
     private final class TriggerEvaluator implements Runnable {
@@ -200,17 +202,20 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
                     try {
                         loadConfiguration();
                         // CHECKSTYLE.OFF: IllegalCatch - Prevent thread from being killed
-                    } catch (final Throwable t) {
+                    } catch (final Exception e) {
                         // CHECKSTYLE.ON: IllegalCatch
-                        LOGGER.error("Failed to load configuration", t);
+                        LOGGER.error("Failed to load configuration", e);
                     }
                 }
 
                 // Wait for the next evaluation period
                 try {
-                    Thread.sleep(TRIGGER_EVALUATION_INTERVAL_IN_MILLISECONDS);
+                    final DateTime sleepTimeout = DateTime.now().plus(TRIGGER_EVALUATION_INTERVAL);
+                    while (DateTime.now().isBefore(sleepTimeout) && _isRunning) {
+                        Thread.sleep(100);
+                    }
                 } catch (final InterruptedException e) {
-                    LOGGER.debug(String.format("Interrupted; isRunning=%s", Boolean.valueOf(_isRunning)), e);
+                    LOGGER.debug(String.format("Interrupted; isRunning=%s", _isRunning), e);
                 }
             }
         }
@@ -218,6 +223,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(TriggerEvaluator.class)
+                    .add("id", Integer.toHexString(System.identityHashCode(this)))
                     .add("IsRunning", _isRunning)
                     .add("Triggers", _triggers)
                     .toString();

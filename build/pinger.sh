@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 uri=
 
 function show_help {
@@ -59,5 +58,5 @@ do
   if [ -n "$verbose" ]; then
     echo "Pinging ${uri}... $result"
   fi
-  sleep 1
+  sleep 0.5
 done

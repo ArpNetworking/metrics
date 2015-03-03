@@ -41,6 +41,7 @@ public class LogFileDisappeared {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("File", _file)
                 .toString();
     }

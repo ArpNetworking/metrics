@@ -58,7 +58,11 @@ final class TsdQuantity implements Quantity {
      */
     @Override
     public String toString() {
-        return String.format("TsdQuantity{Value=%s, Unit=%s}", _value, _unit);
+        return String.format(
+                "TsdQuantity{id=%s, Value=%s, Unit=%s}",
+                Integer.toHexString(System.identityHashCode(this)),
+                _value,
+                _unit);
     }
 
     private TsdQuantity(final Number value, final Unit unit) {

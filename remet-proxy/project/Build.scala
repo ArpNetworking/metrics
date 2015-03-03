@@ -24,14 +24,19 @@ import PlayKeys._
 object ApplicationBuild extends Build {
 
     val appName         = "remet-proxy"
-    val appVersion      = "0.3.0"
+    val appVersion      = "0.3.1"
 
     //val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask
     val s = CheckstyleSettings.checkstyleTask
 
     val appDependencies = Seq(
-      "com.arpnetworking.metrics" % "tsd-core" % "0.3.0",
-      "com.arpnetworking.metrics" % "metrics-client" % "0.3.0",
+      // Play 2.4 uses version 1.1.1 and although some transitive dependencies
+      // may use a newer version we force the known working version.
+      "ch.qos.logback" % "logback-classic" % "1.1.1" force(),
+      "ch.qos.logback" % "logback-core" % "1.1.1" force(),
+      "com.arpnetworking.logback" % "logback-steno" % "1.3.2",
+      "com.arpnetworking.metrics" % "metrics-client" % "0.3.1",
+      "com.arpnetworking.metrics" % "tsd-core" % "0.3.1",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % "2.5.0",
       "com.google.guava" % "guava" % "18.0",
       "com.google.inject" % "guice" % "3.0"

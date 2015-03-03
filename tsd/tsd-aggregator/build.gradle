@@ -16,7 +16,7 @@
 
 apply plugin: 'application'
 
-mainClassName = 'com.arpnetworking.tsdaggregator.TsdAggregator'
+mainClassName = 'com.arpnetworking.tsdaggregator.Main'
 
 task perfTransform(type: JavaExec, dependsOn: perf) {
     ext.inputFile = file("build/reports/perf/profile.hprof.txt")
@@ -35,7 +35,8 @@ def guice_version = '3.0'
 
 dependencies {
     compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.2'
-    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.0'
+    compile group: 'com.arpnetworking.logback', name: 'logback-steno', version: '1.3.2'
+    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.1'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jackson_version
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jackson_version
     compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-joda', version: jackson_version
@@ -61,7 +62,7 @@ dependencies {
     compile project(':tsd-core')
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+    testCompile group: 'org.hamcrest', name: 'java-hamcrest', version: '2.0.0.0'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '1.10.19'
     testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.0.3'
 

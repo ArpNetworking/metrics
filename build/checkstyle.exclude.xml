@@ -41,17 +41,4 @@
     <suppress checks="FileLength" files=".*Test\.java"/>
     <suppress checks="FileLength" files=".*IT\.java"/>
 
-    <!-- Exclude files temporarily copied from other projects -->
-    <suppress checks=".*" files="org[\\/]hamcrest[\\/]collection[\\/]IsMapWithSize\.java"/>
-
-    <!-- Similar independent object trees for each version allow independent fixes -->
-    <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]tsdaggregator[\\/]model[\\/]querylog[\\/]Version[^\.]*\.java"/>
-
-    <!-- Parallel trigger and source classes have similar builders -->
-    <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]configuration[\\/]DirectoryTrigger.java"/>
-    <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]configuration[\\/]jackson[\\/]JsonNodeDirectorySource.java"/>
-
-    <!-- Parallel alert and expression classes have similar builders -->
-    <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]tsdcore[\\/]sinks[\\/]ExpressionSink.java"/>
-    <suppress checks="StrictDuplicateCode" files="com[\\/]arpnetworking[\\/]tsdcore[\\/]sinks[\\/]AlertSink.java"/>
 </suppressions>

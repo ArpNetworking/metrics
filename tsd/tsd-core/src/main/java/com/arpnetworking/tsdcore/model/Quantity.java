@@ -16,12 +16,17 @@
 package com.arpnetworking.tsdcore.model;
 
 import com.arpnetworking.utility.OvalBuilder;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 /**
  * Represents a sample.
@@ -29,19 +34,6 @@ import java.util.Objects;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public final class Quantity implements Comparable<Quantity>, Serializable {
-
-    /**
-     * Public constructor.
-     *
-     * @param value the value
-     * @param unit the unit of the value
-     * @deprecated Replaced with <code>Builder</code>.
-     */
-    @Deprecated
-    public Quantity(final double value, final Optional<Unit> unit) {
-        _value = value;
-        _unit = unit;
-    }
 
     public double getValue() {
         return _value;
@@ -65,7 +57,10 @@ public final class Quantity implements Comparable<Quantity>, Serializable {
                     "Cannot convert a quantity without a unit; this=%s",
                     this));
         }
-        return new Quantity(unit.convert(_value, _unit.get()), Optional.of(unit));
+        return new Quantity.Builder()
+                .setValue(unit.convert(_value, _unit.get()))
+                .setUnit(unit)
+                .build();
     }
 
     /**
@@ -92,7 +87,7 @@ public final class Quantity implements Comparable<Quantity>, Serializable {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(Double.valueOf(_value), _unit);
+        return Objects.hash(_value, _unit);
     }
 
     /**
@@ -119,13 +114,45 @@ public final class Quantity implements Comparable<Quantity>, Serializable {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Unit", _unit)
                 .add("Value", _value)
                 .toString();
     }
 
+    /**
+     * Ensures all <code>Quantity</code> instances have the same (including no)
+     * <code>Unit</code>.
+     *
+     * @param quantities <code>Quantity</code> instances to convert.
+     * @return <code>List</code> of <code>Quantity</code> instances with the
+     * same <code>Unit</code> (or no <code>Unit</code>).
+     */
+    public static List<Quantity> unify(final Collection<Quantity> quantities) {
+        // This is a 2-pass operation:
+        // First pass is to grab the smallest unit in the samples
+        // Second pass is to convert everything to that unit
+        Optional<Unit> smallestUnit = Optional.absent();
+        for (final Quantity quantity : quantities) {
+            if (!smallestUnit.isPresent()) {
+                smallestUnit = quantity.getUnit();
+            } else if (quantity.getUnit().isPresent()
+                    && !smallestUnit.get().getSmallerUnit(quantity.getUnit().get()).equals(smallestUnit.get())) {
+                smallestUnit = quantity.getUnit();
+            }
+        }
+
+        final List<Quantity> convertedSamples = Lists.newArrayListWithExpectedSize(quantities.size());
+        final Function<Quantity, Quantity> converter = SampleConverter.to(smallestUnit);
+        for (final Quantity quantity : quantities) {
+            convertedSamples.add(converter.apply(quantity));
+        }
+
+        return convertedSamples;
+    }
+
     private Quantity(final Builder builder) {
-        _value = builder._value.doubleValue();
+        _value = builder._value;
         _unit = Optional.fromNullable(builder._unit);
     }
 
@@ -133,6 +160,37 @@ public final class Quantity implements Comparable<Quantity>, Serializable {
     private final double _value;
 
     private static final long serialVersionUID = -6339526234042605516L;
+
+    private static final class SampleConverter implements Function<Quantity, Quantity> {
+
+        public static Function<Quantity, Quantity> to(final Optional<Unit> unit) {
+            if (unit.isPresent()) {
+                return new SampleConverter(unit.get());
+            }
+            return (q) -> q;
+        }
+
+        @Override
+        @Nullable
+        public Quantity apply(@Nullable final Quantity quantity) {
+            if (quantity == null) {
+                return null;
+            }
+            if (!quantity.getUnit().isPresent()) {
+                throw new IllegalArgumentException(String.format("Cannot convert a quantity without unit; sample=%s", quantity));
+            }
+            return new Quantity.Builder()
+                    .setValue(_unit.convert(quantity.getValue(), quantity.getUnit().get()))
+                    .setUnit(_unit)
+                    .build();
+        }
+
+        private SampleConverter(final Unit convertTo) {
+            _unit = convertTo;
+        }
+
+        private final Unit _unit;
+    }
 
     /**
      * <code>Builder</code> implementation for <code>Quantity</code>.

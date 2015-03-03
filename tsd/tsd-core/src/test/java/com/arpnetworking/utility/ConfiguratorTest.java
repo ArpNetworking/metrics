@@ -21,8 +21,6 @@ import com.google.common.base.Optional;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Map;
-
 /**
  * Tests for the <code>Configurator</code> class.
  *
@@ -30,14 +28,9 @@ import java.util.Map;
  */
 public class ConfiguratorTest {
 
-    @Test(expected = RuntimeException.class)
-    public void testConstructorNotFound() throws Exception {
-        new Configurator<>(TestLaunchable.class, Map.class);
-    }
-
     @Test
     public void testOffer() throws Exception {
-        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable.class, String.class);
+        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable::new, String.class);
         configurator.offerConfiguration(new StaticConfiguration.Builder()
                 .addSource(new JsonNodeLiteralSource.Builder().setSource("\"foo\"").build())
                 .build());
@@ -52,7 +45,7 @@ public class ConfiguratorTest {
 
     @Test
     public void testOfferAndApply() throws Exception {
-        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable.class, String.class);
+        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable::new, String.class);
         configurator.offerConfiguration(new StaticConfiguration.Builder()
                 .addSource(new JsonNodeLiteralSource.Builder().setSource("\"foo\"").build())
                 .build());
@@ -74,7 +67,7 @@ public class ConfiguratorTest {
 
     @Test(expected = Exception.class)
     public void testOfferFailure() throws Exception {
-        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable.class, String.class);
+        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable::new, String.class);
         configurator.offerConfiguration(new StaticConfiguration.Builder()
                 .addSource(new JsonNodeLiteralSource.Builder().setSource("{}").build())
                 .build());
@@ -82,7 +75,7 @@ public class ConfiguratorTest {
 
     @Test
     public void testSecondOfferAndApply() throws Exception {
-        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable.class, String.class);
+        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable::new, String.class);
         configurator.offerConfiguration(new StaticConfiguration.Builder()
                 .addSource(new JsonNodeLiteralSource.Builder().setSource("\"foo\"").build())
                 .build());
@@ -113,7 +106,7 @@ public class ConfiguratorTest {
 
     @Test
     public void testSecondOfferFailure() throws Exception {
-        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable.class, String.class);
+        final Configurator<TestLaunchable, String> configurator = new Configurator<>(TestLaunchable::new, String.class);
         configurator.offerConfiguration(new StaticConfiguration.Builder()
                 .addSource(new JsonNodeLiteralSource.Builder().setSource("\"foo\"").build())
                 .build());
@@ -140,7 +133,7 @@ public class ConfiguratorTest {
 
     @Test
     public void testToString() {
-        final String asString = new Configurator<>(TestLaunchable.class, String.class).toString();
+        final String asString = new Configurator<>(TestLaunchable::new, String.class).toString();
         Assert.assertNotNull(asString);
         Assert.assertFalse(asString.isEmpty());
     }

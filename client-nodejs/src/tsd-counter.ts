@@ -36,7 +36,8 @@ import TsdMetricSample = sample.TsdMetricSample;
  * <code>Counter</code> instances bound to that [TsdMetrics]{@linkcode module:tsd-metrics-client~TsdMetrics} instance
  * will be ignored.
  *
-    * @class
+ * @class
+ * @extends MetricSample
  * @alias Counter
  * @author Mohammed Kamel (mkamel at groupon dot com)
  */
@@ -45,9 +46,10 @@ export class TsdCounter extends TsdMetricSample implements tsdDef.Counter {
     /**
      * Constructor.
      *
-     * @param {MetricsStateObject} metricsStateObject Object holding state of the original metrics object.
+     * @param {MetricsStateObject} _metricsStateObject Object holding state of the parent metrics object.
+     * @ignore
      */
-    constructor(private metricsStateObject:tsd.MetricsStateObject) {
+    constructor(private _name:string, private _metricsStateObject:tsd.MetricsStateObject) {
         super(0, undefined);
     }
 
@@ -59,8 +61,8 @@ export class TsdCounter extends TsdMetricSample implements tsdDef.Counter {
      * @emits 'error' if the metrics object is closed
      */
     public increment(value:number = 1):void {
-        if (this.metricsStateObject.assertIsOpen("Cannot increment/decrement counter")) {
-            (<any>this).value = (<any>this).value + value;
+        if (this._metricsStateObject.assertIsOpen("Cannot increment/decrement counter '" + this._name + "'")) {
+            (<any>this)._value = (<any>this)._value + value;
         }
     }
 

@@ -1,0 +1,9 @@
+.project
+build.sh
+compile
+coverage/
+jsdoc.conf.json
+login_info
+test-tsd-query.log.*
+*.log
+xunit.xml

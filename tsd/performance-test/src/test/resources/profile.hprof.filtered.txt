@@ -219,21 +219,21 @@ TRACE 303567:
 	com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
 	com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:1587)
 TRACE 302819:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.JsonGenerator.writeObjectField(JsonGenerator.java:1312)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.JsonGenerator.writeObjectField(JsonGenerator.java:1312)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$QuantitySerializer.serialize(TsdQueryLogSink.java:313)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$QuantitySerializer.serialize(TsdQueryLogSink.java:300)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:100)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:21)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize(AsArraySerializerBase.java:183)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:100)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:21)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize(AsArraySerializerBase.java:183)
 TRACE 303600:
 	sun.reflect.Reflection.getCallerClass(Reflection.java:Unknown line)
 	java.lang.Class.getDeclaredConstructor(Class.java:2052)
@@ -379,21 +379,21 @@ TRACE 303929:
 	com.arpnetworking.tsdcore.sources.BaseSource.notify(BaseSource.java:55)
 	com.arpnetworking.tsdcore.sources.FileSource$LogTailerListener.handle(FileSource.java:153)
 TRACE 302951:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
 TRACE 302831:
 	java.io.FileInputStream.readBytes(FileInputStream.java:Unknown line)
 	java.io.FileInputStream.read(FileInputStream.java:272)
@@ -683,15 +683,15 @@ TRACE 303915:
 	com.arpnetworking.utility.observer.ObservableDelegate.notify(ObservableDelegate.java:81)
 	com.arpnetworking.tsdcore.sources.BaseSource.notify(BaseSource.java:55)
 TRACE 302932:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:Unknown line)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:Unknown line)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -827,15 +827,15 @@ TRACE 303843:
 	com.arpnetworking.jackson.BuilderDeserializer.deserialize(BuilderDeserializer.java:85)
 	com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
 TRACE 302947:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:Unknown line)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:Unknown line)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -1051,15 +1051,15 @@ TRACE 303317:
 	com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
 	com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:1587)
 TRACE 302809:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -2290,21 +2290,21 @@ TRACE 304111:
 	com.arpnetworking.tsdaggregator.parsers.QueryLogParser.parse(QueryLogParser.java:305)
 	com.arpnetworking.tsdcore.sources.FileSource$LogTailerListener.handle(FileSource.java:148)
 TRACE 303767:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 TRACE 304120:
 	java.util.ComparableTimSort.binarySort(ComparableTimSort.java:236)
 	java.util.ComparableTimSort.sort(ComparableTimSort.java:176)
@@ -2656,15 +2656,15 @@ TRACE 303961:
 	sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
 	sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
 TRACE 302923:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -2998,21 +2998,21 @@ TRACE 304026:
 	com.arpnetworking.utility.observer.ObservableDelegate.notify(ObservableDelegate.java:81)
 	com.arpnetworking.tsdcore.sources.BaseSource.notify(BaseSource.java:55)
 TRACE 304179:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:55)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.JsonGenerator.writeObjectField(JsonGenerator.java:1312)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:55)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.JsonGenerator.writeObjectField(JsonGenerator.java:1312)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$QuantitySerializer.serialize(TsdQueryLogSink.java:313)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$QuantitySerializer.serialize(TsdQueryLogSink.java:300)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:100)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:21)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize(AsArraySerializerBase.java:183)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:100)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:21)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize(AsArraySerializerBase.java:183)
 TRACE 303847:
 	com.google.common.collect.TransformedIterator.next(TransformedIterator.java:48)
 	com.google.common.collect.ImmutableCollection$Builder.addAll(ImmutableCollection.java:301)
@@ -3633,15 +3633,15 @@ TRACE 303618:
 	com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
 	com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:1587)
 TRACE 303966:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -3870,9 +3870,9 @@ TRACE 303914:
 	java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
 	java.lang.Thread.run(Thread.java:744)
 TRACE 304189:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.writeRawLong(WriterBasedJsonGenerator.java:497)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.writeRaw(WriterBasedJsonGenerator.java:430)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeRawValue(GeneratorBase.java:202)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.writeRawLong(WriterBasedJsonGenerator.java:497)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.writeRaw(WriterBasedJsonGenerator.java:430)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeRawValue(GeneratorBase.java:202)
 	com.arpnetworking.metrics.com.groupon.logback.StenoEncoder.buildArrayJsonMessage(StenoEncoder.java:238)
 	com.arpnetworking.metrics.com.groupon.logback.BaseLoggingEncoder.doEncode(BaseLoggingEncoder.java:53)
 	com.arpnetworking.metrics.com.groupon.logback.BaseLoggingEncoder.doEncode(BaseLoggingEncoder.java:31)
@@ -4041,12 +4041,12 @@ TRACE 303769:
 	com.arpnetworking.tsdaggregator.perf.ApplicationPipelineTest.test(ApplicationPipelineTest.java:98)
 	sun.reflect.NativeMethodAccessorImpl.invoke0(NativeMethodAccessorImpl.java:Unknown line)
 TRACE 302670:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.io.IOContext._verifyRelease(IOContext.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.io.IOContext.releaseConcatBuffer(IOContext.java:231)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator._releaseBuffers(WriterBasedJsonGenerator.java:916)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.close(WriterBasedJsonGenerator.java:907)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2820)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.io.IOContext._verifyRelease(IOContext.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.io.IOContext.releaseConcatBuffer(IOContext.java:231)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator._releaseBuffers(WriterBasedJsonGenerator.java:916)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.close(WriterBasedJsonGenerator.java:907)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2820)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -4057,15 +4057,15 @@ TRACE 302670:
 	sun.reflect.NativeMethodAccessorImpl.invoke0(NativeMethodAccessorImpl.java:Unknown line)
 	sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
 TRACE 303771:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:Unknown line)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:Unknown line)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -4781,15 +4781,15 @@ TRACE 304155:
 	com.arpnetworking.tsdaggregator.LineProcessor.notify(LineProcessor.java:143)
 	com.arpnetworking.utility.observer.ObservableDelegate.notify(ObservableDelegate.java:81)
 TRACE 302915:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.DeserializationConfig.getDeserializationFeatures(DeserializationConfig.java:512)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.DeserializationContext.<init>(DeserializationContext.java:182)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.<init>(DefaultDeserializationContext.java:44)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.DefaultDeserializationContext$Impl.<init>(DefaultDeserializationContext.java:208)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.DefaultDeserializationContext$Impl.createInstance(DefaultDeserializationContext.java:218)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.createDeserializationContext(ObjectMapper.java:2936)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2959)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1655)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.DeserializationConfig.getDeserializationFeatures(DeserializationConfig.java:512)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.DeserializationContext.<init>(DeserializationContext.java:182)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.<init>(DefaultDeserializationContext.java:44)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.DefaultDeserializationContext$Impl.<init>(DefaultDeserializationContext.java:208)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.DefaultDeserializationContext$Impl.createInstance(DefaultDeserializationContext.java:218)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.createDeserializationContext(ObjectMapper.java:2936)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2959)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1655)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -4925,9 +4925,9 @@ TRACE 303436:
 	com.fasterxml.jackson.databind.ObjectMapper.treeToValue(ObjectMapper.java:1931)
 	com.arpnetworking.tsdaggregator.parsers.QueryLogParser.parseV2eLogLine(QueryLogParser.java:400)
 TRACE 302818:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Segment.<init>(TokenBuffer.java:1546)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer.<init>(TokenBuffer.java:152)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1962)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Segment.<init>(TokenBuffer.java:1546)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer.<init>(TokenBuffer.java:152)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1962)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -5325,9 +5325,9 @@ TRACE 303544:
 	com.fasterxml.jackson.databind.ObjectMapper.treeToValue(ObjectMapper.java:1931)
 	com.arpnetworking.tsdaggregator.parsers.QueryLogParser.parseV2eLogLine(QueryLogParser.java:400)
 TRACE 302745:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.util.TextBuffer.<init>(TextBuffer.java:84)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.io.SegmentedStringWriter.<init>(SegmentedStringWriter.java:24)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2273)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.util.TextBuffer.<init>(TextBuffer.java:84)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.io.SegmentedStringWriter.<init>(SegmentedStringWriter.java:24)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2273)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -5467,50 +5467,50 @@ TRACE 303554:
 	java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
 	java.lang.Thread.run(Thread.java:744)
 TRACE 302830:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.StdKeySerializer.serialize(StdKeySerializer.java:34)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serializeFields(MapSerializer.java:448)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serialize(MapSerializer.java:388)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serialize(MapSerializer.java:27)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.StdKeySerializer.serialize(StdKeySerializer.java:34)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serializeFields(MapSerializer.java:448)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serialize(MapSerializer.java:388)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serialize(MapSerializer.java:27)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 TRACE 303947:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.JsonReadContext.reset(JsonReadContext.java:68)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.JsonReadContext.createChildObjectContext(JsonReadContext.java:123)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Parser.nextToken(TokenBuffer.java:1194)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:220)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:63)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:14)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1655)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.json.JsonReadContext.reset(JsonReadContext.java:68)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.json.JsonReadContext.createChildObjectContext(JsonReadContext.java:123)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Parser.nextToken(TokenBuffer.java:1194)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:220)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:63)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:14)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1655)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
 	com.arpnetworking.metrics.generator.uow.UnitOfWorkGenerator.generate(UnitOfWorkGenerator.java:51)
 	com.arpnetworking.metrics.generator.util.IntervalExecutor.execute(IntervalExecutor.java:69)
 TRACE 303950:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize(AsArraySerializerBase.java:185)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize(AsArraySerializerBase.java:185)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -5531,16 +5531,16 @@ TRACE 303345:
 	com.arpnetworking.tsdcore.sources.FileSource$LogTailerListener.handle(FileSource.java:148)
 	com.arpnetworking.tsdcore.tailer.StatefulTailer.handleLine(StatefulTailer.java:426)
 TRACE 303956:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Segment.next(TokenBuffer.java:1581)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Parser.nextToken(TokenBuffer.java:1182)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:217)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:63)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:14)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1655)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Segment.next(TokenBuffer.java:1581)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Parser.nextToken(TokenBuffer.java:1182)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:217)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:63)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:14)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1655)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -5691,15 +5691,15 @@ TRACE 303354:
 	com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:1587)
 	com.fasterxml.jackson.core.JsonParser.readValueAs(JsonParser.java:1431)
 TRACE 303971:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:Unknown line)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:Unknown line)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -5755,9 +5755,9 @@ TRACE 303573:
 TRACE 302946:
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$EntrySerializer.serialize(TsdQueryLogSink.java:281)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$EntrySerializer.serialize(TsdQueryLogSink.java:252)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -5913,10 +5913,10 @@ TRACE 303586:
 	java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
 	java.lang.Thread.run(Thread.java:744)
 TRACE 302839:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.getOutputContext(GeneratorBase.java:162)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.close(WriterBasedJsonGenerator.java:880)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2820)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.getOutputContext(GeneratorBase.java:162)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.close(WriterBasedJsonGenerator.java:880)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2820)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -6366,13 +6366,13 @@ TRACE 304057:
 	com.arpnetworking.tsdcore.sources.BaseSource.notify(BaseSource.java:55)
 	com.arpnetworking.tsdcore.sources.FileSource$LogTailerListener.handle(FileSource.java:153)
 TRACE 302847:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer.writeString(TokenBuffer.java:633)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.JsonGenerator.writeStringField(JsonGenerator.java:1134)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer.writeString(TokenBuffer.java:633)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.JsonGenerator.writeStringField(JsonGenerator.java:1134)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$EntrySerializer.serialize(TsdQueryLogSink.java:266)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$EntrySerializer.serialize(TsdQueryLogSink.java:252)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -6593,9 +6593,9 @@ TRACE 304085:
 	com.arpnetworking.tsdcore.tailer.StatefulTailer.readLoop(StatefulTailer.java:173)
 TRACE 302961:
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$EntrySerializer.serialize(TsdQueryLogSink.java:252)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -6657,20 +6657,20 @@ TRACE 301269:
 	java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
 TRACE 302762:
 	java.lang.Object.getClass(Object.java:Unknown line)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:91)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.JsonGenerator.writeObjectField(JsonGenerator.java:1312)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:91)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.JsonGenerator.writeObjectField(JsonGenerator.java:1312)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$QuantitySerializer.serialize(TsdQueryLogSink.java:313)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink$QuantitySerializer.serialize(TsdQueryLogSink.java:300)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:100)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:21)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize(AsArraySerializerBase.java:183)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:100)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.impl.IndexedListSerializer.serializeContents(IndexedListSerializer.java:21)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize(AsArraySerializerBase.java:183)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.ObjectNode.serialize(ObjectNode.java:261)
 TRACE 304096:
 	java.util.concurrent.locks.AbstractQueuedSynchronizer.transferForSignal(AbstractQueuedSynchronizer.java:1673)
 	java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.doSignalAll(AbstractQueuedSynchronizer.java:1890)
@@ -7281,10 +7281,10 @@ TRACE 302708:
 	com.arpnetworking.metrics.ch.qos.logback.core.OutputStreamAppender.subAppend(OutputStreamAppender.java:219)
 	com.arpnetworking.metrics.ch.qos.logback.core.OutputStreamAppender.append(OutputStreamAppender.java:103)
 TRACE 302862:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.io.SegmentedStringWriter.close(SegmentedStringWriter.java:56)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.close(WriterBasedJsonGenerator.java:900)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2820)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.io.SegmentedStringWriter.close(SegmentedStringWriter.java:56)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.close(WriterBasedJsonGenerator.java:900)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2820)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -7488,12 +7488,12 @@ TRACE 304207:
 	com.arpnetworking.tsdaggregator.TSAggregation.addSample(TSAggregation.java:96)
 	com.arpnetworking.tsdaggregator.TSData.addMetric(TSData.java:74)
 TRACE 302778:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.io.IOContext._verifyAlloc(IOContext.java:254)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.io.IOContext.allocConcatBuffer(IOContext.java:177)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.<init>(WriterBasedJsonGenerator.java:76)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.JsonFactory._createGenerator(JsonFactory.java:1332)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.JsonFactory.createGenerator(JsonFactory.java:1084)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.io.IOContext._verifyAlloc(IOContext.java:254)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.io.IOContext.allocConcatBuffer(IOContext.java:177)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.<init>(WriterBasedJsonGenerator.java:76)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.JsonFactory._createGenerator(JsonFactory.java:1332)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.JsonFactory.createGenerator(JsonFactory.java:1084)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -8152,7 +8152,7 @@ TRACE 304299:
 	com.arpnetworking.utility.observer.ObservableDelegate.notify(ObservableDelegate.java:81)
 	com.arpnetworking.tsdcore.sources.BaseSource.notify(BaseSource.java:55)
 TRACE 303736:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.ObjectNode.fields(ObjectNode.java:116)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.ObjectNode.fields(ObjectNode.java:116)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:87)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -8344,8 +8344,8 @@ TRACE 303746:
 	sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
 	java.lang.reflect.Method.invoke(Method.java:606)
 TRACE 303747:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Parser.close(TokenBuffer.java:1162)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1968)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Parser.close(TokenBuffer.java:1162)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1968)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -8473,18 +8473,18 @@ TRACE 303754:
 	sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
 TRACE 302794:
 	java.lang.Object.getClass(Object.java:Unknown line)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serializeFields(MapSerializer.java:455)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serialize(MapSerializer.java:388)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serialize(MapSerializer.java:27)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serializeFields(MapSerializer.java:455)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serialize(MapSerializer.java:388)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.MapSerializer.serialize(MapSerializer.java:27)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.writeObject(GeneratorBase.java:261)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.POJONode.serialize(POJONode.java:109)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:44)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.SerializableSerializer.serialize(SerializableSerializer.java:29)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.serializeValue(DefaultSerializerProvider.java:114)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._configAndWriteValue(ObjectMapper.java:2818)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValueAsString(ObjectMapper.java:2275)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:90)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 TRACE 302796:
@@ -8727,15 +8727,15 @@ TRACE 301279:
 	org.jacoco.agent.rt.internal_38bf6f6.CoverageTransformer.transform(CoverageTransformer.java:87)
 	sun.instrument.TransformerManager.transform(TransformerManager.java:188)
 TRACE 303773:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap(SerializerCache.java:47)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.SerializerProvider.<init>(SerializerProvider.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider.<init>(DefaultSerializerProvider.java:62)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.<init>(DefaultSerializerProvider.java:504)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:510)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.DefaultSerializerProvider$Impl.createInstance(DefaultSerializerProvider.java:496)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._serializerProvider(ObjectMapper.java:2783)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.writeValue(ObjectMapper.java:1837)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1965)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -8996,15 +8996,15 @@ TRACE 303480:
 	com.arpnetworking.tsdcore.tailer.StatefulTailer.readLoop(StatefulTailer.java:173)
 TRACE 302734:
 	java.lang.Object.getClass(Object.java:Unknown line)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeAny(JsonNodeDeserializer.java:293)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:231)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:63)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:14)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1655)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeAny(JsonNodeDeserializer.java:293)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:231)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject(JsonNodeDeserializer.java:222)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:63)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize(JsonNodeDeserializer.java:14)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper._readValue(ObjectMapper.java:2965)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1655)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -9290,7 +9290,7 @@ TRACE 303510:
 	java.util.regex.Pattern$Begin.match(Pattern.java:3472)
 	java.util.regex.Matcher.match(Matcher.java:1221)
 	java.util.regex.Matcher.matches(Matcher.java:559)
-	net.sf.oval.constraint.MatchPatternCheck.isSatisfied(MatchPatternCheck.java:112)
+	net.sf.oval.constrMatchPatternCheck.isSatisfied(MatchPatternCheck.java:112)
 	net.sf.oval.Validator._checkConstraint(Validator.java:554)
 	net.sf.oval.Validator.checkConstraint(Validator.java:843)
 	net.sf.oval.Validator._validateObjectInvariants(Validator.java:589)
@@ -9389,8 +9389,8 @@ TRACE 301627:
 	org.reflections.Reflections.<init>(Reflections.java:169)
 	com.arpnetworking.utility.ReflectionsDatabase.<clinit>(ReflectionsDatabase.java:68)
 TRACE 302921:
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1651)
-	com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree(ObjectMapper.java:1651)
+	com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.valueToTree(ObjectMapper.java:1967)
 	com.arpnetworking.metrics.impl.TsdQueryLogSink.record(TsdQueryLogSink.java:73)
 	com.arpnetworking.metrics.generator.client.TimeModifyingSink.record(TimeModifyingSink.java:81)
 	com.arpnetworking.metrics.impl.TsdMetrics.close(TsdMetrics.java:299)
@@ -9586,7 +9586,7 @@ rank   self  accum   count trace method
    4  2.26% 12.53%      79 303824 com.arpnetworking.tsdcore.tailer.StatefulTailer.readLines
    5  2.18% 14.71%      76 303347 java.lang.System.identityHashCode
    6  1.95% 16.66%      68 303567 com.fasterxml.jackson.databind.type.TypeFactory._fromClass
-   7  1.72% 18.38%      60 302819 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+   7  1.72% 18.38%      60 302819 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
    8  1.66% 20.04%      58 303600 sun.reflect.Reflection.getCallerClass
    9  1.32% 21.36%      46 303804 sun.reflect.Reflection.getCallerClass
   10  1.26% 22.62%      44 303312 java.lang.System.identityHashCode
@@ -9596,7 +9596,7 @@ rank   self  accum   count trace method
   14  1.03% 27.09%      36 303428 net.sf.oval.Validator._checkConstraint
   15  1.00% 28.10%      35 303537 java.lang.System.identityHashCode
   16  0.95% 29.04%      33 303929 org.joda.time.format.DateTimeFormatterBuilder$Composite.printTo
-  17  0.86% 29.90%      30 302951 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+  17  0.86% 29.90%      30 302951 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
   18  0.86% 30.76%      30 302831 java.io.FileInputStream.readBytes
   19  0.86% 31.62%      30 303803 net.sf.oval.internal.ContextCache.getFieldContext
   20  0.80% 32.43%      28 303932 org.joda.time.chrono.BasicChronology.getYear
@@ -9615,7 +9615,7 @@ rank   self  accum   count trace method
   33  0.49% 39.62%      17 304038 com.fasterxml.jackson.databind.type.TypeFactory._fromClass
   34  0.49% 40.11%      17 303708 org.joda.time.base.AbstractPeriod.getFieldType
   35  0.49% 40.60%      17 303915 org.joda.time.format.DateTimeFormatterBuilder$PaddedNumber.printTo
-  36  0.49% 41.08%      17 302932 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+  36  0.49% 41.08%      17 302932 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
   37  0.46% 41.54%      16 304019 net.sf.oval.Validator._checkConstraint
   38  0.46% 42.00%      16 304142 org.joda.time.format.DateTimeFormatterBuilder$PaddedNumber.printTo
   39  0.46% 42.46%      16 303519 com.fasterxml.jackson.databind.type.TypeFactory._fromClass
@@ -9624,7 +9624,7 @@ rank   self  accum   count trace method
   42  0.43% 43.75%      15 303685 net.sf.oval.internal.ContextCache.getFieldContext
   43  0.43% 44.18%      15 303816 net.sf.oval.internal.ContextCache.getFieldContext
   44  0.40% 44.58%      14 303843 com.fasterxml.jackson.databind.type.TypeFactory._fromClass
-  45  0.40% 44.98%      14 302947 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+  45  0.40% 44.98%      14 302947 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
   46  0.40% 45.38%      14 304116 org.joda.time.format.DateTimeFormatterBuilder$PaddedNumber.printTo
   47  0.37% 45.76%      13 303651 sun.reflect.Reflection.getCallerClass
   48  0.37% 46.13%      13 302743 java.io.FileOutputStream.writeBytes
@@ -9638,7 +9638,7 @@ rank   self  accum   count trace method
   56  0.32% 48.82%      11 303895 org.joda.time.format.DateTimeFormatter.printTo
   57  0.32% 49.14%      11 304050 java.lang.AbstractStringBuilder.expandCapacity
   58  0.32% 49.46%      11 303317 sun.reflect.Reflection.getCallerClass
-  59  0.32% 49.77%      11 302809 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+  59  0.32% 49.77%      11 302809 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
   60  0.32% 50.09%      11 303512 net.sf.oval.internal.ContextCache.getFieldContext
   61  0.32% 50.40%      11 301560 java.util.zip.ZipFile.getNextEntry
   62  0.32% 50.72%      11 303860 ch.qos.logback.classic.Logger.log
@@ -9716,7 +9716,7 @@ rank   self  accum   count trace method
  134  0.14% 65.28%       5 303463 net.sf.oval.internal.ContextCache.getFieldContext
  135  0.14% 65.42%       5 304345 org.joda.time.DurationFieldType$StandardDurationFieldType.getField
  136  0.14% 65.57%       5 304111 java.util.HashMap.put
- 137  0.14% 65.71%       5 303767 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+ 137  0.14% 65.71%       5 303767 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
  138  0.14% 65.85%       5 304120 java.util.ComparableTimSort.binarySort
  139  0.14% 66.00%       5 304000 org.joda.time.format.PeriodFormatterBuilder$FieldFormatter.getFieldValue
  140  0.14% 66.14%       5 303906 org.joda.time.chrono.BasicGJChronology.setYear
@@ -9739,7 +9739,7 @@ rank   self  accum   count trace method
  157  0.11% 68.35%       4 302922 org.joda.time.DateTimeZone.getDefault
  158  0.11% 68.46%       4 304149 net.sf.oval.Validator.checkConstraint
  159  0.11% 68.58%       4 303961 java.util.concurrent.ConcurrentHashMap.hash
- 160  0.11% 68.69%       4 302923 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+ 160  0.11% 68.69%       4 302923 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
  161  0.11% 68.81%       4 302807 org.joda.time.format.DateTimeFormatterBuilder$Fraction.getFractionData
  162  0.11% 68.92%       4 304009 org.joda.time.DurationFieldType.days
  163  0.11% 69.04%       4 301466 java.lang.Object.getClass
@@ -9761,7 +9761,7 @@ rank   self  accum   count trace method
  179  0.11% 70.87%       4 303917 java.lang.StringCoding.decode
  180  0.11% 70.99%       4 301576 java.util.zip.ZipFile.freeEntry
  181  0.11% 71.10%       4 304026 org.joda.time.DurationFieldType.seconds
- 182  0.11% 71.22%       4 304179 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+ 182  0.11% 71.22%       4 304179 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
  183  0.11% 71.33%       4 303847 com.google.common.collect.TransformedIterator.next
  184  0.11% 71.44%       4 304182 org.apache.commons.math3.random.BitsStreamGenerator.nextDouble
  185  0.11% 71.56%       4 304049 org.joda.time.field.PreciseDurationField.add
@@ -9802,7 +9802,7 @@ rank   self  accum   count trace method
  220  0.09% 75.37%       3 302269 java.lang.System.arraycopy
  221  0.09% 75.46%       3 303869 com.fasterxml.jackson.core.base.ParserBase.close
  222  0.09% 75.54%       3 303618 org.joda.time.format.DateTimeParserBucket$SavedField.set
- 223  0.09% 75.63%       3 303966 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+ 223  0.09% 75.63%       3 303966 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
  224  0.09% 75.72%       3 303951 java.lang.System.currentTimeMillis
  225  0.09% 75.80%       3 304249 net.sf.oval.Validator.getClassChecks
  226  0.09% 75.89%       3 303911 org.joda.time.PeriodType.size
@@ -9817,7 +9817,7 @@ rank   self  accum   count trace method
  235  0.09% 76.66%       3 303892 com.fasterxml.jackson.core.util.TextBuffer.setCurrentLength
  236  0.09% 76.75%       3 303913 org.joda.time.chrono.BasicChronology.getDayOfMonth
  237  0.09% 76.83%       3 303914 com.arpnetworking.tsdaggregator.TSAggregation.rotateAggregation
- 238  0.09% 76.92%       3 304189 com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.writeRawLong
+ 238  0.09% 76.92%       3 304189 com.arpnetworking.metrics.com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.writeRawLong
  239  0.09% 77.01%       3 304229 org.joda.time.base.AbstractPeriod.size
  240  0.09% 77.09%       3 304192 java.io.FileOutputStream.write
  241  0.09% 77.18%       3 301777 java.io.DataInputStream.readUnsignedShort
@@ -9828,8 +9828,8 @@ rank   self  accum   count trace method
  246  0.09% 77.61%       3 303588 ch.qos.logback.classic.Logger.trace
  247  0.09% 77.69%       3 304115 com.fasterxml.jackson.databind.node.JsonNodeFactory.textNode
  248  0.09% 77.78%       3 303769 org.joda.time.format.DateTimeFormatterBuilder$Fraction.printTo
- 249  0.09% 77.87%       3 302670 com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.io.IOContext._verifyRelease
- 250  0.09% 77.95%       3 303771 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+ 249  0.09% 77.87%       3 302670 com.arpnetworking.metrics.com.fasterxml.jackson.core.io.IOContext._verifyRelease
+ 250  0.09% 77.95%       3 303771 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
  251  0.09% 78.04%       3 304223 java.util.ComparableTimSort.mergeAt
  252  0.09% 78.12%       3 301113 java.util.zip.Inflater.inflateBytes
  253  0.09% 78.21%       3 303891 com.arpnetworking.tsdcore.sources.FileSource$LogTailerListener.handle
@@ -9875,7 +9875,7 @@ rank   self  accum   count trace method
  293  0.09% 81.65%       3 304153 org.joda.time.DurationFieldType.months
  294  0.09% 81.74%       3 302957 sun.util.locale.UnicodeLocaleExtension.isKey
  295  0.09% 81.82%       3 304155 org.joda.time.base.AbstractPeriod.size
- 296  0.09% 81.91%       3 302915 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.DeserializationConfig.getDeserializationFeatures
+ 296  0.09% 81.91%       3 302915 com.arpnetworking.metrics.com.fasterxml.jackson.databind.DeserializationConfig.getDeserializationFeatures
  297  0.09% 82.00%       3 303828 com.fasterxml.jackson.core.json.JsonReadContext.createChildArrayContext
  298  0.09% 82.08%       3 304156 org.joda.time.DurationFieldType.minutes
  299  0.09% 82.17%       3 303441 java.lang.Thread.currentThread
@@ -9884,7 +9884,7 @@ rank   self  accum   count trace method
  302  0.09% 82.43%       3 303833 java.util.ComparableTimSort.mergeCollapse
  303  0.09% 82.51%       3 303835 org.joda.time.format.PeriodFormatterBuilder$Literal.printTo
  304  0.09% 82.60%       3 303436 sun.reflect.GeneratedMethodAccessor24.invoke
- 305  0.09% 82.68%       3 302818 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Segment.<init>
+ 305  0.09% 82.68%       3 302818 com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Segment.<init>
  306  0.09% 82.77%       3 301194 java.util.zip.Inflater.reset
  307  0.09% 82.86%       3 302163 java.io.UnixFileSystem.getBooleanAttributes0
  308  0.09% 82.94%       3 304269 java.lang.Integer.getChars
@@ -9909,7 +9909,7 @@ rank   self  accum   count trace method
  327  0.06% 84.29%       2 303908 com.fasterxml.jackson.databind.type.TypeFactory._fromClass
  328  0.06% 84.35%       2 303543 net.sf.oval.Validator.getClassChecks
  329  0.06% 84.40%       2 303544 sun.reflect.GeneratedMethodAccessor14.invoke
- 330  0.06% 84.46%       2 302745 com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.util.TextBuffer.<init>
+ 330  0.06% 84.46%       2 302745 com.arpnetworking.metrics.com.fasterxml.jackson.core.util.TextBuffer.<init>
  331  0.06% 84.52%       2 303920 org.joda.time.PeriodType.size
  332  0.06% 84.58%       2 303924 com.google.common.collect.ImmutableCollection.toArray
  333  0.06% 84.63%       2 302826 java.util.PriorityQueue.siftDown
@@ -9918,11 +9918,11 @@ rank   self  accum   count trace method
  336  0.06% 84.81%       2 303940 net.sf.oval.Validator.getClassChecks
  337  0.06% 84.86%       2 301296 org.jacoco.agent.rt.internal_38bf6f6.asm.MethodWriter.writeFrame
  338  0.06% 84.92%       2 303554 com.arpnetworking.tsdaggregator.model.querylog.Version2e$Data.getTimers
- 339  0.06% 84.98%       2 302830 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.StdKeySerializer.serialize
- 340  0.06% 85.03%       2 303947 com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.json.JsonReadContext.reset
- 341  0.06% 85.09%       2 303950 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize
+ 339  0.06% 84.98%       2 302830 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.StdKeySerializer.serialize
+ 340  0.06% 85.03%       2 303947 com.arpnetworking.metrics.com.fasterxml.jackson.core.json.JsonReadContext.reset
+ 341  0.06% 85.09%       2 303950 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.std.AsArraySerializerBase.serialize
  342  0.06% 85.15%       2 303345 com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeAny
- 343  0.06% 85.21%       2 303956 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Segment.next
+ 343  0.06% 85.21%       2 303956 com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Segment.next
  344  0.06% 85.26%       2 303349 com.google.common.collect.AbstractMapEntry.<init>
  345  0.06% 85.32%       2 302270 java.util.zip.ZipFile.getEntry
  346  0.06% 85.38%       2 303564 com.arpnetworking.jackson.EnumerationDeserializer.deserialize
@@ -9932,7 +9932,7 @@ rank   self  accum   count trace method
  350  0.06% 85.61%       2 301337 org.jacoco.agent.rt.internal_38bf6f6.asm.ByteVector.enlarge
  351  0.06% 85.67%       2 302943 org.apache.commons.math3.util.FastMath$lnMant.access$400
  352  0.06% 85.72%       2 303354 com.fasterxml.jackson.databind.introspect.AnnotatedConstructor.call
- 353  0.06% 85.78%       2 303971 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+ 353  0.06% 85.78%       2 303971 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
  354  0.06% 85.84%       2 302837 com.arpnetworking.metrics.ch.qos.logback.classic.spi.LoggingEvent.getMarker
  355  0.06% 85.89%       2 303571 com.fasterxml.jackson.core.json.JsonReadContext.createChildArrayContext
  356  0.06% 85.95%       2 303573 com.arpnetworking.tsdaggregator.model.querylog.Version2e$Annotations.getFinalTimestamp
@@ -9947,7 +9947,7 @@ rank   self  accum   count trace method
  365  0.06% 86.47%       2 303991 java.lang.String.getBytes
  366  0.06% 86.53%       2 303992 java.util.Formatter$FormatSpecifier.<init>
  367  0.06% 86.58%       2 303586 ch.qos.logback.classic.Logger.trace
- 368  0.06% 86.64%       2 302839 com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.base.GeneratorBase.getOutputContext
+ 368  0.06% 86.64%       2 302839 com.arpnetworking.metrics.com.fasterxml.jackson.core.base.GeneratorBase.getOutputContext
  369  0.06% 86.70%       2 303995 org.gradle.api.internal.tasks.testing.DefaultTestOutputEvent.getDestination
  370  0.06% 86.75%       2 301548 javassist.bytecode.AttributeInfo.<init>
  371  0.06% 86.81%       2 303590 org.gradle.util.LinePerThreadBufferingOutputStream.getStream
@@ -9976,7 +9976,7 @@ rank   self  accum   count trace method
  394  0.06% 88.13%       2 303382 java.util.Formatter.parse
  395  0.06% 88.19%       2 304056 org.joda.time.format.PeriodFormatterBuilder$FieldFormatter.getFieldValue
  396  0.06% 88.25%       2 304057 org.joda.time.format.PeriodFormatterBuilder$FieldFormatter.getFieldValue
- 397  0.06% 88.30%       2 302847 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer.writeString
+ 397  0.06% 88.30%       2 302847 com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer.writeString
  398  0.06% 88.36%       2 304062 com.fasterxml.jackson.databind.node.TreeTraversingParser.<init>
  399  0.06% 88.42%       2 304063 java.util.concurrent.locks.AbstractQueuedSynchronizer.transferForSignal
  400  0.06% 88.47%       2 304065 com.google.common.collect.FluentIterable.from
@@ -10035,7 +10035,7 @@ rank   self  accum   count trace method
  453  0.06% 91.51%       2 303411 com.fasterxml.jackson.databind.node.ValueNode.<init>
  454  0.06% 91.57%       2 302655 com.arpnetworking.metrics.generator.util.WorkEntry.<init>
  455  0.06% 91.63%       2 302708 org.joda.time.format.DateTimeFormatterBuilder$Fraction.getFractionData
- 456  0.06% 91.69%       2 302862 com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.io.SegmentedStringWriter.close
+ 456  0.06% 91.69%       2 302862 com.arpnetworking.metrics.com.fasterxml.jackson.core.io.SegmentedStringWriter.close
  457  0.06% 91.74%       2 304184 org.apache.commons.math3.random.BitsStreamGenerator.nextGaussian
  458  0.06% 91.80%       2 303417 sun.reflect.GeneratedMethodAccessor18.invoke
  459  0.06% 91.86%       2 303681 java.util.concurrent.locks.ReentrantReadWriteLock$Sync.tryReleaseShared
@@ -10048,7 +10048,7 @@ rank   self  accum   count trace method
  466  0.06% 92.26%       2 301776 sun.security.provider.DigestBase.engineUpdate
  467  0.06% 92.32%       2 303696 java.nio.charset.CharsetEncoder.<init>
  468  0.06% 92.37%       2 304207 org.joda.time.chrono.BasicChronology.getDayOfMonth
- 469  0.06% 92.43%       2 302778 com.arpnetworking.aint.metrics.com.fasterxml.jackson.core.io.IOContext._verifyAlloc
+ 469  0.06% 92.43%       2 302778 com.arpnetworking.metrics.com.fasterxml.jackson.core.io.IOContext._verifyAlloc
  470  0.06% 92.49%       2 301102 org.jacoco.agent.rt.internal_38bf6f6.asm.tree.MethodNode.visitLocalVariable
  471  0.06% 92.55%       2 304220 org.joda.time.PeriodType.size
  472  0.06% 92.60%       2 304225 org.joda.time.DurationFieldType.months
@@ -10090,7 +10090,7 @@ rank   self  accum   count trace method
  508  0.06% 94.67%       2 304295 com.fasterxml.jackson.core.json.JsonReadContext.reset
  509  0.06% 94.72%       2 303446 com.arpnetworking.tsdaggregator.model.DefaultMetric$Builder.<init>
  510  0.06% 94.78%       2 304299 org.joda.time.DurationFieldType.hours
- 511  0.06% 94.84%       2 303736 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.node.ObjectNode.fields
+ 511  0.06% 94.84%       2 303736 com.arpnetworking.metrics.com.fasterxml.jackson.databind.node.ObjectNode.fields
  512  0.06% 94.90%       2 304301 net.sf.oval.Validator.checkConstraint
  513  0.06% 94.95%       2 304302 java.util.ComparableTimSort.mergeLo
  514  0.06% 95.01%       2 304303 org.joda.time.format.PeriodFormatterBuilder$FieldFormatter.getFieldValue
@@ -10102,7 +10102,7 @@ rank   self  accum   count trace method
  520  0.06% 95.36%       2 303745 java.util.HashMap.putAllForCreate
  521  0.06% 95.41%       2 304318 org.joda.time.field.PreciseDurationDateTimeField.remainder
  522  0.06% 95.47%       2 303746 java.util.concurrent.ConcurrentLinkedDeque.linkLast
- 523  0.06% 95.53%       2 303747 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Parser.close
+ 523  0.06% 95.53%       2 303747 com.arpnetworking.metrics.com.fasterxml.jackson.databind.util.TokenBuffer$Parser.close
  524  0.06% 95.58%       2 304323 org.joda.time.chrono.BasicChronology.getYearMonthDayMillis
  525  0.06% 95.64%       2 304324 org.joda.time.DurationFieldType.weeks
  526  0.06% 95.70%       2 301417 java.lang.Object.hashCode
@@ -10126,7 +10126,7 @@ rank   self  accum   count trace method
  544  0.06% 96.73%       2 304359 org.joda.time.chrono.AssembledChronology.minuteOfHour
  545  0.06% 96.79%       2 304360 org.joda.time.DurationFieldType.minutes
  546  0.06% 96.85%       2 301279 org.jacoco.agent.rt.internal_38bf6f6.core.internal.instr.ProbeInserter.visitFrame
- 547  0.06% 96.90%       2 303773 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
+ 547  0.06% 96.90%       2 303773 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ser.SerializerCache.getReadOnlyLookupMap
  548  0.06% 96.96%       2 302673 com.arpnetworking.metrics.impl.TsdQueryLogSink.record
  549  0.06% 97.02%       2 304365 org.joda.time.chrono.BasicChronology.getDayOfMonth
  550  0.06% 97.08%       2 302894 com.arpnetworking.metrics.ch.qos.logback.classic.spi.LoggingEvent.getFormattedMessage
@@ -10169,7 +10169,7 @@ rank   self  accum   count trace method
  587  0.06% 99.20%       2 303849 org.gradle.messaging.serialize.kryo.TypeSafeSerializer.access$000
  588  0.06% 99.25%       2 300275 org.jacoco.agent.rt.internal_38bf6f6.asm.MethodWriter.visitLocalVariable
  589  0.06% 99.31%       2 301627 java.io.DataInputStream.readUnsignedShort
- 590  0.06% 99.37%       2 302921 com.arpnetworking.aint.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree
+ 590  0.06% 99.37%       2 302921 com.arpnetworking.metrics.com.fasterxml.jackson.databind.ObjectMapper.readTree
  591  0.06% 99.43%       2 303862 org.joda.time.PeriodType.size
  592  0.06% 99.48%       2 303865 java.util.regex.Matcher.getTextLength
  593  0.06% 99.54%       2 301640 java.io.DataInputStream.readUnsignedShort

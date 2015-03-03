@@ -60,7 +60,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public Optional<Boolean> getPropertyAsBoolean(final String name) {
         final Optional<String> property = getProperty(name);
-        return property.isPresent() ? Optional.of(Boolean.valueOf(property.get())) : Optional.<Boolean>absent();
+        return property.isPresent() ? Optional.of(Boolean.parseBoolean(property.get())) : Optional.<Boolean>absent();
     }
 
     /**
@@ -69,7 +69,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public boolean getPropertyAsBoolean(final String name, final boolean defaultValue) {
         final Optional<Boolean> property = getPropertyAsBoolean(name);
-        return property.isPresent() ? property.get().booleanValue() : defaultValue;
+        return property.or(defaultValue);
     }
 
     /**
@@ -87,7 +87,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public Optional<Integer> getPropertyAsInteger(final String name) throws NumberFormatException {
         final Optional<String> property = getProperty(name);
-        return property.isPresent() ? Optional.of(Integer.valueOf(property.get())) : Optional.<Integer>absent();
+        return property.isPresent() ? Optional.of(Integer.parseInt(property.get())) : Optional.<Integer>absent();
     }
 
     /**
@@ -96,7 +96,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public int getPropertyAsInteger(final String name, final int defaultValue) throws NumberFormatException {
         final Optional<Integer> property = getPropertyAsInteger(name);
-        return property.isPresent() ? property.get().intValue() : defaultValue;
+        return property.or(defaultValue);
     }
 
     /**
@@ -114,7 +114,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public Optional<Long> getPropertyAsLong(final String name) throws NumberFormatException {
         final Optional<String> property = getProperty(name);
-        return property.isPresent() ? Optional.of(Long.valueOf(property.get())) : Optional.<Long>absent();
+        return property.isPresent() ? Optional.of(Long.parseLong(property.get())) : Optional.<Long>absent();
     }
 
     /**
@@ -123,7 +123,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public long getPropertyAsLong(final String name, final long defaultValue) throws NumberFormatException {
         final Optional<Long> property = getPropertyAsLong(name);
-        return property.isPresent() ? property.get().longValue() : defaultValue;
+        return property.or(defaultValue);
     }
 
     /**
@@ -141,7 +141,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public Optional<Double> getPropertyAsDouble(final String name) throws NumberFormatException {
         final Optional<String> property = getProperty(name);
-        return property.isPresent() ? Optional.of(Double.valueOf(property.get())) : Optional.<Double>absent();
+        return property.isPresent() ? Optional.of(Double.parseDouble(property.get())) : Optional.<Double>absent();
     }
 
     /**
@@ -150,7 +150,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public double getPropertyAsDouble(final String name, final double defaultValue) throws NumberFormatException {
         final Optional<Double> property = getPropertyAsDouble(name);
-        return property.isPresent() ? property.get().doubleValue() : defaultValue;
+        return property.or(defaultValue);
     }
 
     /**
@@ -168,7 +168,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public Optional<Float> getPropertyAsFloat(final String name) throws NumberFormatException {
         final Optional<String> property = getProperty(name);
-        return property.isPresent() ? Optional.of(Float.valueOf(property.get())) : Optional.<Float>absent();
+        return property.isPresent() ? Optional.of(Float.parseFloat(property.get())) : Optional.<Float>absent();
     }
 
     /**
@@ -177,7 +177,7 @@ public abstract class BaseConfiguration implements Configuration {
     @Override
     public float getPropertyAsFloat(final String name, final float defaultValue) throws NumberFormatException {
         final Optional<Float> property = getPropertyAsFloat(name);
-        return property.isPresent() ? property.get().floatValue() : defaultValue;
+        return property.or(defaultValue);
     }
 
     /**

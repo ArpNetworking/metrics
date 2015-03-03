@@ -22,6 +22,7 @@ import akka.actor.UntypedActor;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.google.common.collect.Lists;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -81,7 +82,7 @@ public final class AggregatorLifecycle extends UntypedActor {
     /**
      * Message indicating that a new aggregator has started.
      */
-    public static final class NotifyAggregatorStarted {
+    public static final class NotifyAggregatorStarted implements Serializable {
         /**
          * Public constructor.
          *
@@ -96,5 +97,6 @@ public final class AggregatorLifecycle extends UntypedActor {
         }
 
         private final AggregatedData _aggregatedData;
+        private static final long serialVersionUID = 1943920959991388190L;
     }
 }

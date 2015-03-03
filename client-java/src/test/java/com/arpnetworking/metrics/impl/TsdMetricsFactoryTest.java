@@ -21,7 +21,7 @@ import com.arpnetworking.metrics.Quantity;
 import com.arpnetworking.metrics.Sink;
 import com.arpnetworking.metrics.test.MockitoHelper;
 
-import org.hamcrest.collection.IsMapWithSize;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -55,14 +55,14 @@ public class TsdMetricsFactoryTest {
         metrics.close();
         Mockito.verify(sink1).record(
                 org.mockito.Matchers.anyMapOf(String.class, String.class),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
         Mockito.verify(sink2).record(
                 org.mockito.Matchers.anyMapOf(String.class, String.class),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     @Test

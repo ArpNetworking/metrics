@@ -17,7 +17,6 @@
 package models.messages;
 
 import com.google.common.base.MoreObjects;
-import org.joda.time.DateTime;
 
 import java.nio.file.Path;
 
@@ -32,28 +31,21 @@ public class LogLine {
      * Public constructor.
      *
      * @param file The name of the log file
-     * @param line The log line.
-     * @param timeStamp The timestamp of the log line.
+     * @param line The raw log line.
      */
     public LogLine(
             final Path file,
-            final String line,
-            final DateTime timeStamp) {
+            final byte[] line) {
         _file = file;
         _line = line;
-        _timestamp = timeStamp;
     }
 
     public Path getFile() {
         return _file;
     }
 
-    public String getLine() {
+    public byte[] getLine() {
         return _line;
-    }
-
-    public DateTime getTimestamp() {
-        return _timestamp;
     }
 
     /**
@@ -62,13 +54,12 @@ public class LogLine {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("File", _file)
                 .add("Line", _line)
-                .add("Timestamp", _timestamp)
                 .toString();
     }
 
     private final Path _file;
-    private final String _line;
-    private final DateTime _timestamp;
+    private final byte[] _line;
 }

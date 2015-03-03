@@ -19,9 +19,10 @@ import akka.actor.UntypedActor;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import org.joda.time.Duration;
-import play.Logger;
 
 /**
  * This is an actor that finds "random" hosts. The primary purpose of this
@@ -48,34 +49,49 @@ public class RandomHostProvider extends UntypedActor {
     @Override
     public void onReceive(final Object message) throws Exception {
         if ("tick".equals(message)) {
-            Logger.trace(String.format("Searching for added/updated/deleted hosts; hostProvider=%s", this));
+            LOGGER.trace()
+                    .setMessage("Searching for added/updated/deleted hosts")
+                    .addData("hostProvider", this)
+                    .log();
 
             if (System.currentTimeMillis() - _lastTime > INTERVAL.getMillis()) {
                 final Host newHost = new DefaultHost.Builder()
-                        .setHostName("test-app" + _hostAdd + ".com")
+                        .setHostName("test-app" + _hostAdd + ".snc1")
                         .setMetricsSoftwareState(MetricsSoftwareState.NOT_INSTALLED)
                         .build();
-                Logger.debug(String.format("Found a new host; host=%s", newHost));
+                LOGGER.debug()
+                        .setMessage("Found a new host")
+                        .addData("hostname", newHost.getHostName())
+                        .log();
                 _hostRepository.addOrUpdateHost(newHost);
                 if (_hostUpdateOne > 0) {
                     final Host updatedHost = new DefaultHost.Builder()
-                            .setHostName("test-app" + _hostUpdateOne + ".com")
+                            .setHostName("test-app" + _hostUpdateOne + ".snc1")
                             .setMetricsSoftwareState(MetricsSoftwareState.OLD_VERSION_INSTALLED)
                             .build();
-                    Logger.debug(String.format("Found an updated host; host=%s", updatedHost));
+                    LOGGER.debug()
+                            .setMessage("Found an updated host")
+                            .addData("hostname", updatedHost.getHostName())
+                            .log();
                     _hostRepository.addOrUpdateHost(updatedHost);
                 }
                 if (_hostUpdateTwo > 0) {
                     final Host updatedHost = new DefaultHost.Builder()
-                            .setHostName("test-app" + _hostUpdateTwo + ".com")
+                            .setHostName("test-app" + _hostUpdateTwo + ".snc1")
                             .setMetricsSoftwareState(MetricsSoftwareState.LATEST_VERSION_INSTALLED)
                             .build();
-                    Logger.debug(String.format("Found an updated host; host=%s", updatedHost));
+                    LOGGER.debug()
+                            .setMessage("Found an updated host")
+                            .addData("hostname", updatedHost.getHostName())
+                            .log();
                     _hostRepository.addOrUpdateHost(updatedHost);
                 }
                 if (_hostRemove > 0) {
-                    final String deletedHostName = "test-app" + _hostRemove + ".com";
-                    Logger.debug(String.format("Found host to delete; hostName=%s", deletedHostName));
+                    final String deletedHostName = "test-app" + _hostRemove + ".snc1";
+                    LOGGER.debug()
+                            .setMessage("Found host to delete")
+                            .addData("hostname", deletedHostName)
+                            .log();
                     _hostRepository.deleteHost(deletedHostName);
                 }
                 ++_hostAdd;
@@ -95,4 +111,5 @@ public class RandomHostProvider extends UntypedActor {
     private long _hostRemove = -15;
 
     private static final Duration INTERVAL = Duration.standardSeconds(10);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RandomHostProvider.class);
 }

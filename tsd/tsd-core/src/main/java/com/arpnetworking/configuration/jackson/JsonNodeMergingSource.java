@@ -49,7 +49,8 @@ public final class JsonNodeMergingSource implements JsonNodeSource {
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(JsonNodeMergingSource.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("MergedNode", _mergedNode)
                 .toString();
     }

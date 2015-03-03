@@ -78,6 +78,7 @@ public final class DefaultHost implements Host {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("HostName", _hostName)
                 .add("MetricsSoftwareState", _metricsSoftwareState)
                 .toString();

@@ -16,6 +16,7 @@
 
 package com.arpnetworking.test.junitbenchmarks;
 
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.carrotsearch.junitbenchmarks.AutocloseConsumer;
 import com.carrotsearch.junitbenchmarks.GCSnapshot;
 import com.carrotsearch.junitbenchmarks.Result;
@@ -70,7 +71,7 @@ public class JsonBenchmarkConsumer extends AutocloseConsumer implements Closeabl
                     Files.createDirectories(_path.toAbsolutePath().getParent());
                 }
                 LOGGER.info(String.format("Closing; file=%s", _path));
-                MAPPER.writeValue(_path.toFile(), this);
+                OBJECT_MAPPER.writeValue(_path.toFile(), this);
             } catch (final IOException e) {
                 LOGGER.error("Could not write json performance file", e);
             }
@@ -87,12 +88,12 @@ public class JsonBenchmarkConsumer extends AutocloseConsumer implements Closeabl
     private final List<Result> _results = Lists.newArrayList();
     private final Path _path;
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonBenchmarkConsumer.class);
 
     static {
         final SimpleModule simpleModule = new SimpleModule();
         simpleModule.addSerializer(GCSnapshot.class, new GCSnapshotSerializer());
-        MAPPER.registerModule(simpleModule);
+        OBJECT_MAPPER.registerModule(simpleModule);
     }
 }

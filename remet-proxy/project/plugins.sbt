@@ -28,5 +28,5 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.4.0-M2")
 //addSbtPlugin("de.johoop" % "findbugs4sbt" % "1.3.0")
 
 libraryDependencies ++= Seq(
-    "com.puppycrawl.tools" % "checkstyle" % "5.7"
+    "com.puppycrawl.tools" % "checkstyle" % "6.3"
 )

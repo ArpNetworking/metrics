@@ -20,7 +20,8 @@ import akka.actor.ActorRef;
 import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import play.Logger;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import scala.concurrent.duration.FiniteDuration;
 
 /**
@@ -73,7 +74,7 @@ public class HostProviderScheduler extends UntypedActor {
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        Logger.info("Starting HostProviderScheduler");
+        LOGGER.info().setMessage("Starting HostProviderScheduler").log();
     }
 
     /**
@@ -94,4 +95,6 @@ public class HostProviderScheduler extends UntypedActor {
     }
 
     private final Cancellable _tickScheduler;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HostProviderScheduler.class);
 }

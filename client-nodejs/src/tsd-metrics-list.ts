@@ -20,35 +20,52 @@ import tsdDef = require("tsdDef");
  * Class for holding a list of samples.
  *
  * @class
- * @alias TsdMetricsList
+ * @alias MetricsList
  */
 export class TsdMetricsList<T extends tsdDef.MetricSample> implements tsdDef.MetricsList <T> {
+
+    /**
+     * An array holding metrics samples.
+     *
+     * @member {MetricsSample[]} values
+     * @memberof MetricsList
+     * @instance
+     */
     private _values:T[] = [];
+
+    /**
+     * An array holding metrics samples.
+     *
+     * @method
+     * @returns {T[]}
+     */
+    public getValues():T[] {
+        return this._values
+
+    }
 
     /**
      * Push a value to the list.
      *
      * @method
-     * @param {TsdMetricSample} value The value to be pushed
+     * @param {MetricSample} value The value to be pushed
+     * @ignore
      */
     public push(value:T):void {
-        this[this._values.push(value) - 1] = value;
+        this._values.push(value);
     }
 
     /**
-     * Creates a new TsdMetricsList with all elements that pass the test implemented by the provided predicate.
+     * Creates a new MetricsList with all elements that pass the test implemented by the provided predicate.
      *
      * @method
      * @param predicate The function to test if element should be taken.
-     * @return {TsdMetricsList<TsdMetricSample>} new TsdMetricsList list containing only the items matching the filter predicate
+     * @return {MetricsList<MetricSample>} new MetricsList list containing only the items matching the filter
+     * predicate
      */
     public filter(predicate:(T) => boolean):TsdMetricsList<T> {
         var ret = new TsdMetricsList<T>();
         ret._values = this._values.filter(predicate);
         return ret;
-    }
-
-    public toJSON() {
-        return { values: this._values };
     }
 }

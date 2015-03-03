@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.utility;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -49,7 +50,7 @@ public class ReflectionsDatabaseTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "DM_NEW_FOR_GETCLASS", justification = "Need a new class")
+    @SuppressFBWarnings(value = "DM_NEW_FOR_GETCLASS", justification = "Need a new class")
     public void testFindClassesWithAnnotationNonAnnotation() {
         final Class<? extends Annotation> notAnAnnotation = new Annotation() {
             @Override

@@ -1,0 +1,58 @@
+{
+    "name": "TSDAggregatorPipeline",
+    "service": "tsd_aggregator",
+    "cluster": "tsd_aggregator_dev",
+    "host": "localhost",
+    "sources":
+    [
+        {
+            "type": "com.arpnetworking.tsdcore.sources.FileSource",
+            "name": "tsd_aggregator_query_log",
+            "sourceFile": "logs/tsd-aggregator-query.log",
+            "stateFile": "logs/tsd-aggregator-query.log.state",
+            "parser": {
+                "type": "com.arpnetworking.tsdaggregator.parsers.QueryLogParser"
+            }
+        }
+    ],
+    "sinks":
+    [
+        {
+            "type": "com.arpnetworking.tsdcore.sinks.ExpressionSink",
+            "name": "tsd_aggregator_expression_sink",
+            "dynamicConfigurationFactory": {
+                "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
+                "directory": "../../build/start/tsdagg/expressions"
+            },
+            "sink": {
+                "type": "com.arpnetworking.tsdcore.sinks.AlertSink",
+                "name": "tsd_aggregator_alert_sink",
+                "dynamicConfigurationFactory": {
+                    "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
+                    "directory": "../../build/start/tsdagg/alerts"
+                },
+                "sink": {
+                    "type": "com.arpnetworking.tsdcore.sinks.MultiSink",
+                    "name": "tsd_aggregator_multi_sink",
+                    "sinks": [
+                        {
+                            "type": "com.arpnetworking.tsdcore.sinks.PeriodicStatisticsSink",
+                            "name": "tsd_aggregator_periodic_statistics_sink"
+                        },
+                        {
+                            "type": "com.arpnetworking.tsdcore.sinks.ReMetSink",
+                            "name": "tsd_aggregator_remet_sink",
+                            "uri": "http://localhost:7090/report"
+                        },
+                        {
+                            "type": "com.arpnetworking.tsdcore.sinks.AggregationServerSink",
+                            "name": "tsd_aggregator_cluster_sink",
+                            "serverAddress": "localhost",
+                            "serverPort": 7065
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

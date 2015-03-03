@@ -18,6 +18,7 @@ package com.arpnetworking.tsdaggregator.parsers;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.EnumerationDeserializer;
 import com.arpnetworking.jackson.EnumerationDeserializerStrategyUsingToUpperCase;
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.tsdaggregator.model.DefaultMetric;
 import com.arpnetworking.tsdaggregator.model.DefaultRecord;
 import com.arpnetworking.tsdaggregator.model.Metric;
@@ -33,10 +34,8 @@ import com.arpnetworking.tsdcore.parsers.exceptions.ParsingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -310,7 +309,9 @@ public final class QueryLogParser implements Parser<Record> {
             jsonNode = OBJECT_MAPPER.readTree(data);
         } catch (final IOException ex) {
             // CHECKSTYLE.OFF: IllegalInstantiation - Approved for byte[] to String
-            throw new ParsingException(String.format("Unsupported non-json format; data=%s", new String(data, Charsets.UTF_8)));
+            throw new ParsingException(String.format(
+                    "Unsupported non-json format; data=%s",
+                    new String(data, Charsets.UTF_8)));
             // CHECKSTYLE.ON: IllegalInstantiation
         }
 
@@ -344,7 +345,7 @@ public final class QueryLogParser implements Parser<Record> {
         final Version2c model;
         try {
             model = OBJECT_MAPPER.treeToValue(jsonNode, Version2c.class);
-        } catch (final IOException | ConstraintsViolatedException e) {
+        } catch (final IOException | IllegalArgumentException | ConstraintsViolatedException e) {
             throw new ParsingException("Failed to deserialize version 2c", e);
         }
 
@@ -368,7 +369,7 @@ public final class QueryLogParser implements Parser<Record> {
         final Version2d model;
         try {
             model = OBJECT_MAPPER.treeToValue(jsonNode, Version2d.class);
-        } catch (final IOException | ConstraintsViolatedException e) {
+        } catch (final IOException | IllegalArgumentException | ConstraintsViolatedException e) {
             throw new ParsingException("Failed to deserialize version 2d", e);
         }
 
@@ -392,7 +393,7 @@ public final class QueryLogParser implements Parser<Record> {
         final Version2e model;
         try {
             model = OBJECT_MAPPER.treeToValue(jsonNode, Version2e.class);
-        } catch (final IOException | ConstraintsViolatedException e) {
+        } catch (final IOException | IllegalArgumentException | ConstraintsViolatedException e) {
             throw new ParsingException("Failed to deserialize version 2e", e);
         }
 
@@ -495,7 +496,7 @@ public final class QueryLogParser implements Parser<Record> {
         return new DateTime(Math.round(seconds * 1000.0), ISOChronology.getInstanceUTC());
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
     private static final String DATA_KEY = "data";
     private static final String VERSION_KEY = "version";
 
@@ -503,7 +504,7 @@ public final class QueryLogParser implements Parser<Record> {
         @Override
         public Quantity apply(final String sample) {
             try {
-                return sample != null ? new Quantity(Double.parseDouble(sample), Optional.<Unit>absent()) : null;
+                return sample != null ? new Quantity.Builder().setValue(Double.parseDouble(sample)).build() : null;
             } catch (final NumberFormatException nfe) {
                 return null;
             }
@@ -513,19 +514,18 @@ public final class QueryLogParser implements Parser<Record> {
     private static final Function<Version2d.Sample, Quantity> VERSION_2D_SAMPLE_TO_QUANTITY = new Function<Version2d.Sample, Quantity>() {
         @Override
         public Quantity apply(final Version2d.Sample sample) {
-            return sample != null ? new Quantity(sample.getValue(), sample.getUnit()) : null;
+            return sample != null ? new Quantity.Builder().setValue(sample.getValue()).setUnit(sample.getUnit().orNull()).build() : null;
         }
     };
 
     private static final Function<Version2e.Sample, Quantity> VERSION_2E_SAMPLE_TO_QUANTITY = new Function<Version2e.Sample, Quantity>() {
         @Override
         public Quantity apply(final Version2e.Sample sample) {
-            return sample != null ? new Quantity(sample.getValue(), sample.getUnit()) : null;
+            return sample != null ? new Quantity.Builder().setValue(sample.getValue()).setUnit(sample.getUnit().orNull()).build() : null;
         }
     };
 
     static {
-        OBJECT_MAPPER.registerModule(new JodaModule());
         final SimpleModule queryLogParserModule = new SimpleModule("QuerLogParser");
         BuilderDeserializer.addTo(queryLogParserModule, Version2c.class);
         BuilderDeserializer.addTo(queryLogParserModule, Version2d.class);

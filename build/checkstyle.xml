@@ -1,11 +1,26 @@
 <?xml version="1.0"?>
+<!--
+  ~ Copyright 2014 Groupon.com
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
 <!DOCTYPE module PUBLIC
-    "-//Puppy Crawl//DTD Check Configuration 1.1//EN"
-    "http://www.puppycrawl.com/dtds/configuration_1_1.dtd">
+    "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
+    "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
 
 <!--
-    Custom Checkstyle configuration for AINT. This is based heavily on
-    the standard sun coding conventions as provided with Checkstyle in:
+    Custom Checkstyle configuration. This is based heavily on the standard
+    Sun coding conventions as provided with Checkstyle in:
 
     config/sun_checks.xml
 
@@ -45,17 +60,13 @@
     <!-- Checks that FIXME is not used in comments.  TODO is preferred. -->
     <module name="RegexpSingleline">
         <property name="format" value="((//.*)|(\*.*))FIXME"/>
-        <property name="message" value='TODO is preferred to FIXME.  e.g. "TODO(johndoe): Refactor when v2 is released. [MAI-?]"'/>
+        <property name="message" value='TODO is preferred to FIXME.  e.g. "TODO(johndoe): Refactor when v2 is released."'/>
     </module>
 
-    <!-- Checks that TODOs are named with jira reference.  (Actually, just that they are followed by an open paren.) -->
+    <!-- Checks that TODOs are named.  (Actually, just that they are followed by an open paren.) -->
     <module name="RegexpSingleline">
         <property name="format" value="((//.*)|(\*.*))TODO[^(]"/>
-        <property name="message" value='All TODOs should be named with jira reference.  e.g. "TODO(johndoe): Refactor when v2 is released. [MAI-?]"'/>
-    </module>
-    <module name="RegexpSingleline">
-        <property name="format" value="((//.*)|(\*.*))TODO\([^)]*\):[^\[]*[^\[][^\]]*[^\]]$"/>
-        <property name="message" value='All TODOs should be named with jira reference.  e.g. "TODO(johndoe): Refactor when v2 is released. [MAI-?]"'/>
+        <property name="message" value='All TODOs should be named.  e.g. "TODO(johndoe): Refactor when v2 is released."'/>
     </module>
 
     <!-- Checks that comments do not include date or time lines -->
@@ -84,6 +95,12 @@
         <property name="message" value="Use JUnit v4 instead."/>
     </module>
 
+    <!-- Forbid shaded packages -->
+    <module name="RegexpSingleline">
+        <property name="format" value="^[ ]*Throwables.propagate\(.*"/>
+        <property name="message" value="Always throw the result of Throwables.propagate."/>
+    </module>
+
     <!-- Checks that property files contain the same keys.         -->
     <!-- See http://checkstyle.sf.net/config_misc.html#Translation -->
     <module name="Translation"/>
@@ -94,18 +111,13 @@
 
     <!-- Turn checkstyle ON and OFF for a specified code block -->
     <module name="SuppressionCommentFilter">
-        <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
-        <property name="onCommentFormat" value="CHECKSTYLE.ON\: ([\w\|]+)"/>
+        <property name="offCommentFormat" value="CHECKSTYLE\.OFF\: ([\w\|]+)"/>
+        <property name="onCommentFormat" value="CHECKSTYLE\.ON\: ([\w\|]+)"/>
         <property name="checkFormat" value="$1"/>
     </module>
 
     <module name="FileLength">
         <property name="max" value="1000"/>
-    </module>
-
-    <module name="StrictDuplicateCode">
-        <!-- This counts lines including comments -->
-        <property name="min" value="35"/>
     </module>
 
     <module name="TreeWalker">
@@ -293,7 +305,6 @@
         </module>
         <module name="IllegalThrows"/>
         <module name="InnerAssignment"/>
-        <module name="JUnitTestCase"/>
         <module name="MissingSwitchDefault"/>
         <module name="ModifiedControlVariable"/>
         <module name="NoClone"/>
@@ -301,10 +312,6 @@
         <module name="OneStatementPerLine"/>
         <module name="PackageDeclaration"/>
         <module name="ParameterAssignment"/>
-        <module name="RedundantThrows">
-            <property name="allowUnchecked" value="true"/>
-            <property name="allowSubclasses" value="false"/>
-        </module>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>

@@ -59,8 +59,8 @@ public final class CarbonSink extends VertxSink {
                         datum.getFQDSN().getMetric(),
                         datum.getPeriod().toString(),
                         datum.getFQDSN().getStatistic().getName(),
-                        Double.valueOf(datum.getValue().getValue()),
-                        Long.valueOf(datum.getPeriodStart().toInstant().getMillis() / 1000)));
+                        datum.getValue().getValue(),
+                        datum.getPeriodStart().toInstant().getMillis() / 1000));
     }
 
     private CarbonSink(final Builder builder) {
@@ -79,7 +79,7 @@ public final class CarbonSink extends VertxSink {
          */
         public Builder() {
             super(CarbonSink.class);
-            setServerPort(Integer.valueOf(2003));
+            setServerPort(2003);
         }
 
         /**
