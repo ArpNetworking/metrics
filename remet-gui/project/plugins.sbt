@@ -31,7 +31,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.0.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.0")
 
 libraryDependencies ++= Seq(
-    "com.puppycrawl.tools" % "checkstyle" % "5.7"
+    "com.puppycrawl.tools" % "checkstyle" % "6.3"
 )
 
 addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.1.4")

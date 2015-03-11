@@ -102,9 +102,9 @@ public final class MonitordSink extends HttpPostSink {
                                 .append("%3D").append(condition.getThreshold().getValue())
                                 .append("%3B");
 
-                        if (condition.isTriggered().isPresent() && condition.isTriggered().get().booleanValue()) {
+                        if (condition.isTriggered().isPresent() && condition.isTriggered().get()) {
                             final int status = _severityToStatus.containsKey(condition.getSeverity())
-                                    ? _severityToStatus.get(condition.getSeverity()).intValue() : _unknownSeverityStatus;
+                                    ? _severityToStatus.get(condition.getSeverity()) : _unknownSeverityStatus;
                             maxStatus = Math.max(status, maxStatus);
                         }
                     }
@@ -209,7 +209,7 @@ public final class MonitordSink extends HttpPostSink {
     private MonitordSink(final Builder builder) {
         super(builder);
         _severityToStatus = Maps.newHashMap(builder._severityToStatus);
-        _unknownSeverityStatus = builder._unknownSeverityStatus.intValue();
+        _unknownSeverityStatus = builder._unknownSeverityStatus;
     }
 
     private final Map<String, Integer> _severityToStatus;
@@ -271,9 +271,9 @@ public final class MonitordSink extends HttpPostSink {
 
         @NotNull
         private Map<String, Integer> _severityToStatus = ImmutableMap.of(
-                "warning", Integer.valueOf(1),
-                "critical", Integer.valueOf(2));
+                "warning", 1,
+                "critical", 2);
         @NotNull
-        private Integer _unknownSeverityStatus = Integer.valueOf(2);
+        private Integer _unknownSeverityStatus = 2;
     }
 }

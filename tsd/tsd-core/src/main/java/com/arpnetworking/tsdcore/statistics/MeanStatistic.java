@@ -33,23 +33,26 @@ public class MeanStatistic extends BaseStatistic {
      * {@inheritDoc}
      */
     @Override
-    public double calculate(final List<Quantity> orderedValues) {
-        if (orderedValues.size() == 0) {
-            return 0d;
-        }
-        double sum = 0;
-        for (final Quantity sample : orderedValues) {
-            sum += sample.getValue();
-        }
-        return sum / orderedValues.size();
+    public String getName() {
+        return "mean";
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getName() {
-        return "mean";
+    public Quantity calculate(final List<Quantity> orderedValues) {
+        // TODO(vkoskela): Statistic calculation should be allowed to either fail or not return a quantity. [MAI-?]
+        if (orderedValues.size() == 0) {
+            return ZERO;
+        }
+        double sum = 0;
+        Optional<Unit> unit = Optional.absent();
+        for (final Quantity sample : orderedValues) {
+            sum += sample.getValue();
+            unit = unit.or(sample.getUnit());
+        }
+        return new Quantity.Builder().setValue(sum / orderedValues.size()).setUnit(unit.orNull()).build();
     }
 
     /**
@@ -65,8 +68,12 @@ public class MeanStatistic extends BaseStatistic {
             samples += aggregation.getPopulationSize();
             unit = unit.or(aggregation.getValue().getUnit());
         }
-        return new Quantity(weighted / samples, unit);
+        return new Quantity.Builder()
+                .setValue(weighted / samples)
+                .setUnit(unit.orNull())
+                .build();
     }
 
+    private static final Quantity ZERO = new Quantity.Builder().setValue(0.0).build();
     private static final long serialVersionUID = 2943082617025777130L;
 }

@@ -87,7 +87,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener, Mockito.never()).handle(Mockito.any(Throwable.class));
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -116,7 +116,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener, Mockito.atLeastOnce()).fileNotFound();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -150,7 +150,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).initialize(_tailer);
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -169,7 +169,7 @@ public class StatefulTailerTest {
             writer.flush();
             _readTrigger.releaseTrigger();
             _readTrigger.waitForWait();
-            Mockito.verify(_listener).handle(value);
+            Mockito.verify(_listener).handle(value.getBytes(Charsets.UTF_8));
         }
 
         _readTrigger.disable();
@@ -209,7 +209,7 @@ public class StatefulTailerTest {
         _executor.awaitTermination(EXECUTOR_TERMINATE_TIMEOUT.getMillis(), TimeUnit.MILLISECONDS);
 
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -240,7 +240,7 @@ public class StatefulTailerTest {
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         Mockito.verify(_listener).initialize(_tailer);
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
         Mockito.verifyNoMoreInteractions(_listener);
     }
@@ -248,7 +248,7 @@ public class StatefulTailerTest {
     @Test
     public void testReadDataWithNonZeroOffsetInLargeFile() throws IOException, InterruptedException {
         // Sufficient data for hash; 15 * (36 + 1) = 555 bytes; 15 UUIDs of 36 characters plus line break
-        Mockito.when(_positionStore.getPosition(Mockito.anyString())).thenReturn(Optional.of(Long.valueOf(555L)));
+        Mockito.when(_positionStore.getPosition(Mockito.anyString())).thenReturn(Optional.of(555L));
         Mockito.doNothing().when(_positionStore).setPosition(Mockito.anyString(), Mockito.anyLong());
 
         final BufferedWriter writer = Files.newBufferedWriter(_file.toPath(), Charsets.UTF_8, StandardOpenOption.CREATE_NEW);
@@ -278,7 +278,7 @@ public class StatefulTailerTest {
         Mockito.verify(_positionStore, Mockito.atLeastOnce()).setPosition(Mockito.anyString(), Mockito.anyLong());
         Mockito.verify(_listener).initialize(_tailer);
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
         Mockito.verifyNoMoreInteractions(_listener);
     }
@@ -323,12 +323,12 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
     @Test
-    public void testRotateCopyTruncateEqualData() throws IOException, InterruptedException {
+    public void testRotateCopyTruncateEqualLengthData() throws IOException, InterruptedException {
         BufferedWriter writer = Files.newBufferedWriter(_file.toPath(), Charsets.UTF_8, StandardOpenOption.CREATE_NEW);
         final List<String> expectedValues = Lists.newArrayList();
         writeUuids(writer, 5, expectedValues);
@@ -350,7 +350,7 @@ public class StatefulTailerTest {
         _readTrigger.releaseTrigger();
         _readTrigger.waitForWait();
 
-        // Write _same_ data to the new file
+        // Write _same length_ of data to the new file
         writer = Files.newBufferedWriter(_file.toPath(), Charsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING);
         writeUuids(writer, 5, expectedValues);
         writer.close();
@@ -375,10 +375,9 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
-
 
     @Test
     public void testRotateCopyTruncateMoreData() throws IOException, InterruptedException {
@@ -435,7 +434,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).initialize(_tailer);
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -483,7 +482,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -531,7 +530,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -579,7 +578,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -632,7 +631,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -680,7 +679,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -724,7 +723,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -773,7 +772,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -821,7 +820,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.atLeastOnce()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -865,7 +864,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -909,7 +908,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).fileRotated();
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
     }
 
@@ -964,7 +963,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).initialize(_tailer);
         Mockito.verify(_positionStore, Mockito.never()).getPosition(Mockito.anyString());
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
 
         // BUG 1: File rotation is not detected
@@ -976,7 +975,7 @@ public class StatefulTailerTest {
         Mockito.verifyNoMoreInteractions(_listener);
         // Should be:
         //for (final String expectedValue : expectedValues) {
-        //    Mockito.verify(_listener).handle(expectedValue);
+        //    Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         //}
     }
 
@@ -1019,7 +1018,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener, Mockito.never()).fileNotFound();
         Mockito.verify(_listener).initialize(_tailer);
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
         Mockito.verifyNoMoreInteractions(_listener);
     }
@@ -1081,7 +1080,7 @@ public class StatefulTailerTest {
         Mockito.verify(_listener).initialize(_tailer);
         Mockito.verify(_listener).fileRotated();
         for (final String expectedValue : expectedValues) {
-            Mockito.verify(_listener).handle(expectedValue);
+            Mockito.verify(_listener).handle(expectedValue.getBytes(Charsets.UTF_8));
         }
         Mockito.verifyNoMoreInteractions(_listener);
     }

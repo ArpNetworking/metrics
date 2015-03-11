@@ -45,7 +45,8 @@ public final class JsonNodeLiteralSource extends BaseJsonNodeSource implements J
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(JsonNodeMergingSource.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Source", _source)
                 .add("JsonNode", _jsonNode)
                 .toString();
@@ -63,7 +64,7 @@ public final class JsonNodeLiteralSource extends BaseJsonNodeSource implements J
         try {
             jsonNode = _objectMapper.readTree(_source);
         } catch (final IOException e) {
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
         _jsonNode = Optional.fromNullable(jsonNode);
     }

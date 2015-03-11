@@ -145,7 +145,7 @@ public class MetricsLimiterTestBase {
             .setHost("example.com")
             .setPeriod(Period.minutes(5))
             .setStart(new DateTime())
-            .setPopulationSize(Long.valueOf(1))
+            .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
             .build();
@@ -159,7 +159,7 @@ public class MetricsLimiterTestBase {
             .setHost("example.com")
             .setPeriod(Period.minutes(15))
             .setStart(new DateTime())
-            .setPopulationSize(Long.valueOf(1))
+            .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
             .build();
@@ -173,7 +173,7 @@ public class MetricsLimiterTestBase {
             .setHost("example.com")
             .setPeriod(Period.minutes(60))
             .setStart(new DateTime())
-            .setPopulationSize(Long.valueOf(1))
+            .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
             .build();
@@ -187,7 +187,7 @@ public class MetricsLimiterTestBase {
             .setHost("example.com")
             .setPeriod(Period.minutes(5))
             .setStart(new DateTime())
-            .setPopulationSize(Long.valueOf(1))
+            .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
             .build();
@@ -201,7 +201,7 @@ public class MetricsLimiterTestBase {
             .setHost("example.com")
             .setPeriod(Period.minutes(15))
             .setStart(new DateTime())
-            .setPopulationSize(Long.valueOf(1))
+            .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
             .build();
@@ -215,7 +215,7 @@ public class MetricsLimiterTestBase {
             .setHost("example.com")
             .setPeriod(Period.minutes(60))
             .setStart(new DateTime())
-            .setPopulationSize(Long.valueOf(1))
+            .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
             .build();
@@ -232,7 +232,7 @@ public class MetricsLimiterTestBase {
             .setHost("example.com")
             .setPeriod(Period.hours(1))
             .setStart(new DateTime())
-            .setPopulationSize(Long.valueOf(1))
+            .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
             .build();

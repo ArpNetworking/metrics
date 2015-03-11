@@ -85,7 +85,7 @@ public final class BuildableEqualsAndHashCodeTester {
 
                 } catch (final NoSuchMethodException | SecurityException | IllegalAccessException
                         | IllegalArgumentException | InvocationTargetException e) {
-                    Throwables.propagate(e);
+                    throw Throwables.propagate(e);
                 }
             }
         }

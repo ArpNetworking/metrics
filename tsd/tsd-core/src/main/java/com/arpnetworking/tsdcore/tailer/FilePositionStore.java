@@ -16,13 +16,12 @@
 package com.arpnetworking.tsdcore.tailer;
 
 import com.arpnetworking.jackson.BuilderDeserializer;
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
@@ -36,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
@@ -68,7 +69,7 @@ public final class FilePositionStore implements PositionStore {
         final Descriptor descriptor = _state.putIfAbsent(
                 identifier,
                 new Descriptor.Builder()
-                        .setPosition(Long.valueOf(position))
+                        .setPosition(position)
                         .build());
 
         final DateTime now = DateTime.now();
@@ -105,20 +106,22 @@ public final class FilePositionStore implements PositionStore {
         if (sizeBefore != sizeAfter) {
             LOGGER.debug(String.format(
                     "Removed old entries from file position store; sizeBefore=%d, sizeAfter=%d",
-                    Long.valueOf(sizeBefore),
-                    Long.valueOf(sizeAfter)));
+                    sizeBefore,
+                    sizeAfter));
         }
 
         // Persist the state to disk
         try {
-            OBJECT_MAPPER.writeValue(_file, _state);
+            final File temporaryFile = new File(_file.getAbsolutePath() + ".tmp");
+            OBJECT_MAPPER.writeValue(temporaryFile, _state);
+            Files.move(temporaryFile.toPath(), _file.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             LOGGER.debug(String.format(
                     "Persisted file position state to disk; size=%d, file=%s",
-                    Long.valueOf(_state.size()),
+                    _state.size(),
                     _file));
         } catch (final IOException ioe) {
-            Throwables.propagate(ioe);
+            throw Throwables.propagate(ioe);
         } finally {
             _lastFlush = now;
         }
@@ -127,7 +130,7 @@ public final class FilePositionStore implements PositionStore {
     private FilePositionStore(final Builder builder) {
         _file = builder._file;
         _flushInterval = builder._flushInterval;
-        _flushThreshold = builder._flushThreshold.longValue();
+        _flushThreshold = builder._flushThreshold;
         _retention = builder._retention;
 
         ConcurrentMap<String, Descriptor> state = Maps.newConcurrentMap();
@@ -149,15 +152,13 @@ public final class FilePositionStore implements PositionStore {
 
     private static final TypeReference<ConcurrentMap<String, Descriptor>> STATE_MAP_TYPE_REFERENCE =
             new TypeReference<ConcurrentMap<String, Descriptor>>(){};
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
     private static final Logger LOGGER = LoggerFactory.getLogger(FilePositionStore.class);
 
     static {
         final SimpleModule module = new SimpleModule("FilePositionStore");
         module.addDeserializer(Descriptor.class, BuilderDeserializer.of(Descriptor.Builder.class));
         OBJECT_MAPPER.registerModules(module);
-        OBJECT_MAPPER.registerModule(new JodaModule());
-        OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     private static final class Descriptor {
@@ -186,7 +187,7 @@ public final class FilePositionStore implements PositionStore {
         }
 
         private Descriptor(final Builder builder) {
-            _position = builder._position.longValue();
+            _position = builder._position;
             _lastUpdated = builder._lastUpdated;
             _delta = 0;
         }

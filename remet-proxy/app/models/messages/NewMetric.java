@@ -55,6 +55,7 @@ public final class NewMetric {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Service", _service)
                 .add("Metric", _metric)
                 .add("Statistic", _statistic)

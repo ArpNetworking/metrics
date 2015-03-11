@@ -1,0 +1,19 @@
+[  
+    {
+        "type": "com.arpnetworking.tsdcore.scripting.lua.LuaAlert",
+        "name": "critical",
+        "severity": "critical",
+        "cluster": "tsd_aggregator_dev",
+        "service": "tsd_aggregator",
+        "metric": "RestService/GET/ping",
+        "statistic": {
+            "type": "com.arpnetworking.tsdcore.statistics.MeanStatistic"
+        },
+        "period": "PT1M",
+        "operator": "GREATER_THAN",
+        "value": {
+            "value": 0.35,
+            "unit": "MILLISECOND"
+        }
+    }
+]

@@ -20,7 +20,9 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import com.arpnetworking.clusteraggregator.configuration.EmitterConfiguration;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.sinks.MultiSink;
 import com.arpnetworking.tsdcore.sinks.Sink;
 
 import java.util.Collections;
@@ -34,20 +36,24 @@ public class Emitter extends UntypedActor {
     /**
      * Creates a <code>Props</code> for construction in Akka.
      *
-     * @param sink Sink to write the aggregated data output to.
+     * @param config Config describing the sinks to write to
      * @return A new <code>Props</code>.
      */
-    public static Props props(final Sink sink) {
-        return Props.create(Emitter.class, sink);
+    public static Props props(final EmitterConfiguration config) {
+        return Props.create(Emitter.class, config);
     }
 
     /**
      * Public constructor.
      *
-     * @param sink Sink to write the aggregated data output to.
+     * @param config Config describing the sinks to write to
      */
-    public Emitter(final Sink sink) {
-        _sink = sink;
+    public Emitter(final EmitterConfiguration config) {
+        _sink = new MultiSink.Builder()
+                .setName("EmitterMultiSink")
+                .setSinks(config.getSinks())
+                .build();
+        _log.debug(String.format("Emitter starting up; sink=%s", _sink));
     }
 
     /**
@@ -62,6 +68,15 @@ public class Emitter extends UntypedActor {
         } else {
             unhandled(message);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void postStop() throws Exception {
+        super.postStop();
+        _sink.close();
     }
 
     private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);

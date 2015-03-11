@@ -40,6 +40,7 @@ public class LogFileAppeared {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("File", _file)
                 .toString();
     }
@@ -49,7 +50,7 @@ public class LogFileAppeared {
      *
      * @return the file path
      */
-    public Path getFilePath() {
+    public Path getFile() {
         return _file;
     }
 

@@ -53,7 +53,8 @@ public final class Condition {
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(Condition.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Name", _name)
                 .add("Severity", _name)
                 .add("FQDSN", _fqdsn)

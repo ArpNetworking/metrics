@@ -21,6 +21,8 @@ import akka.actor.UntypedActor;
 import akka.dispatch.ExecutionContexts;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -28,7 +30,6 @@ import models.messages.Command;
 import models.messages.Connect;
 import models.protocol.MessageProcessorsFactory;
 import models.protocol.MessagesProcessor;
-import play.Logger;
 import play.libs.Akka;
 import play.mvc.WebSocket;
 import scala.concurrent.duration.FiniteDuration;
@@ -57,7 +58,7 @@ public class ConnectionContext extends UntypedActor {
         _connection = connection;
         _instrument = Akka.system().scheduler().schedule(
                 new FiniteDuration(0, TimeUnit.SECONDS), // Initial delay
-                new FiniteDuration(1, TimeUnit.SECONDS), // Interval
+                new FiniteDuration(500, TimeUnit.MILLISECONDS), // Interval
                 getSelf(),
                 "instrument",
                 ExecutionContexts.global(),
@@ -89,9 +90,11 @@ public class ConnectionContext extends UntypedActor {
      */
     @Override
     public void onReceive(final Object message) throws Exception {
-        if (Logger.isTraceEnabled()) {
-            Logger.trace(String.format("Received message on channel; message=%s, channel=%s", message, _connection));
-        }
+        LOGGER.trace()
+                .setMessage("Received message")
+                .addData("data", message)
+                .addData("channel", _connection)
+                .log();
         if ("instrument".equals(message)) {
             periodicInstrumentation();
             return;
@@ -111,10 +114,17 @@ public class ConnectionContext extends UntypedActor {
                 final Command command = (Command) message;
                 final ObjectNode commandNode = (ObjectNode) command.getCommand();
                 final String commandString = commandNode.get("command").asText();
-                Logger.warn(String.format("channel command unsupported; command=%s, channel=%s", commandString, _connection));
+                LOGGER.warn()
+                        .setMessage("Unsupported command")
+                        .addData("data", message)
+                        .log();
                 unhandled(message);
             } else {
-                Logger.warn(String.format("Unsupported message; message=%s", message));
+                _metrics.incrementCounter("Actors/Connection/UNKNOWN");
+                LOGGER.warn()
+                        .setMessage("Unsupported message")
+                        .addData("data", message)
+                        .log();
                 unhandled(message);
             }
         }
@@ -167,10 +177,12 @@ public class ConnectionContext extends UntypedActor {
     private final WebSocket.Out<JsonNode> _connection;
     private final List<MessagesProcessor> _messageProcessors;
 
-    // Akka actors are single threaded execution so there are no race conditions keeping
-    // See: http://doc.akka.io/docs/akka/snapshot/general/jmm.html
     private Metrics _metrics;
+
     private static final String METRICS_PREFIX = "Actors/Connection/";
     private static final String UNKONOWN_COMMAND_COUNTER = METRICS_PREFIX + "Command/UNKNOWN";
     private static final String UNKNOWN_COUNTER = METRICS_PREFIX + "UNKNOWN";
+
+    private static final ObjectNode OK_RESPONSE = JsonNodeFactory.instance.objectNode().put("response", "ok");
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionContext.class);
 }

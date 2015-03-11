@@ -60,7 +60,7 @@ public class BuilderDeserializerTest {
                         + ", \"fieldNull\":" + expectedBean.getFieldNull()
                         + "}";
 
-        final JsonFactory jsonFactory = new JsonFactory(new ObjectMapper());
+        final JsonFactory jsonFactory = new JsonFactory(ObjectMapperFactory.createInstance());
         try (final JsonParser jsonParser = jsonFactory.createParser(jsonString)) {
             final JsonDeserializer<? extends TestFooBeanInterface> deserializer = BuilderDeserializer.of(TestFooBeanImpl.Builder.class);
             final TestFooBeanInterface actualBean = deserializer.deserialize(jsonParser, null);
@@ -256,8 +256,8 @@ public class BuilderDeserializerTest {
                     _fieldNull,
                     _fieldString,
                     _fieldBoolean,
-                    Integer.valueOf(_fieldPrimitive),
-                    Boolean.valueOf(_fieldBooleanPrimitive),
+                    _fieldPrimitive,
+                    _fieldBooleanPrimitive,
                     _fieldBarBean);
         }
 

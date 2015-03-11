@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 function safe_command {
   local l_command=$1
   local l_prefix=`date  +'%H:%M:%S'`

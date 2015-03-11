@@ -83,7 +83,12 @@ final class TsdCounter implements Counter, Quantity {
      */
     @Override
     public String toString() {
-        return String.format("TsdCounter{Name=%s, Value=%s, IsOpen=%s}", _name, _value, _isOpen);
+        return String.format(
+                "TsdCounter{id=%s, Name=%s, Value=%s, IsOpen=%s}",
+                Integer.toHexString(System.identityHashCode(this)),
+                _name,
+                _value,
+                _isOpen);
     }
 
     /**

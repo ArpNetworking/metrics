@@ -32,7 +32,18 @@ public final class TestQuantity implements Quantity {
      * @param unit The units of the value.
      * @return New instance of <code>TestQuantity</code>.
      */
-    public static TestQuantity newInstance(final Number value, final Unit unit) {
+    public static TestQuantity newInstance(final long value, final Unit unit) {
+        return new TestQuantity(value, unit);
+    }
+
+    /**
+     * Static factory.
+     *
+     * @param value The value.
+     * @param unit The units of the value.
+     * @return New instance of <code>TestQuantity</code>.
+     */
+    public static TestQuantity newInstance(final double value, final Unit unit) {
         return new TestQuantity(value, unit);
     }
 
@@ -57,7 +68,11 @@ public final class TestQuantity implements Quantity {
      */
     @Override
     public String toString() {
-        return String.format("TestQuantity{Value=%s, Unit=%s}", _value, _unit);
+        return String.format(
+                "TestQuantity{id=%s, Value=%s, Unit=%s}",
+                Integer.toHexString(System.identityHashCode(this)),
+                _value,
+                _unit);
     }
 
     private TestQuantity(final Number value, final Unit unit) {

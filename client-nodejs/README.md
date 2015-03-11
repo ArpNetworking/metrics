@@ -31,15 +31,32 @@ The metrics library must be included before being used.
 tsd = require("tsd-metrics-client")
 ```
 
-Optionally, the client library may be configured.
+This will write the metrics to file named ```tsd-query.log``` with rotation size of 32MB and retention of the last 10 logs
+
+Optionally, the client library may be configured by creating custom query log sink.
 
 ```javascript
-tsd = require("tsd-metrics-client") ({
-    LOG_CONSOLE_ECHO : <true/false>, // additionally output metrics to console; default: false
-    LOG_FILE_NAME : <log_file_name>, // name of the log file; default: "tsd-query.log"
-    LOG_BACKUPS : <number>,          // maximum number of log files to retain; default: 10
-    LOG_MAX_SIZE : <number_in_bytes> // log size file rotation threshold; default: 32 MB
-});
+tsd = require("tsd-metrics-client")
+var logFilename="filename.log";
+var maxlogSize=10*1024*1024;
+var backups=10;
+tsd.init([tsd.Sinks.createQueryLogSink(logFilename, maxLogSize, backups), tsd.Sinks.createConsoleSink()]);
+
+//tsd.Sinks.createConsoleSink() creates sink that logs to console
+```
+
+Custom sinks can also be added by extending the Sink class.
+```javascript
+var tsd = require("tsd-metrics-client");
+var util = require("util");
+function MySink() {
+}
+util.inherits(MySink, tsd.Sink);
+MySink.prototype.record = function (metricsEvent) {
+      console.log(metricsEvent);
+};
+var mySink =  new MySink();
+tsd.init([mySink, tsd.Sinks.createQueryLogSink()])
 ```
 
 ### Metrics
@@ -128,17 +145,16 @@ The one caveat is to ensure the timer objects are stopped/closed before the Metr
 
 Gauges are the simplest metric to record.  Samples for a gauge represent spot measurements. For example, the length of a queue or the number of active threads in a thread pool.  Gauges are often used in separate units of work to measure the state of system resources, for example the row count in a database table.  However, gauges are also useful in existing units of work, for example recording the memory in use at the beginning and end of each service request.
 
-### Events
+### Errors
 
-In lieu of logging the TsdMetrics class provides an event emitter to which end users may add listeners. The emitter generates two types of events:
-
-* `"error"`: Emitted when an error is detected. The parameter passed to the listener function is contains details about the error condition encountered.
-* `"logEvent"`: Emitted after closing the Metrics instance and writing data to disk.  The parameter passed to the listener function is an object with the data that was written to the disk.
+In lieu of logging errors the TSD library exposes a function ```tsd.onError(errorCallback)``` to register a callback
+that is called whenever an error occurs withing the library. The ```errorCallback``` is a function that takes a single
+parameter of type ```Error```
 
 For example, to log all errors you could do the following:
 
 ```javascript
-metrics.events().addListener("error", function (err) {
+tsd.onError(function (err) {
     console.log("Error: " + err);
 });
 ```

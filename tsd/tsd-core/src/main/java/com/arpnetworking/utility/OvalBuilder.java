@@ -58,7 +58,7 @@ public abstract class OvalBuilder<T> implements Builder<T> {
             builder = (B) builderConstructor.newInstance();
         } catch (final InvocationTargetException | NoSuchMethodException | InstantiationException
                 | IllegalAccessException | ClassNotFoundException e) {
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
         return clone(source, builder);
     }
@@ -88,7 +88,7 @@ public abstract class OvalBuilder<T> implements Builder<T> {
                         }
                         targetMethod.invoke(target, value);
                     } catch (final IllegalAccessException | InvocationTargetException e) {
-                        Throwables.propagate(e);
+                        throw Throwables.propagate(e);
                     }
                 }
             }
@@ -120,11 +120,11 @@ public abstract class OvalBuilder<T> implements Builder<T> {
             constructor.setAccessible(true);
             return constructor.newInstance(this);
 
-        } catch (final NoSuchMethodException |
-                SecurityException |
-                InstantiationException |
-                IllegalAccessException |
-                IllegalArgumentException e) {
+        } catch (final NoSuchMethodException
+                | SecurityException
+                | InstantiationException
+                | IllegalAccessException
+                | IllegalArgumentException e) {
             throw new UnsupportedOperationException(
                     String.format(UNABLE_TO_CONSTRUCT_TARGET_CLASS, _targetClass),
                     e);

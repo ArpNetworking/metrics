@@ -18,6 +18,8 @@ package actors;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.sources.FileSource;
 import com.arpnetworking.tsdcore.sources.Source;
 import com.arpnetworking.tsdcore.tailer.InitialPosition;
@@ -32,7 +34,6 @@ import models.messages.LogFileDisappeared;
 import models.messages.LogLine;
 import org.joda.time.Duration;
 import play.Configuration;
-import play.Logger;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -64,24 +65,31 @@ public class FileSourcesManager extends UntypedActor {
      */
     @Override
     public void onReceive(final Object message) throws Exception {
-        if (Logger.isTraceEnabled()) {
-            Logger.trace(String.format("Received message; message=%s", message));
-        }
+        LOGGER.trace()
+                .setMessage("Received message")
+                .addData("data", message)
+                .log();
 
         if (message instanceof LogFileAppeared) {
             final LogFileAppeared logFileAppeared = (LogFileAppeared) message;
-            addSource(logFileAppeared.getFilePath());
+            addSource(logFileAppeared.getFile());
         } else if (message instanceof LogFileDisappeared) {
             final LogFileDisappeared logFileDisappeared = (LogFileDisappeared) message;
             removeSource(logFileDisappeared.getFile());
         } else {
-            Logger.warn(String.format("FileSourcesManager got an unexpected message; message=%s", message));
+            LOGGER.warn()
+                    .setMessage("Unsupported message")
+                    .addData("data", message)
+                    .log();
             unhandled(message);
         }
     }
 
     private void addSource(final Path filepath) {
-        Logger.info(String.format("Adding new log file source; path=%s", filepath));
+        LOGGER.info()
+                .setMessage("Adding new log file source")
+                .addData("path", filepath)
+                .log();
         if (!_fileSources.containsKey(filepath)) {
             final Source source =
                     new FileSource.Builder<LogLine>()
@@ -102,18 +110,26 @@ public class FileSourcesManager extends UntypedActor {
 
     private void removeSource(final Path filepath) {
         _streamContextActor.tell(new LogFileDisappeared(filepath), getSelf());
-        Logger.info(String.format("Removing log file source; path=%s", filepath));
+        LOGGER.info()
+            .setMessage("Removing log file source")
+            .addData("path", filepath)
+            .log();
         final Source source = _fileSources.remove(filepath);
         if (source != null) {
             source.stop();
         } else {
-            Logger.warn(String.format("Attempted to removed a non existing file source; path=%s", filepath));
+            LOGGER.warn()
+                .setMessage("Attempted to removed a non existing file source")
+                .addData("path", filepath)
+                .log();
         }
     }
 
     private final Duration _fileSourceIntervalMilliseconds;
     private final Map<Path, Source> _fileSources = Maps.newHashMap();
     private final ActorRef _streamContextActor;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileSourcesManager.class);
 
     /*package private*/
     static class LogFileObserver implements Observer {

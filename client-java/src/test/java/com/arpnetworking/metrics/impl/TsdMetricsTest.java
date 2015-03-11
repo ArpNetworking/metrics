@@ -59,9 +59,9 @@ public class TsdMetricsTest {
                         Matchers.allOf(
                                 Matchers.hasKey("initTimestamp"),
                                 Matchers.hasKey("finalTimestamp"))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     @Test
@@ -77,18 +77,18 @@ public class TsdMetricsTest {
                         Matchers.allOf(
                                 Matchers.hasKey("initTimestamp"),
                                 Matchers.hasKey("finalTimestamp"))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
 
         Mockito.verify(sink2).record(
                 MockitoHelper.<Map<String, String>>argThat(
                         Matchers.allOf(
                                 Matchers.hasKey("initTimestamp"),
                                 Matchers.hasKey("finalTimestamp"))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     @Test
@@ -104,12 +104,12 @@ public class TsdMetricsTest {
                         Matchers.allOf(
                                 Matchers.hasKey("initTimestamp"),
                                 Matchers.hasKey("finalTimestamp"))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
                 MockitoHelper.<Map<String, List<Quantity>>>argThat(
                         MetricMatcher.match(
                                 "counter",
                                 QuantityMatcher.match(1))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     @Test
@@ -129,8 +129,8 @@ public class TsdMetricsTest {
                         MetricMatcher.match(
                                 "timer",
                                 QuantityMatcher.match(1))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     @Test
@@ -146,8 +146,8 @@ public class TsdMetricsTest {
                         Matchers.allOf(
                                 Matchers.hasKey("initTimestamp"),
                                 Matchers.hasKey("finalTimestamp"))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
                 MockitoHelper.<Map<String, List<Quantity>>>argThat(
                         MetricMatcher.match(
                                 "gauge",
@@ -361,12 +361,12 @@ public class TsdMetricsTest {
                         Matchers.allOf(
                                 Matchers.hasKey("initTimestamp"),
                                 Matchers.hasKey("finalTimestamp"))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
                 MockitoHelper.<Map<String, List<Quantity>>>argThat(
                         MetricMatcher.match(
                                 "testCloseTryWithResource",
                                 QuantityMatcher.match(1))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     @Test
@@ -409,8 +409,8 @@ public class TsdMetricsTest {
                                 "timerD",
                                 QuantityMatcher.match(Matchers.any(Number.class), Unit.NANOSECOND),
                                 QuantityMatcher.match(1, Unit.MILLISECOND))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
 
         final Map<String, String> annotations = captureAnnotations.getValue();
         Assert.assertThat(annotations, IsMapWithSize.aMapWithSize(2));
@@ -446,7 +446,7 @@ public class TsdMetricsTest {
 
         Mockito.verify(sink).record(
                 captureAnnotations.capture(),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
                 MockitoHelper.<Map<String, List<Quantity>>>argThat(
                         MetricMatcher.match(
                                 "counterA",
@@ -463,10 +463,10 @@ public class TsdMetricsTest {
                                 QuantityMatcher.match(0),
                                 QuantityMatcher.match(1),
                                 QuantityMatcher.match(2))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
 
         final Map<String, String> annotations = captureAnnotations.getValue();
-        Assert.assertThat(annotations, IsMapWithSize.aMapWithSize(2));
+        Assert.assertThat(annotations, Matchers.aMapWithSize(2));
         assertTimestamps(earliestStartDate, latestEndDate, annotations);
     }
 
@@ -494,8 +494,8 @@ public class TsdMetricsTest {
 
         Mockito.verify(sink).record(
                 captureAnnotations.capture(),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
                 MockitoHelper.<Map<String, List<Quantity>>>argThat(
                         MetricMatcher.match(
                                 "gaugeA",
@@ -535,9 +535,9 @@ public class TsdMetricsTest {
 
         Mockito.verify(sink).record(
                 captureAnnotations.capture(),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
 
         final Map<String, String> annotations = captureAnnotations.getValue();
         Assert.assertThat(annotations, IsMapWithSize.aMapWithSize(4));
@@ -602,7 +602,7 @@ public class TsdMetricsTest {
                                 QuantityMatcher.match(5, Unit.MINUTE),
                                 QuantityMatcher.match(6, Unit.HOUR),
                                 QuantityMatcher.match(7, Unit.DAY))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
                 MockitoHelper.<Map<String, List<Quantity>>>argThat(
                         MetricMatcher.match(
                                 "bySize",
@@ -653,8 +653,8 @@ public class TsdMetricsTest {
                                 "timerObjectB",
                                 QuantityMatcher.match(Matchers.greaterThanOrEqualTo(Long.valueOf(2)), Unit.NANOSECOND),
                                 QuantityMatcher.match(Matchers.greaterThanOrEqualTo(Long.valueOf(1)), Unit.NANOSECOND))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     @Test
@@ -676,8 +676,8 @@ public class TsdMetricsTest {
                         MetricMatcher.match(
                                 "timerObjectA",
                                 QuantityMatcher.match(1, Unit.SECOND))),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     @Test
@@ -700,8 +700,8 @@ public class TsdMetricsTest {
                                 "timerObjectA",
                                 QuantityMatcher.match(1, Unit.SECOND),
                                 "timerObjectB")),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     @Test
@@ -721,8 +721,8 @@ public class TsdMetricsTest {
                 MockitoHelper.<Map<String, List<Quantity>>>argThat(
                         MetricMatcher.match(
                                 "timerObjectB")),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()),
-                MockitoHelper.<Map<String, List<Quantity>>>argThat(IsMapWithSize.anEmptyMap()));
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()),
+                MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
     private TsdMetrics createTsdMetrics(final Sink... sinks) {

@@ -50,7 +50,7 @@ public class HostController extends Controller {
      */
     @Inject
     public HostController(final Configuration configuration, final HostRepository hostRepository) {
-        this(configuration.getInt("hosts.limit", Integer.valueOf(DEFAULT_LIMIT)).intValue(), hostRepository);
+        this(configuration.getInt("hosts.limit", DEFAULT_LIMIT), hostRepository);
     }
 
     /**
@@ -87,13 +87,13 @@ public class HostController extends Controller {
         }
         final Optional<String> argName = Optional.fromNullable(name);
         final Optional<MetricsSoftwareState> argState = Optional.fromNullable(stateValue);
-        final Optional<Integer> argLimit = Optional.of(MoreObjects.firstNonNull(limit, Integer.valueOf(_defaultLimit)));
+        final Optional<Integer> argLimit = Optional.of(MoreObjects.firstNonNull(limit, _defaultLimit));
         final Optional<Integer> argOffset = Optional.fromNullable(offset);
         final Optional<HostQuery.Field> argSortBy = Optional.fromNullable(sortByValue);
-        if (argLimit.isPresent() && argLimit.get().intValue() < 0) {
+        if (argLimit.isPresent() && argLimit.get() < 0) {
             return badRequest("Invalid limit; must be greater than or equal to 0");
         }
-        if (argOffset.isPresent() && argOffset.get().intValue() < 0) {
+        if (argOffset.isPresent() && argOffset.get() < 0) {
             return badRequest("Invalid offset; must be greater than or equal to 0");
         }
 

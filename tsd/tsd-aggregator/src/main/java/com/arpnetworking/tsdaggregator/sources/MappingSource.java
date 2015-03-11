@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdaggregator.sources;
 
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.model.DefaultMetric;
 import com.arpnetworking.tsdaggregator.model.DefaultRecord;
 import com.arpnetworking.tsdaggregator.model.Metric;
@@ -31,7 +33,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotNull;
-import org.apache.log4j.Logger;
 
 import java.util.Collections;
 import java.util.List;
@@ -91,7 +92,7 @@ public final class MappingSource extends BaseSource {
     private final Source _source;
     private final Map<Pattern, List<String>> _findAndReplace;
 
-    private static final Logger LOGGER = Logger.getLogger(MappingSource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MappingSource.class);
 
     // NOTE: Package private for testing
     /* package private */ static final class MappingObserver implements Observer {
@@ -104,7 +105,10 @@ public final class MappingSource extends BaseSource {
         @Override
         public void notify(final Observable observable, final Object event) {
             if (!(event instanceof Record)) {
-                LOGGER.error(String.format("Observed unsupported event; event=%s", event));
+                LOGGER.error()
+                        .setMessage("Observed unsupported event")
+                        .addData("event", event)
+                        .log();
                 return;
             }
 
@@ -151,7 +155,12 @@ public final class MappingSource extends BaseSource {
                 mergedMetrics.put(key, new MergingMetric(metric));
             } else if (!mergedMetric.isMergable(metric)) {
                 // This instance of the metric is not mergable with previous
-                LOGGER.error(String.format("Discarding metric, failed to merge; metric=%s mergedMetric=%s", metric, mergedMetric));
+                LOGGER.error()
+                        .setMessage("Discarding metric")
+                        .addData("reason", "failed to merge")
+                        .addData("metric", metric)
+                        .addData("mergedMetric", mergedMetric)
+                        .log();
             } else {
                 // Merge the new instance in
                 mergedMetric.merge(metric);
@@ -194,6 +203,7 @@ public final class MappingSource extends BaseSource {
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
+                    .add("id", Integer.toHexString(System.identityHashCode(this)))
                     .add("Type", _type)
                     .add("Values", _values)
                     .toString();

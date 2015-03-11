@@ -87,14 +87,14 @@ public final class DirectoryTrigger implements Trigger {
                     "Directory trigger initialized; directory=%s",
                     _directory));
 
-            _exists = Optional.of(Boolean.valueOf(exists));
+            _exists = Optional.of(exists);
             return true;
-        } else if (_exists.get().booleanValue() != exists) {
+        } else if (_exists.get() != exists) {
             LOGGER.debug(String.format(
                     "Directory created or removed; directory=%s",
                     _directory));
 
-            _exists = Optional.of(Boolean.valueOf(exists));
+            _exists = Optional.of(exists);
             return true;
         }
 
@@ -127,7 +127,8 @@ public final class DirectoryTrigger implements Trigger {
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(DirectoryTrigger.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Directory", _directory)
                 .add("Exists", _exists)
                 .add("FileNames", _fileNames)

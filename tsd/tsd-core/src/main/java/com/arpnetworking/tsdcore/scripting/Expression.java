@@ -72,6 +72,15 @@ public interface Expression {
     Optional<AggregatedData> evaluate(final PeriodicData periodicData) throws ScriptingException;
 
     /**
+     * Accessor for instance of <code>FQDSN</code> representing the data
+     * produced by this <code>Expression</code>.
+     *
+     * @return Instance of <code>FQDSN</code> representing the data produced by
+     * this <code>Expression</code>.
+     */
+    FQDSN getTargetFQDSN();
+
+    /**
      * Retrieve the set of dependencies expressed as fully qualified data
      * space names (FQDSNs).
      *

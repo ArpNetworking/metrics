@@ -27,7 +27,7 @@ import akka.event.LoggingAdapter;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
 import akka.japi.Function;
-import com.arpnetworking.clusteraggregator.AkkaCluster;
+import com.arpnetworking.clusteraggregator.Main;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import scala.concurrent.duration.Duration;
 
@@ -47,7 +47,7 @@ public class AggClientSupervisor extends UntypedActor {
     public void onReceive(final Object message) throws Exception {
         if (message instanceof AggregatedData) {
             // Route the message to the sharding region
-            _shardRegion.tell(message, getSender());
+            _shardRegion.forward(message, context());
         } else if (message instanceof Tcp.Connected) {
             final Tcp.Connected conn = (Tcp.Connected) message;
             final ActorRef handler = getContext().actorOf(AggClientConnection.props(getSender(), conn.remoteAddress()),
@@ -58,7 +58,6 @@ public class AggClientSupervisor extends UntypedActor {
             _log.debug("detected terminated connection, releasing all resources");
             getContext().stop(getSelf());
         } else {
-            _log.warning("UNHANDLED MESSAGE!!: " + message);
             unhandled(message);
         }
     }
@@ -79,6 +78,7 @@ public class AggClientSupervisor extends UntypedActor {
         });
     }
 
-    private final ActorRef _shardRegion = ClusterSharding.get(getContext().system()).shardRegion(AkkaCluster.AGG_SHARD_NAME);
+    // TODO(barp): use dependency injection for this field [MAI-469]
+    private final ActorRef _shardRegion = ClusterSharding.get(getContext().system()).shardRegion(Main.AGG_SHARD_NAME);
     private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
 }

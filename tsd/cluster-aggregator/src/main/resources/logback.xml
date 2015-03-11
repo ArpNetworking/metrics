@@ -41,7 +41,6 @@
   </appender>
 
   <root level="DEBUG">
-    <appender-ref ref="clusteragg-async"/>
-    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="clusteragg-async" />
   </root>
 </configuration>

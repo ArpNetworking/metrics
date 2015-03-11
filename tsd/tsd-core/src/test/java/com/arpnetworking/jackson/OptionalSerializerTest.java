@@ -68,13 +68,10 @@ public class OptionalSerializerTest {
         Assert.assertEquals("\"foo\"", serializedWidget);
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
 
     static {
         final SimpleModule module = new SimpleModule();
-        module.addSerializer(
-                Optional.class,
-                OptionalSerializer.newInstance());
         module.addSerializer(
                 Widget.class,
                 new JsonSerializer<Widget>() {

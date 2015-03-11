@@ -45,6 +45,7 @@ public final class Command {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Command", _command)
                 .toString();
     }

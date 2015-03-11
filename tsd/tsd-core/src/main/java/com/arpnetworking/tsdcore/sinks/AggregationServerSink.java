@@ -149,7 +149,7 @@ public final class AggregationServerSink extends VertxSink {
     private static final Function<Quantity, Double> EXTRACT_VALUES_FROM_SAMPLES = new Function<Quantity, Double>() {
         @Override
         public Double apply(final Quantity input) {
-            return input != null ? Double.valueOf(input.getValue()) : null;
+            return input != null ? input.getValue() : null;
         }
     };
 
@@ -168,7 +168,7 @@ public final class AggregationServerSink extends VertxSink {
          */
         public Builder() {
             super(AggregationServerSink.class);
-            setServerPort(Integer.valueOf(7065));
+            setServerPort(7065);
         }
 
         /**

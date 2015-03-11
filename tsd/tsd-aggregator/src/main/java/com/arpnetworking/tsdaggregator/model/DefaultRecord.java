@@ -24,6 +24,7 @@ import net.sf.oval.constraint.NotNull;
 
 import org.joda.time.DateTime;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -42,7 +43,10 @@ public final class DefaultRecord implements Record {
      * @deprecated Use the <code>Builder</code> instead.
      */
     @Deprecated
-    public DefaultRecord(final Map<String, ? extends Metric> metrics, final DateTime time, final Map<String, String> annotations) {
+    public DefaultRecord(
+            final Map<String, ? extends Metric> metrics,
+            final DateTime time,
+            final Map<String, String> annotations) {
         _metrics = ImmutableMap.copyOf(metrics);
         _time = time;
         _annotations = ImmutableMap.copyOf(annotations);
@@ -105,6 +109,7 @@ public final class DefaultRecord implements Record {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Metrics", _metrics)
                 .add("Time", _time)
                 .add("Annotations", _annotations)
@@ -160,7 +165,8 @@ public final class DefaultRecord implements Record {
         }
 
         /**
-         * The annotations <code>Map</code>. Cannot be null.
+         * The annotations <code>Map</code>. Optional. Default is an empty
+         * <code>Map</code>. Cannot be null.
          *
          * @param value The annotations <code>Map</code>.
          * @return This instance of <code>Builder</code>.
@@ -175,6 +181,6 @@ public final class DefaultRecord implements Record {
         @NotNull
         private DateTime _time;
         @NotNull
-        private Map<String, String> _annotations;
+        private Map<String, String> _annotations = Collections.emptyMap();
     }
 }

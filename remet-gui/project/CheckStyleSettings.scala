@@ -34,8 +34,8 @@ object CheckstyleSettings {
       val args = List(
         "-c", (buildDir / "checkstyle.xml").getAbsolutePath,
         "-f", "xml",
-        "-r", inputDir,
-        "-o", outputFile
+        "-o", outputFile,
+        inputDir
       )
 
       System.setProperty("samedir", buildDir.toString)

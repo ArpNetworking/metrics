@@ -27,7 +27,9 @@ import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
@@ -40,7 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -63,32 +65,33 @@ public final class LimitingSink extends BaseSink {
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
         final DateTime now = DateTime.now();
         final List<AggregatedData> filteredData = Lists.newArrayListWithExpectedSize(data.size());
-        final Map<FQDSN, Condition> conditionsByFQDSN = Maps.uniqueIndex(conditions, new Function<Condition, FQDSN>() {
+        final List<Condition> filteredConditions = Lists.newArrayListWithExpectedSize(conditions.size());
+        final Multimap<FQDSN, Condition> conditionsByFQDSN = Multimaps.index(conditions, new Function<Condition, FQDSN>() {
             @Override
             public FQDSN apply(final Condition condition) {
                 return condition.getFQDSN();
             }
         });
+        //final Map<FQDSN, Condition> conditionsByFQDSN = Maps.uniqueIndex(conditions, Condition::getFQDSN);
+        final Set<FQDSN> filteredFQDSNs = Sets.newHashSet();
         long limited = 0;
         for (final AggregatedData datum : data) {
             if (_metricsLimiter.offer(datum, now)) {
                 filteredData.add(datum);
+                filteredFQDSNs.add(datum.getFQDSN());
             } else {
                 LOGGER.warn(String.format(
                         "%s: Skipping publication of limited data; aggregatedData=%s",
                         getName(),
                         datum));
                 ++limited;
-
-                // Remove any condition for the FQDSN
-                // NOTE: Although limiting also contains period, the data produced
-                // in any one invocation of the sink is for a single period we can
-                // safely ignore that and find any matching conditions by FQDSN.
-                conditionsByFQDSN.remove(datum.getFQDSN());
             }
         }
+        for (final FQDSN fqdsn : filteredFQDSNs) {
+            filteredConditions.addAll(conditionsByFQDSN.get(fqdsn));
+        }
         _limited.getAndAdd(limited);
-        _sink.recordAggregateData(filteredData, conditionsByFQDSN.values());
+        _sink.recordAggregateData(filteredData, filteredConditions);
     }
 
     /**
@@ -102,7 +105,7 @@ public final class LimitingSink extends BaseSink {
             _executor.awaitTermination(EXECUTOR_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
             Thread.interrupted();
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
         flushMetrics();
     }
@@ -163,9 +166,9 @@ public final class LimitingSink extends BaseSink {
         // Write the metrics periodically
         _executor.scheduleAtFixedRate(
                 new MetricsLogger(),
-                builder._intervalInSeconds.longValue(),
-                builder._intervalInSeconds.longValue(),
-                TimeUnit.SECONDS);
+                builder._intervalInMilliseconds,
+                builder._intervalInMilliseconds,
+                TimeUnit.MILLISECONDS);
     }
 
     private final Sink _sink;
@@ -216,14 +219,14 @@ public final class LimitingSink extends BaseSink {
         }
 
         /**
-         * The interval in seconds between statistic flushes. Cannot be null;
+         * The interval in milliseconds between statistic flushes. Cannot be null;
          * minimum 1. Default is 1.
          *
          * @param value The interval in seconds between flushes.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setIntervalInSeconds(final Long value) {
-            _intervalInSeconds = value;
+        public Builder setIntervalInMilliseconds(final Long value) {
+            _intervalInMilliseconds = value;
             return this;
         }
 
@@ -282,7 +285,7 @@ public final class LimitingSink extends BaseSink {
         private Injector _injector;
         @NotNull
         @Min(value = 1)
-        private Long _intervalInSeconds = Long.valueOf(1);
+        private Long _intervalInMilliseconds = 500L;
         @JacksonInject
         @NotNull
         private MetricsFactory _metricsFactory;

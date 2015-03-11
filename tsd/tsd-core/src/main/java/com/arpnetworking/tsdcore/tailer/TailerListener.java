@@ -60,9 +60,9 @@ public interface TailerListener {
      * Handles a line from a <code>Tailer</code>.
      * <p>
      * <b>Note:</b> this is called from the <code>Tailer</code> thread.
-     * @param line the line.
+     * @param line the raw line.
      */
-    void handle(final String line);
+    void handle(final byte[] line);
 
     /**
      * Handles a <code>Throwable</code> encountered during tailing.

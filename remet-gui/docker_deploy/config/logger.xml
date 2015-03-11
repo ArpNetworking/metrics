@@ -27,8 +27,8 @@
       <maxHistory>20</maxHistory>
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
-    <encoder>
-      <pattern>%date %t RequestId=%mdc{request_id} [%level] %logger : %message %sThrowable%nopex%n</pattern>
+    <encoder class="com.arpnetworking.logback.StenoEncoder">
+      <injectContextLogger>true</injectContextLogger>
     </encoder>
   </appender>
    

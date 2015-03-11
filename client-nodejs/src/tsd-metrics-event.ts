@@ -16,9 +16,9 @@
 
 import tsdDef = require("tsdDef");
 
+import utils = require("./utils");
 import timers = require("./tsd-timer");
 import counters = require("./tsd-counter");
-import utils = require("./utils");
 import timerSamples = require("./timer-samples");
 import counterSamples = require("./counter-samples");
 import sample = require("./tsd-metric-sample");
@@ -34,73 +34,48 @@ import TsdMetricsList = metricsList.TsdMetricsList;
 import Lazy = utils.Lazy;
 
 /**
- * This class holds all all the metrics to be recorded by a <code>Sink</code>. The instance is passed to
- * <code>Sink#record()</code> method
+ * This class holds all metrics details captured for a metric event and ready to be serialized. An instance is passed
+ * to the [Sink.record()]{@linkcode Sink#record} method in every sink, for the [Sink]{@linkcode Sink} to
+ * serialize the event in its own format and to its own medium.
  *
  * @class
  * @alias MetricsEvent
  * @author Mohammed Kamel (mkamel at groupon dot com)
  **/
-export class MetricsEvent implements tsdDef.MetricsEvent {
+export class TsdMetricsEvent implements tsdDef.MetricsEvent {
 
     /**
      * The annotations represented as hash of arrays indexed by annotation name.
      *
      * @memberof! MetricsEvent#
-     * @type {Object.<string, TsdMetricsList>}
+     * @type {Object.<string, string>}
      */
     public annotations:{[name:string]: string} = {};
 
     /**
      * Counters and their samples recorded represented as hash of counter name to
-     * [TsdMetricSample]{@linkcode TsdMetricSample}
+     * [MetricSample]{@linkcode MetricSample}
      *
      * @memberof! MetricsEvent#
-     * @type {Object.<string, TsdMetricsList>}
+     * @type {Object.<string, MetricsList<MetricSample>>}
      */
-    public counters:{[name:string]: TsdMetricsList<tsdDef.MetricSample>} = {};
+    public counters:{[name:string]: tsdDef.MetricsList<tsdDef.MetricSample>} = {};
 
     /**
      * Gauges and their samples recorded represented as hash of counter name to
-     * [TsdMetricSample]{@linkcode TsdMetricSample}
+     * [MetricSample]{@linkcode MetricSample}
      *
      * @memberof! MetricsEvent#
-     * @type {Object.<string, TsdMetricsList>}
+     * @type {Object.<string, MetricsList<MetricSample>>}
      */
-    public gauges:{[name:string]: TsdMetricsList<tsdDef.MetricSample>} = {};
+    public gauges:{[name:string]: tsdDef.MetricsList<tsdDef.MetricSample>} = {};
 
     /**
      * Timers and their samples recorded represented as hash of counter name to
-     * [TsdMetricSample]{@linkcode TsdMetricSample}
+     * [Timer]{@linkcode Timer}
      *
      * @memberof! MetricsEvent#
-     * @type {Object.<string, TsdMetricsList>}
+     * @type {Object.<string, MetricsList<Timer>>}
      */
-    public timers:{[name:string]: TsdMetricsList<tsdDef.MetricSample>} = {};
-
-    private static _VERSION:string = "2e";
-    private _hash:Lazy<any> = new Lazy<any>(()=> {
-        var hash:any = {
-            annotations: this.annotations
-        };
-
-        if (!utils.isEmptyObject(this.counters)) {
-            hash.counters = this.counters;
-        }
-
-        if (!utils.isEmptyObject(this.gauges)) {
-            hash.gauges = this.gauges;
-        }
-
-        if (!utils.isEmptyObject(this.timers)) {
-            hash.timers = this.timers;
-        }
-
-        hash.version = MetricsEvent._VERSION;
-        return hash;
-    });
-
-    public toJSON() {
-        return this._hash.getValue();
-    }
+    public timers:{[name:string]: tsdDef.MetricsList<tsdDef.Timer>} = {};
 }

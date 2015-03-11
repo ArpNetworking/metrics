@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdaggregator;
 
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.configuration.PipelineConfiguration;
 import com.arpnetworking.tsdcore.sinks.MultiSink;
 import com.arpnetworking.tsdcore.sinks.Sink;
@@ -22,13 +24,13 @@ import com.arpnetworking.tsdcore.sources.Source;
 import com.arpnetworking.utility.DefaultHostResolver;
 import com.arpnetworking.utility.HostResolver;
 import com.arpnetworking.utility.Launchable;
+import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Single data pathway through the time series data aggregator. The pathway
@@ -54,21 +56,23 @@ public class Pipeline implements Launchable {
      */
     @Override
     public void launch() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Launching pipeline; configuration=%s", _pipelineConfiguration));
-        } else {
-            LOGGER.info(String.format("Launching pipeline; pipeline=%s", _pipelineConfiguration.getName()));
-        }
+        LOGGER.info()
+                .setMessage("Launching pipeline")
+                .addData("configuration", _pipelineConfiguration)
+                .log();
 
-        final String hostName;
+        final String host;
         try {
             if (_pipelineConfiguration.getHost().isPresent()) {
-                hostName = _pipelineConfiguration.getHost().get();
+                host = _pipelineConfiguration.getHost().get();
             } else {
-                hostName = HOST_RESOLVER.getLocalHostName();
+                host = HOST_RESOLVER.getLocalHostName();
             }
         } catch (final UnknownHostException e) {
-            LOGGER.error("Failed to determine host name", e);
+            LOGGER.error()
+                    .setMessage("Failed to determine host name")
+                    .setThrowable(e)
+                    .log();
             throw Throwables.propagate(e);
         }
 
@@ -78,20 +82,21 @@ public class Pipeline implements Launchable {
                 .build();
         _sinks.add(rootSink);
 
-        final LineProcessor processor = new LineProcessor(
-                _pipelineConfiguration.getTimerStatistic(),
-                _pipelineConfiguration.getCounterStatistic(),
-                _pipelineConfiguration.getGaugeStatistic(),
-                hostName,
-                _pipelineConfiguration.getService(),
-                _pipelineConfiguration.getCluster(),
-                _pipelineConfiguration.getPeriods(),
-                rootSink
-        );
-        _processors.add(processor);
+        final Aggregator aggregator = new Aggregator.Builder()
+                .setService(_pipelineConfiguration.getService())
+                .setCluster(_pipelineConfiguration.getCluster())
+                .setPeriods(_pipelineConfiguration.getPeriods())
+                .setHost(host)
+                .setTimerStatistics(_pipelineConfiguration.getTimerStatistic())
+                .setCounterStatistics(_pipelineConfiguration.getCounterStatistic())
+                .setGaugeStatistics(_pipelineConfiguration.getGaugeStatistic())
+                .setSink(rootSink)
+                .build();
+        aggregator.launch();
+        _aggregator.set(aggregator);
 
         for (final Source source : _pipelineConfiguration.getSources()) {
-            source.attach(processor);
+            source.attach(aggregator);
             source.start();
             _sources.add(source);
         }
@@ -102,26 +107,28 @@ public class Pipeline implements Launchable {
      */
     @Override
     public void shutdown() {
-        LOGGER.info(String.format("Stopping pipeline; pipeline=%s", _pipelineConfiguration.getName()));
+        LOGGER.info()
+                .setMessage("Stopping pipeline")
+                .addData("pipeline", _pipelineConfiguration.getName())
+                .log();
 
         for (final Source source : _sources) {
             source.stop();
         }
-        for (final LineProcessor processor : _processors) {
-            processor.closeAggregations();
-            processor.shutdown();
+        final Optional<Aggregator> aggregator = Optional.fromNullable(_aggregator.getAndSet(null));
+        if (aggregator.isPresent()) {
+            aggregator.get().shutdown();
         }
         for (final Sink sink : _sinks) {
             sink.close();
         }
 
         _sources.clear();
-        _processors.clear();
         _sinks.clear();
     }
 
     private final PipelineConfiguration _pipelineConfiguration;
-    private final List<LineProcessor> _processors = Lists.newArrayList();
+    private final AtomicReference<Aggregator> _aggregator = new AtomicReference<>();
     private final List<Sink> _sinks = Lists.newArrayList();
     private final List<Source> _sources = Lists.newArrayList();
 

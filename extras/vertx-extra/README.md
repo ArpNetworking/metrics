@@ -23,7 +23,7 @@ Building:
 
 Determine the latest version of the Vertx wrapper in [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.arpnetworking.metrics.extras%22%20a%3A%22vertx-extra%22).  Alternatively, install the current version locally:
 
-    client-java> mvn install
+    extras/vertx-extra> mvn install
 
 Using the local version is intended only for testing or development.
 
@@ -39,7 +39,7 @@ Add a dependency to your pom:
 </dependency>
 ```
 
-Add the Maven Central repository either to your ~/.m2/settings.xml or into your project's pom.  Alternatively, if using the local version add the local repository is enabled by default.
+Add the Maven Central repository either to your ~/.m2/settings.xml or into your project's pom.  Alternatively, if using the local version no changes are necessary as the local repository is enabled by default.
 
 ##### Gradle
 

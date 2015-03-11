@@ -96,6 +96,7 @@ public final class ObservableDelegate implements Observable {
         try {
             _lock.readLock().lock();
             return MoreObjects.toStringHelper(this)
+                    .add("id", Integer.toHexString(System.identityHashCode(this)))
                     .add("Observers", _observers)
                     .toString();
         } finally {

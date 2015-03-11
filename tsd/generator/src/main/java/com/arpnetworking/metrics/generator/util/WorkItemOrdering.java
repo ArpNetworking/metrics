@@ -31,7 +31,7 @@ class WorkItemOrdering implements Comparator<WorkEntry>, Serializable {
      */
     @Override
     public int compare(final WorkEntry o1, final WorkEntry o2) {
-        return Long.valueOf(o1.getCurrentValue()).compareTo(o2.getCurrentValue());
+        return Long.compare(o1.getCurrentValue(), o2.getCurrentValue());
     }
 
     private static final long serialVersionUID = -7812605920313005784L;

@@ -282,7 +282,7 @@ public abstract class VertxSink extends BaseSink {
     protected VertxSink(final Builder<?, ?> builder) {
         super(builder);
         _serverAddress = builder._serverAddress;
-        _serverPort = builder._serverPort.intValue();
+        _serverPort = builder._serverPort;
         _vertx = VertxFactory.newVertx();
         //Calling this just so the context gets created
         if (_vertx instanceof DefaultVertx) {
@@ -301,7 +301,7 @@ public abstract class VertxSink extends BaseSink {
                 .setTCPNoDelay(true)
                 .setTCPKeepAlive(true);
         _socket = new AtomicReference<>();
-        _pendingData = EvictingQueue.create(builder._maxQueueSize.intValue());
+        _pendingData = EvictingQueue.create(builder._maxQueueSize);
         _exponentialBackoffBase = builder._exponentialBackoffBase;
 
         connectToServer();
@@ -386,9 +386,9 @@ public abstract class VertxSink extends BaseSink {
         private Integer _serverPort;
         @NotNull
         @Min(value = 0)
-        private Integer _maxQueueSize = Integer.valueOf(512);
+        private Integer _maxQueueSize = 512;
         @NotNull
-        private Integer _exponentialBackoffBase = Integer.valueOf(500);
+        private Integer _exponentialBackoffBase = 500;
     }
 
     private class ConnectionHandler implements AsyncResultHandler<NetSocket> {

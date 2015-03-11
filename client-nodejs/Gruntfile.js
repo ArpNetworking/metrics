@@ -64,7 +64,7 @@ module.exports = function (grunt) {
         },
         jsdoc: {
             basic: {
-                src: ['lib/**.js', 'README.md'],
+                src: ['lib/**/*.js', 'README.md'],
                 options: {
                     destination: 'doc',
                     template: "node_modules/grunt-jsdoc/node_modules/ink-docstrap/template",
@@ -88,13 +88,16 @@ module.exports = function (grunt) {
     grunt.registerTask('test-verbose', 'Compile code and run tests with coverage in verbose mode',function(n) {
         mochaOptions.push("--verbose=true");
         grunt.task.run('test');
-    })
+    });
 
     grunt.registerTask('test-only', 'Run tests without compiling code.', ['mocha_istanbul:coverage']);
 
     grunt.registerTask('opencc', 'Open code coverage report.', 'open:ccreport');
 
+    grunt.registerTask('gendocs', 'Compile code and generate jsdocs.', ['clean', 'build', 'jsdoc:basic']);
+
     grunt.registerTask('build', 'Compile code', ['typescript']);
     grunt.registerTask('default', ['build']);
     grunt.registerTask('', ['build']);
+
 };

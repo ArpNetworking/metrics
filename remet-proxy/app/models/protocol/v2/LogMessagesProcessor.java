@@ -16,13 +16,14 @@
 
 package models.protocol.v2;
 
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import models.ConnectionContext;
@@ -33,7 +34,7 @@ import models.messages.LogsList;
 import models.messages.LogsListRequest;
 import models.messages.NewLog;
 import models.protocol.MessagesProcessor;
-import play.Logger;
+import org.joda.time.DateTime;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -126,28 +127,35 @@ public class LogMessagesProcessor implements MessagesProcessor {
     }
 
     private void processLogReport(final LogLine rawReport) {
+        _metrics.incrementCounter(LOG_LINE_COUNTER);
         final Path logFile = rawReport.getFile();
 
-        _metrics.incrementCounter(LOG_REPORT_COUNTER);
         final Set<String> regexes = _logsSubscriptions.get(logFile);
         if (regexes == null) {
-            if (Logger.isTraceEnabled()) {
-                Logger.trace(String.format("Not sending LogReport, log [%s] not found in _logsSubscriptions", logFile));
-            }
+            LOGGER.trace()
+                    .setMessage("Not sending LogReport")
+                    .addData("reason", "log not found in logsSubscriptions")
+                    .addData("file", logFile)
+                    .log();
             return;
         }
 
         if (regexes.isEmpty()) {
-            if (Logger.isTraceEnabled()) {
-                Logger.trace(String.format("Not sending LogReport, log [%s] has not subscribed regexes in  _logsSubscriptions", logFile));
-            }
+            LOGGER.trace()
+                    .setMessage("Not sending LogReport")
+                    .addData("reason", "log has not subscribed regexes")
+                    .addData("file", logFile)
+                    .log();
             return;
         }
 
+        // CHECKSTYLE.OFF: IllegalInstantiation - we need to turn the bytes into a String
+        final String line = new String(rawReport.getLine());
+        // CHECKSTYLE.ON: IllegalInstantiation
         final List<String> matchingRegexes = new ArrayList<>();
         for (final String regex : regexes) {
             final Pattern pattern = PATTERNS_MAP.get(regex);
-            if (pattern.matcher(rawReport.getLine()).matches()) {
+            if (pattern.matcher(line).matches()) {
                 matchingRegexes.add(regex);
             }
         }
@@ -156,8 +164,8 @@ public class LogMessagesProcessor implements MessagesProcessor {
             final LogReport logReport = new LogReport(
                     matchingRegexes,
                     logFile,
-                    rawReport.getLine(),
-                    rawReport.getTimestamp());
+                    line,
+                    extractTimestamp(line));
             _connectionContext.sendCommand(COMMAND_REPORT_LOG, OBJECT_MAPPER.convertValue(logReport, ObjectNode.class));
         }
     }
@@ -191,6 +199,11 @@ public class LogMessagesProcessor implements MessagesProcessor {
         }
     }
 
+    private DateTime extractTimestamp(final String line) {
+        // TODO(vkoskela): Implement different timestamp extract strategies [MAI-409]
+        return DateTime.now();
+    }
+
     private final Map<Path, Set<String>> _logsSubscriptions = Maps.newHashMap();
     private final ConnectionContext _connectionContext;
     private Metrics _metrics;
@@ -199,20 +212,17 @@ public class LogMessagesProcessor implements MessagesProcessor {
     private static final String COMMAND_GET_LOGS = "getLogs";
     private static final String COMMAND_SUBSCRIBE_LOG = "subscribeLog";
     private static final String COMMAND_UNSUBSCRIBE_LOG = "unsubscribeLog";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final String COMMAND_LOGS_LIST = "logsList";
     private static final String COMMAND_REPORT_LOG = "reportLog";
     private static final String COMMAND_NEW_LOG = "newLog";
     private static final String METRICS_PREFIX = "MessageProcessor/Log/";
+    private static final String LOG_LINE_COUNTER = METRICS_PREFIX + "LogLine";
     private static final String LOGS_LIST_COUNTER = METRICS_PREFIX + "ListLog";
     private static final String NEW_LOG_COUNTER = METRICS_PREFIX + "NewLog";
     private static final String LOG_REPORT_COUNTER = METRICS_PREFIX + "LogReport";
     private static final String SUBSCRIBE_COUNTER = METRICS_PREFIX + "Subscribe";
     private static final String UNSUBSCRIBE_COUNTER = METRICS_PREFIX + "Unsubscribe";
     private static final String GET_LOGS_COUNTER = METRICS_PREFIX + "Command/GetLogs";
-
-    static {
-        OBJECT_MAPPER.registerModule(new JodaModule());
-        OBJECT_MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogMessagesProcessor.class);
 }

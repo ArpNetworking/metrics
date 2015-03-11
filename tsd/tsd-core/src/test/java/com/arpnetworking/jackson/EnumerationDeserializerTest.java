@@ -37,7 +37,7 @@ public class EnumerationDeserializerTest {
 
         final SimpleModule module = new SimpleModule();
         module.addDeserializer(TestEnum.class, EnumerationDeserializer.newInstance(TestEnum.class, strategy));
-        final ObjectMapper objectMapper = new ObjectMapper();
+        final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
         objectMapper.registerModule(module);
 
         final TestClass c = objectMapper.readValue("{\"enum\":\"bar\"}", TestClass.class);

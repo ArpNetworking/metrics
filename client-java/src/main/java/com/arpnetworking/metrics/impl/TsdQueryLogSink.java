@@ -108,10 +108,13 @@ public class TsdQueryLogSink implements Sink {
         return _queryLogger;
     }
 
-    private TimeBasedRollingPolicy<ILoggingEvent> createRollingPolicy(final String extension, final String fileNameWithoutExtension) {
+    private TimeBasedRollingPolicy<ILoggingEvent> createRollingPolicy(
+            final String extension,
+            final String fileNameWithoutExtension,
+            final int maxHistory) {
         final TimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = new TimeBasedRollingPolicy<>();
         rollingPolicy.setContext(_loggerContext);
-        rollingPolicy.setMaxHistory(24);
+        rollingPolicy.setMaxHistory(maxHistory);
         rollingPolicy.setCleanHistoryOnStart(true);
         rollingPolicy.setFileNamePattern(fileNameWithoutExtension + DATE_EXTENSION + extension + GZIP_EXTENSION);
         return rollingPolicy;
@@ -164,6 +167,7 @@ public class TsdQueryLogSink implements Sink {
         final String path = builder._path;
         final String extension = builder._extension;
         final boolean immediateFlush = builder._immediateFlush.booleanValue();
+        final int maxHistory = builder._maxHistory.intValue();
 
         final StringBuilder fileNameBuilder = new StringBuilder(path);
         if (!path.isEmpty() && !path.endsWith(File.separator)) {
@@ -174,7 +178,10 @@ public class TsdQueryLogSink implements Sink {
         fileNameBuilder.append(extension);
         final String fileName = fileNameBuilder.toString();
 
-        final TimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = createRollingPolicy(extension, fileNameWithoutExtension);
+        final TimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = createRollingPolicy(
+                extension,
+                fileNameWithoutExtension,
+                maxHistory);
         final Encoder<ILoggingEvent> encoder = createEncoder(immediateFlush);
         final FileAppender<ILoggingEvent> rollingAppender = createRollingAppender(fileName, rollingPolicy, encoder);
         final Appender<ILoggingEvent> asyncAppender = createAsyncAppender(rollingAppender);
@@ -361,6 +368,12 @@ public class TsdQueryLogSink implements Sink {
             if (_immediateFlush == null) {
                 throw new IllegalArgumentException("ImmediateFlush cannot be null");
             }
+            if (_maxHistory == null) {
+                throw new IllegalArgumentException("MaxHistory cannot be null");
+            }
+            if (_maxHistory.intValue() < 0) {
+                throw new IllegalArgumentException("MaxHistory cannot be negative");
+            }
             return new TsdQueryLogSink(this);
         }
 
@@ -411,14 +424,29 @@ public class TsdQueryLogSink implements Sink {
             return this;
         }
 
+        /**
+         * Set the maximum number of historical (e.g. number of rotated files
+         * to retain). Files are rotated hourly, so this is equivalent to the
+         * number of hours of logs to retain. Optional; default is 24.
+         *
+         * @param value Maximum number of historical (e.g. rotated) files to retain.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setMaxHistory(final Integer value) {
+            _maxHistory = value;
+            return this;
+        }
+
         private String _path = DEFAULT_PATH;
         private String _name = DEFAULT_NAME;
         private String _extension = DEFAULT_EXTENSION;
         private Boolean _immediateFlush = DEFAULT_IMMEDIATE_FLUSH;
+        private Integer _maxHistory = DEFAULT_MAX_HISTORY;
 
         private static final String DEFAULT_PATH = "";
         private static final String DEFAULT_NAME = "query";
         private static final String DEFAULT_EXTENSION = ".log";
         private static final Boolean DEFAULT_IMMEDIATE_FLUSH = Boolean.TRUE;
+        private static final Integer DEFAULT_MAX_HISTORY = Integer.valueOf(24);
     }
 }

@@ -116,9 +116,9 @@ public final class LuaAlert implements Alert {
             final LuaValue value = LuaValue.valueOf(datumValue);
             result = _expression.call(value);
             // CHECKSTYLE.OFF: IllegalCatch - Lua throws RuntimeExceptions
-        } catch (final Throwable t) {
+        } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
-            throw new ScriptingException(String.format("Expression evaluation failed; expression=%s", this), t);
+            throw new ScriptingException(String.format("Expression evaluation failed; expression=%s", this), e);
         }
 
         return new Condition.Builder()
@@ -135,7 +135,8 @@ public final class LuaAlert implements Alert {
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(LuaExpression.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Name", _name)
                 .add("Severity", _severity)
                 .add("FQDSN", _fqdsn)
@@ -147,7 +148,7 @@ public final class LuaAlert implements Alert {
 
     private Optional<Boolean> convertToBoolean(final LuaValue result) throws ScriptingException {
         if (result.isboolean()) {
-            return Optional.of(Boolean.valueOf(result.toboolean()));
+            return Optional.of(result.toboolean());
         }
         throw new ScriptingException(
                 String.format("Script returned an unsupported value; result=%s", result));

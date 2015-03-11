@@ -71,8 +71,9 @@ public final class LogReport {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("Log", _file)
-                .add("Data", _line)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("File", _file)
+                .add("Line", _line)
                 .add("Timestamp", _timestamp)
                 .add("MatchingRegexes", _matchingRegexes)
                 .toString();

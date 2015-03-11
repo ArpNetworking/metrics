@@ -132,7 +132,7 @@ public class YammerMetricsSink implements Sink {
 
         @Override
         public Double value() {
-            return Double.valueOf(_value);
+            return _value;
         }
 
         private double _value;

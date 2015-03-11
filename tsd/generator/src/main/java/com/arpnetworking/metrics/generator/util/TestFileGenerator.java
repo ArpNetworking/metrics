@@ -67,7 +67,7 @@ public final class TestFileGenerator {
         try {
             Files.deleteIfExists(_fileName);
         } catch (final IOException e) {
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
 
         final long totalSampleCount = ((long) _uowCount) * _namesCount * _samplesCount;

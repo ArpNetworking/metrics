@@ -17,7 +17,7 @@
 apply plugin: 'build-dashboard'
 apply plugin: 'idea'
 
-version = '0.3.0'
+version = ''
 group = 'com.arpnetworking.metrics'
 
 subprojects {
@@ -127,6 +127,10 @@ subprojects {
                 }
                 t.finalizedBy "checkstyleReport$cap"
             }
+    }
+
+    checkstyle {
+        toolVersion = "6.3"
     }
 
     jacoco {

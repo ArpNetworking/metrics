@@ -21,8 +21,11 @@
             <fileNamePattern>logs/tsd_aggregator.%d{yyyyMMdd}.log.gz</fileNamePattern>
             <maxHistory>20</maxHistory>
         </rollingPolicy>
-        <encoder immediateFlush="true">
-            <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
+        <encoder class="com.arpnetworking.logback.KeyValueEncoder">
+            <injectContextLogger>true</injectContextLogger>
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
+            </layout>
         </encoder>
     </appender>
 

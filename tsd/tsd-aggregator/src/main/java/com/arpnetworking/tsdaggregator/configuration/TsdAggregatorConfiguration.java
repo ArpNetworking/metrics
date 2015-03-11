@@ -91,6 +91,7 @@ public final class TsdAggregatorConfiguration {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("LogDirectory", _logDirectory)
                 .add("PipelinesDirectory", _pipelinesDirectory)
                 .add("HttpHost", _httpHost)
@@ -104,7 +105,7 @@ public final class TsdAggregatorConfiguration {
         _logDirectory = builder._logDirectory;
         _pipelinesDirectory = builder._pipelinesDirectory;
         _httpHost = builder._httpHost;
-        _httpPort = builder._httpPort.intValue();
+        _httpPort = builder._httpPort;
         _limiters = builder._limiters;
         _akkaConfiguration = builder._akkaConfiguration;
     }

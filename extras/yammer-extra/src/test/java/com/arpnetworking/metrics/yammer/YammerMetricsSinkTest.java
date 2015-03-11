@@ -99,7 +99,7 @@ public final class YammerMetricsSinkTest {
         Mockito.when(registry.newTimer(YammerMetricsSink.class, metricName)).thenReturn(timer);
 
         final List<Quantity> samples = new ArrayList<>();
-        samples.add(TestQuantity.newInstance(Long.valueOf(1), Unit.SECOND));
+        samples.add(TestQuantity.newInstance(1L, Unit.SECOND));
         // CHECKSTYLE.OFF: IllegalInstantiation - No Gauva
         final Map<String, List<Quantity>> metrics = new HashMap<>();
         // CHECKSTYLE.ON: IllegalInstantiation
@@ -130,8 +130,8 @@ public final class YammerMetricsSinkTest {
         Mockito.when(registry.newTimer(YammerMetricsSink.class, metricName)).thenReturn(timer);
 
         final List<Quantity> samples = new ArrayList<>();
-        samples.add(TestQuantity.newInstance(Long.valueOf(1), Unit.SECOND));
-        samples.add(TestQuantity.newInstance(Long.valueOf(2), Unit.MILLISECOND));
+        samples.add(TestQuantity.newInstance(1L, Unit.SECOND));
+        samples.add(TestQuantity.newInstance(2L, Unit.MILLISECOND));
         // CHECKSTYLE.OFF: IllegalInstantiation - No Gauva
         final Map<String, List<Quantity>> metrics = new HashMap<>();
         // CHECKSTYLE.ON: IllegalInstantiation
@@ -163,7 +163,7 @@ public final class YammerMetricsSinkTest {
         Mockito.when(registry.newTimer(YammerMetricsSink.class, metricName)).thenReturn(timer);
 
         final List<Quantity> samples = new ArrayList<>();
-        samples.add(TestQuantity.newInstance(Long.valueOf(1), null));
+        samples.add(TestQuantity.newInstance(1L, null));
         // CHECKSTYLE.OFF: IllegalInstantiation - No Gauva
         final Map<String, List<Quantity>> metrics = new HashMap<>();
         // CHECKSTYLE.ON: IllegalInstantiation
@@ -194,7 +194,7 @@ public final class YammerMetricsSinkTest {
         Mockito.when(registry.newCounter(YammerMetricsSink.class, metricName)).thenReturn(counter);
 
         final List<Quantity> samples = new ArrayList<>();
-        samples.add(TestQuantity.newInstance(Long.valueOf(10), null));
+        samples.add(TestQuantity.newInstance(10L, null));
         // CHECKSTYLE.OFF: IllegalInstantiation - No Gauva
         final Map<String, List<Quantity>> metrics = new HashMap<>();
         // CHECKSTYLE.ON: IllegalInstantiation
@@ -225,8 +225,8 @@ public final class YammerMetricsSinkTest {
         Mockito.when(registry.newCounter(YammerMetricsSink.class, metricName)).thenReturn(counter);
 
         final List<Quantity> samples = new ArrayList<>();
-        samples.add(TestQuantity.newInstance(Long.valueOf(10), null));
-        samples.add(TestQuantity.newInstance(Long.valueOf(11), null));
+        samples.add(TestQuantity.newInstance(10L, null));
+        samples.add(TestQuantity.newInstance(11L, null));
         // CHECKSTYLE.OFF: IllegalInstantiation - No Gauva
         final Map<String, List<Quantity>> metrics = new HashMap<>();
         // CHECKSTYLE.ON: IllegalInstantiation
@@ -286,7 +286,7 @@ public final class YammerMetricsSinkTest {
                 .then(new GaugeCaptureAnswer(gauge));
 
         final List<Quantity> samples = new ArrayList<>();
-        samples.add(TestQuantity.newInstance(Double.valueOf(3.14), null));
+        samples.add(TestQuantity.newInstance(3.14, null));
         // CHECKSTYLE.OFF: IllegalInstantiation - No Gauva
         final Map<String, List<Quantity>> metrics = new HashMap<>();
         // CHECKSTYLE.ON: IllegalInstantiation
@@ -304,7 +304,7 @@ public final class YammerMetricsSinkTest {
                 Matchers.any(Gauge.class));
         Mockito.verifyNoMoreInteractions(registry);
 
-        Assert.assertEquals(3.14, gauge.get().value().doubleValue(), 0.0001);
+        Assert.assertEquals(3.14, gauge.get().value(), 0.0001);
     }
 
     @SuppressWarnings("unchecked")
@@ -325,8 +325,8 @@ public final class YammerMetricsSinkTest {
                 .then(new GaugeCaptureAnswer(gauge));
 
         final List<Quantity> samples = new ArrayList<>();
-        samples.add(TestQuantity.newInstance(Double.valueOf(3.14), null));
-        samples.add(TestQuantity.newInstance(Double.valueOf(2.07), null));
+        samples.add(TestQuantity.newInstance(3.14, null));
+        samples.add(TestQuantity.newInstance(2.07, null));
         // CHECKSTYLE.OFF: IllegalInstantiation - No Gauva
         final Map<String, List<Quantity>> metrics = new HashMap<>();
         // CHECKSTYLE.ON: IllegalInstantiation
@@ -344,7 +344,7 @@ public final class YammerMetricsSinkTest {
                 Matchers.any(Gauge.class));
         Mockito.verifyNoMoreInteractions(registry);
 
-        Assert.assertEquals(2.07, gauge.get().value().doubleValue(), 0.0001);
+        Assert.assertEquals(2.07, gauge.get().value(), 0.0001);
     }
 
     @SuppressWarnings("unchecked")
@@ -365,9 +365,9 @@ public final class YammerMetricsSinkTest {
                 .then(new GaugeCaptureAnswer(gauge));
 
         final List<Quantity> samplesA = new ArrayList<>();
-        samplesA.add(TestQuantity.newInstance(Double.valueOf(3.14), null));
+        samplesA.add(TestQuantity.newInstance(3.14, null));
         final List<Quantity> samplesB = new ArrayList<>();
-        samplesB.add(TestQuantity.newInstance(Double.valueOf(2.07), null));
+        samplesB.add(TestQuantity.newInstance(2.07, null));
         // CHECKSTYLE.OFF: IllegalInstantiation - No Gauva
         final Map<String, List<Quantity>> metricsA = new HashMap<>();
         final Map<String, List<Quantity>> metricsB = new HashMap<>();
@@ -386,7 +386,7 @@ public final class YammerMetricsSinkTest {
                 Matchers.eq(metricName),
                 Matchers.any(Gauge.class));
 
-        Assert.assertEquals(3.14, gauge.get().value().doubleValue(), 0.0001);
+        Assert.assertEquals(3.14, gauge.get().value(), 0.0001);
         Mockito.reset(registry);
 
         Mockito.when(
@@ -409,7 +409,7 @@ public final class YammerMetricsSinkTest {
 
         Mockito.verifyNoMoreInteractions(registry);
 
-        Assert.assertEquals(2.07, gauge.get().value().doubleValue(), 0.0001);
+        Assert.assertEquals(2.07, gauge.get().value(), 0.0001);
     }
 
     @SuppressWarnings("unchecked")
@@ -429,7 +429,7 @@ public final class YammerMetricsSinkTest {
                 .then(new DifferentGaugeAnswer());
 
         final List<Quantity> samples = new ArrayList<>();
-        samples.add(TestQuantity.newInstance(Double.valueOf(3.14), null));
+        samples.add(TestQuantity.newInstance(3.14, null));
         // CHECKSTYLE.OFF: IllegalInstantiation - No Gauva
         final Map<String, List<Quantity>> metrics = new HashMap<>();
         // CHECKSTYLE.ON: IllegalInstantiation
@@ -455,7 +455,7 @@ public final class YammerMetricsSinkTest {
     private static final class DifferentGauge extends Gauge<Double> {
         @Override
         public Double value() {
-            return Double.valueOf(99.9);
+            return 99.9;
         }
     }
 

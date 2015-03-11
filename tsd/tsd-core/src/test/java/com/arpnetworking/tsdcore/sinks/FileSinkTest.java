@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -89,5 +90,5 @@ public class FileSinkTest {
     private File _outFile;
     private FileSink.Builder _fileSinkBuilder;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 }

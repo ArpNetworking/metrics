@@ -61,7 +61,7 @@ public final class ConsoleSink extends BaseSink {
                         .append("] ")
                         .append(datum.getFQDSN().getStatistic().getName())
                         .append(": ")
-                        .append(String.format("%f", Double.valueOf(datum.getValue().getValue())))
+                        .append(String.format("%f", datum.getValue().getValue()))
                         .append(" ")
                         .append(unit);
 

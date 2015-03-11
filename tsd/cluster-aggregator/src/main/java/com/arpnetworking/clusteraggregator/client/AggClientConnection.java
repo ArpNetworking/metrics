@@ -185,7 +185,9 @@ public class AggClientConnection extends UntypedActor {
                 .setStart(periodStart)
                 .setPopulationSize(sampleCount)
                 .setSamples(sampleizeDoubles(aggRecord.getStatisticSamplesList(), Optional.<Unit>absent()))
-                .setValue(new Quantity(aggRecord.getStatisticValue(), Optional.<Unit>absent()))
+                .setValue(new Quantity.Builder()
+                        .setValue(aggRecord.getStatisticValue())
+                        .build())
                 .build());
         // CHECKSTYLE.OFF: IllegalCatch - The legacy parsing can throw a variety of runtime exceptions
         } catch (final RuntimeException e) {
@@ -207,7 +209,10 @@ public class AggClientConnection extends UntypedActor {
         } else {
             recordUnit = Optional.fromNullable(Unit.valueOf(aggRecord.getUnit()));
         }
-        final Quantity quantity = new Quantity(aggRecord.getStatisticValue(), recordUnit);
+        final Quantity quantity = new Quantity.Builder()
+                .setValue(aggRecord.getStatisticValue())
+                .setUnit(recordUnit.orNull())
+                .build();
         return Optional.of(
                 new AggregatedData.Builder()
                         .setHost(_hostName.get())
@@ -229,7 +234,10 @@ public class AggClientConnection extends UntypedActor {
         return FluentIterable.from(samplesList).transform(new Function<Double, Quantity>() {
             @Override
             public Quantity apply(final Double input) {
-                return new Quantity(input, recordUnit.or(Optional.<Unit>absent()));
+                return new Quantity.Builder()
+                        .setValue(input)
+                        .setUnit(recordUnit.orNull())
+                        .build();
             }
         }).toList();
     }

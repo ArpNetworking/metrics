@@ -50,7 +50,7 @@ public final class UnitMappingSink extends BaseSink {
                     mappedData.add(
                             AggregatedData.Builder.<AggregatedData, AggregatedData.Builder>clone(datum)
                                     .setValue(new Quantity.Builder()
-                                            .setValue(Double.valueOf(toUnit.convert(value.getValue(), fromUnit)))
+                                            .setValue(toUnit.convert(value.getValue(), fromUnit))
                                             .setUnit(toUnit)
                                             .build())
                                     .build());
@@ -71,7 +71,7 @@ public final class UnitMappingSink extends BaseSink {
                     mappedConditions.add(
                             Condition.Builder.<Condition, Condition.Builder>clone(condition)
                                     .setThreshold(new Quantity.Builder()
-                                            .setValue(Double.valueOf(toUnit.convert(threshold.getValue(), fromUnit)))
+                                            .setValue(toUnit.convert(threshold.getValue(), fromUnit))
                                             .setUnit(toUnit)
                                             .build())
                                     .build());

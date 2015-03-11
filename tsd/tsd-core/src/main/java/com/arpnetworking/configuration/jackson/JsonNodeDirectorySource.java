@@ -57,7 +57,8 @@ public final class JsonNodeDirectorySource extends BaseJsonNodeSource implements
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(JsonNodeDirectorySource.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Directory", _directory)
                 .add("FileNames", _fileNames)
                 .add("FileNamePatterns", _fileNamePatterns)
@@ -127,7 +128,7 @@ public final class JsonNodeDirectorySource extends BaseJsonNodeSource implements
             try {
                 jsonNode = _objectMapper.readTree(jsonBuilder.toString());
             } catch (final IOException e) {
-                Throwables.propagate(e);
+                throw Throwables.propagate(e);
             }
         }
         _jsonNode = Optional.fromNullable(jsonNode);

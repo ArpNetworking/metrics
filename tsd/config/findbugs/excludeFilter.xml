@@ -24,6 +24,12 @@
     </Match>
 
     <Match>
+        <!-- Will be refactored into configuration -->
+        <Class name="com.arpnetworking.clusteraggregator.AkkaCluster"/>
+        <Method name="createEmitter"/>
+        <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
+    </Match>
+    <Match>
         <!-- Lua implements only part of the equals-hash contract -->
         <Class name="com.arpnetworking.tsdcore.scripting.lua.LuaExpression$CreateQuantityLuaFunction"/>
         <Bug pattern="HE_INHERITS_EQUALS_USE_HASHCODE"/>

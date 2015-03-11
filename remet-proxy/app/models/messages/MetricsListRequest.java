@@ -35,6 +35,7 @@ public final class MetricsListRequest {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .toString();
     }
 }

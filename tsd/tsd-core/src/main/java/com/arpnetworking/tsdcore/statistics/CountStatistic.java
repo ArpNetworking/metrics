@@ -17,10 +17,10 @@ package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Quantity;
-import com.arpnetworking.tsdcore.model.Unit;
-import com.google.common.base.Optional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Counts the entries.
@@ -28,14 +28,6 @@ import java.util.List;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class CountStatistic extends BaseStatistic {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double calculate(final List<Quantity> unorderedValues) {
-        return Double.valueOf(unorderedValues.size()).doubleValue();
-    }
 
     /**
      * {@inheritDoc}
@@ -49,12 +41,28 @@ public class CountStatistic extends BaseStatistic {
      * {@inheritDoc}
      */
     @Override
+    public Set<String> getAliases() {
+        return Collections.singleton("n");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Quantity calculate(final List<Quantity> unorderedValues) {
+        return new Quantity.Builder().setValue((double) unorderedValues.size()).build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
         double samples = 0;
         for (final AggregatedData aggregation : aggregations) {
             samples += aggregation.getPopulationSize();
         }
-        return new Quantity(samples, Optional.<Unit>absent());
+        return new Quantity.Builder().setValue(samples).build();
     }
 
     private static final long serialVersionUID = 983762187313397225L;

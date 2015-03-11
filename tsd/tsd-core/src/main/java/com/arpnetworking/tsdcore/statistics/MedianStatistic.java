@@ -15,17 +15,36 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
- * Top 50th percentile statistic (aka median).
+ * Top median statistic (aka 50th percentile).
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class TP50Statistic extends TPStatistic {
+public class MedianStatistic extends TPStatistic {
 
     /**
      * Public constructor.
      */
-    public TP50Statistic() {
+    public MedianStatistic() {
         super(50d);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getName() {
+        return "median";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<String> getAliases() {
+        return Collections.singleton("tp50");
     }
 }

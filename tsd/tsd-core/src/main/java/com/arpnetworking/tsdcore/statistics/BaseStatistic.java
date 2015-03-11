@@ -15,12 +15,23 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * A statistic base class.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
 public abstract class BaseStatistic implements Statistic {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<String> getAliases() {
+        return Collections.emptySet();
+    }
 
     /**
      * {@inheritDoc}

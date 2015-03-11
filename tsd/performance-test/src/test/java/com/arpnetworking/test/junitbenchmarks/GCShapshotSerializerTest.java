@@ -16,11 +16,13 @@
 
 package com.arpnetworking.test.junitbenchmarks;
 
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.carrotsearch.junitbenchmarks.DataCreator;
 import com.carrotsearch.junitbenchmarks.GCSnapshot;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,16 +36,14 @@ public class GCShapshotSerializerTest {
     public void testSerialization() {
         final SimpleModule module = new SimpleModule();
         module.addSerializer(GCSnapshot.class, new GCSnapshotSerializer());
-        final ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = ObjectMapperFactory.createInstance();
         mapper.registerModule(module);
 
         final GCSnapshot testSnapshot = DataCreator.createGCSnapshot();
-        final long accumulatedInvocations = testSnapshot.accumulatedInvocations();
-        final long accumulatedTime = testSnapshot.accumulatedTime();
 
         final JsonNode jsonNode = mapper.valueToTree(testSnapshot);
         Assert.assertTrue(jsonNode.isObject());
-        Assert.assertEquals(jsonNode.get("accumulatedInvocations").asLong(), accumulatedInvocations);
-        Assert.assertEquals(jsonNode.get("accumulatedTime").asLong(), accumulatedTime);
+        Assert.assertThat(jsonNode.get("accumulatedInvocations").asLong(), Matchers.greaterThanOrEqualTo(0L));
+        Assert.assertThat(jsonNode.get("accumulatedTime").asLong(), Matchers.greaterThanOrEqualTo(0L));
     }
 }

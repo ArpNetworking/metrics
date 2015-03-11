@@ -18,12 +18,13 @@ package com.arpnetworking.clusteraggregator;
 
 import com.arpnetworking.tsdcore.statistics.CountStatistic;
 import com.arpnetworking.tsdcore.statistics.MeanStatistic;
+import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.SumStatistic;
 import com.arpnetworking.tsdcore.statistics.TP0Statistic;
 import com.arpnetworking.tsdcore.statistics.TP100Statistic;
-import com.arpnetworking.tsdcore.statistics.TP50Statistic;
 import com.arpnetworking.tsdcore.statistics.TP90Statistic;
+import com.arpnetworking.tsdcore.statistics.TP95Statistic;
 import com.arpnetworking.tsdcore.statistics.TP99Statistic;
 import com.arpnetworking.tsdcore.statistics.TP99p9Statistic;
 import com.google.common.base.Optional;
@@ -45,15 +46,18 @@ import java.util.List;
 public class StatisticFactoryTest {
     private Object[] args() {
         return a(
-                a(l("mean", "Mean"), MeanStatistic.class),
-                a(l("sum", "Sum"), SumStatistic.class),
-                a(l("N", "n", "count", "Count"), CountStatistic.class),
-                a(l("p0", "Tp0", "P0", "min", "Min"), TP0Statistic.class),
-                a(l("p50", "Tp50", "P50", "median", "Median"), TP50Statistic.class),
-                a(l("p90", "Tp90", "P90"), TP90Statistic.class),
-                a(l("p99", "Tp99", "P99"), TP99Statistic.class),
-                a(l("p99.9", "Tp99.9", "P99.9"), TP99p9Statistic.class),
-                a(l("p100", "Tp100", "P100", "max", "Max"), TP100Statistic.class)
+                a(l("mean"), MeanStatistic.class),
+                a(l("sum"), SumStatistic.class),
+                a(l("count"), CountStatistic.class),
+                a(l("n"), CountStatistic.class),
+                a(l("min"), TP0Statistic.class),
+                a(l("tp50"), MedianStatistic.class),
+                a(l("median"), MedianStatistic.class),
+                a(l("tp90"), TP90Statistic.class),
+                a(l("tp95"), TP95Statistic.class),
+                a(l("tp99"), TP99Statistic.class),
+                a(l("tp99.9"), TP99p9Statistic.class),
+                a(l("max"), TP100Statistic.class)
         );
     }
 

@@ -116,12 +116,12 @@ public final class DefaultMetricsLimiter implements Closeable {
 
         // If we get here, there was no room for the new aggregations, log it (but not too often) and then ignore
         final Long lastLogged = _lastLogged.get(key);
-        if (lastLogged == null || now - lastLogged.longValue() >= _loggingInterval.getMillis()) {
+        if (lastLogged == null || now - lastLogged >= _loggingInterval.getMillis()) {
             LOGGER.error(String.format(
                     "Limited aggregate %s; already aggregating %d",
                     key,
-                    Integer.valueOf(_nAggregations)));
-            _lastLogged.put(key, Long.valueOf(now));
+                    _nAggregations));
+            _lastLogged.put(key, now);
         }
 
         return false;
@@ -203,14 +203,14 @@ public final class DefaultMetricsLimiter implements Closeable {
     }
 
     private DefaultMetricsLimiter(final Builder builder) {
-        _maxAggregations = builder._maxAggregations.longValue();
+        _maxAggregations = builder._maxAggregations;
         _loggingInterval = builder._loggingInterval;
         _ageOutThreshold = builder._ageOutThreshold;
         _stateManager = builder._stateManagerBuilder.build(_marks);
 
         // Load the persisted limit state & enable periodic state writes
         updateMarksAndAggregationCount(_stateManager.readState(), System.currentTimeMillis());
-        _enableStateAutoWriter = builder._enableStateAutoWriter.booleanValue();
+        _enableStateAutoWriter = builder._enableStateAutoWriter;
         if (_enableStateAutoWriter) {
             _stateManager.startAutoWriter();
         }
@@ -268,7 +268,8 @@ public final class DefaultMetricsLimiter implements Closeable {
          */
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(Mark.class)
+            return MoreObjects.toStringHelper(this)
+                    .add("id", Integer.toHexString(System.identityHashCode(this)))
                     .add("Count", _count)
                     .add("Timer", _time)
                     .toString();

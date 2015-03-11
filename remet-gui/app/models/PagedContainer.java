@@ -54,6 +54,7 @@ public final class PagedContainer<T> {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Data", _data)
                 .add("Pagination", _pagination)
                 .toString();

@@ -119,6 +119,7 @@ public final class FQSN {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("FQDSN", _fqdsn)
                 .add("Period", _period)
                 .add("Start", _start)

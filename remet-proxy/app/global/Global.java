@@ -16,9 +16,10 @@
 
 package global;
 
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import play.Application;
 import play.GlobalSettings;
-import play.Logger;
 
 /**
  * Setup the global application components.
@@ -31,12 +32,12 @@ public final class Global extends GlobalSettings {
      */
     @Override
     public void onStart(final Application app) {
-        Logger.info("Starting application...");
+        LOGGER.info().setMessage("Starting application...").log();
 
         // Start-up parent
         super.onStart(app);
 
-        Logger.debug("Startup complete");
+        LOGGER.debug().setMessage("Startup complete").log();
     }
 
     /**
@@ -44,11 +45,13 @@ public final class Global extends GlobalSettings {
      */
     @Override
     public void onStop(final Application app) {
-        Logger.info("Shutting down application...");
+        LOGGER.info().setMessage("Shutting down application...").log();
 
         // Shutdown parent
         super.onStop(app);
 
-        Logger.debug("Shutdown complete");
+        LOGGER.debug().setMessage("Shutdown complete").log();
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Global.class);
 }

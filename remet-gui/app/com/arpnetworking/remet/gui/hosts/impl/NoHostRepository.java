@@ -20,9 +20,10 @@ import com.arpnetworking.remet.gui.hosts.HostQuery;
 import com.arpnetworking.remet.gui.hosts.HostQueryResult;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
-import play.Logger;
 
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,7 +49,7 @@ public class NoHostRepository implements HostRepository {
     @Override
     public void open() {
         assertIsOpen(false);
-        Logger.debug("Opening host repository");
+        LOGGER.debug().setMessage("Opening host repository").log();
         _isOpen.set(true);
     }
 
@@ -58,7 +59,7 @@ public class NoHostRepository implements HostRepository {
     @Override
     public void close() {
         assertIsOpen();
-        Logger.debug("Closing host repository");
+        LOGGER.debug().setMessage("Closing host repository").log();
         _isOpen.set(false);
     }
 
@@ -68,7 +69,10 @@ public class NoHostRepository implements HostRepository {
     @Override
     public void addOrUpdateHost(final Host host) {
         assertIsOpen();
-        Logger.debug(String.format("Adding or updating host; host=%s", host));
+        LOGGER.debug()
+                .setMessage("Adding or updating host")
+                .addData("host", host)
+                .log();
     }
 
     /**
@@ -77,7 +81,10 @@ public class NoHostRepository implements HostRepository {
     @Override
     public void deleteHost(final String hostName) {
         assertIsOpen();
-        Logger.debug(String.format("Deleting host; hostName=%s", hostName));
+        LOGGER.debug()
+                .setMessage("Deleting host")
+                .addData("hostname", hostName)
+                .log();
     }
 
 
@@ -87,7 +94,7 @@ public class NoHostRepository implements HostRepository {
     @Override
     public HostQuery createQuery() {
         assertIsOpen();
-        Logger.debug("Preparing query");
+        LOGGER.debug().setMessage("Preparing query").log();
         return new DefaultHostQuery(this);
     }
 
@@ -97,7 +104,10 @@ public class NoHostRepository implements HostRepository {
     @Override
     public HostQueryResult query(final HostQuery query) {
         assertIsOpen();
-        Logger.debug(String.format("Querying; query=%s", query));
+        LOGGER.debug()
+                .setMessage("Querying")
+                .addData("query", query)
+                .log();
         return new DefaultHostQueryResult(Collections.<Host>emptyList(), 0);
     }
 
@@ -107,7 +117,7 @@ public class NoHostRepository implements HostRepository {
     @Override
     public long getHostCount() {
         assertIsOpen();
-        Logger.debug("Getting host count");
+        LOGGER.debug().setMessage("Getting host count").log();
         return 0;
     }
 
@@ -117,7 +127,10 @@ public class NoHostRepository implements HostRepository {
     @Override
     public long getHostCount(final MetricsSoftwareState metricsSoftwareState) {
         assertIsOpen();
-        Logger.debug(String.format("Getting host count in state; metricsSoftwareState=%s", metricsSoftwareState));
+        LOGGER.debug()
+                .setMessage("Getting host count in state")
+                .addData("state", metricsSoftwareState)
+                .log();
         return 0;
     }
 
@@ -127,6 +140,7 @@ public class NoHostRepository implements HostRepository {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .toString();
     }
 
@@ -141,4 +155,5 @@ public class NoHostRepository implements HostRepository {
     }
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NoHostRepository.class);
 }

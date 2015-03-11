@@ -24,7 +24,6 @@ import com.arpnetworking.tsdcore.tailer.PositionStore;
 import com.arpnetworking.tsdcore.tailer.StatefulTailer;
 import com.arpnetworking.tsdcore.tailer.Tailer;
 import com.arpnetworking.tsdcore.tailer.TailerListener;
-import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import net.sf.oval.constraint.NotEmpty;
@@ -147,11 +146,10 @@ public final class FileSource<T> extends BaseSource {
         }
 
         @Override
-        public void handle(final String line) {
-            _logger.trace(String.format("Tailer reading line; source=%s, line=%s", FileSource.this, line));
+        public void handle(final byte[] line) {
             T record;
             try {
-                record = _parser.parse(line.getBytes(Charsets.UTF_8));
+                record = _parser.parse(line);
             } catch (final ParsingException e) {
                 _logger.error("Failed to parse data", e);
                 return;

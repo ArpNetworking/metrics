@@ -22,6 +22,8 @@ import akka.actor.UntypedActor;
 import akka.dispatch.ExecutionContexts;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -39,7 +41,6 @@ import models.messages.MetricsListRequest;
 import models.messages.NewLog;
 import models.messages.NewMetric;
 import models.messages.Quit;
-import play.Logger;
 import play.libs.F.Callback;
 import play.libs.F.Callback0;
 import play.mvc.WebSocket;
@@ -70,7 +71,7 @@ public class StreamContext extends UntypedActor {
         _metrics = metricsFactory.create();
         _instrument = context().system().scheduler().schedule(
                 new FiniteDuration(0, TimeUnit.SECONDS), // Initial delay
-                new FiniteDuration(1, TimeUnit.SECONDS), // Interval
+                new FiniteDuration(500, TimeUnit.MILLISECONDS), // Interval
                 getSelf(),
                 "instrument",
                 ExecutionContexts.global(),
@@ -82,9 +83,10 @@ public class StreamContext extends UntypedActor {
      */
     @Override
     public void onReceive(final Object message) throws Exception {
-        if (Logger.isTraceEnabled()) {
-            Logger.trace(String.format("Received message; %s", message));
-        }
+        LOGGER.trace()
+                .setMessage("Received message")
+                .addData("data", message)
+                .log();
 
         if ("instrument".equals(message)) {
             periodicInstrumentation();
@@ -93,7 +95,7 @@ public class StreamContext extends UntypedActor {
         } else if (message instanceof MetricReport) {
             executeMetricReport((MetricReport) message);
         } else if (message instanceof LogLine) {
-            executeLogReport((LogLine) message);
+            executeLogLine((LogLine) message);
         } else if (message instanceof Quit) {
             executeQuit((Quit) message);
         } else if (message instanceof MetricsListRequest) {
@@ -106,7 +108,10 @@ public class StreamContext extends UntypedActor {
             executeLogRemoved((LogFileDisappeared) message);
         } else {
             _metrics.incrementCounter(UNKNOWN_COUNTER);
-            Logger.warn(String.format("Unsupported message; message=%s", message));
+            LOGGER.warn()
+                    .setMessage("Unsupported message")
+                    .addData("data", message)
+                    .log();
             unhandled(message);
         }
     }
@@ -130,25 +135,19 @@ public class StreamContext extends UntypedActor {
 
     private void executeLogAdded(final LogFileAppeared message) {
         _metrics.incrementCounter(LOG_ADDED_COUNTER);
-        if (!_logs.contains(message.getFilePath())) {
-            _logs.add(message.getFilePath());
-            notifyNewLog(message.getFilePath());
+        if (!_logs.contains(message.getFile())) {
+            _logs.add(message.getFile());
+            notifyNewLog(message.getFile());
         }
     }
 
     private void executeLogsListRequest() {
         _metrics.incrementCounter(METRICS_LIST_COUNTER);
-        if (Logger.isDebugEnabled()) {
-            Logger.debug("Metrics list request");
-        }
         getSender().tell(new LogsList(_logs), getSelf());
     }
 
-    private void executeLogReport(final LogLine message) {
+    private void executeLogLine(final LogLine message) {
         _metrics.incrementCounter(LOG_LINE_COUNTER);
-        if (Logger.isTraceEnabled()) {
-            Logger.trace(String.format("Log report; report=%s", message));
-        }
         registerLog(message.getFile());
         broadcast(message);
     }
@@ -156,19 +155,18 @@ public class StreamContext extends UntypedActor {
     private void executeConnect(final Connect message) {
         _metrics.incrementCounter(CONNECT_COUNTER);
         final WebSocket.Out<JsonNode> outputChannel = message.getOutputChannel();
-        if (Logger.isDebugEnabled()) {
-            Logger.debug(String.format("Adding new channel to streaming context; channel=%s", outputChannel));
-        }
-
-        final ActorRef context = context().actorOf(ConnectionContext.props(_metricsFactory, message));
 
         // Add the connection to the pool to receive future metric reports
+        final ActorRef context = context().actorOf(ConnectionContext.props(_metricsFactory, message));
         _members.put(message.getOutputChannel(), context);
 
         message.getInputChannel().onClose(new Callback0() {
             @Override
             public void invoke() {
-                Logger.debug(String.format("Connection closed from channel; %s", outputChannel));
+                LOGGER.info()
+                        .setMessage("Connection closed")
+                        .addData("channel", outputChannel)
+                        .log();
                 // Send a Quit message
                 getSelf().tell(new Quit(outputChannel), ActorRef.noSender());
             }
@@ -181,13 +179,16 @@ public class StreamContext extends UntypedActor {
                 context.tell(new Command(event), ActorRef.noSender());
             }
         });
+
+        LOGGER.info()
+                .setMessage("Connection opened")
+                .addData("context", context)
+                .addData("channel", outputChannel)
+                .log();
     }
 
     private void executeMetricReport(final MetricReport message) {
         _metrics.incrementCounter(METRIC_REPORT_COUNTER);
-        if (Logger.isTraceEnabled()) {
-            Logger.trace(String.format("Metric report; report=%s", message));
-        }
 
         // Ensure the metric is in the registry
         registerMetric(message.getService(), message.getMetric(), message.getStatistic());
@@ -198,9 +199,6 @@ public class StreamContext extends UntypedActor {
 
     private void executeQuit(final Quit message) {
         _metrics.incrementCounter(QUIT_COUNTER);
-        if (Logger.isDebugEnabled()) {
-            Logger.debug(String.format("Quit; message=%s", message));
-        }
 
         // Remove the connection from the pool
         _members.remove(message.getChannel()).tell(PoisonPill.getInstance(), getSelf());
@@ -208,9 +206,6 @@ public class StreamContext extends UntypedActor {
 
     private void executeMetricsListRequest() {
         _metrics.incrementCounter(METRICS_LIST_REQUEST);
-        if (Logger.isDebugEnabled()) {
-            Logger.debug("Metrics list request");
-        }
 
         // Transmit a list of all registered metrics
         getSender().tell(new MetricsList(_serviceMetrics), getSelf());
@@ -274,9 +269,10 @@ public class StreamContext extends UntypedActor {
     private static final String QUIT_COUNTER = METRIC_PREFIX + "Quit";
     private static final String METRIC_REPORT_COUNTER = METRIC_PREFIX + "MetricReport";
     private static final String CONNECT_COUNTER = METRIC_PREFIX + "Connect";
-    private static final String LOG_LINE_COUNTER = METRIC_PREFIX + "LogReport";
+    private static final String LOG_LINE_COUNTER = METRIC_PREFIX + "LogLine";
     private static final String METRICS_LIST_COUNTER = METRIC_PREFIX + "MetricsList";
     private static final String LOG_ADDED_COUNTER = METRIC_PREFIX + "LogAdded";
     private static final String LOG_REMOVED_COUNTER = METRIC_PREFIX + "LogRemoved";
     private static final String UNKNOWN_COUNTER = METRIC_PREFIX + "UNKNOWN";
+    private static final Logger LOGGER = LoggerFactory.getLogger(StreamContext.class);
 }

@@ -67,6 +67,10 @@ public class FilePerfTestBase {
                 if (input != null) {
                     final AggregatedData datum = Iterables.getFirst(input, null);
                     if (datum != null && TestFileGenerator.CANARY.equals(datum.getFQDSN().getMetric()) && timer.isRunning()) {
+                        LOGGER.info(String.format(
+                                "Performance test result; test=%s, seconds=%s",
+                                this.getClass(),
+                                timer.elapsed(TimeUnit.SECONDS)));
                         timer.stop();
                         latch.countDown();
                     }

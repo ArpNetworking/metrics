@@ -1,0 +1,30 @@
+{
+    "logDirectory": "logs",
+    "pipelinesDirectory": "../../build/start/tsdagg/pipelines",
+    "httpHost": "0.0.0.0",
+    "httpPort": 6080,
+    "limiters": {
+        "limiter": {
+            "type": "com.arpnetworking.tsdcore.limiter.DefaultMetricsLimiter",
+            "maxAggregations": 1000,
+            "stateFile": "logs/limiter.state",
+            "stateFlushInterval": "PT5M",
+            "ageOutThreshold": "P7D"
+        }
+    },
+    "akkaConfiguration": {
+        "akka": {
+            "loggers": [
+                "akka.event.slf4j.Slf4jLogger"
+            ],
+            "loglevel": "DEBUG",
+            "stdout-loglevel": "DEBUG",
+            "logging-filter": "akka.event.slf4j.Slf4jLoggingFilter",
+            "actor": {
+                "debug": {
+                    "unhandled": "on"
+                }
+            }
+        }
+    } 
+}

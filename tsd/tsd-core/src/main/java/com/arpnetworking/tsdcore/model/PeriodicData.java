@@ -67,7 +67,8 @@ public final class PeriodicData {
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(PeriodicData.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Period", _period)
                 .add("Start", _start)
                 .add("Dimensions", _dimensions)

@@ -66,8 +66,8 @@ public final class MetricsLimiterStateManager implements Runnable {
                         public String apply(final Map.Entry<String, Mark> aggregationMarkTime) {
                             return String.format(
                                     "%d %d %s",
-                                    Long.valueOf(aggregationMarkTime.getValue().getTime()),
-                                    Long.valueOf(aggregationMarkTime.getValue().getCount()),
+                                    aggregationMarkTime.getValue().getTime(),
+                                    aggregationMarkTime.getValue().getCount(),
                                     aggregationMarkTime.getKey());
                         }
                     })

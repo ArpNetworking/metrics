@@ -61,10 +61,11 @@ public final class Connect {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-            .add("OutputChannel", _outputChannel)
-            .add("InputChannel", _inputChannel)
-            .add("MessageProcessorsFactory", _messageProcessorsFactory)
-            .toString();
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("OutputChannel", _outputChannel)
+                .add("InputChannel", _inputChannel)
+                .add("MessageProcessorsFactory", _messageProcessorsFactory)
+                .toString();
     }
 
     private final WebSocket.Out<JsonNode> _outputChannel;

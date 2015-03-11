@@ -16,17 +16,17 @@
 
 package com.arpnetworking.clusteraggregator;
 
-import com.arpnetworking.tsdcore.statistics.CountStatistic;
-import com.arpnetworking.tsdcore.statistics.MeanStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.tsdcore.statistics.SumStatistic;
-import com.arpnetworking.tsdcore.statistics.TP0Statistic;
-import com.arpnetworking.tsdcore.statistics.TP100Statistic;
-import com.arpnetworking.tsdcore.statistics.TP50Statistic;
-import com.arpnetworking.tsdcore.statistics.TP90Statistic;
-import com.arpnetworking.tsdcore.statistics.TP99Statistic;
-import com.arpnetworking.tsdcore.statistics.TP99p9Statistic;
+import com.arpnetworking.utility.InterfaceDatabase;
+import com.arpnetworking.utility.ReflectionsDatabase;
 import com.google.common.base.Optional;
+import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Creates statistics.
@@ -34,6 +34,7 @@ import com.google.common.base.Optional;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class StatisticFactory {
+
     /**
      * Creates a statistic from a name.
      *
@@ -41,35 +42,46 @@ public class StatisticFactory {
      * @return A new <code>Statistic</code>.
      */
     public Optional<Statistic> createStatistic(final String statistic) {
-        if (statistic.equalsIgnoreCase("tp99")
-                || statistic.equalsIgnoreCase("p99")) {
-            return Optional.<Statistic>of(new TP99Statistic());
-        } else if (statistic.equalsIgnoreCase("tp99.9")
-                || statistic.equalsIgnoreCase("p99.9")) {
-            return Optional.<Statistic>of(new TP99p9Statistic());
-        } else if (statistic.equalsIgnoreCase("tp90")
-                || statistic.equalsIgnoreCase("p90")) {
-            return Optional.<Statistic>of(new TP90Statistic());
-        } else if (statistic.equalsIgnoreCase("tp0")
-                || statistic.equalsIgnoreCase("p0")
-                || statistic.equalsIgnoreCase("min")) {
-            return Optional.<Statistic>of(new TP0Statistic());
-        } else if (statistic.equalsIgnoreCase("tp100")
-                || statistic.equalsIgnoreCase("p100")
-                || statistic.equalsIgnoreCase("max")) {
-            return Optional.<Statistic>of(new TP100Statistic());
-        } else if (statistic.equalsIgnoreCase("tp50")
-                || statistic.equalsIgnoreCase("p50")
-                || statistic.equalsIgnoreCase("median")) {
-            return Optional.<Statistic>of(new TP50Statistic());
-        } else if (statistic.equalsIgnoreCase("mean")) {
-            return Optional.<Statistic>of(new MeanStatistic());
-        } else if (statistic.equalsIgnoreCase("sum")) {
-            return Optional.<Statistic>of(new SumStatistic());
-        } else if (statistic.equalsIgnoreCase("n")
-                || statistic.equalsIgnoreCase("count")) {
-            return Optional.<Statistic>of(new CountStatistic());
+        return Optional.fromNullable(STATISTICS.get(statistic));
+    }
+
+    private static void checkedPut(final Map<String, Statistic> map, final Statistic statistic, final String key) {
+        if (map.containsKey(key)) {
+            LOGGER.error(String.format(
+                    "Statistic already registered; key=%s, existing=%s, new=%s",
+                    key,
+                    map.get(key),
+                    statistic));
         }
-        return Optional.absent();
+        map.put(key, statistic);
+    }
+
+    private static final Map<String, Statistic> STATISTICS = Maps.newHashMap();
+    private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
+    private static final Logger LOGGER = LoggerFactory.getLogger(StatisticFactory.class);
+
+    static {
+        final Set<Class<? extends Statistic>> statisticClasses = INTERFACE_DATABASE.findClassesWithInterface(Statistic.class);
+        for (final Class<? extends Statistic> statisticClass : statisticClasses) {
+            LOGGER.debug(String.format("Considering statistic; class=%s", statisticClass));
+            if (!statisticClass.isInterface() && !Modifier.isAbstract(statisticClass.getModifiers())) {
+                try {
+                    final Statistic statistic = statisticClass.newInstance();
+                    checkedPut(STATISTICS, statistic, statistic.getName());
+                    for (final String alias : statistic.getAliases()) {
+                        checkedPut(STATISTICS, statistic, alias);
+                    }
+                    LOGGER.info(String.format(
+                            "Registered statistic; name=%s, aliases=%s, class=%s",
+                            statistic.getName(),
+                            statistic.getAliases(),
+                            statisticClass));
+                    // CHECKSTYLE.OFF: IllegalCatch - All exceptions fail.
+                } catch (final Exception e) {
+                    // CHECKSTYLE.ON: IllegalCatch
+                    LOGGER.warn(String.format("Unable to load statistic; class=%s", statisticClass), e);
+                }
+            }
+        }
     }
 }

@@ -14,7 +14,7 @@
 
 Gem::Specification.new do |s|
   s.name        = 'tsd_metrics'
-  s.version     = '0.2.3'
+  s.version     = '0.2.4'
   s.date        = '2015-01-15'
   s.summary     = "TSD Metrics client for Ruby"
   s.description = "A client for logging to TSD-Aggregation-logging-compatible JSON files"

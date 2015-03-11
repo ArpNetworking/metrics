@@ -48,10 +48,10 @@ public class InMemoryBookkeeper implements BookkeeperPersistence {
     public Future<BookkeeperData> getBookkeeperData() {
         return Futures.successful(
                 new BookkeeperData.Builder()
-                        .setClusters(Long.valueOf(_clusters.size()))
-                        .setMetrics(Long.valueOf(_metrics.size()))
-                        .setServices(Long.valueOf(_services.size()))
-                        .setStatistics(Long.valueOf(_statistics.size()))
+                        .setClusters((long) _clusters.size())
+                        .setMetrics((long) _metrics.size())
+                        .setServices((long) _services.size())
+                        .setStatistics((long) _statistics.size())
                         .build());
     }
 

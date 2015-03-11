@@ -25,7 +25,6 @@ import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.sources.Source;
 import com.arpnetworking.utility.observer.Observable;
 import com.arpnetworking.utility.observer.Observer;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -140,13 +139,18 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
-                                        new Quantity(3.14f, Optional.<Unit>of(Unit.BYTE))))
+                                        new Quantity.Builder()
+                                                .setValue(3.14d)
+                                                .setUnit(Unit.BYTE)
+                                                .build()))
                                 .build(),
                         "foo/2/bar",
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
-                                        new Quantity(6.28f, Optional.<Unit>absent())))
+                                        new Quantity.Builder()
+                                                .setValue(6.28d)
+                                                .build()))
                                 .build()))
                 .build();
 
@@ -166,8 +170,13 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
-                                        new Quantity(3.14f, Optional.<Unit>of(Unit.BYTE)),
-                                        new Quantity(6.28f, Optional.<Unit>absent())))
+                                        new Quantity.Builder()
+                                                .setValue(3.14d)
+                                                .setUnit(Unit.BYTE)
+                                                .build(),
+                                        new Quantity.Builder()
+                                                .setValue(6.28d)
+                                                .build()))
                                 .build()))
                 .build();
         Assert.assertTrue(
@@ -183,13 +192,13 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
-                                        new Quantity(3.14f, Optional.<Unit>absent())))
+                                        new Quantity.Builder().setValue(3.14d).build()))
                                 .build(),
                         "foo/2/bar",
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.TIMER)
                                 .setValues(Collections.singletonList(
-                                        new Quantity(6.28f, Optional.<Unit>absent())))
+                                        new Quantity.Builder().setValue(6.28d).build()))
                                 .build()))
                 .build();
 
@@ -209,7 +218,7 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
-                                        new Quantity(3.14f, Optional.<Unit>absent())))
+                                        new Quantity.Builder().setValue(3.14d).build()))
                                 .build()))
                 .build();
         final Record expectedRecord2 = TestBeanFactory.createRecordBuilder()
@@ -220,7 +229,7 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.TIMER)
                                 .setValues(ImmutableList.of(
-                                        new Quantity(6.28f, Optional.<Unit>absent())))
+                                        new Quantity.Builder().setValue(6.28d).build()))
                                 .build()))
                 .build();
 
@@ -239,7 +248,10 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
-                                        new Quantity(3.14f, Optional.<Unit>of(Unit.BYTE))))
+                                        new Quantity.Builder()
+                                                .setValue(3.14d)
+                                                .setUnit(Unit.BYTE)
+                                                .build()))
                                 .build()))
                 .build();
 
@@ -259,7 +271,10 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
-                                        new Quantity(3.14f, Optional.<Unit>of(Unit.BYTE))))
+                                        new Quantity.Builder()
+                                                .setValue(3.14d)
+                                                .setUnit(Unit.BYTE)
+                                                .build()))
                                 .build()))
                 .build();
         Assert.assertTrue(
@@ -276,13 +291,18 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
-                                        new Quantity(3.14f, Optional.<Unit>of(Unit.BYTE))))
+                                        new Quantity.Builder()
+                                                .setValue(3.14d)
+                                                .setUnit(Unit.BYTE)
+                                                .build()))
                                 .build(),
                         "cat/sheep/dog",
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
-                                        new Quantity(6.28f, Optional.<Unit>absent())))
+                                        new Quantity.Builder()
+                                                .setValue(6.28d)
+                                                .build()))
                                 .build()))
                 .build();
 
@@ -302,20 +322,30 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
-                                        new Quantity(3.14f, Optional.<Unit>of(Unit.BYTE)),
-                                        new Quantity(6.28f, Optional.<Unit>absent())))
+                                        new Quantity.Builder()
+                                                .setValue(3.14d)
+                                                .setUnit(Unit.BYTE)
+                                                .build(),
+                                        new Quantity.Builder()
+                                                .setValue(6.28d)
+                                                .build()))
                                 .build(),
                         "cat/dog/sheep",
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
-                                        new Quantity(6.28f, Optional.<Unit>absent())))
+                                        new Quantity.Builder()
+                                                .setValue(6.28d)
+                                                .build()))
                                 .build(),
                         "cat/dog/bear",
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
-                                        new Quantity(3.14f, Optional.<Unit>of(Unit.BYTE))))
+                                        new Quantity.Builder()
+                                                .setValue(3.14d)
+                                                .setUnit(Unit.BYTE)
+                                                .build()))
                                 .build()))
                 .build();
         Assert.assertTrue(

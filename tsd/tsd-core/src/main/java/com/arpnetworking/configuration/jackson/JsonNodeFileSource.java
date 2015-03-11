@@ -46,7 +46,8 @@ public final class JsonNodeFileSource extends BaseJsonNodeSource implements Json
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(JsonNodeMergingSource.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("File", _file)
                 .add("JsonNode", _jsonNode)
                 .toString();
@@ -65,7 +66,7 @@ public final class JsonNodeFileSource extends BaseJsonNodeSource implements Json
             try {
                 jsonNode = _objectMapper.readTree(_file);
             } catch (final IOException e) {
-                Throwables.propagate(e);
+                throw Throwables.propagate(e);
             }
         } else if (builder._file.exists()) {
             LOGGER.warn(String.format("Cannot read file; file=%s", _file));

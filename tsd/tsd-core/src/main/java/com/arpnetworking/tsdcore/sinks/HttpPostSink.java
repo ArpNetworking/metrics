@@ -79,8 +79,7 @@ public abstract class HttpPostSink extends BaseSink {
                     if (responseEntity != null) {
                         try {
                             responseEntity.getContent().close();
-                            // CHECKSTYLE.OFF: IllegalCatch - Catch all
-                            // exceptions
+                            // CHECKSTYLE.OFF: IllegalCatch - Catch all exceptions
                         } catch (final Exception e) {
                             // CHECKSTYLE.ON: IllegalCatch
                             LOGGER.warn(getName() + ": Error closing response content stream", e);

@@ -105,7 +105,15 @@ public class TelemetryController extends Controller {
             final String periodStart = obj.get("periodStart").asText();
             final DateTime startTime = DateTime.parse(periodStart);
 
-            _streamContext.tell(new MetricReport(service, host, statistic, metric, value, startTime), ActorRef.noSender());
+            _streamContext.tell(
+                    new MetricReport(
+                            service,
+                            host,
+                            statistic,
+                            metric,
+                            value,
+                            startTime),
+                    ActorRef.noSender());
         }
 
         return ok();

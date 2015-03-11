@@ -15,14 +15,16 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
+import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.Assert;
@@ -51,7 +53,7 @@ public class ReMetSinkTest {
 
     @Test
     public void testSerialize() throws IOException {
-        final AggregatedData datum = TestBeanFactory.createAggregatedData();
+        final AggregatedData datum = TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build();
         final List<AggregatedData> data = Collections.singletonList(datum);
         final ReMetSink remetSink = _remetSinkBuilder.build();
         final Collection<String> serializedData = remetSink.serialize(data, Collections.<Condition>emptyList());
@@ -67,8 +69,8 @@ public class ReMetSinkTest {
 
     @Test
     public void testSerializeMultiple() throws IOException {
-        final AggregatedData datumA = TestBeanFactory.createAggregatedData();
-        final AggregatedData datumB = TestBeanFactory.createAggregatedData();
+        final AggregatedData datumA = TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build();
+        final AggregatedData datumB = TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build();
         final List<AggregatedData> data = Lists.newArrayList(datumA, datumB);
         final ReMetSink remetSink = _remetSinkBuilder.build();
         final Collection<String> serializedData = remetSink.serialize(data, Collections.<Condition>emptyList());
@@ -84,6 +86,31 @@ public class ReMetSinkTest {
         assertJsonEqualsDatum(jsonNodeB, datumB);
     }
 
+    @Test
+    public void testSerializeChunk() throws IOException {
+        final List<AggregatedData> data = Lists.newArrayList();
+        for (int x = 0; x < 10000; x++) {
+            data.add(TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build());
+        }
+        final int maxChunkSize = 83 * 1024;
+        final ReMetSink remetSink = _remetSinkBuilder.setMaxRequestSize((long) maxChunkSize).build();
+        final Collection<String> serializedData = remetSink.serialize(data, Collections.<Condition>emptyList());
+        remetSink.close();
+
+        Assert.assertThat(serializedData.size(), Matchers.greaterThan(1));
+        int x = 0;
+        for (final String serialized : serializedData) {
+            Assert.assertThat(serialized.getBytes(Charsets.UTF_8).length, Matchers.lessThanOrEqualTo(maxChunkSize));
+            final JsonNode jsonArrayNode = OBJECT_MAPPER.readTree(serialized);
+            Assert.assertTrue(jsonArrayNode.isArray());
+            for (final JsonNode jsonNode : jsonArrayNode) {
+                assertJsonEqualsDatum(jsonNode, data.get(x));
+                x++;
+            }
+        }
+        Assert.assertEquals(10000, x);
+    }
+
     private static void assertJsonEqualsDatum(final JsonNode jsonNode, final AggregatedData datum) {
         Assert.assertEquals(datum.getValue().getValue(), jsonNode.get("value").asDouble(), 0.001);
         Assert.assertEquals(datum.getFQDSN().getMetric(), jsonNode.get("metric").asText());
@@ -96,5 +123,5 @@ public class ReMetSinkTest {
 
     private ReMetSink.Builder _remetSinkBuilder;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 }

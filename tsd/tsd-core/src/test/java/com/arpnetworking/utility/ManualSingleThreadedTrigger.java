@@ -68,9 +68,10 @@ public class ManualSingleThreadedTrigger implements Trigger {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("_enabled", _enabled)
-                .add("_semaphore", _semaphore)
-                .add("_waiter", _waiter)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("Enabled", _enabled)
+                .add("Semaphore", _semaphore)
+                .add("Waiter", _waiter)
                 .toString();
     }
 

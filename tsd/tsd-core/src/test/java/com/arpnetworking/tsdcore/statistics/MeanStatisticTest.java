@@ -17,6 +17,7 @@ package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.Quantity;
+import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.collect.Lists;
 
 import org.hamcrest.Matchers;
@@ -47,18 +48,24 @@ public class MeanStatisticTest {
     @Test
     public void testCalculate() {
         final MeanStatistic stat = new MeanStatistic();
-        final List<Double> doubleVals = Lists.newArrayList(Double.valueOf(12d), Double.valueOf(20d), Double.valueOf(7d));
+        final List<Double> doubleVals = Lists.newArrayList(12d, 20d, 7d);
         final List<Quantity> vals = TestBeanFactory.createSamples(doubleVals);
-        final Double calculated = stat.calculate(vals);
-        Assert.assertThat(calculated, Matchers.equalTo(Double.valueOf(13d)));
+        final Quantity calculated = stat.calculate(vals);
+        Assert.assertThat(
+                calculated,
+                Matchers.equalTo(
+                        new Quantity.Builder()
+                                .setValue(13.0)
+                                .setUnit(Unit.MILLISECOND)
+                                .build()));
     }
 
     @Test
     public void testCalculateWithNoEntries() {
         final MeanStatistic stat = new MeanStatistic();
         final List<Quantity> vals = Collections.emptyList();
-        final Double calculated = stat.calculate(vals);
-        Assert.assertThat(calculated, Matchers.equalTo(Double.valueOf(0d)));
+        final Quantity calculated = stat.calculate(vals);
+        Assert.assertThat(calculated, Matchers.equalTo(new Quantity.Builder().setValue(0.0).build()));
     }
 
     @Test

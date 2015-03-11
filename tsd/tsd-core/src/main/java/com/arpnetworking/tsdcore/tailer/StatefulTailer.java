@@ -69,14 +69,21 @@ public final class StatefulTailer implements Tailer {
      */
     @Override
     public void run() {
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(final Thread thread, final Throwable throwable) {
+                LOGGER.error("Unhandled exception", throwable);
+            }
+        });
+
         try {
             fileLoop();
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             handleThrowable(e);
             // CHECKSTYLE.OFF: IllegalCatch - Intercept all exceptions
-        } catch (final Throwable t) {
-            handleThrowable(t);
+        } catch (final Exception e) {
+            handleThrowable(e);
             // CHECKSTYLE.ON: IllegalCatch
         } finally {
             IOUtils.closeQuietly(_positionStore);
@@ -116,12 +123,12 @@ public final class StatefulTailer implements Tailer {
                     nextInitialPosition = InitialPosition.START;
                     _hash = computeHash(reader, REQUIRED_BYTES_FOR_HASH);
                     if (_hash.isPresent()) {
-                        position = _positionStore.getPosition(_hash.get()).or(position).longValue();
+                        position = _positionStore.getPosition(_hash.get()).or(position);
                     }
-                    LOGGER.trace(String.format(
+                    LOGGER.info(String.format(
                             "Starting tail; file=%s, position=%d",
                             _file,
-                            Long.valueOf(position)));
+                            position));
                     reader.position(position);
 
                     // Read the file
@@ -165,9 +172,9 @@ public final class StatefulTailer implements Tailer {
                 rotate(Optional.of(reader), String.format(
                         "File rotation detected based on length, position and size; file=%s, length=%d, position=%d, size=%d",
                         _file,
-                        Long.valueOf(attributes.getLength()),
-                        Long.valueOf(reader.position()),
-                        Long.valueOf(reader.size())));
+                        attributes.getLength(),
+                        reader.position(),
+                        reader.size()));
 
                 // Return to the file loop
                 return;
@@ -192,13 +199,17 @@ public final class StatefulTailer implements Tailer {
                         rotate(Optional.<SeekableByteChannel>absent(), String.format(
                                 "File rotation detected based on length and no new data; file=%s, length=%d, position=%d",
                                 _file,
-                                Long.valueOf(attributes.getLength()),
-                                Long.valueOf(reader.position())));
+                                attributes.getLength(),
+                                reader.position()));
 
                         // Return to the file loop
                         return;
                     }
-                    lastChecked = Optional.of(Long.valueOf(_file.lastModified()));
+                    lastChecked = Optional.of(_file.lastModified());
+
+                    // This control path, specifically, successfully reading
+                    // data from the file does not trigger a wait. This permits
+                    // continuous reading without pausing.
 
                 } else if (attributes.isNewer()) {
                     // The file does not contain any additional data, but its
@@ -211,8 +222,8 @@ public final class StatefulTailer implements Tailer {
                             "File rotation detected based equal length and position but newer"
                                     + "; file=%s, length=%d, position=%d, lastChecked=%s, attributes=%s",
                             _file,
-                            Long.valueOf(attributes.getLength()),
-                            Long.valueOf(reader.position()),
+                            attributes.getLength(),
+                            reader.position(),
                             lastChecked.get(),
                             attributes));
 
@@ -230,7 +241,7 @@ public final class StatefulTailer implements Tailer {
                     // file to see if we're still working on the same file.
 
                     final Optional<Boolean> hashesSame = compareByHash(currentReaderPrefixHash, currentReaderPrefixHashLength);
-                    if (hashesSame.isPresent() && !hashesSame.get().booleanValue()) {
+                    if (hashesSame.isPresent() && !hashesSame.get()) {
                         // The file rotated with the same length!
                         rotate(Optional.<SeekableByteChannel>absent(), String.format(
                                 "File rotation detected based on hash; file=%s",
@@ -253,17 +264,18 @@ public final class StatefulTailer implements Tailer {
                     // file every interval; but short enough that we don't wait
                     // too long before realizing a slowly growing file was
                     // rotated.
+
+                    // Read interval
+                    _trigger.waitOnTrigger();
                 }
             }
 
             // Compute the prefix hash unless we have an identity
-            if (!_hash.isPresent()) {
-                currentReaderPrefixHashLength = (int) Math.min(reader.size(), REQUIRED_BYTES_FOR_HASH);
+            final int newPrefixHashLength = (int) Math.min(reader.size(), REQUIRED_BYTES_FOR_HASH);
+            if (!_hash.isPresent() && (currentReaderPrefixHashLength != newPrefixHashLength || !currentReaderPrefixHash.isPresent())) {
+                currentReaderPrefixHashLength = newPrefixHashLength;
                 currentReaderPrefixHash = computeHash(reader, currentReaderPrefixHashLength);
             }
-
-            // Read interval
-            _trigger.waitOnTrigger();
 
             // Update the reader position
             updateCheckpoint(reader.position());
@@ -275,13 +287,13 @@ public final class StatefulTailer implements Tailer {
         LOGGER.trace(String.format(
                 "File attributes; file=%s, lastModifiedTime=%d, size=%d",
                 file,
-                Long.valueOf(attributes.lastModifiedTime().toMillis()),
-                Long.valueOf(attributes.size())));
+                attributes.lastModifiedTime().toMillis(),
+                attributes.size()));
 
         return new Attributes(
                 attributes.size(),
                 attributes.lastModifiedTime().toMillis(),
-                lastChecked.isPresent() && attributes.lastModifiedTime().toMillis() > lastChecked.get().longValue());
+                lastChecked.isPresent() && attributes.lastModifiedTime().toMillis() > lastChecked.get());
     }
 
     private void rotate(final Optional<SeekableByteChannel> reader, final String reason) throws InterruptedException, IOException {
@@ -294,7 +306,7 @@ public final class StatefulTailer implements Tailer {
         // Inform the listener
         _listener.fileRotated();
 
-        LOGGER.trace(reason);
+        LOGGER.info(reason);
     }
 
     private boolean readLines(final SeekableByteChannel reader) throws IOException {
@@ -368,9 +380,9 @@ public final class StatefulTailer implements Tailer {
                     "Comparing hashes; hash1=%s, hash2=%s, size=%d",
                     prefixHash,
                     filePrefixHash,
-                    Integer.valueOf(appliedLength)));
+                    appliedLength));
 
-            return Optional.of(Boolean.valueOf(Objects.equals(_hash.or(prefixHash).orNull(), filePrefixHash.orNull())));
+            return Optional.of(Objects.equals(_hash.or(prefixHash).orNull(), filePrefixHash.orNull()));
         } catch (final IOException e) {
             return Optional.absent();
         }
@@ -388,9 +400,9 @@ public final class StatefulTailer implements Tailer {
         if (reader.size() < hashSize) {
             reader.position(oldPosition);
             LOGGER.trace(String.format(
-                    "Reader size insufficient to compute hash; hashSize=%s, hashSize=%d",
-                    Integer.valueOf(hashSize),
-                    Long.valueOf(reader.size())));
+                    "Reader size insufficient to compute hash; hashSize=%d, hashSize=%d",
+                    hashSize,
+                    reader.size()));
             return Optional.absent();
         }
 
@@ -402,7 +414,7 @@ public final class StatefulTailer implements Tailer {
             if (bytesRead < 0) {
                 LOGGER.warn(String.format(
                         "Unexpected end of file reached; totalBytesRead=%d",
-                        Long.valueOf(totalBytesRead)));
+                        totalBytesRead));
                 return Optional.absent();
             }
             totalBytesRead += bytesRead;
@@ -426,11 +438,8 @@ public final class StatefulTailer implements Tailer {
     }
 
     private void handleLine() {
-        //CHECKSTYLE.OFF: IllegalInstantiation - This is how you convert a byte[] to String.
-        LOGGER.trace("handleLine: " + new String(_lineBuffer.toByteArray(), _characterSet));
-        _listener.handle(new String(_lineBuffer.toByteArray(), _characterSet));
+        _listener.handle(_lineBuffer.toByteArray());
         _lineBuffer.reset();
-        //CHECKSTYLE.ON: IllegalInstantiation
     }
 
     private void handleThrowable(final Throwable t) {
@@ -476,7 +485,7 @@ public final class StatefulTailer implements Tailer {
     private volatile boolean _isRunning = true;
     private Optional<String> _hash = Optional.absent();
 
-    private static final Long ZERO = Long.valueOf(0);
+    private static final Long ZERO = 0L;
     private static final int REQUIRED_BYTES_FOR_HASH = 512;
     private static final int INITIAL_BUFFER_SIZE = 65536;
     private static final Logger LOGGER = LoggerFactory.getLogger(StatefulTailer.class);
@@ -506,7 +515,8 @@ public final class StatefulTailer implements Tailer {
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(Attributes.class)
+            return MoreObjects.toStringHelper(this)
+                    .add("id", Integer.toHexString(System.identityHashCode(this)))
                     .add("Length", _length)
                     .add("LastModifiedTime", _lastModifiedTime)
                     .add("Newer", _newer)

@@ -17,10 +17,14 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
+import net.sf.oval.constraint.NotNull;
+import org.joda.time.Duration;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * Publishes to a ReMet endpoint. This class is thread safe.
@@ -46,12 +50,23 @@ public final class ReMetSink extends HttpPostSink {
     protected Collection<String> serialize(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
         // TODO(vkoskela): Send conditions to ReMet [MAI-451]
         final StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("[");
+        stringBuilder.append(HEADER);
+        int byteLength = HEADER_BYTE_LENGTH;
+
+        final List<String> serializedData = Lists.newArrayList();
+
         for (final AggregatedData datum : data) {
             // TODO(vkoskela): Refactor into JSON serializer [MAI-88]
             // Question: We should consider carefully how to separate sinks and
             // data formats.
-            stringBuilder.append("{\"value\":\"").append(datum.getValue().getValue())
+
+            // Only emit 1 second aggregations
+            if (!datum.getPeriod().toStandardDuration().isEqual(Duration.standardSeconds(1))) {
+                continue;
+            }
+
+            final StringBuilder nextChunkBuilder = new StringBuilder()
+                    .append("{\"value\":\"").append(datum.getValue().getValue())
                     .append("\",\"metric\":\"").append(datum.getFQDSN().getMetric())
                     .append("\",\"service\":\"").append(datum.getFQDSN().getService())
                     .append("\",\"host\":\"").append(datum.getHost())
@@ -59,14 +74,35 @@ public final class ReMetSink extends HttpPostSink {
                     .append("\",\"periodStart\":\"").append(datum.getPeriodStart())
                     .append("\",\"statistic\":\"").append(datum.getFQDSN().getStatistic().getName())
                     .append("\"},");
+            final String nextChunk = nextChunkBuilder.toString();
+            final int nextChunkSize = nextChunk.getBytes(Charsets.UTF_8).length;
+            if (byteLength + nextChunkSize > _maxRequestSize) {
+                // Close the string builder and add the string to the serialized list
+                stringBuilder.setCharAt(stringBuilder.length() - 1, ']');
+                serializedData.add(stringBuilder.toString());
+
+                // Truncate all but the beginning '[' to prepare the next entries
+                stringBuilder.setLength(HEADER_BYTE_LENGTH);
+                byteLength = HEADER_BYTE_LENGTH;
+            }
+
+            stringBuilder.append(nextChunk);
+            byteLength += nextChunkSize;
         }
         stringBuilder.setCharAt(stringBuilder.length() - 1, ']');
-        return Collections.singletonList(stringBuilder.toString());
+        serializedData.add(stringBuilder.toString());
+        return serializedData;
     }
 
     private ReMetSink(final Builder builder) {
         super(builder);
+        _maxRequestSize = builder._maxRequestSize;
     }
+
+    private final long _maxRequestSize;
+
+    private static final String HEADER = "[";
+    private static final int HEADER_BYTE_LENGTH = HEADER.getBytes(Charsets.UTF_8).length;
 
     /**
      * Implementation of builder pattern for <code>ReMetSink</code>.
@@ -89,5 +125,20 @@ public final class ReMetSink extends HttpPostSink {
         protected Builder self() {
             return this;
         }
+
+        /**
+         * Sets the maximum size of the request to publish.
+         * Optional. Defaults to 100KiB.
+         *
+         * @param value the maximum request size.
+         * @return This instance of {@link Builder}.
+         */
+        public Builder setMaxRequestSize(final Long value) {
+            _maxRequestSize = value;
+            return this;
+        }
+
+        @NotNull
+        private Long _maxRequestSize = 100 * 1024L;
     }
 }

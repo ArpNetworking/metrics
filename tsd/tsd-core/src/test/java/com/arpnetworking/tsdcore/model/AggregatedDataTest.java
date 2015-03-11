@@ -16,8 +16,8 @@
 package com.arpnetworking.tsdcore.model;
 
 import com.arpnetworking.test.TestBeanFactory;
+import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.tsdcore.statistics.TP50Statistic;
 import com.arpnetworking.tsdcore.statistics.TP99Statistic;
 import com.arpnetworking.utility.test.BuildableEqualsAndHashCodeTester;
 import com.google.common.collect.Lists;
@@ -60,7 +60,7 @@ public class AggregatedDataTest {
                 .setValue(expectedValue)
                 .setStart(expectedPeriodStart)
                 .setPeriod(expectedPeriod)
-                .setPopulationSize(Long.valueOf(expectedPopulationSize))
+                .setPopulationSize(expectedPopulationSize)
                 .setSamples(expectedSamples)
                 .build();
 
@@ -91,11 +91,11 @@ public class AggregatedDataTest {
                         .setValue(TestBeanFactory.createSample())
                         .setStart(new DateTime())
                         .setPeriod(Period.minutes(1))
-                        .setPopulationSize(Long.valueOf(1))
+                        .setPopulationSize(1L)
                         .setSamples(Lists.newArrayList(TestBeanFactory.createSample())),
                 new AggregatedData.Builder()
                         .setFQDSN(new FQDSN.Builder()
-                                .setStatistic(new TP50Statistic())
+                                .setStatistic(new MedianStatistic())
                                 .setMetric("MyMetricB")
                                 .setService("MyServiceB")
                                 .setCluster("MyServiceB")
@@ -104,7 +104,7 @@ public class AggregatedDataTest {
                         .setValue(TestBeanFactory.createSample())
                         .setStart(new DateTime().plusDays(1))
                         .setPeriod(Period.minutes(5))
-                        .setPopulationSize(Long.valueOf(2))
+                        .setPopulationSize(2L)
                         .setSamples(Lists.newArrayList(TestBeanFactory.createSample(), TestBeanFactory.createSample())));
     }
 
@@ -121,7 +121,7 @@ public class AggregatedDataTest {
                 .setValue(TestBeanFactory.createSample())
                 .setStart(new DateTime())
                 .setPeriod(Period.minutes(1))
-                .setPopulationSize(Long.valueOf(1))
+                .setPopulationSize(1L)
                 .setSamples(Lists.newArrayList(TestBeanFactory.createSample()))
                 .build()
                 .toString();

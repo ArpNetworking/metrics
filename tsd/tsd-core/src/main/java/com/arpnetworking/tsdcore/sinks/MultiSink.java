@@ -43,8 +43,8 @@ public final class MultiSink extends BaseSink {
         LOGGER.debug(String.format(
                 "%s: Recording; dataSize=%d, conditionsSize=%d",
                 getName(), 
-                Integer.valueOf(data.size()),
-                Integer.valueOf(conditions.size())));
+                data.size(),
+                conditions.size()));
 
         for (final Sink sink : _sinks) {
             sink.recordAggregateData(data, conditions);

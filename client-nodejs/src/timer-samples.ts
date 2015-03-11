@@ -42,7 +42,7 @@ export class TimerSamples extends TsdMetricsList<tsdDef.MetricSample> {
      * Constructor.
      *
      * @param {string} _name Name of the timer.
-     * @param {MetricsStateObject} _metricsStateObject Object holding state of the original metrics object.
+     * @param {MetricsStateObject} _metricsStateObject Object holding state of the parent metrics object.
      */
     public constructor(private _name:string, private _metricsStateObject:MetricsStateObject) {
         super();
@@ -69,11 +69,5 @@ export class TimerSamples extends TsdMetricsList<tsdDef.MetricSample> {
      */
     public addExplicitTimer(duration:number, unit:tsdDef.Unit):void {
         this.push(new ExplicitTimer(duration, unit, this._name, this._metricsStateObject));
-    }
-
-    public toJSON() {
-        return this.filter((timer) =>
-            this._metricsStateObject.assert(timer.isStopped(),
-                    "Skipping unstopped sample for timer '" + this._name + "'")).toJSON();
     }
 }

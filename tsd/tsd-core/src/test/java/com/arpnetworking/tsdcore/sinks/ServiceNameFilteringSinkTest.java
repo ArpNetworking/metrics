@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Groupon.com
+ * Copyright 2015 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-
 import com.arpnetworking.tsdcore.model.Condition;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,14 +29,14 @@ import java.util.List;
 /**
  * Tests for the <code>FilteringSink</code> class.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Brandon Arp (barp at groupon dot com)
  */
-public class FilteringSinkTest {
+public class ServiceNameFilteringSinkTest {
 
     @Before
     public void before() {
         _mockSink = Mockito.mock(Sink.class);
-        _sinkBuilder = new FilteringSink.Builder()
+        _sinkBuilder = new ServiceNameFilteringSink.Builder()
                 .setName("filtering_sink_test")
                 .setSink(_mockSink);
     }
@@ -55,12 +54,13 @@ public class FilteringSinkTest {
     @Test
     public void testExcludeOverDefault() {
         final Sink sink = _sinkBuilder
-                .setExcludeFilters(Collections.singletonList(".*MATCHES HERE.*"))
+                .setExcludeFilters(Collections.singletonList(".*SVCMATCH.*"))
                 .build();
         final List<AggregatedData> data = Collections.singletonList(
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setFQDSN(TestBeanFactory.createFQDSNBuilder()
-                                .setMetric("Metric name MATCHES HERE for exclusion")
+                                .setMetric("Metric name does not match for exclusion")
+                                .setService("SVCMATCH_Prod")
                                 .build())
                         .build());
         sink.recordAggregateData(data, Collections.<Condition>emptyList());
@@ -78,7 +78,8 @@ public class FilteringSinkTest {
         final List<AggregatedData> data = Collections.singletonList(
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setFQDSN(TestBeanFactory.createFQDSNBuilder()
-                                .setMetric("Metric name MATCHES HERE for inclusion")
+                                .setMetric("Metric name")
+                                .setService("service MATCHES HERE for inclusion")
                                 .build())
                         .build());
         sink.recordAggregateData(data, Collections.<Condition>emptyList());
@@ -87,6 +88,6 @@ public class FilteringSinkTest {
                 Matchers.eq(Collections.<Condition>emptyList()));
     }
 
-    private FilteringSink.Builder _sinkBuilder;
+    private ServiceNameFilteringSink.Builder _sinkBuilder;
     private Sink _mockSink;
 }

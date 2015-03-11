@@ -51,10 +51,11 @@ public final class BookkeeperData implements Serializable{
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("clusters", _clusters)
-                .add("metrics", _metrics)
-                .add("services", _services)
-                .add("statistics", _statistics)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("Clusters", _clusters)
+                .add("Metrics", _metrics)
+                .add("Services", _services)
+                .add("Statistics", _statistics)
                 .toString();
     }
 

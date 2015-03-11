@@ -80,6 +80,7 @@ public final class DefaultMetric implements Metric {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Type", _type)
                 .add("Values", _values)
                 .toString();

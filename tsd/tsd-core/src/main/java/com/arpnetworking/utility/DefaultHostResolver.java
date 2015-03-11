@@ -30,6 +30,6 @@ public class DefaultHostResolver implements HostResolver {
      */
     @Override
     public String getLocalHostName() throws UnknownHostException {
-        return InetAddress.getLocalHost().getHostName();
+        return InetAddress.getLocalHost().getCanonicalHostName();
     }
 }

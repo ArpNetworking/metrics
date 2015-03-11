@@ -121,14 +121,14 @@ public class LuaExpression implements Expression {
             // CHECKSTYLE.OFF: IllegalCatch - Lua throws RuntimeExceptions
         } catch (final ScriptingException se) {
             throw se;
-        } catch (final Throwable t) {
+        } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
-            throw new ScriptingException(String.format("Expression evaluation failed; expression=%s", this), t);
+            throw new ScriptingException(String.format("Expression evaluation failed; expression=%s", this), e);
         }
 
         return Optional.of(new AggregatedData.Builder()
                 .setFQDSN(_fqdsn)
-                .setPopulationSize(Long.valueOf(1))
+                .setPopulationSize(1L)
                 .setSamples(Collections.singletonList(result))
                 .setValue(result)
                 // TODO(vkoskela): Remove these once we move to PeriodicData [MAI-448]
@@ -136,6 +136,14 @@ public class LuaExpression implements Expression {
                 .setPeriod(periodicData.getPeriod())
                 .setStart(periodicData.getStart())
                 .build());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public FQDSN getTargetFQDSN() {
+        return _fqdsn;
     }
 
     /**
@@ -151,7 +159,8 @@ public class LuaExpression implements Expression {
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(LuaExpression.class)
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("FQDSN", _fqdsn)
                 .add("Script", _script.replace("\n", "\\n").replace("\r", "\\r"))
                 .toString();
@@ -204,7 +213,9 @@ public class LuaExpression implements Expression {
     private Quantity convertToQuantity(final LuaValue result) throws ScriptingException {
         if (result.isnumber()) {
             // Construct and return a unit-less Quantity
-            return new Quantity(result.todouble(), Optional.<Unit>absent());
+            return new Quantity.Builder()
+                    .setValue(result.todouble())
+                    .build();
 
         } else if (result.istable()) {
             // Extract and validate the value
@@ -222,7 +233,10 @@ public class LuaExpression implements Expression {
                     ? Optional.<Unit>absent() : Optional.of(Unit.valueOf(unitName.tojstring()));
 
             // Construct and return the Quantity
-            return new Quantity(result.get("value").todouble(), unit);
+            return new Quantity.Builder()
+                    .setValue(result.get("value").todouble())
+                    .setUnit(unit.orNull())
+                    .build();
         } else if (result.isuserdata(LuaQuantity.class)) {
             // Coerce the Java instance
             @SuppressWarnings("unchecked")
@@ -597,7 +611,10 @@ public class LuaExpression implements Expression {
         }
 
         public LuaQuantity(final double value, final Unit unit) {
-            this(new Quantity(value, Optional.fromNullable(unit)));
+            this(new Quantity.Builder()
+                    .setValue(value)
+                    .setUnit(unit)
+                    .build());
         }
 
         public LuaQuantity(final Quantity quantity) {
@@ -658,9 +675,9 @@ public class LuaExpression implements Expression {
                 final double convertedValue = smallestUnit.convert(
                         _quantity.getValue(),
                         _quantity.getUnit().get());
-                return Objects.hash(Double.valueOf(convertedValue), smallestUnit);
+                return Objects.hash(convertedValue, smallestUnit);
             }
-            return Objects.hash(Double.valueOf(_quantity.getValue()));
+            return Objects.hash(_quantity.getValue());
         }
 
         /* package private */ Quantity getQuantity() {

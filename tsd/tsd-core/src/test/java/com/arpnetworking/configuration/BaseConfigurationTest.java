@@ -66,7 +66,7 @@ public class BaseConfigurationTest {
                 "foo", "false");
         final Optional<Boolean> value = configuration.getPropertyAsBoolean("foo");
         Assert.assertTrue(value.isPresent());
-        Assert.assertFalse(value.get().booleanValue());
+        Assert.assertFalse(value.get());
     }
 
     @Test
@@ -175,7 +175,7 @@ public class BaseConfigurationTest {
                 "foo", "1");
         final Optional<Integer> value = configuration.getPropertyAsInteger("foo");
         Assert.assertTrue(value.isPresent());
-        Assert.assertEquals(1, value.get().intValue());
+        Assert.assertEquals(1L, value.get().longValue());
     }
 
     @Test
@@ -240,7 +240,7 @@ public class BaseConfigurationTest {
                 "foo", "1");
         final Optional<Long> value = configuration.getPropertyAsLong("foo");
         Assert.assertTrue(value.isPresent());
-        Assert.assertEquals(1, value.get().longValue());
+        Assert.assertEquals(1L, value.get().longValue());
     }
 
     @Test
@@ -305,7 +305,7 @@ public class BaseConfigurationTest {
                 "foo", "3.14");
         final Optional<Float> value = configuration.getPropertyAsFloat("foo");
         Assert.assertTrue(value.isPresent());
-        Assert.assertEquals(3.14f, value.get().floatValue(), 0.001);
+        Assert.assertEquals(3.14f, value.get(), 0.001);
     }
 
     @Test
@@ -370,7 +370,7 @@ public class BaseConfigurationTest {
                 "foo", "3.14");
         final Optional<Double> value = configuration.getPropertyAsDouble("foo");
         Assert.assertTrue(value.isPresent());
-        Assert.assertEquals(3.14d, value.get().doubleValue(), 0.001);
+        Assert.assertEquals(3.14d, value.get(), 0.001);
     }
 
     @Test

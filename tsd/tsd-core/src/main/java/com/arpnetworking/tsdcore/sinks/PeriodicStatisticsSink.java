@@ -38,6 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.LongAccumulator;
 
 /**
  * Aggregates and periodically logs metrics about the aggregated data being
@@ -90,7 +91,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
 
             _uniqueStatistics.get().add(fqsn);
 
-            updateMax(_age, now - datum.getPeriodStart().plus(datum.getPeriod()).getMillis());
+            _age.accumulate(now - datum.getPeriodStart().plus(datum.getPeriod()).getMillis());
         }
     }
 
@@ -104,7 +105,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
             _executor.awaitTermination(EXECUTOR_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
             Thread.interrupted();
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
         flushMetrics(_metrics.get());
     }
@@ -135,7 +136,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
         metrics.incrementCounter(_aggregatedDataName, _aggregatedData.getAndSet(0));
         metrics.incrementCounter(_uniqueMetricsName, oldUniqueMetrics.size());
         metrics.incrementCounter(_uniqueStatisticsName, oldUniqueStatistics.size());
-        metrics.setGauge(_ageName, _age.getAndSet(0), Unit.fromTimeUnit(TimeUnit.MILLISECONDS));
+        metrics.setGauge(_ageName, _age.getThenReset(), Unit.fromTimeUnit(TimeUnit.MILLISECONDS));
         metrics.close();
     }
 
@@ -149,21 +150,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
 
     private Set<String> createConcurrentSet(final Set<String> existingSet) {
         final int initialCapacity = (int) (existingSet.size() / 0.75);
-        return Sets.newSetFromMap(new ConcurrentHashMap<String, Boolean>(initialCapacity));
-    }
-
-    private void updateMax(final AtomicLong maximum, final long sample) {
-        // TODO(vkoskela): Replace with Java 8's LongAccumulator [MAI-328]
-        while (true) {
-            final long currentMaximum = maximum.longValue();
-            if (currentMaximum >= sample) {
-                break;
-            }
-            final boolean success = maximum.compareAndSet(currentMaximum, sample);
-            if (success) {
-                break;
-            }
-        }
+        return Sets.newSetFromMap(new ConcurrentHashMap<>(initialCapacity));
     }
 
     // NOTE: Package private for testing
@@ -182,9 +169,9 @@ public final class PeriodicStatisticsSink extends BaseSink {
         _executor = executor;
         _executor.scheduleAtFixedRate(
                 new MetricsLogger(),
-                builder._intervalInSeconds.longValue(),
-                builder._intervalInSeconds.longValue(),
-                TimeUnit.SECONDS);
+                builder._intervalInMilliseconds,
+                builder._intervalInMilliseconds,
+                TimeUnit.MILLISECONDS);
     }
 
 
@@ -195,7 +182,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
     private final MetricsFactory _metricsFactory;
     private final AtomicReference<Metrics> _metrics = new AtomicReference<>();
 
-    private final AtomicLong _age = new AtomicLong(0);
+    private final LongAccumulator _age = new LongAccumulator(Math::max, 0);
     private final String _aggregatedDataName;
     private final String _uniqueMetricsName;
     private final String _uniqueStatisticsName;
@@ -238,14 +225,14 @@ public final class PeriodicStatisticsSink extends BaseSink {
         }
 
         /**
-         * The interval in seconds between statistic flushes. Cannot be null;
+         * The interval in milliseconds between statistic flushes. Cannot be null;
          * minimum 1. Default is 1.
          *
          * @param value The interval in seconds between flushes.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setIntervalInSeconds(final Long value) {
-            _intervalInSeconds = value;
+        public Builder setIntervalInMilliseconds(final Long value) {
+            _intervalInMilliseconds = value;
             return this;
         }
 
@@ -271,7 +258,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
 
         @NotNull
         @Min(value = 1)
-        private Long _intervalInSeconds = Long.valueOf(1);
+        private Long _intervalInMilliseconds = 500L;
         @JacksonInject
         @NotNull
         private MetricsFactory _metricsFactory;
