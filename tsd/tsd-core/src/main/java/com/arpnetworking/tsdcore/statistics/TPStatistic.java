@@ -73,4 +73,6 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
     private final double _percentile;
 
     private static final DecimalFormat FORMAT = new DecimalFormat("##0.#");
+
+    private static final long serialVersionUID = 2002333257077042351L;
 }

@@ -51,45 +51,49 @@ public class RandomHostProvider extends UntypedActor {
         if ("tick".equals(message)) {
             LOGGER.trace()
                     .setMessage("Searching for added/updated/deleted hosts")
-                    .addData("hostProvider", this)
+                    .addData("actor", self().toString())
                     .log();
 
             if (System.currentTimeMillis() - _lastTime > INTERVAL.getMillis()) {
                 final Host newHost = new DefaultHost.Builder()
-                        .setHostName("test-app" + _hostAdd + ".snc1")
+                        .setHostName("test-app" + _hostAdd + ".example.com")
                         .setMetricsSoftwareState(MetricsSoftwareState.NOT_INSTALLED)
                         .build();
                 LOGGER.debug()
                         .setMessage("Found a new host")
+                        .addData("actor", self().toString())
                         .addData("hostname", newHost.getHostName())
                         .log();
                 _hostRepository.addOrUpdateHost(newHost);
                 if (_hostUpdateOne > 0) {
                     final Host updatedHost = new DefaultHost.Builder()
-                            .setHostName("test-app" + _hostUpdateOne + ".snc1")
+                            .setHostName("test-app" + _hostUpdateOne + ".example.com")
                             .setMetricsSoftwareState(MetricsSoftwareState.OLD_VERSION_INSTALLED)
                             .build();
                     LOGGER.debug()
                             .setMessage("Found an updated host")
+                            .addData("actor", self().toString())
                             .addData("hostname", updatedHost.getHostName())
                             .log();
                     _hostRepository.addOrUpdateHost(updatedHost);
                 }
                 if (_hostUpdateTwo > 0) {
                     final Host updatedHost = new DefaultHost.Builder()
-                            .setHostName("test-app" + _hostUpdateTwo + ".snc1")
+                            .setHostName("test-app" + _hostUpdateTwo + ".example.com")
                             .setMetricsSoftwareState(MetricsSoftwareState.LATEST_VERSION_INSTALLED)
                             .build();
                     LOGGER.debug()
                             .setMessage("Found an updated host")
+                            .addData("actor", self().toString())
                             .addData("hostname", updatedHost.getHostName())
                             .log();
                     _hostRepository.addOrUpdateHost(updatedHost);
                 }
                 if (_hostRemove > 0) {
-                    final String deletedHostName = "test-app" + _hostRemove + ".snc1";
+                    final String deletedHostName = "test-app" + _hostRemove + ".example..com";
                     LOGGER.debug()
                             .setMessage("Found host to delete")
+                            .addData("actor", self().toString())
                             .addData("hostname", deletedHostName)
                             .log();
                     _hostRepository.deleteHost(deletedHostName);

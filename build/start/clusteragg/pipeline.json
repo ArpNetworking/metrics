@@ -1,8 +1,36 @@
 {
-  "sinks": [
-    {
-      "type": "com.arpnetworking.tsdcore.sinks.PeriodicStatisticsSink",
-      "name": "PeriodicStatisticsSink"
-    }
-  ]
+    "sinks":
+    [
+        {
+            "type": "com.arpnetworking.tsdcore.sinks.ExpressionSink",
+            "name": "emitter_expression_sink",
+            "dynamicConfigurationFactory":
+            {
+                "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
+                "directories": [ "../../build/start/clusteragg/expressions" ]
+            },
+            "sink":
+            {
+                "type": "com.arpnetworking.tsdcore.sinks.AlertSink",
+                "name": "emitter_alert_sink",
+                "dynamicConfigurationFactory":
+                {
+                    "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
+                    "directories": [ "../../build/start/clusteragg/alerts" ]
+                },
+                "sink":
+                {
+                    "type": "com.arpnetworking.tsdcore.sinks.MultiSink",
+                    "name": "emitter_multi_sink",
+                    "sinks":
+                    [
+                        {
+                            "type": "com.arpnetworking.tsdcore.sinks.PeriodicStatisticsSink",
+                            "name": "emitter_periodic_statistics_sink"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
 }

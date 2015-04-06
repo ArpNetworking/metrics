@@ -96,7 +96,7 @@ public final class EmitterConfiguration {
      *
      * @author Brandon Arp (barp at groupon dot com)
      */
-    public static class Builder extends OvalBuilder<EmitterConfiguration> {
+    public static final class Builder extends OvalBuilder<EmitterConfiguration> {
         /**
          * Public constructor.
          */
@@ -105,8 +105,7 @@ public final class EmitterConfiguration {
         }
 
         /**
-         * The sinks.
-         * Required. Cannot be null. Cannot be empty.
+         * The sinks. Required. Cannot be null or empty.
          *
          * @param value The sinks.
          * @return This instance of <code>Builder</code>.

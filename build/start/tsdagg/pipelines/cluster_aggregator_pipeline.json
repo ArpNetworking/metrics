@@ -1,0 +1,90 @@
+{
+    "name": "ClusterAggregatorPipeline",
+    "service": "cluster_aggregator",
+    "cluster": "tsd_aggregator_dev",
+    "host": "localhost",
+    "sources":
+    [
+        {
+            "type": "com.arpnetworking.tsdcore.sources.FileSource",
+            "name": "tsd_aggregator_query_log",
+            "sourceFile": "../cluster-aggregator/logs/cluster-aggregator-query.log",
+            "stateFile": "../cluster-aggregator/logs/cluster-aggregator-query.log.state",
+            "parser":
+            {
+                "type": "com.arpnetworking.tsdaggregator.parsers.QueryLogParser"
+            }
+        }
+    ],
+    "sinks":
+    [
+        {
+            "type": "com.arpnetworking.tsdcore.sinks.ExpressionSink",
+            "name": "cluster_aggregator_expression_sink",
+            "dynamicConfigurationFactory":
+            {
+                "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
+                "directories": [ "../../build/start/tsdagg/expressions" ]
+            },
+            "sink":
+            {
+                "type": "com.arpnetworking.tsdcore.sinks.AlertSink",
+                "name": "cluster_aggregator_alert_sink",
+                "dynamicConfigurationFactory":
+                {
+                    "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
+                    "directories": [ "../../build/start/tsdagg/alerts" ]
+                },
+                "sink":
+                {
+                    "type": "com.arpnetworking.tsdcore.sinks.MultiSink",
+                    "name": "cluster_aggregator_multi_sink",
+                    "sinks":
+                    [
+                        {
+                            "type": "com.arpnetworking.tsdcore.sinks.PeriodicStatisticsSink",
+                            "name": "cluster_aggregator_periodic_statistics_sink"
+                        },
+                        {
+                            "type": "com.arpnetworking.tsdcore.sinks.PeriodFilteringSink",
+                            "name": "period_filtering_cluster_aggregator_remet_sink",
+                            "include": ["PT1S"],
+                            "excludeGreaterThan": "PT0S",
+                            "sink":
+                            {
+                                "type": "com.arpnetworking.tsdcore.sinks.TimeThresholdSink",
+                                "name": "time_threshold_cluster_aggregator_remet_sink",
+                                "threshold": "PT10M",
+                                "sink":
+                                {
+                                    "type": "com.arpnetworking.tsdcore.sinks.ReMetSink",
+                                    "name": "cluster_aggregator_remet_sink",
+                                    "uri": "http://localhost:7090/report"
+                                }
+                            }
+                        },
+                        {
+                            "type": "com.arpnetworking.tsdcore.sinks.PeriodFilteringSink",
+                            "name": "period_filtering_cluster_aggregator_cluster_sink",
+                            "excludeLessThan": "PT1M",
+                            "sink":
+                            {
+                                "type": "com.arpnetworking.tsdcore.sinks.TimeThresholdSink",
+                                "name": "time_threshold_cluster_aggregator_cluster_sink",
+                                "threshold": "PT10M",
+                                "logOnly": true,
+                                "sink":
+                                {
+                                    "type": "com.arpnetworking.tsdcore.sinks.AggregationServerSink",
+                                    "name": "cluster_aggregator_cluster_sink",
+                                    "serverAddress": "localhost",
+                                    "serverPort": 7065
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

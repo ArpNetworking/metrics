@@ -23,7 +23,6 @@ import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.fasterxml.jackson.annotation.JacksonInject;
-import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
@@ -66,13 +65,7 @@ public final class LimitingSink extends BaseSink {
         final DateTime now = DateTime.now();
         final List<AggregatedData> filteredData = Lists.newArrayListWithExpectedSize(data.size());
         final List<Condition> filteredConditions = Lists.newArrayListWithExpectedSize(conditions.size());
-        final Multimap<FQDSN, Condition> conditionsByFQDSN = Multimaps.index(conditions, new Function<Condition, FQDSN>() {
-            @Override
-            public FQDSN apply(final Condition condition) {
-                return condition.getFQDSN();
-            }
-        });
-        //final Map<FQDSN, Condition> conditionsByFQDSN = Maps.uniqueIndex(conditions, Condition::getFQDSN);
+        final Multimap<FQDSN, Condition> conditionsByFQDSN = Multimaps.index(conditions, Condition::getFQDSN);
         final Set<FQDSN> filteredFQDSNs = Sets.newHashSet();
         long limited = 0;
         for (final AggregatedData datum : data) {

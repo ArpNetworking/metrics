@@ -18,8 +18,10 @@ package com.arpnetworking.clusteraggregator.aggregation;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.ReceiveTimeout;
 import akka.actor.Scheduler;
 import akka.actor.UntypedActor;
+import akka.contrib.pattern.ShardRegion;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import com.arpnetworking.clusteraggregator.AggDataUnifier;
@@ -29,6 +31,8 @@ import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
@@ -64,12 +68,17 @@ public class Aggregator extends UntypedActor {
      * Public constructor.
      *
      * @param lifecycleTracker Where to register the liveliness of this aggregator.
-     * @param metricsListener Where to send metrics about aggregation computations.
+     * @param periodicStatistics Where to send metrics about aggregation computations.
      * @param emitter Where to send the metrics data.
      */
-    public Aggregator(final ActorRef lifecycleTracker, final ActorRef metricsListener, final ActorRef emitter) {
+    @Inject
+    public Aggregator(
+            @Named("bookkeeper-proxy") final ActorRef lifecycleTracker,
+            @Named("periodic-statistics") final ActorRef periodicStatistics,
+            @Named("emitter") final ActorRef emitter) {
         _lifecycleTracker = lifecycleTracker;
-        _metricsListener = metricsListener;
+        _periodicStatistics = periodicStatistics;
+        context().setReceiveTimeout(FiniteDuration.apply(30, TimeUnit.MINUTES));
 
         final Scheduler scheduler = getContext().system().scheduler();
         scheduler.schedule(
@@ -106,22 +115,23 @@ public class Aggregator extends UntypedActor {
                         //Need to unify them
                         final List<AggregatedData> aggData = AggDataUnifier.unify(bucket.getAggregatedData());
                         final Quantity computed = _statistic.calculateAggregations(aggData);
-                        _log.info(String.format(
-                                "Computed %s %s %s %s %s (%s) = %s",
-                                _cluster,
-                                _service,
-                                _metric,
-                                _statistic,
-                                _period,
-                                bucket.getPeriodStart().withZone(DateTimeZone.UTC),
-                                computed));
+                        _log.info(
+                                String.format(
+                                        "Computed %s %s %s %s %s (%s) = %s",
+                                        _cluster,
+                                        _service,
+                                        _metric,
+                                        _statistic,
+                                        _period,
+                                        bucket.getPeriodStart().withZone(DateTimeZone.UTC),
+                                        computed));
                         final AggregatedData result = _resultBuilder
                                 .setStart(bucket.getPeriodStart())
                                 .setValue(computed)
                                 .build();
                         _emitter.tell(result, getSelf());
 
-                        _metricsListener.tell(result, getSelf());
+                        _periodicStatistics.tell(result, getSelf());
                     } else {
                         //Walk of the list is complete
                         break;
@@ -132,6 +142,10 @@ public class Aggregator extends UntypedActor {
             if (_resultBuilder != null) {
                 _lifecycleTracker.tell(new AggregatorLifecycle.NotifyAggregatorStarted(_resultBuilder.build()), getSelf());
             }
+        } else if (message instanceof ShutdownAggregator) {
+            context().stop(self());
+        } else if (message.equals(ReceiveTimeout.getInstance())) {
+            getContext().parent().tell(new ShardRegion.Passivate(new ShutdownAggregator()), getSelf());
         } else {
             unhandled(message);
         }
@@ -146,12 +160,13 @@ public class Aggregator extends UntypedActor {
             _service = data.getFQDSN().getService();
             _statistic = data.getFQDSN().getStatistic();
             _resultBuilder = new AggregatedData.Builder()
-                    .setFQDSN(new FQDSN.Builder()
-                        .setCluster(_cluster)
-                        .setMetric(_metric)
-                        .setService(_service)
-                        .setStatistic(_statistic)
-                        .build())
+                    .setFQDSN(
+                            new FQDSN.Builder()
+                                    .setCluster(_cluster)
+                                    .setMetric(_metric)
+                                    .setService(_service)
+                                    .setStatistic(_statistic)
+                                    .build())
                     .setHost(_cluster + "-cluster")
                     .setPeriod(_period)
                     .setPopulationSize(1L)
@@ -162,39 +177,42 @@ public class Aggregator extends UntypedActor {
             _lifecycleTracker.tell(new AggregatorLifecycle.NotifyAggregatorStarted(_resultBuilder.build()), getSelf());
 
             _initialized = true;
-            _log.debug(String.format(
-                    "Initialized aggregator for %s %s %s %s %s",
-                    _cluster,
-                    _service,
-                    _metric,
-                    _statistic,
-                    _period));
+            _log.debug(
+                    String.format(
+                            "Initialized aggregator for %s %s %s %s %s",
+                            _cluster,
+                            _service,
+                            _metric,
+                            _statistic,
+                            _period));
         } else if (!(_period.equals(data.getPeriod()))
                 && _cluster.equals(data.getFQDSN().getCluster())
                 && _service.equals(data.getFQDSN().getService())
                 && _metric.equals(data.getFQDSN().getMetric())
                 && _statistic.equals(data.getFQDSN().getStatistic())) {
-            _log.error(String.format(
-                    "Aggregator for %s %s %s %s %s received a message with %s %s %s %s %s",
-                    _cluster,
-                    _service,
-                    _metric,
-                    _statistic,
-                    _period,
-                    data.getFQDSN().getCluster(),
-                    data.getFQDSN().getService(),
-                    data.getFQDSN().getMetric(),
-                    data.getFQDSN().getStatistic(),
-                    data.getPeriod()));
+            _log.error(
+                    String.format(
+                            "Aggregator for %s %s %s %s %s received a message with %s %s %s %s %s",
+                            _cluster,
+                            _service,
+                            _metric,
+                            _statistic,
+                            _period,
+                            data.getFQDSN().getCluster(),
+                            data.getFQDSN().getService(),
+                            data.getFQDSN().getMetric(),
+                            data.getFQDSN().getStatistic(),
+                            data.getPeriod()));
         }
         //Find the time bucket to dump this in
         if (_aggBuckets.size() > 0 && _aggBuckets.getFirst().getPeriodStart().isAfter(data.getPeriodStart())) {
             //We got a bit of data that is too old for us to aggregate.
-            _log.warning(String.format(
-                    "Received a work item that is too old to aggregate: work item period starts at %s, "
-                            + "bucket period starts at %s",
-                    data.getPeriodStart(),
-                    _aggBuckets.getFirst().getPeriodStart()));
+            _log.warning(
+                    String.format(
+                            "Received a work item that is too old to aggregate: work item period starts at %s, "
+                                    + "bucket period starts at %s",
+                            data.getPeriodStart(),
+                            _aggBuckets.getFirst().getPeriodStart()));
         } else {
             if (_aggBuckets.size() == 0 || _aggBuckets.getLast().getPeriodStart().isBefore(data.getPeriodStart())) {
                 //We need to create a new bucket to hold this data.
@@ -225,7 +243,7 @@ public class Aggregator extends UntypedActor {
     private final LinkedList<AggregationBucket> _aggBuckets = Lists.newLinkedList();
     private final ActorRef _emitter;
     private final ActorRef _lifecycleTracker;
-    private final ActorRef _metricsListener;
+    private final ActorRef _periodicStatistics;
     private boolean _initialized = false;
     private Period _period;
     private String _cluster;
@@ -236,5 +254,8 @@ public class Aggregator extends UntypedActor {
     private static final Duration AGG_TIMEOUT = Duration.standardMinutes(1);
 
     private static final class BucketCheck {}
+
     private static final class UpdateBookkeeper {}
+
+    private static final class ShutdownAggregator {}
 }

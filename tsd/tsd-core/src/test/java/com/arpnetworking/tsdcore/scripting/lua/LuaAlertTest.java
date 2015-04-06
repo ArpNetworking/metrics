@@ -24,6 +24,7 @@ import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.scripting.Alert;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
 import com.arpnetworking.tsdcore.statistics.TP99Statistic;
+import com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.Assert;
@@ -67,13 +68,13 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder.build());
         Assert.assertEquals("testAlertMissing", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -95,7 +96,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -105,7 +106,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithEquals", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -128,7 +129,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -138,7 +139,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseWithEquals", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -161,7 +162,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.NOT_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -171,7 +172,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithNotEquals", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -194,7 +195,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.NOT_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -204,7 +205,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseWithNotEquals", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -227,7 +228,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.LESS_THAN)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -237,7 +238,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithLessThan", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -260,7 +261,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.LESS_THAN)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -270,7 +271,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseLessThan", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -293,7 +294,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.LESS_THAN_OR_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -303,7 +304,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithLessThanOrEqual", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -326,7 +327,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.LESS_THAN_OR_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -336,7 +337,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseLessThanOrEqual", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -359,7 +360,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.GREATER_THAN)
                 .setValue(new Quantity.Builder().setValue(0d).build())
                 .build();
@@ -369,7 +370,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithGreaterThan", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(0d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -392,7 +393,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.GREATER_THAN)
                 .setValue(new Quantity.Builder().setValue(2d).build())
                 .build();
@@ -402,7 +403,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseGreaterThan", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(2d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -425,7 +426,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.GREATER_THAN_OR_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -435,7 +436,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertTrueWithGreaterThanOrEqual", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(1d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -458,7 +459,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.GREATER_THAN_OR_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(2d).build())
                 .build();
@@ -468,7 +469,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testAlertFalseGreaterThanOrEqual", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(new Quantity.Builder().setValue(2d).build(), result.getThreshold());
         Assert.assertEquals(
                 new FQDSN.Builder()
@@ -491,7 +492,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.SECOND).build())
                 .build();
@@ -511,7 +512,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
@@ -531,7 +532,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.MEGABIT).build())
                 .build();
@@ -551,7 +552,7 @@ public class LuaAlertTest {
                 .setMetric("MyMetric")
                 .setStatistic(new TP99Statistic())
                 .setPeriod(Period.minutes(1))
-                .setSeverity("critical")
+                .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.MINUTE).build())
                 .build();
@@ -561,7 +562,7 @@ public class LuaAlertTest {
                         .build()))
                 .build());
         Assert.assertEquals("testUnitConversion", result.getName());
-        Assert.assertEquals("critical", result.getSeverity());
+        Assert.assertEquals("critical", result.getExtensions().get("severity"));
         Assert.assertEquals(
                 new Quantity.Builder()
                         .setValue(1d)

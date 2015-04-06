@@ -22,7 +22,7 @@ import akka.actor.UntypedActor;
 import akka.testkit.CallingThreadDispatcher;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
-import com.arpnetworking.clusteraggregator.BaseActorTest;
+import com.arpnetworking.utility.BaseActorTest;
 import com.arpnetworking.utility.ConfiguredLaunchableFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -53,7 +53,7 @@ public class ConfigurableActorProxyTest extends BaseActorTest {
     @Test
     public void testInitialActorStart() {
         // Verifies that the initial actor is created via the factory when the first ApplyConfiguration message is sent
-        final TestActorRef<ConfigurableActorProxy> ref = TestActorRef.create(
+        final TestActorRef<ConfigurableActorProxy<?>> ref = TestActorRef.create(
                 getSystem(),
                 mockProps().withDispatcher(CallingThreadDispatcher.Id()));
         final Object dummyConfig = new Object();
@@ -63,7 +63,7 @@ public class ConfigurableActorProxyTest extends BaseActorTest {
 
     @Test
     public void testTeardownAndSwap() {
-        final TestActorRef<ConfigurableActorProxy> ref = TestActorRef.create(
+        final TestActorRef<ConfigurableActorProxy<?>> ref = TestActorRef.create(
                 getSystem(),
                 mockProps().withDispatcher(CallingThreadDispatcher.Id()));
         final TestProbe probe = TestProbe.apply(getSystem());

@@ -36,6 +36,7 @@ import akka.pattern.Patterns;
 import akka.util.Timeout;
 import com.arpnetworking.clusteraggregator.Status;
 import com.arpnetworking.clusteraggregator.models.StatusResponse;
+import com.arpnetworking.configuration.jackson.akka.AkkaModule;
 import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -70,6 +71,8 @@ public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Futur
     public Routes(final ActorSystem actorSystem, final MetricsFactory metricsFactory) {
         _actorSystem = actorSystem;
         _metricsFactory = metricsFactory;
+        _mapper.registerModule(new SimpleModule().addSerializer(Member.class, new MemberSerializer()));
+        _mapper.registerModule(new AkkaModule(actorSystem));
     }
 
     /**
@@ -125,7 +128,7 @@ public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Futur
                                         return (HttpResponse) response()
                                                 .withEntity(
                                                         JSON_CONTENT_TYPE,
-                                                        MAPPER.writeValueAsString(status));
+                                                        _mapper.writeValueAsString(status));
                                     }
                                 },
                                 _actorSystem.dispatcher());
@@ -198,12 +201,7 @@ public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Futur
 
     private static final akka.http.model.japi.ContentType JSON_CONTENT_TYPE =
             akka.http.model.japi.ContentType.create(MediaTypes.APPLICATION_JSON);
-    private static final ObjectMapper MAPPER = ObjectMapperFactory.createInstance();
-
-    static {
-        MAPPER.registerModule(new SimpleModule().addSerializer(Member.class, new MemberSerializer()));
-
-    }
+    private final ObjectMapper _mapper = ObjectMapperFactory.createInstance();
 
     private static class MemberSerializer extends JsonSerializer<Member> {
         @Override

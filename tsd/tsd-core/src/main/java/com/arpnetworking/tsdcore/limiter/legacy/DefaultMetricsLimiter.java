@@ -19,6 +19,7 @@ import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
@@ -79,7 +80,7 @@ public final class DefaultMetricsLimiter implements Closeable {
      * @param time The current date and time.
      * @return True if and only if the data was accepted.
      */
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "DM_EXIT")
+    @SuppressFBWarnings(value = "DM_EXIT")
     public boolean offer(final AggregatedData data, final DateTime time) {
         final String key = data.getFQDSN().getCluster() + "-"
                 + data.getFQDSN().getService() + "-"

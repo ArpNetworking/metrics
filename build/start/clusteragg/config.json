@@ -3,6 +3,13 @@
   "httpHost": "0.0.0.0",
   "logDirectory": "logs",
   "pipelineConfiguration": "../../build/start/clusteragg/pipeline.json",
+  "maxConnectionTimeout": "PT2M",
+  "minConnectionTimeout": "PT1M",
+  "jvmMetricsCollectionInterval": "PT.5S",
+  "rebalanceConfiguration": {
+    "maxParallel": 100,
+    "threshold": 500
+  },
   "akkaConfiguration": {
     "akka": {
       "loggers": ["akka.event.slf4j.Slf4jLogger"],

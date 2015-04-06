@@ -20,8 +20,6 @@ import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -33,8 +31,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
 import org.slf4j.Logger;
@@ -103,8 +99,12 @@ public final class MonitordSink extends HttpPostSink {
                                 .append("%3B");
 
                         if (condition.isTriggered().isPresent() && condition.isTriggered().get()) {
-                            final int status = _severityToStatus.containsKey(condition.getSeverity())
-                                    ? _severityToStatus.get(condition.getSeverity()) : _unknownSeverityStatus;
+                            // Collect the status of this metric
+                            final Object severity = condition.getExtensions().get("severity");
+                            int status = _unknownSeverityStatus;
+                            if (severity != null && _severityToStatus.containsKey(severity)) {
+                                status = _severityToStatus.get(severity);
+                            }
                             maxStatus = Math.max(status, maxStatus);
                         }
                     }
@@ -159,51 +159,14 @@ public final class MonitordSink extends HttpPostSink {
     private Multimap<String, AggregatedData> prepareData(final Collection<AggregatedData> data) {
         // Transform the data list to a multimap by metric name
         // Ie, get all the statistics for a unique metric
-        final ImmutableListMultimap<String, AggregatedData> indexedData = Multimaps.index(
-                data,
-                new Function<AggregatedData, String>() {
-                    @Override
-                    public String apply(final AggregatedData input) {
-                        // NOTE: It is assumed as part of serialization that
-                        // that period is part of the unique metric name.
-                        return input.getFQDSN().getService() + "_"
+
+        return Multimaps.index(
+                data, input ->
+                        input.getFQDSN().getService() + "_"
                                 + input.getPeriod().toString(ISOPeriodFormat.standard()) + "_"
                                 + input.getFQDSN().getMetric() + "_"
                                 + input.getHost() + "_"
-                                + input.getFQDSN().getCluster();
-                    }
-                });
-
-        // Filter the multimap
-        final DateTime now = DateTime.now();
-
-        return Multimaps.filterValues(
-                indexedData,
-                // CHECKSTYLE.OFF: AnonInnerLength - Rewrite with MAI-91 and MAI-92.
-                new Predicate<AggregatedData>() {
-                    @Override
-                    public boolean apply(final AggregatedData input) {
-                        // Skip periods less than 1 minute
-                        // TODO(vkoskela): This should be configurable [MAI-91]
-                        if (input.getPeriod().toStandardDuration().isShorterThan(Duration.standardMinutes(1))) {
-                            return false;
-                        }
-
-                        // Skip the entry if the period start is too long ago,
-                        // specifically not within 2x periods of the start
-                        // period, but must be at least 10 minutes late to be discarded.
-                        // TODO(vkoskela): This should be configurable [MAI-92]
-                        if (now.isAfter(input.getPeriodStart().plus(input.getPeriod().multipliedBy(2)))
-                                && now.isAfter(input.getPeriodStart().plus(Duration.standardMinutes(10)))) {
-                            LOGGER.warn(getName() + ": Skipping publication of stale data; periodStart=" + input.getPeriodStart());
-                            return false;
-                        }
-
-                        // Otherwise accept the data
-                        return true;
-                    }
-                });
-                // CHECKSTYLE.ON: AnonInnerLength
+                                + input.getFQDSN().getCluster());
     }
 
     private MonitordSink(final Builder builder) {

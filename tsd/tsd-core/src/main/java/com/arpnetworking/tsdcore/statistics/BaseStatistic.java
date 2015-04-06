@@ -56,4 +56,6 @@ public abstract class BaseStatistic implements Statistic {
     public boolean equals(final Object o) {
         return this == o || (o != null && getClass().equals(o.getClass()));
     }
+
+    private static final long serialVersionUID = -1334453626232464982L;
 }

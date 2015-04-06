@@ -24,7 +24,7 @@ import PlayKeys._
 object ApplicationBuild extends Build {
 
     val appName         = "remet-proxy"
-    val appVersion      = "0.3.1"
+    val appVersion      = "0.3.2"
 
     //val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask
     val s = CheckstyleSettings.checkstyleTask
@@ -35,8 +35,9 @@ object ApplicationBuild extends Build {
       "ch.qos.logback" % "logback-classic" % "1.1.1" force(),
       "ch.qos.logback" % "logback-core" % "1.1.1" force(),
       "com.arpnetworking.logback" % "logback-steno" % "1.3.2",
-      "com.arpnetworking.metrics" % "metrics-client" % "0.3.1",
-      "com.arpnetworking.metrics" % "tsd-core" % "0.3.1",
+      "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.3.1",
+      "com.arpnetworking.metrics" % "metrics-client" % "0.3.2",
+      "com.arpnetworking.metrics" % "tsd-core" % "0.3.2",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % "2.5.0",
       "com.google.guava" % "guava" % "18.0",
       "com.google.inject" % "guice" % "3.0"

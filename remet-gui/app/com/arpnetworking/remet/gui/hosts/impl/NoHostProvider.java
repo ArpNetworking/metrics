@@ -43,7 +43,7 @@ public class NoHostProvider extends UntypedActor {
         if ("tick".equals(message)) {
             LOGGER.trace()
                     .setMessage("Searching for added/updated/deleted hosts")
-                    .addData("hostProvider", this)
+                    .addData("actor", self().toString())
                     .log();
             LOGGER.debug().setMessage("No hosts found!").log();
         }

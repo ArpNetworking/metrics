@@ -21,6 +21,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -227,7 +228,7 @@ public final class MetricsLimiterStateManager implements Runnable {
         }
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "RV_RETURN_VALUE_IGNORED")
+    @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED")
     private void waitForRequestOrTimeout() throws InterruptedException {
         _writeRequests.tryAcquire(_stateFileFlushInterval.getMillis(), TimeUnit.MILLISECONDS);
         _writeRequests.drainPermits();

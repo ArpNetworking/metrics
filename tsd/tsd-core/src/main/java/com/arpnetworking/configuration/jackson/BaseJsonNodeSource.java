@@ -53,7 +53,7 @@ public abstract class BaseJsonNodeSource implements JsonNodeSource {
      *
      * @param builder Instance of <code>Builder</code>.
      */
-    protected BaseJsonNodeSource(final Builder builder) {
+    protected BaseJsonNodeSource(final Builder<?, ?> builder) {
         _objectMapper = builder._objectMapper;
     }
 
@@ -62,7 +62,7 @@ public abstract class BaseJsonNodeSource implements JsonNodeSource {
     /**
      * Builder for <code>BaseJsonNodeSource</code>.
      */
-    protected abstract static class Builder<T extends Builder, S extends JsonNodeSource> extends OvalBuilder<S> {
+    protected abstract static class Builder<T extends Builder<?, ?>, S extends JsonNodeSource> extends OvalBuilder<S> {
 
         /**
          * Protected constructor.

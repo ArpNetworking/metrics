@@ -3,6 +3,7 @@
     "pipelinesDirectory": "../../build/start/tsdagg/pipelines",
     "httpHost": "0.0.0.0",
     "httpPort": 6080,
+    "jvmMetricsCollectionInterval": "PT.5S",
     "limiters": {
         "limiter": {
             "type": "com.arpnetworking.tsdcore.limiter.DefaultMetricsLimiter",

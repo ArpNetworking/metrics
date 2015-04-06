@@ -74,7 +74,10 @@ public class HostProviderScheduler extends UntypedActor {
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        LOGGER.info().setMessage("Starting HostProviderScheduler").log();
+        LOGGER.info()
+                .setMessage("Starting HostProviderScheduler")
+                .addData("actor", self().toString())
+                .log();
     }
 
     /**

@@ -28,12 +28,11 @@ import akka.cluster.MemberStatus;
 import akka.cluster.UniqueAddress;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
+import com.arpnetworking.utility.BaseActorTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import scala.collection.immutable.Set;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -61,13 +60,10 @@ public class StatusTest extends BaseActorTest {
         Mockito.when(state.getMembers()).thenReturn(Collections.singletonList(
                 selfMember));
         Mockito.doAnswer(
-                new Answer() {
-                    @Override
-                    public Object answer(final InvocationOnMock invocation) {
-                        final ActorRef ref = (ActorRef) invocation.getArguments()[0];
-                        ref.tell(state, ActorRef.noSender());
-                        return null;
-                    }
+                invocation -> {
+                    final ActorRef ref = (ActorRef) invocation.getArguments()[0];
+                    ref.tell(state, ActorRef.noSender());
+                    return null;
                 })
                 .when(_clusterMock).sendCurrentClusterState(Mockito.<ActorRef>any());
     }

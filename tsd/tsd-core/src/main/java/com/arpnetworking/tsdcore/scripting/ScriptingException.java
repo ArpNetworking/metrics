@@ -40,4 +40,6 @@ public class ScriptingException extends Exception {
     public ScriptingException(final String message) {
         super(message);
     }
+
+    private static final long serialVersionUID = 1L;
 }

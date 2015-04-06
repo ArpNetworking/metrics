@@ -23,7 +23,9 @@ import com.arpnetworking.metrics.Unit;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,9 +38,7 @@ import java.util.concurrent.TimeUnit;
 public class SharedMetricsTest {
     @Before
     public void setUp() throws Exception {
-        _mockMetrics = Mockito.mock(Metrics.class);
-        _mockTimer = Mockito.mock(Timer.class);
-        _mockCounter = Mockito.mock(Counter.class);
+        MockitoAnnotations.initMocks(this);
         Mockito.when(_mockMetrics.createTimer(Mockito.any(String.class))).thenReturn(_mockTimer);
         Mockito.when(_mockMetrics.createCounter(Mockito.any(String.class))).thenReturn(_mockCounter);
         _sharedMetrics = new SharedMetrics(_mockMetrics);
@@ -172,8 +172,11 @@ public class SharedMetricsTest {
         Mockito.verifyNoMoreInteractions(_mockMetrics);
     }
 
+    @Mock
     private Metrics _mockMetrics;
+    @Mock
     private Timer _mockTimer;
+    @Mock
     private Counter _mockCounter;
     private SharedMetrics _sharedMetrics;
 

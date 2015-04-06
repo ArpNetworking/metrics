@@ -72,7 +72,7 @@ public class StatisticFactoryTest {
 
     @Test
     @Parameters(method = "args")
-    public void createStatistic(final List<String> names, final Class clazz) {
+    public void createStatistic(final List<String> names, final Class<Statistic> clazz) {
         final StatisticFactory factory = new StatisticFactory();
 
         for (final String name : names) {

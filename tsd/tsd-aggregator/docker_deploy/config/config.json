@@ -3,6 +3,7 @@
     "pipelinesDirectory": "/opt/tsd-aggregator/config/pipelines/",
     "httpHost": "0.0.0.0",
     "httpPort": "6080",
+    "jvmMetricsCollectionInterval" : "PT.5S",
     "limiters": {
         "monitord-client-limiter": {
             "maxAggregations": 1000,

@@ -64,13 +64,13 @@ public class AggMessageExtractor implements ShardRegion.MessageExtractor {
     public String shardId(final Object message) {
         if (message instanceof AggregatedData) {
             final AggregatedData aggregationMessage = (AggregatedData) message;
-            final StringBuilder builder = new StringBuilder();
-            builder.append(aggregationMessage.getFQDSN().getCluster())
+            final StringBuilder builder = new StringBuilder()
+                    .append(aggregationMessage.getFQDSN().getCluster())
                     .append(aggregationMessage.getFQDSN().getService())
                     .append(aggregationMessage.getFQDSN().getMetric())
                     .append(aggregationMessage.getPeriod())
                     .append(aggregationMessage.getFQDSN().getStatistic());
-            return "shard_" + Math.abs(builder.toString().hashCode() % 10000);
+            return String.format("shard_%d", Math.abs(builder.toString().hashCode() % 10000));
         }
         throw new IllegalArgumentException("Unknown message type " + message);
     }

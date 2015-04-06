@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import net.sf.oval.constraint.Min;
@@ -37,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
@@ -96,12 +96,17 @@ public final class FilePositionStore implements PositionStore {
         final DateTime now = DateTime.now();
         final DateTime oldest = now.minus(_retention);
         final long sizeBefore = _state.size();
-        Maps.filterEntries(_state, new Predicate<Map.Entry<String, Descriptor>>() {
-            @Override
-            public boolean apply(final Map.Entry<String, Descriptor> entry) {
-                return oldest.isBefore(entry.getValue().getLastUpdated());
+        final Iterator<Map.Entry<String, Descriptor>> iterator = _state.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<String, Descriptor> entry = iterator.next();
+            if (!oldest.isBefore(entry.getValue().getLastUpdated())) {
+                // Remove old descriptors
+                iterator.remove();
+            } else {
+                // Mark retained descriptors as flushed
+                entry.getValue().flush();
             }
-        });
+        }
         final long sizeAfter = _state.size();
         if (sizeBefore != sizeAfter) {
             LOGGER.debug(String.format(

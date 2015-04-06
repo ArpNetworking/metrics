@@ -67,6 +67,7 @@ public class FileSourcesManager extends UntypedActor {
     public void onReceive(final Object message) throws Exception {
         LOGGER.trace()
                 .setMessage("Received message")
+                .addData("actor", self().toString())
                 .addData("data", message)
                 .log();
 
@@ -79,6 +80,7 @@ public class FileSourcesManager extends UntypedActor {
         } else {
             LOGGER.warn()
                     .setMessage("Unsupported message")
+                    .addData("actor", self().toString())
                     .addData("data", message)
                     .log();
             unhandled(message);
@@ -88,6 +90,7 @@ public class FileSourcesManager extends UntypedActor {
     private void addSource(final Path filepath) {
         LOGGER.info()
                 .setMessage("Adding new log file source")
+                .addData("actor", self().toString())
                 .addData("path", filepath)
                 .log();
         if (!_fileSources.containsKey(filepath)) {
@@ -112,6 +115,7 @@ public class FileSourcesManager extends UntypedActor {
         _streamContextActor.tell(new LogFileDisappeared(filepath), getSelf());
         LOGGER.info()
             .setMessage("Removing log file source")
+            .addData("actor", self().toString())
             .addData("path", filepath)
             .log();
         final Source source = _fileSources.remove(filepath);
@@ -120,6 +124,7 @@ public class FileSourcesManager extends UntypedActor {
         } else {
             LOGGER.warn()
                 .setMessage("Attempted to removed a non existing file source")
+                .addData("actor", self().toString())
                 .addData("path", filepath)
                 .log();
         }

@@ -27,6 +27,7 @@ import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.Range;
+import org.joda.time.Period;
 
 import java.io.File;
 import java.util.Collections;
@@ -77,6 +78,10 @@ public final class TsdAggregatorConfiguration {
         return _httpPort;
     }
 
+    public Period getJvmMetricsCollectionInterval() {
+        return _jvmMetricsCollectionInterval;
+    }
+
     public Map<String, MetricsLimiter> getLimiters() {
         return Collections.unmodifiableMap(_limiters);
     }
@@ -98,6 +103,7 @@ public final class TsdAggregatorConfiguration {
                 .add("HttpPort", _httpPort)
                 .add("Limiters", _limiters)
                 .add("AkkaConfiguration", _akkaConfiguration)
+                .add("JvmMetricsCollectorInterval", _jvmMetricsCollectionInterval)
                 .toString();
     }
 
@@ -107,6 +113,7 @@ public final class TsdAggregatorConfiguration {
         _httpHost = builder._httpHost;
         _httpPort = builder._httpPort;
         _limiters = builder._limiters;
+        _jvmMetricsCollectionInterval = builder._jvmMetricsCollectionInterval;
         _akkaConfiguration = builder._akkaConfiguration;
     }
 
@@ -114,6 +121,7 @@ public final class TsdAggregatorConfiguration {
     private final File _pipelinesDirectory;
     private final String _httpHost;
     private final int _httpPort;
+    private final Period _jvmMetricsCollectionInterval;
     private final Map<String, MetricsLimiter> _limiters;
     private final Map<String, ?> _akkaConfiguration;
 
@@ -179,6 +187,17 @@ public final class TsdAggregatorConfiguration {
         }
 
         /**
+         * Period for collecting JVM metrics. Optional. Default is 500 milliseconds.
+         *
+         * @param value A <code>Period</code> value.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setJvmMetricsCollectionInterval(final Period value) {
+            _jvmMetricsCollectionInterval = value;
+            return this;
+        }
+
+        /**
          * The named limiters. Optional. Defaults to an empty map.
          *
          * @param value The port to listen on.
@@ -216,6 +235,8 @@ public final class TsdAggregatorConfiguration {
         @NotNull
         @Range(min = 1, max = 65535)
         private Integer _httpPort;
+        @NotNull
+        private Period _jvmMetricsCollectionInterval = Period.millis(500);
         @NotNull
         private Map<String, MetricsLimiter> _limiters = Collections.emptyMap();
         @NotNull

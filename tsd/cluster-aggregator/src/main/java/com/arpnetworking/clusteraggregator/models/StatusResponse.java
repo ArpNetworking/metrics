@@ -17,15 +17,24 @@
 package com.arpnetworking.clusteraggregator.models;
 
 import akka.actor.Address;
-import akka.cluster.ClusterEvent;
 import akka.cluster.Member;
+import com.arpnetworking.clusteraggregator.ClusterStatusCache;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.Iterables;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
+import scala.collection.JavaConversions;
 
+import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Response model for the status http endpoint.
@@ -50,12 +59,17 @@ public final class StatusResponse {
         return _localAddress.equals(_clusterLeader);
     }
 
+    @JsonSerialize(contentUsing = MemberSerializer.class)
     public Iterable<Member> getMembers() {
-        return _members;
+        return Iterables.unmodifiableIterable(_members);
     }
 
     public Map<Period, PeriodMetrics> getLocalMetrics() {
-        return _localMetrics;
+        return Collections.unmodifiableMap(_localMetrics);
+    }
+
+    public Optional<List<ShardAllocation>> getAllocations() {
+        return _allocations.map(Collections::unmodifiableList);
     }
 
     private StatusResponse(final Builder builder) {
@@ -63,13 +77,14 @@ public final class StatusResponse {
             _clusterLeader = null;
             _members = Collections.emptyList();
         } else {
-            _clusterLeader = builder._clusterState.getLeader();
-            _members = builder._clusterState.getMembers();
+            _clusterLeader = builder._clusterState.getClusterState().getLeader();
+            _members = builder._clusterState.getClusterState().getMembers();
         }
 
         _localAddress = builder._localAddress;
         _metrics = builder._bookkeeperData;
         _localMetrics = builder._localMetrics;
+        _allocations = Optional.ofNullable(builder._clusterState).flatMap(ClusterStatusCache.StatusResponse::getAllocations);
     }
 
     private final Address _localAddress;
@@ -77,6 +92,7 @@ public final class StatusResponse {
     private final BookkeeperData _metrics;
     private final Iterable<Member> _members;
     private final Map<Period, PeriodMetrics> _localMetrics;
+    private final Optional<List<ShardAllocation>> _allocations;
 
     /**
      * Builder for a {@link StatusResponse}.
@@ -90,18 +106,18 @@ public final class StatusResponse {
         }
 
         /**
-         * Sets the cluster state.
+         * Sets the cluster state. Optional.
          *
          * @param value The cluster state.
          * @return This builder.
          */
-        public Builder setClusterState(final ClusterEvent.CurrentClusterState value) {
+        public Builder setClusterState(final ClusterStatusCache.StatusResponse value) {
             _clusterState = value;
             return this;
         }
 
         /**
-         * Sets the bookkeeper data.
+         * Sets the bookkeeper data. Optional.
          *
          * @param value The bookkeeper data.
          * @return This builder.
@@ -112,7 +128,7 @@ public final class StatusResponse {
         }
 
         /**
-         * Sets the local address of this cluster node.
+         * Sets the local address of this cluster node. Required. Cannot be null.
          *
          * @param value The address of the local node.
          * @return This builder.
@@ -133,10 +149,26 @@ public final class StatusResponse {
             return this;
         }
 
-        private ClusterEvent.CurrentClusterState _clusterState;
+        private ClusterStatusCache.StatusResponse _clusterState;
         private BookkeeperData _bookkeeperData;
         @NotNull
         private Address _localAddress;
         private Map<Period, PeriodMetrics> _localMetrics;
+    }
+
+    private static final class MemberSerializer extends JsonSerializer<Member> {
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void serialize(final Member value, final JsonGenerator gen, final SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("address", value.address().toString());
+            gen.writeObjectField("roles", JavaConversions.setAsJavaSet(value.roles()));
+            gen.writeNumberField("upNumber", value.upNumber());
+            gen.writeStringField("status", value.status().toString());
+            gen.writeNumberField("uniqueAddress", value.uniqueAddress().uid());
+            gen.writeEndObject();
+        }
     }
 }

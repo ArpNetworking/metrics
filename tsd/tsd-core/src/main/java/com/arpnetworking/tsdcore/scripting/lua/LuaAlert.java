@@ -26,6 +26,7 @@ import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
@@ -35,6 +36,8 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Defines and supports evaluation of an alert (aka condition) using Lua. The
@@ -80,7 +83,7 @@ public final class LuaAlert implements Alert {
                     .setName(_name)
                     .setFQDSN(_fqdsn)
                     .setThreshold(_value)
-                    .setSeverity(_severity)
+                    .setExtensions(_extensions)
                     .build();
         }
 
@@ -91,7 +94,7 @@ public final class LuaAlert implements Alert {
                     .setName(_name)
                     .setFQDSN(_fqdsn)
                     .setThreshold(_value)
-                    .setSeverity(_severity)
+                    .setExtensions(_extensions)
                     .build();
         }
 
@@ -126,7 +129,7 @@ public final class LuaAlert implements Alert {
                 .setFQDSN(_fqdsn)
                 .setThreshold(_value)
                 .setTriggered(convertToBoolean(result).orNull())
-                .setSeverity(_severity)
+                .setExtensions(_extensions)
                 .build();
     }
 
@@ -138,11 +141,11 @@ public final class LuaAlert implements Alert {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Name", _name)
-                .add("Severity", _severity)
                 .add("FQDSN", _fqdsn)
                 .add("Period", _period)
                 .add("Operator", _operator)
                 .add("Value", _value)
+                .add("Extensions", _extensions)
                 .toString();
     }
 
@@ -156,10 +159,10 @@ public final class LuaAlert implements Alert {
 
     private LuaAlert(final Builder builder) {
         _name = builder._name;
-        _severity = builder._severity;
         _period = builder._period;
         _operator = builder._operator;
         _value = builder._value;
+        _extensions = ImmutableMap.copyOf(builder._extensions);
 
         _fqdsn = new FQDSN.Builder()
                 .setCluster(builder._cluster)
@@ -176,10 +179,10 @@ public final class LuaAlert implements Alert {
     }
 
     private final String _name;
-    private final String _severity;
     private final Period _period;
     private final LuaRelationalOperator _operator;
     private final Quantity _value;
+    private final ImmutableMap<String, Object> _extensions;
     private final FQDSN _fqdsn;
     private final Globals _globals;
     private final LuaValue _expression;
@@ -204,17 +207,6 @@ public final class LuaAlert implements Alert {
          */
         public Builder setName(final String value) {
             _name = value;
-            return this;
-        }
-
-        /**
-         * Set the alert severity. Required. Cannot be null or empty.
-         *
-         * @param value The alert severity.
-         * @return This <code>Builder</code> instance.
-         */
-        public Builder setSeverity(final String value) {
-            _severity = value;
             return this;
         }
 
@@ -295,12 +287,21 @@ public final class LuaAlert implements Alert {
             return this;
         }
 
+        /**
+         * Set supporting data. Optional. Cannot be null. Default is an empty
+         * <code>Map</code>.
+         *
+         * @param value The supporting data.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setExtensions(final Map<String, Object> value) {
+            _extensions = value;
+            return this;
+        }
+
         @NotNull
         @NotEmpty
         private String _name;
-        @NotNull
-        @NotEmpty
-        private String _severity;
         @NotNull
         @NotEmpty
         private String _cluster;
@@ -319,5 +320,7 @@ public final class LuaAlert implements Alert {
         private LuaRelationalOperator _operator;
         @NotNull
         private Quantity _value;
+        @NotNull
+        private Map<String, Object> _extensions = Collections.emptyMap();
     }
 }

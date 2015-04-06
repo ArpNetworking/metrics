@@ -20,9 +20,9 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.cluster.Cluster;
-import akka.cluster.ClusterEvent;
 import akka.cluster.MemberStatus;
 import akka.dispatch.OnComplete;
+import akka.dispatch.Recover;
 import akka.pattern.Patterns;
 import akka.util.Timeout;
 import com.arpnetworking.clusteraggregator.models.BookkeeperData;
@@ -88,7 +88,7 @@ public class Status extends UntypedActor {
             final Cluster cluster,
             final ActorRef clusterStatusCache,
             final ActorRef localMetrics) {
-        
+
         return Props.create(Status.class, bookkeeper, cluster, clusterStatusCache, localMetrics);
     }
 
@@ -104,11 +104,20 @@ public class Status extends UntypedActor {
             final Future<BookkeeperData> bookkeeperFuture = Patterns.ask(
                     _metricsBookkeeper,
                     new MetricsRequest(),
-                    Timeout.apply(3, TimeUnit.SECONDS)).map(new CastMapper<Object, BookkeeperData>(), executor);
-            final Future<ClusterEvent.CurrentClusterState> clusterStateFuture = Patterns.ask(
+                    Timeout.apply(3, TimeUnit.SECONDS))
+                    .map(new CastMapper<>(), executor)
+                    .recover(
+                            new Recover<BookkeeperData>() {
+                                 @Override
+                                 public BookkeeperData recover(final Throwable failure) {
+                                     return null;
+                                 }
+                             },
+                            executor);
+            final Future<ClusterStatusCache.StatusResponse> clusterStateFuture = Patterns.ask(
                     _clusterStatusCache,
                     new ClusterStatusCache.GetRequest(),
-                    Timeout.apply(3, TimeUnit.SECONDS)).map(new CastMapper<Object, ClusterEvent.CurrentClusterState>(), executor);
+                    Timeout.apply(3, TimeUnit.SECONDS)).map(CAST_MAPPER, executor);
 
             final Future<Map<Period, PeriodMetrics>> localMetricsFuture = Patterns.ask(
                     _localMetrics,
@@ -148,16 +157,16 @@ public class Status extends UntypedActor {
                     executor);
         } else if (message instanceof HealthRequest) {
             final ExecutionContextExecutor executor = getContext().dispatcher();
-            final Future<ClusterEvent.CurrentClusterState> stateFuture = Patterns
+            final Future<ClusterStatusCache.StatusResponse> stateFuture = Patterns
                     .ask(
                             _clusterStatusCache,
                             new ClusterStatusCache.GetRequest(),
                             Timeout.apply(3, TimeUnit.SECONDS))
-                    .map(new CastMapper<Object, ClusterEvent.CurrentClusterState>(), executor);
+                    .map(CAST_MAPPER, executor);
             stateFuture.onComplete(
-                    new OnComplete<ClusterEvent.CurrentClusterState>() {
+                    new OnComplete<ClusterStatusCache.StatusResponse>() {
                         @Override
-                        public void onComplete(final Throwable failure, final ClusterEvent.CurrentClusterState success) {
+                        public void onComplete(final Throwable failure, final ClusterStatusCache.StatusResponse success) {
                             final boolean healthy = _cluster.readView().self().status() == MemberStatus.up();
                             sender.tell(healthy, getSelf());
                         }
@@ -172,6 +181,8 @@ public class Status extends UntypedActor {
     private final Cluster _cluster;
     private final ActorRef _clusterStatusCache;
     private final ActorRef _localMetrics;
+
+    private static final CastMapper<Object, ClusterStatusCache.StatusResponse> CAST_MAPPER = new CastMapper<>();
 
     /**
      * Represents a health check request.

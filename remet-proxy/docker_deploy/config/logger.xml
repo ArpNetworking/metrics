@@ -23,12 +23,16 @@
   <appender name="RemetProxyLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>/opt/remet-proxy/logs/remet-proxy.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.RandomizedTimeBasedFNATP">
+        <maxOffsetInMillis>900000</maxOffsetInMillis>
+      </timeBasedFileNamingAndTriggeringPolicy>
       <fileNamePattern>/opt/remet-proxy/logs/remet-proxy.%d{yyyyMMdd}.log.gz</fileNamePattern>
       <maxHistory>20</maxHistory>
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
     <encoder class="com.arpnetworking.logback.StenoEncoder">
       <injectContextLogger>true</injectContextLogger>
+      <compressLoggerName>true</compressLoggerName>
     </encoder>
   </appender>
    

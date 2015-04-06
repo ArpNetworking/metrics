@@ -25,6 +25,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
+import java.util.Collection;
 import java.util.List;
 import javax.annotation.Nonnull;
 
@@ -41,7 +42,7 @@ public final class AggDataUnifier {
      * @param aggData List of <code>AggregatedData</code> to unify.
      * @return A new {@code List<AggregatedData>} with unified units.
      */
-    public static List<AggregatedData> unify(final List<AggregatedData> aggData) {
+    public static List<AggregatedData> unify(final Collection<AggregatedData> aggData) {
         Optional<Unit> smallestUnit = Optional.absent();
         for (final AggregatedData data : aggData) {
             smallestUnit = getSmaller(smallestUnit, data.getValue().getUnit());
