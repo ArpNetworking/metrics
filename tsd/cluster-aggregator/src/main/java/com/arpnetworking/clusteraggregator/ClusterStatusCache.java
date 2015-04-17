@@ -16,6 +16,7 @@
 
 package com.arpnetworking.clusteraggregator;
 
+import akka.actor.ActorRef;
 import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.actor.Scheduler;
@@ -24,10 +25,22 @@ import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.google.common.base.Optional;
+import com.arpnetworking.clusteraggregator.models.ShardAllocation;
+import com.arpnetworking.utility.ParallelLeastShardAllocationStrategy;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
+import scala.compat.java8.JFunction;
 import scala.concurrent.duration.Duration;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /**
@@ -92,12 +105,11 @@ public class ClusterStatusCache extends UntypedActor {
             if (message instanceof ClusterEvent.CurrentClusterState) {
                 _clusterState = Optional.of((ClusterEvent.CurrentClusterState) message);
             } else if (message instanceof GetRequest) {
-                if (_clusterState.isPresent()) {
-                    getSender().tell(_clusterState.get(), getSelf());
-                } else {
-                    _log.warning("Cache miss; cluster state not available");
-                    _cluster.sendCurrentClusterState(getSender());
-                }
+                sendResponse(getSender());
+            } else if (message instanceof ParallelLeastShardAllocationStrategy.RebalanceNotification) {
+                final ParallelLeastShardAllocationStrategy.RebalanceNotification rebalanceNotification =
+                        (ParallelLeastShardAllocationStrategy.RebalanceNotification) message;
+                _rebalanceState = Optional.of(rebalanceNotification);
             } else {
                 unhandled(message);
             }
@@ -111,16 +123,113 @@ public class ClusterStatusCache extends UntypedActor {
         }
     }
 
+    private void sendResponse(final ActorRef sender) {
+        final StatusResponse response = new StatusResponse(
+                _clusterState.orElse(_cluster.state()),
+                _rebalanceState);
+        sender.tell(response, self());
+    }
+
+    private static String hostFromActorRef(final ActorRef shardRegion) {
+        return shardRegion.path()
+                .address()
+                .host()
+                .getOrElse(JFunction.func(() -> "localhost"));
+    }
+
     private final Cluster _cluster;
     private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
 
-    private Optional<ClusterEvent.CurrentClusterState> _clusterState = Optional.absent();
-    @Nullable private Cancellable _pollTimer;
+    private Optional<ClusterEvent.CurrentClusterState> _clusterState = Optional.empty();
+    @Nullable
+    private Cancellable _pollTimer;
+    private Optional<ParallelLeastShardAllocationStrategy.RebalanceNotification> _rebalanceState = Optional.empty();
 
     private static final String POLL = "poll";
 
     /**
      * Request to get a cluster status.
      */
-    public static final class GetRequest { }
+    public static final class GetRequest {
+    }
+
+    /**
+     * Response to a cluster status request.
+     */
+    public static final class StatusResponse {
+
+        /**
+         * Public constructor.
+         *
+         * @param clusterState the cluster state
+         * @param rebalanceNotification the last rebalance data
+         */
+        public StatusResponse(
+                final ClusterEvent.CurrentClusterState clusterState,
+                final Optional<ParallelLeastShardAllocationStrategy.RebalanceNotification> rebalanceNotification) {
+            _clusterState = clusterState;
+
+            if (rebalanceNotification.isPresent()) {
+                final ParallelLeastShardAllocationStrategy.RebalanceNotification notification = rebalanceNotification.get();
+
+                // There may be a shard joining the cluster that is not in the currentAllocations list yet, but will
+                // have pending rebalances to it.  Compute the set of all shard regions by unioning the current allocation list
+                // with the destinations of the rebalances.
+                final Set<ActorRef> allRefs = Sets.union(
+                        notification.getCurrentAllocations().keySet(),
+                        Sets.newHashSet(notification.getPendingRebalances().values()));
+
+                final Map<String, ActorRef> pendingRebalances = notification.getPendingRebalances();
+
+                final Map<ActorRef, Set<String>> currentAllocations = notification.getCurrentAllocations();
+
+                _allocations = Optional.of(
+                        allRefs.stream()
+                                .map(shardRegion -> computeShardAllocation(pendingRebalances, currentAllocations, shardRegion))
+                                .collect(Collectors.toList()));
+            } else {
+                _allocations = Optional.empty();
+            }
+        }
+
+        private ShardAllocation computeShardAllocation(
+                final Map<String, ActorRef> pendingRebalances,
+                final Map<ActorRef, Set<String>> currentAllocations,
+                final ActorRef shardRegion) {
+            // Setup the map of current shard allocations
+            final Set<String> currentShards = currentAllocations.getOrDefault(shardRegion, Collections.emptySet());
+
+
+            // Setup the list of incoming shard allocations
+            final Map<ActorRef, Collection<String>> invertPending = Multimaps
+                    .invertFrom(Multimaps.forMap(pendingRebalances), ArrayListMultimap.create())
+                    .asMap();
+            final Set<String> incomingShards = Sets.newHashSet(invertPending.getOrDefault(shardRegion, Collections.emptyList()));
+
+            // Setup the list of outgoing shard allocations
+            final Set<String> outgoingShards = Sets.intersection(currentShards, pendingRebalances.keySet()).immutableCopy();
+
+            // Remove the outgoing shards from the currentShards list
+            currentShards.removeAll(outgoingShards);
+
+            return new ShardAllocation.Builder()
+                    .setCurrentShards(currentShards)
+                    .setIncomingShards(incomingShards)
+                    .setOutgoingShards(outgoingShards)
+                    .setHost(hostFromActorRef(shardRegion))
+                    .setShardRegion(shardRegion)
+                    .build();
+        }
+
+        public ClusterEvent.CurrentClusterState getClusterState() {
+            return _clusterState;
+        }
+
+        public Optional<List<ShardAllocation>> getAllocations() {
+            return _allocations;
+        }
+
+        private final ClusterEvent.CurrentClusterState _clusterState;
+        private final Optional<List<ShardAllocation>> _allocations;
+    }
 }

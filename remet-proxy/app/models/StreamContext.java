@@ -85,6 +85,7 @@ public class StreamContext extends UntypedActor {
     public void onReceive(final Object message) throws Exception {
         LOGGER.trace()
                 .setMessage("Received message")
+                .addData("actor", self().toString())
                 .addData("data", message)
                 .log();
 
@@ -110,6 +111,7 @@ public class StreamContext extends UntypedActor {
             _metrics.incrementCounter(UNKNOWN_COUNTER);
             LOGGER.warn()
                     .setMessage("Unsupported message")
+                    .addData("actor", self().toString())
                     .addData("data", message)
                     .log();
             unhandled(message);
@@ -165,6 +167,7 @@ public class StreamContext extends UntypedActor {
             public void invoke() {
                 LOGGER.info()
                         .setMessage("Connection closed")
+                        .addData("actor", self().toString())
                         .addData("channel", outputChannel)
                         .log();
                 // Send a Quit message
@@ -182,6 +185,7 @@ public class StreamContext extends UntypedActor {
 
         LOGGER.info()
                 .setMessage("Connection opened")
+                .addData("actor", self().toString())
                 .addData("context", context)
                 .addData("channel", outputChannel)
                 .log();

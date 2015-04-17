@@ -23,8 +23,11 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 import java.net.InetSocketAddress;
+import javax.inject.Provider;
 
 /**
  * TCP Server that listens for aggregation client connections.
@@ -32,6 +35,15 @@ import java.net.InetSocketAddress;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public final class AggClientServer extends UntypedActor {
+    /**
+     * Public constructor.
+     *
+     * @param supervisorProvider Provider to build aggregation client supervisors.
+     */
+    @Inject
+    public AggClientServer(@Named("agg-client-supervisor") final Provider<Props> supervisorProvider) {
+        _supervisorProvider = supervisorProvider;
+    }
     /**
      * {@inheritDoc}
      */
@@ -53,7 +65,7 @@ public final class AggClientServer extends UntypedActor {
         } else if (message instanceof Tcp.Connected) {
             final Tcp.Connected conn = (Tcp.Connected) message;
             final ActorRef handler = getContext().actorOf(
-                    Props.create(AggClientSupervisor.class),
+                    _supervisorProvider.get(),
                     String.format("sup-%s:%d",
                                   conn.remoteAddress().getAddress().toString().replace("/", ""),
                                   conn.remoteAddress().getPort()));
@@ -63,5 +75,6 @@ public final class AggClientServer extends UntypedActor {
     }
 
     private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
+    private final Provider<Props> _supervisorProvider;
 }
 

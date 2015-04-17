@@ -22,12 +22,14 @@
   <appender name="RemetGuiLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>logs/remet_gui.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.RandomizedTimeBasedFNATP">
+        <maxOffsetInMillis>900000</maxOffsetInMillis>
+      </timeBasedFileNamingAndTriggeringPolicy>
       <fileNamePattern>logs/remet_gui.%d{yyyy-MM-dd_HH}.log.gz</fileNamePattern>
       <maxHistory>20</maxHistory>
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
     <encoder class="com.arpnetworking.logback.KeyValueEncoder">
-      <injectContextLogger>true</injectContextLogger>
       <layout class="ch.qos.logback.classic.PatternLayout">
         <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
       </layout>

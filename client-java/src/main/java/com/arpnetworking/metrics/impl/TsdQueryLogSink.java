@@ -446,7 +446,7 @@ public class TsdQueryLogSink implements Sink {
         private static final String DEFAULT_PATH = "";
         private static final String DEFAULT_NAME = "query";
         private static final String DEFAULT_EXTENSION = ".log";
-        private static final Boolean DEFAULT_IMMEDIATE_FLUSH = Boolean.TRUE;
-        private static final Integer DEFAULT_MAX_HISTORY = Integer.valueOf(24);
+        private static final Boolean DEFAULT_IMMEDIATE_FLUSH = true;
+        private static final Integer DEFAULT_MAX_HISTORY = 24;
     }
 }

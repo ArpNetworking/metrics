@@ -23,6 +23,7 @@ import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.statistics.MeanStatistic;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 import org.joda.time.DateTime;
@@ -49,7 +50,7 @@ public final class TestBeanFactory {
         return new Condition.Builder()
                 .setFQDSN(createFQDSN())
                 .setName("condition-" + UUID.randomUUID())
-                .setSeverity("severity-" + UUID.randomUUID())
+                .setExtensions(ImmutableMap.of("severity", "severity-" + UUID.randomUUID()))
                 .setThreshold(createSample())
                 .setTriggered(Boolean.TRUE);
     }

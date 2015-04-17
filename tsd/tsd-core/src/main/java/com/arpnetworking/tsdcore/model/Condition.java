@@ -18,6 +18,7 @@ package com.arpnetworking.tsdcore.model;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
@@ -32,10 +33,6 @@ public final class Condition {
         return _name;
     }
 
-    public String getSeverity() {
-        return _severity;
-    }
-
     public FQDSN getFQDSN() {
         return _fqdsn;
     }
@@ -48,6 +45,10 @@ public final class Condition {
         return _triggered;
     }
 
+    public ImmutableMap<String, Object> getExtensions() {
+        return _extensions;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -56,26 +57,26 @@ public final class Condition {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Name", _name)
-                .add("Severity", _name)
                 .add("FQDSN", _fqdsn)
                 .add("Threshold", _threshold)
                 .add("Triggered", _triggered)
+                .add("Extension", _extensions)
                 .toString();
     }
 
     private Condition(final Builder builder) {
         _name = builder._name;
-        _severity = builder._severity;
         _fqdsn = builder._fqdsn;
         _threshold = builder._threshold;
         _triggered = Optional.fromNullable(builder._triggered);
+        _extensions = builder._extensions;
     }
 
     private final String _name;
-    private final String _severity;
     private final FQDSN _fqdsn;
     private final Quantity _threshold;
     private final Optional<Boolean> _triggered;
+    private final ImmutableMap<String, Object> _extensions;
 
     /**
      * <code>Builder</code> implementation for <code>Condition</code>.
@@ -97,17 +98,6 @@ public final class Condition {
          */
         public Builder setName(final String value) {
             _name = value;
-            return this;
-        }
-
-        /**
-         * Set the severity.
-         *
-         * @param value The severity.
-         * @return This <code>Builder</code> instance.
-         */
-        public Builder setSeverity(final String value) {
-            _severity = value;
             return this;
         }
 
@@ -144,16 +134,27 @@ public final class Condition {
             return this;
         }
 
+        /**
+         * Set supporting data. Optional. Cannot be null. Default is an empty
+         * <code>Map</code>.
+         *
+         * @param value The supporting data.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setExtensions(final ImmutableMap<String, Object> value) {
+            _extensions = value;
+            return this;
+        }
+
         @NotNull
         @NotEmpty
         private String _name;
-        @NotNull
-        @NotEmpty
-        private String _severity;
         @NotNull
         private FQDSN _fqdsn;
         @NotNull
         private Quantity _threshold;
         private Boolean _triggered;
+        @NotNull
+        private ImmutableMap<String, Object> _extensions = ImmutableMap.of();
     }
 }

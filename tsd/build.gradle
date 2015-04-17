@@ -17,7 +17,7 @@
 apply plugin: 'build-dashboard'
 apply plugin: 'idea'
 
-version = ''
+version = '0.3.2'
 group = 'com.arpnetworking.metrics'
 
 subprojects {

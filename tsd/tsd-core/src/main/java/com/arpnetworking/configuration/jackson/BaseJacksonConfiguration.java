@@ -166,7 +166,7 @@ public abstract class BaseJacksonConfiguration extends com.arpnetworking.configu
      *
      * @param builder The <code>Builder</code> instance to construct from.
      */
-    protected BaseJacksonConfiguration(final Builder builder) {
+    protected BaseJacksonConfiguration(final Builder<?, ?> builder) {
         _objectMapper = builder._objectMapper;
     }
 
@@ -175,7 +175,7 @@ public abstract class BaseJacksonConfiguration extends com.arpnetworking.configu
     /**
      * Builder for <code>BaseObjectMapperConfiguration</code>.
      */
-    protected abstract static class Builder<T extends Builder, S extends Configuration> extends OvalBuilder<S> {
+    protected abstract static class Builder<T extends Builder<?, ?>, S extends Configuration> extends OvalBuilder<S> {
 
         /**
          * Protected constructor.

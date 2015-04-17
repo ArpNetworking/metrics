@@ -17,6 +17,7 @@
 package global;
 
 import actors.FileSourcesManager;
+import actors.JvmMetricsCollector;
 import actors.LogScanner;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -51,6 +52,10 @@ public class MainModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(ActorRef.class).annotatedWith(Names.named("LogScanner")).toProvider(LogScannerProvider.class).asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("JvmMetricsCollector"))
+                .toProvider(JvmMetricsCollectorProvider.class)
+                .asEagerSingleton();
     }
 
     @Provides
@@ -94,6 +99,22 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             return _system.actorOf(Props.create(new GuiceActorCreator(_injector, LogScanner.class)));
+        }
+
+        private final Injector _injector;
+        private final ActorSystem _system;
+    }
+
+    private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {
+        @Inject
+        public JvmMetricsCollectorProvider(final Injector injector, final ActorSystem system) {
+            _injector = injector;
+            _system = system;
+        }
+
+        @Override
+        public ActorRef get() {
+            return _system.actorOf(Props.create(new GuiceActorCreator(_injector, JvmMetricsCollector.class)));
         }
 
         private final Injector _injector;

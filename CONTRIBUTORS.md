@@ -17,3 +17,5 @@ The following people have made source contributions to the metrics project:
 * Ting Tu (ting at groupon dot com)
 * Ville Koskela (vkoskela at groupon dot com)
 * Vivek Muppalla (vmuppalla at groupon dot com)
+
+&copy; Groupon Inc., 2014

@@ -16,9 +16,10 @@
 
 package models;
 
+import com.arpnetworking.metrics.com.arpnetworking.steno.Logger;
+import com.arpnetworking.metrics.com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.parsers.Parser;
 import models.messages.LogLine;
-import play.Logger;
 
 import java.nio.file.Path;
 
@@ -44,7 +45,7 @@ public class LogLineParser implements Parser<LogLine> {
     @Override
     public LogLine parse(final byte[] data) throws IllegalArgumentException {
         if (null == data) {
-            Logger.error("Null data sent to the FilesSource Parser");
+            LOGGER.error().setMessage("Null data sent to the FilesSource Parser").log();
             return null;
         }
 
@@ -52,4 +53,6 @@ public class LogLineParser implements Parser<LogLine> {
     }
 
     private final Path _logFile;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogLineParser.class);
 }

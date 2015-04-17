@@ -23,10 +23,12 @@ import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.ReflectionsDatabase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.Range;
+import org.joda.time.Period;
 
 import java.io.File;
 import java.util.Collections;
@@ -66,6 +68,18 @@ public final class ClusterAggregatorConfiguration {
         return _logDirectory;
     }
 
+    public Period getMaxConnectionTimeout() {
+        return _maxConnectionTimeout;
+    }
+
+    public Period getMinConnectionTimeout() {
+        return _minConnectionTimeout;
+    }
+
+    public Period getJvmMetricsCollectionInterval() {
+        return _jvmMetricsCollectionInterval;
+    }
+
     public Map<String, ?> getAkkaConfiguration() {
         return Collections.unmodifiableMap(_akkaConfiguration);
     }
@@ -74,12 +88,30 @@ public final class ClusterAggregatorConfiguration {
         return _pipelineConfiguration;
     }
 
+    public RebalanceConfiguration getRebalanceConfiguration() {
+        return _rebalanceConfiguration;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .toString();
+    }
+
     private ClusterAggregatorConfiguration(final Builder builder) {
         _httpHost = builder._httpHost;
         _httpPort = builder._httpPort;
         _logDirectory = builder._logDirectory;
         _akkaConfiguration = Maps.newHashMap(builder._akkaConfiguration);
         _pipelineConfiguration = builder._pipelineConfiguration;
+        _minConnectionTimeout = builder._minConnectionTimeout;
+        _maxConnectionTimeout = builder._maxConnectionTimeout;
+        _jvmMetricsCollectionInterval = builder._jvmMetricsCollectionInterval;
+        _rebalanceConfiguration = builder._rebalanceConfiguration;
     }
 
     private final File _logDirectory;
@@ -87,6 +119,10 @@ public final class ClusterAggregatorConfiguration {
     private final int _httpPort;
     private final Map<String, ?> _akkaConfiguration;
     private final File _pipelineConfiguration;
+    private final Period _minConnectionTimeout;
+    private final Period _maxConnectionTimeout;
+    private final Period _jvmMetricsCollectionInterval;
+    private final RebalanceConfiguration _rebalanceConfiguration;
 
     private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
 
@@ -95,7 +131,7 @@ public final class ClusterAggregatorConfiguration {
      *
      * @author Brandon Arp (barp at groupon dot com)
      */
-    public static class Builder extends OvalBuilder<ClusterAggregatorConfiguration> {
+    public static final class Builder extends OvalBuilder<ClusterAggregatorConfiguration> {
         /**
          * Public constructor.
          */
@@ -155,6 +191,39 @@ public final class ClusterAggregatorConfiguration {
         }
 
         /**
+         * The minimum connection cycling time for a client.  Required.  Cannot be null.
+         *
+         * @param value The minimum time before cycling a connection.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setMinConnectionTimeout(final Period value) {
+            _minConnectionTimeout = value;
+            return this;
+        }
+
+        /**
+         * The maximum connection cycling time for a client.  Required.  Cannot be null.
+         *
+         * @param value The maximum time before cycling a connection.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setMaxConnectionTimeout(final Period value) {
+            _maxConnectionTimeout = value;
+            return this;
+        }
+
+        /**
+         * Period for collecting JVM metrics.
+         *
+         * @param value A <code>Period</code> value.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setJvmMetricsCollectionInterval(final Period value) {
+            _jvmMetricsCollectionInterval = value;
+            return this;
+        }
+
+        /**
          * The pipeline configuration file. Cannot be null.
          *
          * @param value The pipeline configuration file.
@@ -162,6 +231,17 @@ public final class ClusterAggregatorConfiguration {
          */
         public Builder setPipelineConfiguration(final File value) {
             _pipelineConfiguration = value;
+            return this;
+        }
+
+        /**
+         * Configuration for the shard rebalance settings.
+         *
+         * @param value The rebalacing configuration.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setRebalanceConfiguration(final RebalanceConfiguration value) {
+            _rebalanceConfiguration = value;
             return this;
         }
 
@@ -177,5 +257,13 @@ public final class ClusterAggregatorConfiguration {
         private File _pipelineConfiguration;
         @NotNull
         private Map<String, ?> _akkaConfiguration;
+        @NotNull
+        private Period _maxConnectionTimeout;
+        @NotNull
+        private Period _minConnectionTimeout;
+        @NotNull
+        private Period _jvmMetricsCollectionInterval;
+        @NotNull
+        private RebalanceConfiguration _rebalanceConfiguration;
     }
 }

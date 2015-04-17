@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.clusteraggregator;
+package com.arpnetworking.utility;
 
 import akka.actor.ActorSystem;
 import org.junit.After;
@@ -26,6 +26,7 @@ import org.mockito.MockitoAnnotations;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+// TODO(barp): Pull this into a test-utils package [MAI-488]
 public abstract class BaseActorTest {
     /**
      * Binds mockito annotations and starts the actor system.

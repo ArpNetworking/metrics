@@ -51,3 +51,5 @@ License
 -------
 
 Published under Apache Software License 2.0, see LICENSE
+
+&copy; Groupon Inc., 2014

@@ -23,12 +23,16 @@
     <appender name="TsdAggregatorLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>/opt/tsd-aggregator/logs/tsd-aggregator.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.RandomizedTimeBasedFNATP">
+              <maxOffsetInMillis>900000</maxOffsetInMillis>
+            </timeBasedFileNamingAndTriggeringPolicy>
             <fileNamePattern>/opt/tsd-aggregator/logs/tsd-aggregator.%d{yyyyMMdd}.log.gz</fileNamePattern>
             <maxHistory>20</maxHistory>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder class="com.arpnetworking.logback.StenoEncoder">
             <injectContextLogger>true</injectContextLogger>
+          <compressLoggerName>true</compressLoggerName>
         </encoder>
     </appender>
     

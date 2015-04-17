@@ -19,7 +19,7 @@
   <name>Metrics Client (Java)</name>
   <groupId>com.arpnetworking.metrics</groupId>
   <artifactId>metrics-client</artifactId>
-  <version>0.3.1</version>
+  <version>0.3.2</version>
   <packaging>jar</packaging>
   <properties>
     <main.basedir>${project.basedir}</main.basedir>

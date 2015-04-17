@@ -23,11 +23,15 @@
     <appender name="clusteragg-logger" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>/opt/cluster-aggregator/logs/cluster-aggregator.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.RandomizedTimeBasedFNATP">
+                <maxOffsetInMillis>900000</maxOffsetInMillis>
+            </timeBasedFileNamingAndTriggeringPolicy>
             <fileNamePattern>/opt/cluster-aggregator/logs/cluster-aggregator.%d{yyyyMMdd}.log.gz</fileNamePattern>
             <maxHistory>20</maxHistory>
         </rollingPolicy>
-        <encoder immediateFlush="false">
-            <pattern>%date %t [%level] %logger : %message %sThrowable%n</pattern>
+        <encoder class="com.arpnetworking.logback.StenoEncoder">
+            <injectContextLogger>true</injectContextLogger>
+            <compressLoggerName>true</compressLoggerName>
         </encoder>
     </appender>
 

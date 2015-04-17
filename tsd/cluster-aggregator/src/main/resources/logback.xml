@@ -14,16 +14,21 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <configuration>
   <appender name="clusteragg-logger" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>logs/cluster_aggregator.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.RandomizedTimeBasedFNATP">
+        <maxOffsetInMillis>900000</maxOffsetInMillis>
+      </timeBasedFileNamingAndTriggeringPolicy>
       <fileNamePattern>logs/cluster_aggregator.%d{yyyyMMdd}.log.gz</fileNamePattern>
       <maxHistory>20</maxHistory>
+      <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
-    <encoder immediateFlush="false">
-      <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
+    <encoder class="com.arpnetworking.logback.KeyValueEncoder">
+      <layout class="ch.qos.logback.classic.PatternLayout">
+        <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
+      </layout>
     </encoder>
   </appender>
 
@@ -40,7 +45,9 @@
     </encoder>
   </appender>
 
+  <logger name="org.apache.http" level="INFO" />
+
   <root level="DEBUG">
-    <appender-ref ref="clusteragg-async" />
+    <appender-ref ref="clusteragg-async"/>
   </root>
 </configuration>

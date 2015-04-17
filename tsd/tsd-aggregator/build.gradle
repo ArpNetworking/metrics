@@ -28,15 +28,16 @@ task perfTransform(type: JavaExec, dependsOn: perf) {
     outputs.file outputFile
 }
 
-def akka_version = '2.3.8'
+def akka_version = '2.3.9'
 def scala_version = '2.11'
 def jackson_version = '2.5.0'
-def guice_version = '3.0'
+def guice_version = '4.0-beta5'
 
 dependencies {
     compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.2'
     compile group: 'com.arpnetworking.logback', name: 'logback-steno', version: '1.3.2'
-    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.1'
+    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.2'
+    compile group: 'com.arpnetworking.metrics.extras', name: 'jvm-extra', version: '0.3.1'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jackson_version
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jackson_version
     compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-joda', version: jackson_version

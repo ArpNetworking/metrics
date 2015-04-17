@@ -284,12 +284,17 @@ public final class ExpressionSink extends BaseSink implements Sink {
 
                     // Process all your dependencies. If any transitive dependency
                     // references a parent then there is a cycle.
-                    for (final FQDSN dependency : expression.getDependencies()) {
-                        insertExpression(
-                                expressionsByFqdsn.get(dependency),
-                                expressionsByFqdsn,
-                                parentExpressions,
-                                orderedExpressions);
+                    for (final FQDSN dependencyFqdsn : expression.getDependencies()) {
+                        final Expression dependency = expressionsByFqdsn.get(dependencyFqdsn);
+                        // Only ensure expression dependencies are ordered; all non-expression
+                        // dependencies are evaluated before expressions and are thus available.
+                        if (dependency != null) {
+                            insertExpression(
+                                    dependency,
+                                    expressionsByFqdsn,
+                                    parentExpressions,
+                                    orderedExpressions);
+                        }
                     }
 
                     // Record yourself in the expression evaluation order. At this

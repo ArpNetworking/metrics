@@ -21,7 +21,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.Duration;
 
 import java.util.Collection;
 import java.util.List;
@@ -59,12 +58,6 @@ public final class ReMetSink extends HttpPostSink {
             // TODO(vkoskela): Refactor into JSON serializer [MAI-88]
             // Question: We should consider carefully how to separate sinks and
             // data formats.
-
-            // Only emit 1 second aggregations
-            if (!datum.getPeriod().toStandardDuration().isEqual(Duration.standardSeconds(1))) {
-                continue;
-            }
-
             final StringBuilder nextChunkBuilder = new StringBuilder()
                     .append("{\"value\":\"").append(datum.getValue().getValue())
                     .append("\",\"metric\":\"").append(datum.getFQDSN().getMetric())

@@ -22,6 +22,7 @@ Please refer to the README under each project for information on how to build an
 |CollectD Extra    |[Autoconf](https://www.gnu.org/software/autoconf/)+[Automake](http://www.gnu.org/software/automake/)|[README](extras/collectd-extra/README.md)|Autoconf, Automake, C-compiler         |
 |Vertx Extra       |[Maven](http://maven.apache.org/)                                                                   |[README](extras/vertx-extra/README.md)   |JDK7, Maven 3.0.5+                     |
 |Yammer Extra      |[Maven](http://maven.apache.org/)                                                                   |[README](extras/yammer-extra/README.md)  |JDK7, Maven 3.0.5+                     |
+|JVM Extra         |[Maven](http://maven.apache.org/)                                                                   |[README](extras/jvm-extra/README.md)     |JDK7, Maven 3.0.5+                     |
 
 Links to prerequisites:
 * [JDK7](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
@@ -181,3 +182,5 @@ License
 -------
 
 Published under Apache Software License 2.0, see [LICENSE](LICENSE)
+
+&copy; Groupon Inc., 2014

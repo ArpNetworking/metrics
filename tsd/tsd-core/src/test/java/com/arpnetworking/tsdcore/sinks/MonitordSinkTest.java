@@ -19,8 +19,6 @@ import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.google.common.collect.Lists;
-
-import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,28 +41,6 @@ public class MonitordSinkTest {
         _monitordSinkBuilder = new MonitordSink.Builder()
                 .setName("monitord_sink_test")
                 .setUri(URI.create("http://localhost:8888"));
-    }
-
-    @Test
-    public void testSerializeFilterSubMinuteData() {
-        final List<AggregatedData> data = Collections.singletonList(
-                TestBeanFactory.createAggregatedDataBuilder()
-                        .setPeriod(Period.seconds(1))
-                        .build());
-        final MonitordSink monitordSink = _monitordSinkBuilder.build();
-        final Collection<String> results = monitordSink.serialize(data, Collections.<Condition>emptyList());
-        Assert.assertTrue(results.isEmpty());
-    }
-
-    @Test
-    public void testSerializeFilterOldData() {
-        final List<AggregatedData> data = Collections.singletonList(
-                TestBeanFactory.createAggregatedDataBuilder()
-                        .setStart(new DateTime().minusMinutes(15))
-                        .build());
-        final MonitordSink monitordSink = _monitordSinkBuilder.build();
-        final Collection<String> results = monitordSink.serialize(data, Collections.<Condition>emptyList());
-        Assert.assertTrue(results.isEmpty());
     }
 
     @Test

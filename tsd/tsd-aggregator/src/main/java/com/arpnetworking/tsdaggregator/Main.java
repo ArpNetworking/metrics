@@ -17,11 +17,11 @@ package com.arpnetworking.tsdaggregator;
 
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import akka.dispatch.Foreach;
 import akka.http.HttpExt;
 import akka.http.model.japi.Http;
-import akka.stream.FlowMaterializer;
-import akka.stream.MaterializerSettings;
+import akka.stream.ActorFlowMaterializer;
+import akka.stream.ActorFlowMaterializerSettings;
+import akka.stream.scaladsl.Source;
 import ch.qos.logback.classic.LoggerContext;
 import com.arpnetworking.configuration.FileTrigger;
 import com.arpnetworking.configuration.jackson.DynamicConfiguration;
@@ -30,6 +30,7 @@ import com.arpnetworking.http.Routes;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.impl.TsdQueryLogSink;
+import com.arpnetworking.metrics.jvm.JvmMetricsRunnable;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.configuration.PipelineConfiguration;
@@ -39,18 +40,27 @@ import com.arpnetworking.utility.Configurator;
 import com.arpnetworking.utility.Launchable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import scala.compat.java8.JFunction;
+import scala.concurrent.Future;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class containing entry point for Time Series Data (TSD) Aggregator.
@@ -133,6 +143,7 @@ public final class Main implements Launchable {
         launchAkka(injector);
         launchLimiters();
         launchPipelines(injector);
+        launchJvmMetricsCollector(injector);
     }
 
     /**
@@ -140,55 +151,32 @@ public final class Main implements Launchable {
      */
     @Override
     public void shutdown() {
+        shutdownJvmMetricsCollector();
         shutdownPipelines();
         shutdownLimiters();
         shutdownAkka();
         shutdownGuice();
     }
 
+    private void launchJvmMetricsCollector(final Injector injector) {
+        LOGGER.info().setMessage("Launching JVM metrics collector.").log();
+        final Runnable runnable = new JvmMetricsRunnable.Builder()
+                .setMetricsFactory(injector.getInstance(MetricsFactory.class))
+                .build();
+        _jvmMetricsCollector = Executors.newSingleThreadScheduledExecutor();
+        _jvmMetricsCollector.scheduleAtFixedRate(
+                runnable,
+                INITIAL_DELAY_IN_MILLIS,
+                _configuration.getJvmMetricsCollectionInterval().toStandardDuration().getMillis(),
+                TIME_UNIT);
+    }
+
     private void launchPipelines(final Injector injector) {
         LOGGER.info().setMessage("Launching pipelines").log();
-
-        final ObjectMapper objectMapper = PipelineConfiguration.createObjectMapper(injector);
-
-        final File[] files = MoreObjects.firstNonNull(
-                _configuration.getPipelinesDirectory().listFiles(),
-                new File[0]);
-
-        for (final File configurationFile : files) {
-            LOGGER.debug()
-                    .setMessage("Creating pipeline")
-                    .addData("configuration", configurationFile)
-                    .log();
-
-            final Configurator<Pipeline, PipelineConfiguration> pipelineConfigurator =
-                    new Configurator<>(Pipeline::new, PipelineConfiguration.class);
-            final DynamicConfiguration pipelineConfiguration = new DynamicConfiguration.Builder()
-                    .setObjectMapper(objectMapper)
-                    .addSourceBuilder(new JsonNodeFileSource.Builder()
-                            .setObjectMapper(objectMapper)
-                            .setFile(configurationFile))
-                    .addTrigger(new FileTrigger.Builder()
-                            .setFile(configurationFile)
-                            .build())
-                    .addListener(pipelineConfigurator)
-                    .build();
-
-            LOGGER.debug()
-                    .setMessage("Launching pipeline")
-                    .addData("pipeline", pipelineConfiguration)
-                    .log();
-            pipelineConfiguration.launch();
-            _pipelineLaunchables.add(pipelineConfigurator);
-            _pipelineLaunchables.add(pipelineConfiguration);
-        }
-
-        if (_pipelineLaunchables.isEmpty()) {
-            LOGGER.warn()
-                    .setMessage("No pipelines found in pipelines directory")
-                    .addData("path", _configuration.getPipelinesDirectory().getAbsolutePath())
-                    .log();
-        }
+        _pipelinesLaunchable = new PipelinesLaunchable(
+                PipelineConfiguration.createObjectMapper(injector),
+                _configuration.getPipelinesDirectory());
+        _pipelinesLaunchable.launch();
     }
 
     private void launchLimiters() {
@@ -215,25 +203,21 @@ public final class Main implements Launchable {
         // Create the status actor
         _actorSystem.actorOf(Props.create(Status.class), "status");
 
-        final MaterializerSettings materializerSettings = MaterializerSettings.create(_actorSystem);
-        final FlowMaterializer materializer = FlowMaterializer.create(materializerSettings, _actorSystem);
+        final ActorFlowMaterializerSettings materializerSettings = ActorFlowMaterializerSettings.create(_actorSystem);
+        final ActorFlowMaterializer materializer = ActorFlowMaterializer.create(materializerSettings, _actorSystem);
 
         // Create and bind Http server
         final HttpExt httpExt = (HttpExt) Http.get(_actorSystem);
-        final akka.http.Http.ServerBinding binding = httpExt.bind(
+        final Source<akka.http.Http.IncomingConnection, Future<akka.http.Http.ServerBinding>> binding = httpExt.bind(
                 _configuration.getHttpHost(),
                 _configuration.getHttpPort(),
                 httpExt.bind$default$3(),
                 httpExt.bind$default$4(),
                 httpExt.bind$default$5(),
-                httpExt.bind$default$6());
-        binding.connections().foreach(
-                new Foreach<akka.http.Http.IncomingConnection>() {
-                    @Override
-                    public void each(final akka.http.Http.IncomingConnection input) {
-                        input.handleWithAsyncHandler(routes, materializer);
-                    }
-                },
+                httpExt.bind$default$6(),
+                materializer);
+        binding.runForeach(
+                JFunction.proc(b -> b.handleWithAsyncHandler(routes, materializer)),
                 materializer);
     }
 
@@ -277,17 +261,16 @@ public final class Main implements Launchable {
                 });
     }
 
+    private void shutdownJvmMetricsCollector() {
+        LOGGER.info().setMessage("Stopping JVM metrics collection").log();
+        if (_jvmMetricsCollector != null) {
+            _jvmMetricsCollector.shutdown();
+        }
+    }
+
     private void shutdownPipelines() {
         LOGGER.info().setMessage("Stopping pipelines").log();
-
-        for (final Launchable pipeline : _pipelineLaunchables) {
-            LOGGER.debug()
-                    .setMessage("Stopping pipeline")
-                    .addData("pipeline", pipeline)
-                    .log();
-            pipeline.shutdown();
-        }
-        _pipelineLaunchables.clear();
+        _pipelinesLaunchable.shutdown();
     }
 
     private void shutdownLimiters() {
@@ -318,11 +301,114 @@ public final class Main implements Launchable {
     }
 
     private final TsdAggregatorConfiguration _configuration;
-
     private final List<Launchable> _limiters = Collections.synchronizedList(Lists.newArrayList());
     private final List<Launchable> _pipelineLaunchables = Collections.synchronizedList(Lists.newArrayList());
 
+    private PipelinesLaunchable _pipelinesLaunchable;
+    private ScheduledExecutorService _jvmMetricsCollector;
+
     private volatile ActorSystem _actorSystem;
 
+    private static final Long INITIAL_DELAY_IN_MILLIS = 0L;
+    private static final TimeUnit TIME_UNIT = TimeUnit.MILLISECONDS;
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+
+    private static final class PipelinesLaunchable implements Launchable, Runnable {
+
+        public PipelinesLaunchable(final ObjectMapper objectMapper, final File directory) {
+            _objectMapper = objectMapper;
+            _directory = directory;
+            _fileToPipelineLaunchables = Maps.newHashMap();
+        }
+
+        @Override
+        public void launch() {
+            _pipelinesExecutor = Executors.newSingleThreadScheduledExecutor();
+            _pipelinesExecutor.scheduleAtFixedRate(
+                    this,
+                    0,  // initial delay
+                    1,  // interval
+                    TimeUnit.MINUTES);
+        }
+
+        @Override
+        public void shutdown() {
+            _pipelinesExecutor.shutdown();
+            _pipelinesExecutor = null;
+
+            _fileToPipelineLaunchables.keySet()
+                    .stream()
+                    .forEach(this::shutdownPipeline);
+            _fileToPipelineLaunchables.clear();
+        }
+
+        @Override
+        public void run() {
+            final boolean exists = _directory.exists() && _directory.isDirectory();
+            if (exists) {
+                final Set<File> missingFiles = Sets.newHashSet(_fileToPipelineLaunchables.keySet());
+                for (final File file : MoreObjects.firstNonNull(_directory.listFiles(), EMPTY_FILE_ARRAY)) {
+                    missingFiles.remove(file);
+                    if (!_fileToPipelineLaunchables.containsKey(file)) {
+                        launchPipeline(file);
+                    }
+                }
+                for (final File missingFile : missingFiles) {
+                    shutdownPipeline(missingFile);
+                }
+            } else {
+                for (final File file : _fileToPipelineLaunchables.keySet()) {
+                    shutdownPipeline(file);
+                }
+            }
+        }
+
+        private void launchPipeline(final File file) {
+            LOGGER.debug()
+                    .setMessage("Creating pipeline")
+                    .addData("configuration", file)
+                    .log();
+
+            final Configurator<Pipeline, PipelineConfiguration> pipelineConfigurator =
+                    new Configurator<>(Pipeline::new, PipelineConfiguration.class);
+            final DynamicConfiguration pipelineConfiguration = new DynamicConfiguration.Builder()
+                    .setObjectMapper(_objectMapper)
+                    .addSourceBuilder(new JsonNodeFileSource.Builder()
+                            .setObjectMapper(_objectMapper)
+                            .setFile(file))
+                    .addTrigger(new FileTrigger.Builder()
+                            .setFile(file)
+                            .build())
+                    .addListener(pipelineConfigurator)
+                    .build();
+
+            LOGGER.debug()
+                    .setMessage("Launching pipeline")
+                    .addData("pipeline", pipelineConfiguration)
+                    .log();
+
+            pipelineConfiguration.launch();
+
+            _fileToPipelineLaunchables.put(file, ImmutableList.of(pipelineConfigurator, pipelineConfiguration));
+        }
+
+        private void shutdownPipeline(final File file) {
+            LOGGER.debug()
+                    .setMessage("Stopping pipeline")
+                    .addData("pipeline", file)
+                    .log();
+
+            for (final Launchable launchable : _fileToPipelineLaunchables.remove(file)) {
+                launchable.shutdown();
+            }
+        }
+
+        private final ObjectMapper _objectMapper;
+        private final File _directory;
+        private final Map<File, List<Launchable>> _fileToPipelineLaunchables;
+
+        private ScheduledExecutorService _pipelinesExecutor;
+
+        private static final File[] EMPTY_FILE_ARRAY = new File[0];
+    }
 }

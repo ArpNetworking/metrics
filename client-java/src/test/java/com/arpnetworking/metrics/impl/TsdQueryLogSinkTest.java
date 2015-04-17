@@ -85,8 +85,8 @@ public class TsdQueryLogSinkTest {
         final String expectedPath = "./target/TsdQueryLogSinkTest/testBuilderWithoutImmediateFlush/";
         final TsdQueryLogSink metricsFactory = (TsdQueryLogSink) new TsdQueryLogSink.Builder()
                 .setPath(expectedPath)
-                .setImmediateFlush(Boolean.FALSE)
-                .setMaxHistory(Integer.valueOf(48))
+                .setImmediateFlush(false)
+                .setMaxHistory(48)
                 .setName("foo")
                 .setExtension(".bar")
                 .build();
@@ -151,7 +151,7 @@ public class TsdQueryLogSinkTest {
     @Test(expected = IllegalArgumentException.class)
     public void testBuilderNegativeMaxHistory() {
         new TsdQueryLogSink.Builder()
-                .setMaxHistory(Integer.valueOf(-1))
+                .setMaxHistory(-1)
                 .build();
     }
 

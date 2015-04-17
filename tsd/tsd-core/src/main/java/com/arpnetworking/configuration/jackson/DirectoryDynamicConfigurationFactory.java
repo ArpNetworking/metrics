@@ -17,9 +17,11 @@ package com.arpnetworking.configuration.jackson;
 
 import com.arpnetworking.configuration.DirectoryTrigger;
 import com.arpnetworking.utility.OvalBuilder;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -38,25 +40,28 @@ public final class DirectoryDynamicConfigurationFactory implements DynamicConfig
             final DynamicConfiguration.Builder builder,
             final Collection<String> keys,
             final Collection<Pattern> keyPatterns) {
+        for (final File directory : _directories) {
+            builder
+                    .addSourceBuilder(
+                            new JsonNodeDirectorySource.Builder()
+                                    .setDirectory(directory)
+                                    .setFileNames(keys)
+                                    .setFileNamePatterns(keyPatterns))
+                    .addTrigger(new DirectoryTrigger.Builder()
+                            .setDirectory(directory)
+                            .setFileNames(keys)
+                            .setFileNamePatterns(keyPatterns)
+                            .build());
+        }
 
-        return builder
-                .addSourceBuilder(new JsonNodeDirectorySource.Builder()
-                        .setDirectory(_directory)
-                        .setFileNames(keys)
-                        .setFileNamePatterns(keyPatterns))
-                .addTrigger(new DirectoryTrigger.Builder()
-                        .setDirectory(_directory)
-                        .setFileNames(keys)
-                        .setFileNamePatterns(keyPatterns)
-                        .build())
-                .build();
+        return builder.build();
     }
 
     private DirectoryDynamicConfigurationFactory(final Builder builder) {
-        _directory = builder._directory;
+        _directories = Lists.newArrayList(builder._directories);
     }
 
-    private final File _directory;
+    private final List<File> _directories;
 
     /**
      * <code>Builder</code> implementation for <code>DirectoryDynamicConfigurationFactory</code>.
@@ -71,16 +76,16 @@ public final class DirectoryDynamicConfigurationFactory implements DynamicConfig
         }
 
         /**
-         * Set the directory.
+         * Set the directories.
          *
-         * @param value The directory.
+         * @param value The directories.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setDirectory(final File value) {
-            _directory = value;
+        public Builder setDirectories(final List<File> value) {
+            _directories = value;
             return this;
         }
 
-        private File _directory;
+        private List<File> _directories;
     }
 }

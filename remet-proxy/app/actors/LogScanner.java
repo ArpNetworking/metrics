@@ -68,6 +68,7 @@ public class LogScanner extends UntypedActor {
 
         LOGGER.debug()
                 .setMessage("Created log scanner")
+                .addData("actor", self().toString())
                 .addData("fileSourceManagerActor", _fileSourceManagerActor.toString())
                 .addData("logs", _logs)
                 .log();
@@ -97,12 +98,14 @@ public class LogScanner extends UntypedActor {
         if ("tick".equals(message)) {
             LOGGER.debug()
                     .setMessage("Searching for created/deleted logs")
+                    .addData("actor", self().toString())
                     .addData("scanner", this.toString())
                     .log();
             for (final Path logFile : _logs) {
                 if (_nonExistingLogs.contains(logFile) && Files.exists(logFile)) {
                     LOGGER.info()
                             .setMessage("Log file materialized")
+                            .addData("actor", self().toString())
                             .addData("file", logFile)
                             .log();
                     _fileSourceManagerActor.tell(new LogFileAppeared(logFile), getSelf());
@@ -111,6 +114,7 @@ public class LogScanner extends UntypedActor {
                 } else if (_existingLogs.contains(logFile) && Files.notExists(logFile)) {
                     LOGGER.info()
                             .setMessage("Log file vanished")
+                            .addData("actor", self().toString())
                             .addData("file", logFile)
                             .log();
                     _fileSourceManagerActor.tell(new LogFileDisappeared(logFile), getSelf());

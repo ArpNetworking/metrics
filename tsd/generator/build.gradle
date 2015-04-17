@@ -20,7 +20,7 @@ mainClassName = 'com.arpnetworking.metrics.generator.Generator'
 
 dependencies {
     compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.2'
-    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.1'
+    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.2'
     compile group: 'com.google.guava', name: 'guava', version: '18.0'
     compile group: 'joda-time', name: 'joda-time', version: '2.7'
     compile group: 'org.apache.commons', name: 'commons-math3', version: '3.4.1'

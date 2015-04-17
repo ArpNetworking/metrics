@@ -51,11 +51,11 @@ public abstract class OvalBuilder<T> implements Builder<T> {
         B builder = null;
         try {
             final Class<B> builderClass = (Class<B>) Class.forName(source.getClass().getName() + "$Builder");
-            final Constructor builderConstructor = builderClass.getDeclaredConstructor();
+            final Constructor<B> builderConstructor = builderClass.getDeclaredConstructor();
             if (!builderConstructor.isAccessible()) {
                 builderConstructor.setAccessible(true);
             }
-            builder = (B) builderConstructor.newInstance();
+            builder = builderConstructor.newInstance();
         } catch (final InvocationTargetException | NoSuchMethodException | InstantiationException
                 | IllegalAccessException | ClassNotFoundException e) {
             throw Throwables.propagate(e);
@@ -111,7 +111,7 @@ public abstract class OvalBuilder<T> implements Builder<T> {
     /**
      * Protected method to construct the target class reflectively from the
      * specified type by passing its constructor an instance of this builder.
-     * 
+     *
      * @return Instance of target class created from this builder.
      */
     protected T construct() {
@@ -144,7 +144,7 @@ public abstract class OvalBuilder<T> implements Builder<T> {
 
     /**
      * Protected constructor for subclasses.
-     * 
+     *
      * @param targetClass The concrete type to be created by this builder.
      */
     protected OvalBuilder(final Class<? extends T> targetClass) {

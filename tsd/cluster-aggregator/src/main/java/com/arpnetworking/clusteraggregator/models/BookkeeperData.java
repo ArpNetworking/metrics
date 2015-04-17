@@ -75,7 +75,7 @@ public final class BookkeeperData implements Serializable{
     /**
      * Builder for a {@link BookkeeperData}.
      */
-    public static class Builder extends OvalBuilder<BookkeeperData> {
+    public static final class Builder extends OvalBuilder<BookkeeperData> {
         /**
          * Public constructor.
          */
@@ -84,7 +84,7 @@ public final class BookkeeperData implements Serializable{
         }
 
         /**
-         * Set the statistics.
+         * Set the statistics. Required. Cannot be null.
          *
          * @param value The total statistics.
          * @return This instance of <code>Builder</code>.
@@ -95,7 +95,7 @@ public final class BookkeeperData implements Serializable{
         }
 
         /**
-         * Set the metrics.
+         * Set the metrics. Required. Cannot be null.
          *
          * @param value The total metrics.
          * @return This instance of <code>Builder</code>.
@@ -106,7 +106,7 @@ public final class BookkeeperData implements Serializable{
         }
 
         /**
-         * Set the services.
+         * Set the services. Required. Cannot be null.
          *
          * @param value The total services.
          * @return This instance of <code>Builder</code>.
@@ -117,7 +117,7 @@ public final class BookkeeperData implements Serializable{
         }
 
         /**
-         * Set the clusters.
+         * Set the clusters. Required. Cannot be null.
          *
          * @param value The total clusters.
          * @return This instance of <code>Builder</code>.

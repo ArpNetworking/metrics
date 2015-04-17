@@ -21,6 +21,7 @@ import com.arpnetworking.configuration.Trigger;
 import com.arpnetworking.utility.Launchable;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
@@ -69,6 +70,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
     @Override
     public void launch() {
         LOGGER.debug(String.format("Launching dynamic configuration; this=%s", this));
+        _triggerEvaluatorExecutor = Executors.newSingleThreadExecutor();
         _triggerEvaluatorExecutor.submit(_triggerEvaluator);
     }
 
@@ -78,7 +80,13 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
     @Override
     public void shutdown() {
         LOGGER.debug(String.format("Shutting down dynamic configuration; this=%s", this));
-        _triggerEvaluator.stop();
+        try {
+            _triggerEvaluator.stop();
+            // CHECKSTYLE.OFF: IllegalCatch - Prevent dynamic configuration from shutting down.
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error(String.format("Exception shutting down dynamic configuration; configuration=%s", this), e);
+        }
         _triggerEvaluatorExecutor.shutdown();
         try {
             _triggerEvaluatorExecutor.awaitTermination(30, TimeUnit.SECONDS);
@@ -147,18 +155,18 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
 
     private DynamicConfiguration(final Builder builder) {
         super(builder);
-        _sourceBuilders = builder._sourceBuilders;
-        _listeners = builder._listeners;
+        _sourceBuilders = ImmutableList.copyOf(builder._sourceBuilders);
+        _listeners = ImmutableList.copyOf(builder._listeners);
 
         _triggerEvaluator = new TriggerEvaluator(Lists.newArrayList(builder._triggers));
-        _triggerEvaluatorExecutor = Executors.newSingleThreadExecutor();
     }
 
     private final AtomicReference<StaticConfiguration> _snapshot = new AtomicReference<>();
     private final List<com.arpnetworking.utility.Builder<? extends JsonNodeSource>> _sourceBuilders;
     private final List<Listener> _listeners;
     private final TriggerEvaluator _triggerEvaluator;
-    private final ExecutorService _triggerEvaluatorExecutor;
+
+    private ExecutorService _triggerEvaluatorExecutor;
 
     private static final Duration TRIGGER_EVALUATION_INTERVAL = Duration.standardSeconds(60);
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamicConfiguration.class);

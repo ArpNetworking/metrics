@@ -10,7 +10,8 @@
             "name": "remet_proxy_query_log",
             "sourceFile": "../../remet-proxy/logs/remet-proxy-query.log",
             "stateFile": "../../remet-proxy/logs/remet-proxy-query.log.state",
-            "parser": {
+            "parser":
+            {
                 "type": "com.arpnetworking.tsdaggregator.parsers.QueryLogParser"
             }
         }
@@ -20,35 +21,29 @@
         {
             "type": "com.arpnetworking.tsdcore.sinks.ExpressionSink",
             "name": "remet_proxy_expression_sink",
-            "dynamicConfigurationFactory": {
+            "dynamicConfigurationFactory":
+            {
                 "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
-                "directory": "../../build/start/tsdagg/expressions"
+                "directories": ["../../build/start/tsdagg/expressions"]
             },
-            "sink": {
+            "sink":
+            {
                 "type": "com.arpnetworking.tsdcore.sinks.AlertSink",
                 "name": "remet_proxy_alert_sink",
-                "dynamicConfigurationFactory": {
+                "dynamicConfigurationFactory":
+                {
                     "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
-                    "directory": "../../build/start/tsdagg/alerts"
+                    "directories": ["../../build/start/tsdagg/alerts"]
                 },
-                "sink": {
+                "sink":
+                {
                     "type": "com.arpnetworking.tsdcore.sinks.MultiSink",
                     "name": "remet_proxy_multi_sink",
-                    "sinks": [
+                    "sinks":
+                    [
                         {
                             "type": "com.arpnetworking.tsdcore.sinks.PeriodicStatisticsSink",
                             "name": "remet_proxy_periodic_statistics_sink"
-                        },
-                        {
-                            "type": "com.arpnetworking.tsdcore.sinks.ReMetSink",
-                            "name": "remet_proxy_remet_sink",
-                            "uri": "http://localhost:7090/report"
-                        },
-                        {
-                            "type": "com.arpnetworking.tsdcore.sinks.AggregationServerSink",
-                            "name": "remet_proxy_cluster_sink",
-                            "serverAddress": "localhost",
-                            "serverPort": 7065
                         }
                     ]
                 }

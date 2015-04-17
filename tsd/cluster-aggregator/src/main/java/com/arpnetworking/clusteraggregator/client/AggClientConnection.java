@@ -22,6 +22,7 @@ import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.io.Tcp;
+import akka.io.TcpMessage;
 import akka.util.ByteString;
 import com.arpnetworking.clusteraggregator.StatisticFactory;
 import com.arpnetworking.tsdcore.Messages;
@@ -39,6 +40,7 @@ import com.google.protobuf.GeneratedMessage;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.vertx.java.core.buffer.Buffer;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -54,10 +56,11 @@ public class AggClientConnection extends UntypedActor {
      *
      * @param connection Reference to the client connection actor.
      * @param remote The address of the client socket.
+     * @param maxConnectionAge The maximum duration to keep a connection open before cycling it.
      * @return A new <code>Props</code>.
      */
-    public static Props props(final ActorRef connection, final InetSocketAddress remote) {
-        return Props.create(AggClientConnection.class, connection, remote);
+    public static Props props(final ActorRef connection, final InetSocketAddress remote, final FiniteDuration maxConnectionAge) {
+        return Props.create(AggClientConnection.class, connection, remote, maxConnectionAge);
     }
 
     /**
@@ -65,12 +68,23 @@ public class AggClientConnection extends UntypedActor {
      *
      * @param connection Reference to the client connection actor.
      * @param remote The address of the client socket.
+     * @param maxConnectionAge The maximum duration to keep a connection open before cycling it.
      */
-    public AggClientConnection(final ActorRef connection, final InetSocketAddress remote) {
+    public AggClientConnection(
+            final ActorRef connection,
+            final InetSocketAddress remote,
+            final FiniteDuration maxConnectionAge) {
         _connection = connection;
         _remoteAddress = remote;
 
         getContext().watch(connection);
+
+        context().system().scheduler().scheduleOnce(
+                maxConnectionAge,
+                self(),
+                TcpMessage.close(),
+                context().dispatcher(),
+                self());
     }
 
     /**
@@ -84,7 +98,11 @@ public class AggClientConnection extends UntypedActor {
             _log.debug(String.format("received a message of %d bytes", data.length()));
             _buffer.appendBytes(data.toArray());
             processMessages();
-//            throw new IllegalArgumentException("testing supervisor");
+        } else if (message instanceof Tcp.CloseCommand) {
+            _log.info(String.format("connection timeout hit, cycling connection to %s", _remoteAddress));
+            if (_connection != null) {
+                _connection.tell(message, self());
+            }
         } else if (message instanceof Tcp.ConnectionClosed) {
             getContext().stop(getSelf());
         } else {

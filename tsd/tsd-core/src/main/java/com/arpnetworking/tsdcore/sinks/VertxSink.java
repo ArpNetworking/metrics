@@ -224,14 +224,8 @@ public abstract class VertxSink extends BaseSink {
     }
 
     private void appendToPending(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        for (final AggregatedData datum : data) {
-            // TODO(vkoskela): This should support sending conditions [MAI-452]
-            // TODO(vkoskela): This should be configurable in the base [MAI-91]
-            // Don't aggregate metrics < 1 minute
-            if (!datum.getPeriod().toStandardDuration().isShorterThan(Duration.standardMinutes(1))) {
-                _pendingData.add(datum);
-            }
-        }
+        // TODO(vkoskela): This should support sending conditions [MAI-452]
+        _pendingData.addAll(data);
     }
 
     private void consumeLoop() {

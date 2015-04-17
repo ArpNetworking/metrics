@@ -47,4 +47,6 @@ public class MedianStatistic extends TPStatistic {
     public Set<String> getAliases() {
         return Collections.singleton("tp50");
     }
+
+    private static final long serialVersionUID = 1L;
 }

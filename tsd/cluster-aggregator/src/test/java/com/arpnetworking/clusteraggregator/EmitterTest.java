@@ -28,6 +28,7 @@ import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.sinks.Sink;
 import com.arpnetworking.tsdcore.statistics.MedianStatistic;
+import com.arpnetworking.utility.BaseActorTest;
 import org.joda.time.Period;
 import org.junit.Assert;
 import org.junit.Before;
