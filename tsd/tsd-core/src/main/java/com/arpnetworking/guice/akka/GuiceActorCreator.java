@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.guice.akka;
 
 import akka.actor.Actor;
-import akka.japi.Creator;
+import akka.actor.IndirectActorProducer;
+import akka.actor.Props;
 import com.google.inject.Injector;
 
 /**
@@ -25,7 +25,16 @@ import com.google.inject.Injector;
 *
 * @author Brandon Arp (barp at groupon dot com)
 */
-public class GuiceActorCreator implements Creator<Actor> {
+public class GuiceActorCreator implements IndirectActorProducer {
+    /**
+     * Creates a <code>Props</code> for this creator.
+     * @param injector the Guice injector to create actors from
+     * @param clazz the class to create
+     * @return a new <code>Props</code>
+     */
+    public static Props props(final Injector injector, final Class<? extends Actor> clazz) {
+        return Props.create(GuiceActorCreator.class, injector, clazz);
+    }
 
     /**
      * Public constructor.
@@ -42,12 +51,19 @@ public class GuiceActorCreator implements Creator<Actor> {
      * {@inheritDoc}
      */
     @Override
-    public Actor create() throws Exception {
+    public Actor produce() {
         return _injector.getInstance(_clazz);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Class<? extends Actor> actorClass() {
+        return _clazz;
     }
 
     private final Injector _injector;
     private final Class<? extends Actor> _clazz;
 
-    private static final long serialVersionUID = 5709175083712063827L;
 }

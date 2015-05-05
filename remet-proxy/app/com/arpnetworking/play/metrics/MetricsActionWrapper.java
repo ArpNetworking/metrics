@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.play.metrics;
 
-import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -93,6 +92,7 @@ public class MetricsActionWrapper extends Action.Simple {
         return metricNameBuilder.toString();
     }
 
+    /*
     private Metrics getMetrics(final Http.Context context) {
         Metrics metrics = (Metrics) context.args.get(METRICS_KEY);
         if (metrics == null) {
@@ -106,6 +106,7 @@ public class MetricsActionWrapper extends Action.Simple {
         }
         return metrics;
     }
+    */
 
     private final MetricsFactory _metricsFactory;
 

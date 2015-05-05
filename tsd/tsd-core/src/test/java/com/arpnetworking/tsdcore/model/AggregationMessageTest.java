@@ -15,18 +15,21 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import akka.util.ByteString;
+import akka.util.ByteStringBuilder;
 import com.arpnetworking.tsdcore.Messages;
 import com.arpnetworking.tsdcore.statistics.TP99Statistic;
 import com.google.common.base.Optional;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.UnknownFieldSet;
-
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.vertx.java.core.buffer.Buffer;
+
+import java.nio.ByteOrder;
 
 /**
  * Tests for the AggregationMessage class.
@@ -45,6 +48,7 @@ public class AggregationMessageTest {
         final Buffer vertxBuffer = message.serialize();
         final byte[] messageBuffer = vertxBuffer.getBytes();
         final byte[] protobufBuffer = protobufMessage.toByteArray();
+        final ByteString byteString = ByteString.fromArray(vertxBuffer.getBytes());
 
         // Assert length
         Assert.assertEquals(protobufBuffer.length + 5, messageBuffer.length);
@@ -60,7 +64,7 @@ public class AggregationMessageTest {
         }
 
         // Deserialize the message
-        final Optional<AggregationMessage> deserializedProtobufMessage = AggregationMessage.deserialize(vertxBuffer);
+        final Optional<AggregationMessage> deserializedProtobufMessage = AggregationMessage.deserialize(byteString);
         Assert.assertTrue(deserializedProtobufMessage.isPresent());
         Assert.assertEquals(protobufMessage, deserializedProtobufMessage.get().getMessage());
         Assert.assertEquals(message.getLength(), deserializedProtobufMessage.get().getLength());
@@ -87,6 +91,7 @@ public class AggregationMessageTest {
         final Buffer vertxBuffer = message.serialize();
         final byte[] messageBuffer = vertxBuffer.getBytes();
         final byte[] protobufBuffer = protobufMessage.toByteArray();
+        final ByteString byteString = ByteString.fromArray(vertxBuffer.getBytes());
 
         // Assert length
         Assert.assertEquals(protobufBuffer.length + 5, messageBuffer.length);
@@ -102,7 +107,7 @@ public class AggregationMessageTest {
         }
 
         // Deserialize the message
-        final Optional<AggregationMessage> deserializedProtobufMessage = AggregationMessage.deserialize(vertxBuffer);
+        final Optional<AggregationMessage> deserializedProtobufMessage = AggregationMessage.deserialize(byteString);
         Assert.assertTrue(deserializedProtobufMessage.isPresent());
         Assert.assertEquals(protobufMessage, deserializedProtobufMessage.get().getMessage());
         Assert.assertEquals(message.getLength(), deserializedProtobufMessage.get().getLength());
@@ -117,78 +122,63 @@ public class AggregationMessageTest {
 
     @Test
     public void testDeserializeWrongLength() {
-        Buffer buffer;
+        ByteString buffer;
         Optional<AggregationMessage> message;
 
         // Too little data
-        buffer = new Buffer();
-        buffer.appendInt(Integer.SIZE / 8 - 1);
+        buffer = new ByteStringBuilder().putInt(Integer.SIZE / 8 - 1, ByteOrder.BIG_ENDIAN).result();
         message = AggregationMessage.deserialize(buffer);
         Assert.assertEquals(Optional.absent(), message);
 
         // Too much data
-        buffer = new Buffer();
-        buffer.appendInt(Integer.SIZE / 8 + 1);
+        buffer = new ByteStringBuilder().putInt(Integer.SIZE / 8 + 1, ByteOrder.BIG_ENDIAN).result();
         message = AggregationMessage.deserialize(buffer);
         Assert.assertEquals(Optional.absent(), message);
 
         // No data
-        buffer = new Buffer();
-        buffer.appendInt(0);
+        buffer = new ByteStringBuilder().putInt(0, ByteOrder.BIG_ENDIAN).result();
         message = AggregationMessage.deserialize(buffer);
         Assert.assertEquals(Optional.absent(), message);
 
         // Negative data
-        buffer = new Buffer();
-        buffer.appendInt(-1);
+        buffer = ByteString.fromInts(-1);
         message = AggregationMessage.deserialize(buffer);
     }
 
     @Test
     public void testDeserializeUnsupportedType() {
-        Buffer buffer;
+        ByteString buffer;
         Optional<AggregationMessage> message;
 
         // Type: 0
-        buffer = new Buffer();
-        buffer.appendInt(Integer.SIZE / 8 + 1);
-        buffer.appendByte((byte) 0);
+        buffer = new ByteStringBuilder().putInt(Integer.SIZE / 8 + 1, ByteOrder.BIG_ENDIAN).putByte((byte) 0).result();
         message = AggregationMessage.deserialize(buffer);
         Assert.assertEquals(Optional.absent(), message);
 
         // Type: 3
-        buffer = new Buffer();
-        buffer.appendInt(Integer.SIZE / 8 + 1);
-        buffer.appendByte((byte) 3);
+        buffer = new ByteStringBuilder().putInt(Integer.SIZE / 8 + 1, ByteOrder.BIG_ENDIAN).putByte((byte) 3).result();
         message = AggregationMessage.deserialize(buffer);
         Assert.assertEquals(Optional.absent(), message);
 
         // Type: -1
-        buffer = new Buffer();
-        buffer.appendInt(Integer.SIZE / 8 + 1);
-        buffer.appendByte((byte) -1);
+        buffer = new ByteStringBuilder().putInt(Integer.SIZE / 8 + 1, ByteOrder.BIG_ENDIAN).putByte((byte) -1).result();
         message = AggregationMessage.deserialize(buffer);
         Assert.assertEquals(Optional.absent(), message);
     }
 
     @Test
     public void testDeserializeInvalidPayload() {
-        Buffer buffer;
+        ByteString buffer;
         Optional<AggregationMessage> message;
 
         // No data
         // NOTE: Some messages will deserialize from an empty buffer.
-        buffer = new Buffer();
-        buffer.appendInt(Integer.SIZE / 8 + 1);
-        buffer.appendByte((byte) 2);
+        buffer = new ByteStringBuilder().putInt(Integer.SIZE / 8 + 1, ByteOrder.BIG_ENDIAN).putByte((byte) 2).result();
         message = AggregationMessage.deserialize(buffer);
         Assert.assertEquals(Optional.absent(), message);
 
         // Just one byte
-        buffer = new Buffer();
-        buffer.appendInt(Integer.SIZE / 8 + 2);
-        buffer.appendByte((byte) 1);
-        buffer.appendByte((byte) 0);
+        buffer = new ByteStringBuilder().putInt(Integer.SIZE / 8 + 2, ByteOrder.BIG_ENDIAN).putByte((byte) 1).putByte((byte) 0).result();
         message = AggregationMessage.deserialize(buffer);
         Assert.assertEquals(Optional.absent(), message);
     }

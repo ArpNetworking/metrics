@@ -19,7 +19,7 @@
   <name>Vertx Extra</name>
   <groupId>com.arpnetworking.metrics.extras</groupId>
   <artifactId>vertx-extra</artifactId>
-  <version>0.3.2</version>
+  <version>0.3.3</version>
   <packaging>jar</packaging>
   <properties>
     <main.basedir>${project.basedir}</main.basedir>
@@ -29,7 +29,7 @@
 
     <!--Dependency versions-->
     <vertx.version>2.1.5</vertx.version>
-    <metrics.client.version>0.3.2</metrics.client.version>
+    <metrics.client.version>0.3.3</metrics.client.version>
     <junit.version>4.12</junit.version>
     <mockito.version>1.10.19</mockito.version>
 

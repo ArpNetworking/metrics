@@ -68,7 +68,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
      * {@inheritDoc}
      */
     @Override
-    public void launch() {
+    public synchronized void launch() {
         LOGGER.debug(String.format("Launching dynamic configuration; this=%s", this));
         _triggerEvaluatorExecutor = Executors.newSingleThreadExecutor();
         _triggerEvaluatorExecutor.submit(_triggerEvaluator);
@@ -78,7 +78,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
      * {@inheritDoc}
      */
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         LOGGER.debug(String.format("Shutting down dynamic configuration; this=%s", this));
         try {
             _triggerEvaluator.stop();
@@ -89,9 +89,9 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
         }
         _triggerEvaluatorExecutor.shutdown();
         try {
-            _triggerEvaluatorExecutor.awaitTermination(30, TimeUnit.SECONDS);
+            _triggerEvaluatorExecutor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
-            LOGGER.error(String.format("Timed-out shutting down dynamic configuration; configuration=%s", this), e);
+            LOGGER.warn("Unable to shutdown trigger evaluator executor", e);
         }
     }
 

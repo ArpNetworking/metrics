@@ -16,8 +16,8 @@
 package com.arpnetworking.play.configuration;
 
 import com.google.common.base.Throwables;
+import play.Application;
 import play.Configuration;
-import play.api.Play;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -35,12 +35,13 @@ public final class ConfigurationHelper {
      *
      * @param configuration Play <code>Configuration</code> instance.
      * @param key The name of the configuration key to interpret as a <code>File</code> reference.
+     * @param app Instance of Play <code>Application</code>.
      * @return Instance of <code>File</code> as defined by key in configuration.
      */
-    public static File getFile(final Configuration configuration, final String key) {
+    public static File getFile(final Configuration configuration, final String key, final Application app) {
         final String pathAsString = configuration.getString(key);
         if (!pathAsString.startsWith("/")) {
-            return Play.current().getFile(pathAsString);
+            return app.getFile(pathAsString);
         }
         return new File(pathAsString);
     }

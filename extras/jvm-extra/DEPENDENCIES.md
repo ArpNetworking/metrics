@@ -1,7 +1,7 @@
 Dependencies
 ========
 
-The following table lists the dependencies of the Java client and their licenses.
+The following table lists the dependencies of the jvm extra and their licenses.
 
 Build Tool Dependencies
 ------------------

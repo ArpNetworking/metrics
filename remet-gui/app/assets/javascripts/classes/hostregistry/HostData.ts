@@ -21,14 +21,14 @@ import Hosts = require('../Hosts');
 import MetricsSoftwareState = require('./MetricsSoftwareState');
 
 class HostData {
-    hostName: string;
+    hostname: string;
     metricsSoftwareState: string;
     connectionStyle: KnockoutComputed<string>;
     connectable: KnockoutComputed<boolean>;
     connection: KnockoutComputed<boolean>;
 
-    constructor(hostName: string, metricsState: string) {
-        this.hostName = hostName;
+    constructor(hostname: string, metricsState: string) {
+        this.hostname = hostname;
         this.metricsSoftwareState = metricsState;
         var self = this;
 
@@ -36,7 +36,7 @@ class HostData {
             var connections: ConnectionVM[] = Hosts.connections();
             for (var i in connections) {
                 var connection = connections[i];
-                if (connection.server == this.hostName) {
+                if (connection.server == this.hostname) {
                     console.log("connectable false");
                     return false;
                 }
@@ -49,7 +49,7 @@ class HostData {
             var i;
             for (i in connections) {
                 var connection = connections[i];
-                if (connection.server == this.hostName) {
+                if (connection.server == this.hostname) {
                     if (connection.connected()) {
                         return "host-connected glyphicon-transfer";
                     } else {

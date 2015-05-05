@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package models.protocol.v2;
 
 import com.arpnetworking.jackson.ObjectMapperFactory;
@@ -150,7 +149,7 @@ public class LogMessagesProcessor implements MessagesProcessor {
         }
 
         // CHECKSTYLE.OFF: IllegalInstantiation - we need to turn the bytes into a String
-        final String line = new String(rawReport.getLine());
+        final String line = rawReport.getLineAsString();
         // CHECKSTYLE.ON: IllegalInstantiation
         final List<String> matchingRegexes = new ArrayList<>();
         for (final String regex : regexes) {

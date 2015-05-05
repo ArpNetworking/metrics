@@ -354,7 +354,8 @@ public class TsdQueryLogSinkTest {
             + "    \"processId\":\"<PROCESSID>\","
             + "    \"threadId\":\"<THREADID>\""
             + "  },"
-            + "  \"id\":\"<ID>\""
+            + "  \"id\":\"<ID>\","
+            + "  \"version\":\"0\""
             + "}";
 
     private static final Map<String, List<Quantity>> TEST_SERIALIZATION_TIMERS = createQuantityMap(
@@ -548,7 +549,8 @@ public class TsdQueryLogSinkTest {
             + "    \"processId\":\"<PROCESSID>\","
             + "    \"threadId\":\"<THREADID>\""
             + "  },"
-            + "  \"id\":\"<ID>\""
+            + "  \"id\":\"<ID>\","
+            + "  \"version\":\"0\""
             + "}";
 
     static {

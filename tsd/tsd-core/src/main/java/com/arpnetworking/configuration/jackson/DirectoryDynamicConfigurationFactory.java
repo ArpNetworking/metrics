@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.configuration.jackson;
 
-import com.arpnetworking.configuration.DirectoryTrigger;
+import com.arpnetworking.configuration.triggers.DirectoryTrigger;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.collect.Lists;
 

@@ -26,6 +26,7 @@ Compile Dependencies
 
 Project                    | License                    | Project link
 ---------------------------|----------------------------|-------------
+Guava                      | Apache License 2           | https://code.google.com/p/guava-libraries/
 Jackson                    | Apache License 2           | http://jackson.codehaus.org/
 Logback                    | Eclipse Public License 1.0 | http://logback.qos.ch/
 SLF4J                      | MIT                        | http://www.slf4j.org/

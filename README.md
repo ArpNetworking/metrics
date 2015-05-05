@@ -24,11 +24,12 @@ Please refer to the README under each project for information on how to build an
 |Yammer Extra      |[Maven](http://maven.apache.org/)                                                                   |[README](extras/yammer-extra/README.md)  |JDK7, Maven 3.0.5+                     |
 |JVM Extra         |[Maven](http://maven.apache.org/)                                                                   |[README](extras/jvm-extra/README.md)     |JDK7, Maven 3.0.5+                     |
 
-Links to prerequisites:
+### Prerequisites
+
 * [JDK7](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
-* [Maven 3.0.5+](http://maven.apache.org/download.cgi)
+* [Maven 3.2.5+](http://maven.apache.org/download.cgi)
 * [Protobuf 2.5.0](https://code.google.com/p/protobuf/downloads/list)
-* [Play 2.3.0](http://www.playframework.com/download)
+* [Play 2.4.0](http://www.playframework.com/download)
 * [RVM](https://rvm.io/rvm/install) (w/ Ruby 1.9.3+)
 * [NodeJs 0.10.26+](http://nodejs.org/download/)
 * [Typescript 1.0.1.0+](http://www.typescriptlang.org/#Download)

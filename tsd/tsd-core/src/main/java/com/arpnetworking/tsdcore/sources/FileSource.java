@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Produce instances of <code>T</code>from a file. Supports rotating files
@@ -63,6 +64,11 @@ public final class FileSource<T> extends BaseSource {
     public void stop() {
         _tailer.stop();
         _tailerExecutor.shutdown();
+        try {
+            _tailerExecutor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (final InterruptedException e) {
+            LOGGER.warn("Unable to shutdown tailer executor", e);
+        }
     }
 
     /**
@@ -84,7 +90,7 @@ public final class FileSource<T> extends BaseSource {
     }
 
     // NOTE: Package private for testing
-    /*package private*/FileSource(final Builder<T> builder, final Logger logger) {
+    /* package private */ FileSource(final Builder<T> builder, final Logger logger) {
         super(builder);
         _logger = logger;
         _sourceFile = builder._sourceFile;

@@ -56,36 +56,39 @@ public class RandomHostProvider extends UntypedActor {
 
             if (System.currentTimeMillis() - _lastTime > INTERVAL.getMillis()) {
                 final Host newHost = new DefaultHost.Builder()
-                        .setHostName("test-app" + _hostAdd + ".example.com")
+                        .setHostname("test-app" + _hostAdd + ".example.com")
                         .setMetricsSoftwareState(MetricsSoftwareState.NOT_INSTALLED)
+                        .setCluster("cluster" + (_hostAdd / 10 + 1))
                         .build();
                 LOGGER.debug()
                         .setMessage("Found a new host")
                         .addData("actor", self().toString())
-                        .addData("hostname", newHost.getHostName())
+                        .addData("hostname", newHost.getHostname())
                         .log();
                 _hostRepository.addOrUpdateHost(newHost);
                 if (_hostUpdateOne > 0) {
                     final Host updatedHost = new DefaultHost.Builder()
-                            .setHostName("test-app" + _hostUpdateOne + ".example.com")
+                            .setHostname("test-app" + _hostUpdateOne + ".example.com")
                             .setMetricsSoftwareState(MetricsSoftwareState.OLD_VERSION_INSTALLED)
+                            .setCluster("cluster" + (_hostUpdateOne / 10 + 1))
                             .build();
                     LOGGER.debug()
                             .setMessage("Found an updated host")
                             .addData("actor", self().toString())
-                            .addData("hostname", updatedHost.getHostName())
+                            .addData("hostname", updatedHost.getHostname())
                             .log();
                     _hostRepository.addOrUpdateHost(updatedHost);
                 }
                 if (_hostUpdateTwo > 0) {
                     final Host updatedHost = new DefaultHost.Builder()
-                            .setHostName("test-app" + _hostUpdateTwo + ".example.com")
+                            .setHostname("test-app" + _hostUpdateTwo + ".example.com")
+                            .setCluster("cluster" + (_hostUpdateTwo / 10 + 1))
                             .setMetricsSoftwareState(MetricsSoftwareState.LATEST_VERSION_INSTALLED)
                             .build();
                     LOGGER.debug()
                             .setMessage("Found an updated host")
                             .addData("actor", self().toString())
-                            .addData("hostname", updatedHost.getHostName())
+                            .addData("hostname", updatedHost.getHostname())
                             .log();
                     _hostRepository.addOrUpdateHost(updatedHost);
                 }

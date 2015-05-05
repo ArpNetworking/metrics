@@ -92,6 +92,14 @@ public final class ClusterAggregatorConfiguration {
         return _rebalanceConfiguration;
     }
 
+    public int getAggregationPort() {
+        return _aggregationPort;
+    }
+
+    public String getAggregationHost() {
+        return _aggregationHost;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -105,6 +113,8 @@ public final class ClusterAggregatorConfiguration {
     private ClusterAggregatorConfiguration(final Builder builder) {
         _httpHost = builder._httpHost;
         _httpPort = builder._httpPort;
+        _aggregationHost = builder._aggregationHost;
+        _aggregationPort = builder._aggregationPort;
         _logDirectory = builder._logDirectory;
         _akkaConfiguration = Maps.newHashMap(builder._akkaConfiguration);
         _pipelineConfiguration = builder._pipelineConfiguration;
@@ -117,6 +127,8 @@ public final class ClusterAggregatorConfiguration {
     private final File _logDirectory;
     private final String _httpHost;
     private final int _httpPort;
+    private final String _aggregationHost;
+    private final int _aggregationPort;
     private final Map<String, ?> _akkaConfiguration;
     private final File _pipelineConfiguration;
     private final Period _minConnectionTimeout;
@@ -151,6 +163,17 @@ public final class ClusterAggregatorConfiguration {
         }
 
         /**
+         * The aggregation server host address to bind to. Cannot be null or empty.
+         *
+         * @param value The host address to bind to.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setAggregationHost(final String value) {
+            _aggregationHost = value;
+            return this;
+        }
+
+        /**
          * The http port to listen on. Cannot be null, must be between 1 and
          * 65535 (inclusive).
          *
@@ -159,6 +182,18 @@ public final class ClusterAggregatorConfiguration {
          */
         public Builder setHttpPort(final Integer value) {
             _httpPort = value;
+            return this;
+        }
+
+        /**
+         * The http port to listen on. Cannot be null, must be between 1 and
+         * 65535 (inclusive). Defaults to 7065.
+         *
+         * @param value The port to listen on.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setAggregationPort(final Integer value) {
+            _aggregationPort = value;
             return this;
         }
 
@@ -247,10 +282,16 @@ public final class ClusterAggregatorConfiguration {
 
         @NotNull
         @NotEmpty
-        private String _httpHost;
+        private String _httpHost = "0.0.0.0";
         @NotNull
         @Range(min = 1, max = 65535)
-        private Integer _httpPort;
+        private Integer _httpPort = 7066;
+        @NotNull
+        @NotEmpty
+        private String _aggregationHost = "0.0.0.0";
+        @NotNull
+        @Range(min = 1, max = 65535)
+        private Integer _aggregationPort = 7065;
         @NotNull
         private File _logDirectory;
         @NotNull

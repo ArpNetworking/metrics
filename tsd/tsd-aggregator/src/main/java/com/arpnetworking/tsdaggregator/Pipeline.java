@@ -55,7 +55,7 @@ public class Pipeline implements Launchable {
      * Launch the pipeline.
      */
     @Override
-    public void launch() {
+    public synchronized void launch() {
         LOGGER.info()
                 .setMessage("Launching pipeline")
                 .addData("configuration", _pipelineConfiguration)
@@ -106,7 +106,7 @@ public class Pipeline implements Launchable {
      * Shutdown the pipeline.
      */
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         LOGGER.info()
                 .setMessage("Stopping pipeline")
                 .addData("pipeline", _pipelineConfiguration.getName())

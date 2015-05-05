@@ -44,7 +44,7 @@ public final class NoLimitMetricsLimiter implements MetricsLimiter {
      * {@inheritDoc}
      */
     @Override
-    public void launch() {
+    public synchronized void launch() {
         _isRunning = true;
         // Nothing to do
     }
@@ -53,7 +53,7 @@ public final class NoLimitMetricsLimiter implements MetricsLimiter {
      * {@inheritDoc}
      */
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         _isRunning = false;
         // Nothing to do
     }

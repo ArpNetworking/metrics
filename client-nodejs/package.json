@@ -1,7 +1,7 @@
 {
   "name": "tsd-metrics-client",
   "preferGlobal": false,
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Node JS class for publishing metrics as time series data (TSD).",
   "scripts": {
     "prepublish": "grunt",

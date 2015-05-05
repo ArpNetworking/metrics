@@ -24,6 +24,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ClientConnectionManager;
@@ -70,11 +71,22 @@ public abstract class HttpPostSink extends BaseSink {
                         LOGGER.debug(getName() + ": Post response ok");
                     } else {
                         LOGGER.warn(
-                                getName() + ": Post was not accepted; uri=" + _uri + " status=" + responseStatusCode);
+                                String.format(
+                                        "%s: Post was not accepted; uri=%s, status=%d, requestSize=%d",
+                                        getName(),
+                                        _uri,
+                                        responseStatusCode,
+                                        getContentLength(request)));
                     }
                     _postRequests.incrementAndGet();
                 } catch (final IOException e) {
-                    LOGGER.error(getName() + ": Error posting; uri=" + _uri, e);
+                    LOGGER.error(
+                            String.format(
+                                    "%s: Error posting; uri=%s, requestSize=%d",
+                                    getName(),
+                                    _uri,
+                                    getContentLength(request)),
+                            e);
                 } finally {
                     if (responseEntity != null) {
                         try {
@@ -88,6 +100,17 @@ public abstract class HttpPostSink extends BaseSink {
                 }
             }
         }
+    }
+
+    private static long getContentLength(final HttpUriRequest request) {
+        if (request instanceof HttpEntityEnclosingRequestBase) {
+            final HttpEntityEnclosingRequestBase entityRequest = (HttpEntityEnclosingRequestBase) request;
+            final HttpEntity entity = entityRequest.getEntity();
+            if (entity != null) {
+                return entity.getContentLength();
+            }
+        }
+        return -1;
     }
 
     /**

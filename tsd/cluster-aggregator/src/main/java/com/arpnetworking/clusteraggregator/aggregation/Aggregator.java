@@ -39,6 +39,7 @@ import org.joda.time.Duration;
 import org.joda.time.Period;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -104,6 +105,9 @@ public class Aggregator extends UntypedActor {
     @Override
     public void onReceive(final Object message) throws Exception {
         if (message instanceof AggregatedData) {
+            if (_log.isDebugEnabled()) {
+                _log.debug(String.format("Processing an AggregatedData; message=%s", message));
+            }
             processAggregationMessage((AggregatedData) message);
         } else if (message instanceof BucketCheck) {
             if (_initialized) {
@@ -253,9 +257,15 @@ public class Aggregator extends UntypedActor {
     private AggregatedData.Builder _resultBuilder;
     private static final Duration AGG_TIMEOUT = Duration.standardMinutes(1);
 
-    private static final class BucketCheck {}
+    private static final class BucketCheck implements Serializable {
+        private static final long serialVersionUID = 1L;
+    }
 
-    private static final class UpdateBookkeeper {}
+    private static final class UpdateBookkeeper implements Serializable {
+        private static final long serialVersionUID = 1L;
+    }
 
-    private static final class ShutdownAggregator {}
+    private static final class ShutdownAggregator implements Serializable {
+        private static final long serialVersionUID = 1L;
+    }
 }

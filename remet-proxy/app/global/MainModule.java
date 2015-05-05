@@ -31,6 +31,7 @@ import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.StreamContext;
 import play.Configuration;
 
@@ -61,6 +62,7 @@ public class MainModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("StreamContext")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef getStreamContext(final ActorSystem system, final MetricsFactory metricsFactory) {
         return system.actorOf(Props.create(StreamContext.class, metricsFactory));
     }
@@ -68,16 +70,18 @@ public class MainModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("FileSourceManager")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef getFileSourceManager(final Injector injector, final ActorSystem system) {
         return system.actorOf(
-                Props.create(
-                        new GuiceActorCreator(
-                                injector,
-                                FileSourcesManager.class)), "FileSourceManagerActor");
+                GuiceActorCreator.props(
+                        injector,
+                        FileSourcesManager.class),
+                "FileSourceManagerActor");
     }
 
     @Provides
     @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private MetricsFactory getMetricsFactory(final Configuration configuration) {
         return new TsdMetricsFactory.Builder()
                 .setSinks(Collections.singletonList(
@@ -98,7 +102,7 @@ public class MainModule extends AbstractModule {
 
         @Override
         public ActorRef get() {
-            return _system.actorOf(Props.create(new GuiceActorCreator(_injector, LogScanner.class)));
+            return _system.actorOf(GuiceActorCreator.props(_injector, LogScanner.class));
         }
 
         private final Injector _injector;
@@ -114,7 +118,7 @@ public class MainModule extends AbstractModule {
 
         @Override
         public ActorRef get() {
-            return _system.actorOf(Props.create(new GuiceActorCreator(_injector, JvmMetricsCollector.class)));
+            return _system.actorOf(GuiceActorCreator.props(_injector, JvmMetricsCollector.class));
         }
 
         private final Injector _injector;

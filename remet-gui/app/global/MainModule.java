@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package global;
 
 import akka.actor.Actor;
@@ -28,6 +27,8 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.impl.TsdQueryLogSink;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.remet.gui.alerts.AlertRepository;
+import com.arpnetworking.remet.gui.expressions.ExpressionRepository;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.impl.HostProviderScheduler;
 import com.google.inject.AbstractModule;
@@ -35,6 +36,7 @@ import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import play.Configuration;
 import play.inject.ApplicationLifecycle;
 import play.libs.F;
@@ -58,43 +60,35 @@ public class MainModule extends AbstractModule {
      */
     @Override
     protected void configure() {
+        bind(HostRepository.class)
+                .toProvider(HostRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(AlertRepository.class)
+                .toProvider(AlertRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(ExpressionRepository.class)
+                .toProvider(ExpressionRepositoryProvider.class)
+                .asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderSchedulerProvider.class)
                 .asEagerSingleton();
     }
 
-    @Provides
-    @Singleton
-    private HostRepository getHostRepository(
-            final Configuration config,
-            final Injector injector,
-            final ApplicationLifecycle lifecycle) {
-        final HostRepository hostRepository = injector.getInstance(
-                ConfigurationHelper.<HostRepository>getType(config, "hostRepository.type"));
-        hostRepository.open();
-        lifecycle.addStopHook(new Callable<F.Promise<Void>>() {
-            @Override
-            public F.Promise<Void> call() throws Exception {
-                hostRepository.close();
-                return F.Promise.pure(null);
-            }
-        });
-        return hostRepository;
-    }
-
     @Singleton
     @Named("HostProviderProps")
     @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Props getHostProviderProps(final Injector injector, final Configuration config) {
-        return Props.create(
-                new GuiceActorCreator(
+        return
+                GuiceActorCreator.props(
                         injector,
-                        ConfigurationHelper.<Actor>getType(config, "hostProvider.type")));
+                        ConfigurationHelper.<Actor>getType(config, "hostProvider.type"));
     }
 
     @Provides
     @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private MetricsFactory getMetricsFactory(final Configuration configuration) {
         return new TsdMetricsFactory.Builder()
                 .setSinks(Collections.singletonList(
@@ -104,6 +98,102 @@ public class MainModule extends AbstractModule {
                                 .build()
                 ))
                 .build();
+    }
+
+    private static final class HostRepositoryProvider implements Provider<HostRepository> {
+
+        @Inject
+        public HostRepositoryProvider(
+                final Injector injector,
+                final Configuration configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public HostRepository get() {
+            final HostRepository hostRepository = _injector.getInstance(
+                    ConfigurationHelper.<HostRepository>getType(_configuration, "hostRepository.type"));
+            hostRepository.open();
+            _lifecycle.addStopHook(new Callable<F.Promise<Void>>() {
+                @Override
+                public F.Promise<Void> call() throws Exception {
+                    hostRepository.close();
+                    return F.Promise.pure(null);
+                }
+            });
+            return hostRepository;
+        }
+
+        private final Injector _injector;
+        private final Configuration _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
+    private static final class ExpressionRepositoryProvider implements Provider<ExpressionRepository> {
+
+        @Inject
+        public ExpressionRepositoryProvider(
+                final Injector injector,
+                final Configuration configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public ExpressionRepository get() {
+            final ExpressionRepository expressionRepository = _injector.getInstance(
+                    ConfigurationHelper.<ExpressionRepository>getType(_configuration, "expressionRepository.type"));
+            expressionRepository.open();
+            _lifecycle.addStopHook(new Callable<F.Promise<Void>>() {
+                @Override
+                public F.Promise<Void> call() throws Exception {
+                    expressionRepository.close();
+                    return F.Promise.pure(null);
+                }
+            });
+            return expressionRepository;
+        }
+
+        private final Injector _injector;
+        private final Configuration _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
+    private static final class AlertRepositoryProvider implements Provider<AlertRepository> {
+
+        @Inject
+        public AlertRepositoryProvider(
+                final Injector injector,
+                final Configuration configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public AlertRepository get() {
+            final AlertRepository alertRepository = _injector.getInstance(
+                    ConfigurationHelper.<AlertRepository>getType(_configuration, "alertRepository.type"));
+            alertRepository.open();
+            _lifecycle.addStopHook(new Callable<F.Promise<Void>>() {
+                @Override
+                public F.Promise<Void> call() throws Exception {
+                    alertRepository.close();
+                    return F.Promise.pure(null);
+                }
+            });
+            return alertRepository;
+        }
+
+        private final Injector _injector;
+        private final Configuration _configuration;
+        private final ApplicationLifecycle _lifecycle;
     }
 
     private static final class HostProviderSchedulerProvider implements Provider<ActorRef> {

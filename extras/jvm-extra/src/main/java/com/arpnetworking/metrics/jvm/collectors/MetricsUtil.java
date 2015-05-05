@@ -15,8 +15,6 @@
  */
 package com.arpnetworking.metrics.jvm.collectors;
 
-import java.util.Locale;
-
 /**
  * An utility class of JVM metrics.
  *
@@ -31,15 +29,20 @@ import java.util.Locale;
      * @return A camel cased version of the given string.
      */
     /* package private */ static String convertToSnakeCase(final String string) {
-        final StringBuilder result = new StringBuilder();
-        final String[] parts = string.split(" ");
-        for (final String part : parts) {
-            result.append(part.substring(0, 1).toLowerCase(Locale.getDefault()))
-                    .append(part.substring(1));
-            result.append("_");
+        final StringBuilder builder = new StringBuilder();
+        boolean isPrevCharLowerCase = false;
+        for (int index = 0; index < string.length(); index++) {
+            final char character = string.charAt(index);
+            if (character == ' ') {
+                builder.append("_");
+            } else if (Character.isUpperCase(character) && isPrevCharLowerCase) {
+                builder.append("_").append(Character.toLowerCase(character));
+            } else {
+                builder.append(Character.toLowerCase(character));
+            }
+            isPrevCharLowerCase = Character.isLowerCase(character);
         }
-        final String resultString = result.toString();
-        return resultString.substring(0, resultString.length() - 1);
+        return builder.toString();
     }
 
     private MetricsUtil() {}

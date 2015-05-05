@@ -18,8 +18,12 @@ package com.arpnetworking.tsdcore.sinks;
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.statistics.MeanStatistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
+import org.joda.time.Period;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,7 +62,22 @@ public class RandomMetricNameFilterSinkTest {
         final int count = 10000;
         final List<AggregatedData> data = Lists.newArrayListWithCapacity(count);
         for (int x = 0; x < count; x++) {
-            data.add(TestBeanFactory.createAggregatedData());
+            final String cluster = "cluster" + x;
+            final String metric = "metric" + x;
+            final String service = "service" + x;
+            final Statistic statistic = new MeanStatistic();
+            final Period period = Period.minutes(1);
+            final FQDSN fqdsn = TestBeanFactory.createFQDSNBuilder()
+                    .setCluster(cluster)
+                    .setMetric(metric)
+                    .setService(service)
+                    .setStatistic(statistic)
+                    .build();
+            data.add(
+                    TestBeanFactory.createAggregatedDataBuilder()
+                            .setFQDSN(fqdsn)
+                            .setPeriod(period)
+                            .build());
         }
         sink.recordAggregateData(data);
         Mockito.verify(_mockSink).recordAggregateData(_aggregatedData.capture(), Mockito.eq(Collections.<Condition>emptyList()));

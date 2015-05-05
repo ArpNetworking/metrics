@@ -16,9 +16,14 @@
 
 package models.messages;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
+import com.google.common.primitives.Bytes;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Message class to hold data about a log entry that should be sent to clients.
@@ -33,6 +38,8 @@ public class LogLine {
      * @param file The name of the log file
      * @param line The raw log line.
      */
+    // TODO(vkoskela): Investigate the use of immutable rotating buffers [MAI-489]
+    @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
     public LogLine(
             final Path file,
             final byte[] line) {
@@ -44,8 +51,20 @@ public class LogLine {
         return _file;
     }
 
-    public byte[] getLine() {
-        return _line;
+    public List<Byte> getLine() {
+        return Collections.unmodifiableList(Bytes.asList(_line));
+    }
+
+    /**
+     * Return the log line as a <code>String</code>. Callers should cache this
+     * value. The data is interpreted as UTF-8 by default.
+     *
+     * @return The line data as a <code>String</code> interpreted as UTF-8.
+     */
+    public String getLineAsString() {
+        // CHECKSTYLE.OFF: IllegalInstantiation - Unavoidable.
+        return new String(_line, Charsets.UTF_8);
+        // CHECKSTYLE.ON: IllegalInstantiation
     }
 
     /**

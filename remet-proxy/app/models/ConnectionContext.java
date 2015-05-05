@@ -112,9 +112,6 @@ public class ConnectionContext extends UntypedActor {
             _metrics.incrementCounter(UNKNOWN_COUNTER);
             if (message instanceof Command) {
                 _metrics.incrementCounter(UNKONOWN_COMMAND_COUNTER);
-                final Command command = (Command) message;
-                final ObjectNode commandNode = (ObjectNode) command.getCommand();
-                final String commandString = commandNode.get("command").asText();
                 LOGGER.warn()
                         .setMessage("Unsupported command")
                         .addData("actor", self().toString())

@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.configuration;
 
+import com.arpnetworking.configuration.triggers.FileTrigger;
 import com.google.common.base.Charsets;
 import org.junit.Assert;
 import org.junit.BeforeClass;

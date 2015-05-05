@@ -18,6 +18,7 @@ package com.arpnetworking.tsdcore.model;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import net.sf.oval.constraint.Min;
@@ -170,7 +171,7 @@ public final class AggregatedData implements Serializable {
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("FQDSN", _fqdsn)
                 .add("Value", _value)
-                .add("Samples", _samples)
+                .add("SamplesSize", _samples.size())
                 .add("PopulationSize", _populationSize)
                 .add("Period", _period)
                 .add("Start", _start)
@@ -287,6 +288,38 @@ public final class AggregatedData implements Serializable {
         public Builder setHost(final String value) {
             _host = value;
             return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public AggregatedData build() {
+            if (_fqdsn == null) {
+                throw new IllegalStateException("fqdsn must not be null");
+            }
+            if (_value == null) {
+                throw new IllegalStateException("value must not be null");
+            }
+            if (_samples == null) {
+                throw new IllegalStateException("samples must not be null");
+            }
+            if (_populationSize == null) {
+                throw new IllegalStateException("populationSize must not be null");
+            }
+            if (_populationSize < 0) {
+                throw new IllegalStateException("populationSize must be >= 0");
+            }
+            if (_start == null) {
+                throw new IllegalStateException("start must not be null");
+            }
+            if (_period == null) {
+                throw new IllegalStateException("period must not be null");
+            }
+            if (Strings.isNullOrEmpty(_host)) {
+                throw new IllegalStateException("host must not be null or empty");
+            }
+            return new AggregatedData(this);
         }
 
         @NotNull

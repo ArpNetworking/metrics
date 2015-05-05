@@ -41,6 +41,7 @@
     </appender>
 
     <logger name="com.arpnetworking" level="INFO" />
+    <logger name="org.reflections.Reflections" level="ERROR" />
 
     <root level="WARN">
         <appender-ref ref="clusteragg-async"/>

@@ -15,13 +15,12 @@
  */
 package controllers;
 
+import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostQuery;
-import com.arpnetworking.remet.gui.hosts.HostQueryResult;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import models.PagedContainer;
@@ -32,6 +31,8 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 import java.util.Map;
+import java.util.Optional;
+import javax.inject.Singleton;
 
 /**
  * Real time metrics web interface (ReMetGui) host controller. Provides the
@@ -40,6 +41,7 @@ import java.util.Map;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Singleton
 public class HostController extends Controller {
 
     /**
@@ -50,7 +52,7 @@ public class HostController extends Controller {
      */
     @Inject
     public HostController(final Configuration configuration, final HostRepository hostRepository) {
-        this(configuration.getInt("hosts.limit", DEFAULT_LIMIT), hostRepository);
+        this(configuration.getInt("hosts.limit", MAX_LIMIT), hostRepository);
     }
 
     /**
@@ -58,6 +60,7 @@ public class HostController extends Controller {
      *
      * @param name The complete or partial name of the host. Optional.
      * @param state The state of the metrics software on the host. Optional.
+     * @param cluster The name of the cluster for the host. Optional.
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
      * @param sort_by The field to sort results by. Optional.
@@ -67,6 +70,7 @@ public class HostController extends Controller {
     public Result query(
             final String name,
             final String state,
+            final String cluster,
             final Integer limit,
             final Integer offset,
             final String sort_by) {
@@ -85,12 +89,13 @@ public class HostController extends Controller {
         } catch (final IllegalArgumentException iae) {
             return badRequest("Invalid sort_by argument");
         }
-        final Optional<String> argName = Optional.fromNullable(name);
-        final Optional<MetricsSoftwareState> argState = Optional.fromNullable(stateValue);
-        final Optional<Integer> argLimit = Optional.of(MoreObjects.firstNonNull(limit, _defaultLimit));
-        final Optional<Integer> argOffset = Optional.fromNullable(offset);
-        final Optional<HostQuery.Field> argSortBy = Optional.fromNullable(sortByValue);
-        if (argLimit.isPresent() && argLimit.get() < 0) {
+        final Optional<String> argName = Optional.ofNullable(name);
+        final Optional<MetricsSoftwareState> argState = Optional.ofNullable(stateValue);
+        final Optional<String> argCluster = Optional.ofNullable(cluster);
+        final Optional<Integer> argOffset = Optional.ofNullable(offset);
+        final Optional<HostQuery.Field> argSortBy = Optional.ofNullable(sortByValue);
+        final int argLimit = Math.min(_maxLimit, Optional.of(MoreObjects.firstNonNull(limit, _maxLimit)).get());
+        if (argLimit < 0) {
             return badRequest("Invalid limit; must be greater than or equal to 0");
         }
         if (argOffset.isPresent() && argOffset.get() < 0) {
@@ -105,40 +110,44 @@ public class HostController extends Controller {
         if (argState.isPresent()) {
             conditions.put("state", argState.get().toString());
         }
+        if (argCluster.isPresent()) {
+            conditions.put("cluster", argCluster.get());
+        }
         if (argSortBy.isPresent()) {
             conditions.put("sort_by", argSortBy.get().toString());
         }
 
         // Build a host repository query
         final HostQuery query = _hostRepository.createQuery()
-            .hostName(argName)
-            .metricsSoftwareState(argState)
-            .limit(argLimit)
-            .offset(argOffset)
-            .sortBy(argSortBy);
+                .partialHostname(argName)
+                .metricsSoftwareState(argState)
+                .cluster(argCluster)
+                .limit(argLimit)
+                .offset(argOffset)
+                .sortBy(argSortBy);
 
         // Execute the query
-        final HostQueryResult result = query.execute();
+        final QueryResult<Host> result = query.execute();
 
         // Wrap the query results and return as JSON
         return ok(Json.toJson(new PagedContainer<Host>(
-                result.hosts(),
+                result.values(),
                 new Pagination(
-                        "hosts/v1/query",
+                        request().path(),
                         result.total(),
-                        result.hosts().size(),
+                        result.values().size(),
                         argLimit,
                         argOffset,
                         conditions))));
     }
 
-    private HostController(final int defaultLimit, final HostRepository hostRepository) {
-        _defaultLimit = defaultLimit;
+    private HostController(final int maxLimit, final HostRepository hostRepository) {
+        _maxLimit = maxLimit;
         _hostRepository = hostRepository;
     }
 
-    private final int _defaultLimit;
+    private final int _maxLimit;
     private final HostRepository _hostRepository;
 
-    private static final int DEFAULT_LIMIT = 1000;
+    private static final int MAX_LIMIT = 1000;
 }

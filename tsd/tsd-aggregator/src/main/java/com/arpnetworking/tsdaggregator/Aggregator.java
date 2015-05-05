@@ -27,23 +27,15 @@ import com.arpnetworking.utility.observer.Observer;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.Duration;
 import org.joda.time.Period;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.LongAccumulator;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Performs aggregation of <code>Record</code> instances per <code>Period</code>.
@@ -57,7 +49,7 @@ public final class Aggregator implements Observer, Launchable {
      * {@inheritDoc}
      */
     @Override
-    public void launch() {
+    public synchronized void launch() {
         LOGGER.debug()
                 .setMessage("Launching aggregator")
                 .addData("aggregator", this)
@@ -68,7 +60,19 @@ public final class Aggregator implements Observer, Launchable {
             _periodCloserExecutor = Executors.newFixedThreadPool(_periods.size());
             // TODO(vkoskela): Convert to scheduled thread executor [MAI-468]
             for (final Period period : _periods) {
-                final PeriodCloser periodCloser = new PeriodCloser(period);
+                final PeriodCloser periodCloser = new PeriodCloser.Builder()
+                        .setPeriod(period)
+                        .setBucketBuilder(
+                                new Bucket.Builder()
+                                        .setCounterStatistics(_counterStatistics)
+                                        .setGaugeStatistics(_gaugeStatistics)
+                                        .setTimerStatistics(_timerStatistics)
+                                        .setPeriod(period)
+                                        .setCluster(_cluster)
+                                        .setHost(_host)
+                                        .setService(_service)
+                                        .setSink(_sink))
+                        .build();
                 _periodClosers.add(periodCloser);
                 _periodCloserExecutor.submit(periodCloser);
             }
@@ -79,7 +83,7 @@ public final class Aggregator implements Observer, Launchable {
      * {@inheritDoc}
      */
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         LOGGER.debug()
                 .setMessage("Stopping aggregator")
                 .addData("aggregator", this)
@@ -91,6 +95,11 @@ public final class Aggregator implements Observer, Launchable {
         _periodClosers.clear();
         if (_periodCloserExecutor != null) {
             _periodCloserExecutor.shutdown();
+            try {
+                _periodCloserExecutor.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (final InterruptedException e) {
+                LOGGER.warn("Unable to shutdown period closer executor", e);
+            }
             _periodCloserExecutor = null;
         }
     }
@@ -112,53 +121,8 @@ public final class Aggregator implements Observer, Launchable {
                 .setMessage("Processing record")
                 .addData("record", record)
                 .log();
-        for (final Map.Entry<Period, ConcurrentSkipListMap<DateTime, Bucket>> entry : _openBuckets.entrySet()) {
-            final Period period = entry.getKey();
-            final ConcurrentSkipListMap<DateTime, Bucket> periodBuckets = entry.getValue();
-
-            // Discard records prior to earliest acceptable date
-            final DateTime periodThreshold = _periodThresholds.get(period);
-            if (periodThreshold.isAfter(record.getTime())) {
-                LOGGER.warn()
-                        .setMessage("Discarding record")
-                        .addData("reason", "Before period threshold")
-                        .addData("record", record)
-                        .addData("period", period)
-                        .addData("threshold", periodThreshold)
-                        .log();
-                return;
-            }
-
-            // Either find an existing bucket for the record or create a new one
-            final DateTime start = getStartTime(record.getTime(), period);
-            Bucket bucket = periodBuckets.get(start);
-            if (bucket == null) {
-                final Bucket newBucket = new Bucket.Builder()
-                        .setSink(_sink)
-                        .setCluster(_cluster)
-                        .setService(_service)
-                        .setHost(_host)
-                        .setStart(start)
-                        .setPeriod(period)
-                        .setCounterStatistics(_counterStatistics)
-                        .setGaugeStatistics(_gaugeStatistics)
-                        .setTimerStatistics(_timerStatistics)
-                        .build();
-                bucket = periodBuckets.putIfAbsent(start, newBucket);
-                if (bucket == null) {
-                    LOGGER.debug()
-                            .setMessage("Created new bucket")
-                            .addData("bucket", newBucket)
-                            .log();
-                    bucket = newBucket;
-                }
-            }
-
-            // Add the record to the bucket
-            bucket.add(record);
-
-            // Track the latest record start time
-            _lastRecordTime.accumulate(record.getTime().getMillis());
+        for (final PeriodCloser periodCloser : _periodClosers) {
+            periodCloser.record(record);
         }
     }
 
@@ -176,60 +140,9 @@ public final class Aggregator implements Observer, Launchable {
                 .add("TimerStatistics", _timerStatistics)
                 .add("CounterStatistics", _counterStatistics)
                 .add("GaugeStatistics", _gaugeStatistics)
-                .add("PeriodThresholds", _periodThresholds)
-                .add("OpenBuckets", _openBuckets)
-                .add("LastRecordTime", _lastRecordTime)
+                .add("PeriodClosers", _periodClosers)
                 .toString();
 
-    }
-
-    /* package private */ static void rotate(
-            final DateTime now,
-            final Period period,
-            final ConcurrentSkipListMap<DateTime, Bucket> periodBuckets,
-            final Map<Period, DateTime> periodThresholds) {
-        final DateTime expirationDate = now.minus(getPeriodTimeout(period));
-        final SortedMap<DateTime, Bucket> expiredBuckets = periodBuckets.headMap(expirationDate);
-        final int expiredCount = expiredBuckets.size();
-        for (final Map.Entry<DateTime, Bucket> expiredBucketEntry : expiredBuckets.entrySet()) {
-            final Bucket bucket = expiredBucketEntry.getValue();
-
-            // Update the period threshold
-            final DateTime bucketThreshold = bucket.getThreshold();
-            final DateTime periodThreshold = periodThresholds.get(period);
-            if (bucketThreshold.isAfter(periodThreshold)) {
-                periodThresholds.put(period, bucketThreshold);
-            }
-
-            // Remove and close the bucket
-            periodBuckets.remove(expiredBucketEntry.getKey());
-            bucket.close();
-
-            LOGGER.debug()
-                    .setMessage("Closed bucket")
-                    .addData("bucket", bucket)
-                    .log();
-        }
-
-        LOGGER.debug().setMessage("Rotated").addData("count", expiredCount).log();
-    }
-
-    /* package private */ static DateTime getStartTime(final DateTime dateTime, final Period period) {
-        // This effectively uses Jan 1, 1970 at 00:00:00 as the anchor point
-        // for non-standard bucket sizes (e.g. 18 min) that do not divide
-        // equally into an hour or day. Such use cases are rather uncommon.
-        final long periodMillis = period.toStandardDuration().getMillis();
-        final long dateTimeMillis = dateTime.getMillis();
-        return new DateTime(dateTimeMillis - (dateTimeMillis % periodMillis), DateTimeZone.UTC);
-    }
-
-    /* package private */ static Duration getPeriodTimeout(final Period period) {
-        // TODO(vkoskela): Support separate configurable timeouts per period. [MAI-?]
-        final Duration halfPeriodDuration = period.toStandardDuration().dividedBy(2);
-        if (MAXIMUM_PERIOD_TIMEOUT.isShorterThan(halfPeriodDuration)) {
-            return period.toStandardDuration().plus(MAXIMUM_PERIOD_TIMEOUT);
-        }
-        return period.toStandardDuration().plus(halfPeriodDuration);
     }
 
     private Aggregator(final Builder builder) {
@@ -241,15 +154,6 @@ public final class Aggregator implements Observer, Launchable {
         _counterStatistics = ImmutableSet.copyOf(builder._counterStatistics);
         _gaugeStatistics = ImmutableSet.copyOf(builder._gaugeStatistics);
         _timerStatistics = ImmutableSet.copyOf(builder._timerStatistics);
-
-        final DateTime theBeginning = new DateTime(0);
-        _periodThresholds = Maps.newConcurrentMap();
-        final Map<Period, ConcurrentSkipListMap<DateTime, Bucket>> bucketsByPeriod = Maps.newHashMap();
-        for (final Period period : _periods) {
-            bucketsByPeriod.put(period, new ConcurrentSkipListMap<DateTime, Bucket>());
-            _periodThresholds.put(period, theBeginning);
-        }
-        _openBuckets = Collections.unmodifiableMap(bucketsByPeriod);
     }
 
     private final ImmutableSet<Period> _periods;
@@ -260,84 +164,11 @@ public final class Aggregator implements Observer, Launchable {
     private final ImmutableSet<Statistic> _timerStatistics;
     private final ImmutableSet<Statistic> _counterStatistics;
     private final ImmutableSet<Statistic> _gaugeStatistics;
-    private final Map<Period, ConcurrentSkipListMap<DateTime, Bucket>> _openBuckets;
-    private final Map<Period, DateTime> _periodThresholds;
     private final ArrayList<PeriodCloser> _periodClosers = Lists.newArrayList();
-    private final LongAccumulator _lastRecordTime = new LongAccumulator(Math::max, 0L);
 
     private ExecutorService _periodCloserExecutor = null;
 
-    private static final Duration MAXIMUM_PERIOD_TIMEOUT = Duration.standardMinutes(10);
     private static final Logger LOGGER = LoggerFactory.getLogger(Aggregator.class);
-
-    private final class PeriodCloser implements Runnable {
-
-        public PeriodCloser(final Period period) {
-            _period = period;
-        }
-
-        @Override
-        public void run() {
-            Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                @Override
-                public void uncaughtException(final Thread thread, final Throwable throwable) {
-                    LOGGER.error()
-                            .setMessage("Unhandled exception")
-                            .addData("aggregator", Aggregator.this)
-                            .setThrowable(throwable)
-                            .log();
-                }
-            });
-
-            while (_isRunning) {
-                try {
-                    DateTime recordNow = new DateTime(_lastRecordTime.get());
-                    final DateTime rotateAt = getRotateAt(recordNow);
-                    Duration timeToRotate = new Duration(recordNow, rotateAt);
-                    while (_isRunning && timeToRotate.isLongerThan(Duration.ZERO)) {
-                        Thread.sleep(Math.min(timeToRotate.getMillis(), 100));
-                        recordNow = new DateTime(_lastRecordTime.get());
-                        timeToRotate = new Duration(recordNow, rotateAt);
-                    }
-                    rotate(recordNow, _period, _openBuckets.get(_period), _periodThresholds);
-                } catch (final InterruptedException e) {
-                    Thread.interrupted();
-                    LOGGER.warn()
-                            .setMessage("Interrupted waiting to close buckets")
-                            .setThrowable(e)
-                            .log();
-                    // CHECKSTYLE.OFF: IllegalCatch - Top level catch to prevent thread death
-                } catch (final Exception e) {
-                    // CHECKSTYLE.ON: IllegalCatch
-                    LOGGER.error()
-                            .setMessage("Aggregator failure")
-                            .addData("aggregator", Aggregator.this)
-                            .setThrowable(e)
-                            .log();
-                }
-            }
-        }
-
-        private DateTime getRotateAt(final DateTime now) {
-            final DateTime threshold = Aggregator.this._periodThresholds.get(_period);
-            if (threshold != null) {
-                final Duration periodTimeout = getPeriodTimeout(_period);
-                final DateTime rotateAt = threshold.plus(periodTimeout).plus(_rotationCheck);
-                if (rotateAt.isAfter(now)) {
-                    return rotateAt;
-                }
-            }
-            return now.plus(_rotationCheck);
-        }
-
-        public void shutdown() {
-            _isRunning = false;
-        }
-
-        private volatile boolean _isRunning = true;
-        private final Period _period;
-        private final Duration _rotationCheck = Duration.millis(100);
-    }
 
     /**
      * <code>Builder</code> implementation for <code>Aggregator</code>.

@@ -15,11 +15,12 @@
  */
 package com.arpnetworking.remet.gui.hosts.impl;
 
+import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostQuery;
-import com.arpnetworking.remet.gui.hosts.HostQueryResult;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
+import com.arpnetworking.remet.gui.impl.DefaultQueryResult;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
@@ -79,11 +80,11 @@ public class NoHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public void deleteHost(final String hostName) {
+    public void deleteHost(final String hostname) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Deleting host")
-                .addData("hostname", hostName)
+                .addData("hostname", hostname)
                 .log();
     }
 
@@ -102,13 +103,13 @@ public class NoHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public HostQueryResult query(final HostQuery query) {
+    public QueryResult<Host> query(final HostQuery query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Querying")
                 .addData("query", query)
                 .log();
-        return new DefaultHostQueryResult(Collections.<Host>emptyList(), 0);
+        return new DefaultQueryResult<>(Collections.<Host>emptyList(), 0);
     }
 
     /**
@@ -150,7 +151,7 @@ public class NoHostRepository implements HostRepository {
 
     private void assertIsOpen(final boolean expectedState) {
         if (_isOpen.get() != expectedState) {
-            throw new IllegalStateException(String.format("Host repository is %s", expectedState ? "open" : "closed"));
+            throw new IllegalStateException(String.format("Host repository is not %s", expectedState ? "open" : "closed"));
         }
     }
 

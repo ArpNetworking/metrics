@@ -205,6 +205,34 @@ if [ $start_tsd_agg -gt 0 -o $start_cluster_agg -gt 0 ]; then
 fi
 
 # Run projects
+if [ $start_cluster_agg -gt 0 ]; then
+  pushd tsd/cluster-aggregator &> /dev/null
+  if [ -n "$clear_logs" ]; then
+    rm -rf ./logs
+  fi
+  ./build/install/cluster-aggregator/bin/cluster-aggregator ${dir}/start/clusteragg/config.json &
+  pid_cluster_agg=$!
+  echo "Started: cluster-aggregator ($pid_cluster_agg)"
+  if [ -n "$pinger" ]; then
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7066/ping" &
+  fi
+  popd &> /dev/null
+fi
+
+if [ $start_tsd_agg -gt 0 ]; then
+  pushd tsd/tsd-aggregator &> /dev/null
+  if [ -n "$clear_logs" ]; then
+    rm -rf ./logs
+  fi
+  ./build/install/tsd-aggregator/bin/tsd-aggregator ${dir}/start/tsdagg/config.json &
+  pid_tsd_agg=$!
+  echo "Started: tsd-aggregator ($pid_tsd_agg)"
+  if [ -n "$pinger" ]; then
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:6080/ping" &
+  fi
+  popd &> /dev/null
+fi
+
 if [ $start_remet_proxy -gt 0 ]; then
   pushd remet-proxy &> /dev/null
   if [ -n "$clear_logs" ]; then
@@ -229,35 +257,6 @@ if [ $start_remet_gui -gt 0 ]; then
   echo "Started: remet-gui ($pid_remet_gui)"
   if [ -n "$pinger" ]; then
     ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8080/ping" &
-  fi
-  popd &> /dev/null
-fi
-
-if [ $start_cluster_agg -gt 0 ]; then
-  pushd tsd/cluster-aggregator &> /dev/null
-  if [ -n "$clear_logs" ]; then
-    rm -rf ./logs
-  fi
-  ./build/install/cluster-aggregator/bin/cluster-aggregator ${dir}/start/clusteragg/config.json &
-  pid_cluster_agg=$!
-  echo "Started: cluster-aggregator ($pid_cluster_agg)"
-  if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7066/ping" &
-  fi
-  popd &> /dev/null
-fi
-
-
-if [ $start_tsd_agg -gt 0 ]; then
-  pushd tsd/tsd-aggregator &> /dev/null
-  if [ -n "$clear_logs" ]; then
-    rm -rf ./logs
-  fi
-  ./build/install/tsd-aggregator/bin/tsd-aggregator ${dir}/start/tsdagg/config.json &
-  pid_tsd_agg=$!
-  echo "Started: tsd-aggregator ($pid_tsd_agg)"
-  if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:6080/ping" &
   fi
   popd &> /dev/null
 fi

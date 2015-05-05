@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Groupon.com
+ * Copyright 2015 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.remet.gui.hosts;
-
-import java.util.List;
+package com.arpnetworking.utility;
 
 /**
- * Interface describing the result of query to the <code>HostRepository</code>.
+ * Interface for components which can be restarted.
+ *
+ * @param <T> The type representing the validated configuration.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public interface HostQueryResult {
+public interface Relaunchable<T> {
 
     /**
-     * The matching hosts.
+     * Relaunch the component.
      *
-     * @return The matching hosts.
+     * @param configuration The configuration instance.
      */
-    List<Host> hosts();
-
-    /**
-     * The total number of matching hosts. This may be greater than the number of hosts returned.
-     *
-     * @return The total number of matching hosts.
-     */
-    long total();
+    void relaunch(final T configuration);
 }

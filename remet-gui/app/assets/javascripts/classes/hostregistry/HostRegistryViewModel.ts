@@ -90,7 +90,7 @@ class HostRegistryViewModel {
     }
 
     click(connectTo: HostData) {
-        Hosts.connectToServer(connectTo.hostName);
+        Hosts.connectToServer(connectTo.hostname);
     }
 
     private gotoPage: (element: PagerElement) => void;
@@ -100,17 +100,17 @@ class HostRegistryViewModel {
         var host = this.searchHostThrottled();
         var version = this.versionFilter();
         var offset = (this.page() - 1) * this.perPage;
-        var query: any = {limit: this.perPage, sort_by: "HOST_NAME", offset: offset};
+        var query: any = {limit: this.perPage, sort_by: "HOSTNAME", offset: offset};
         if (host && host != "") {
             query.name = host;
         }
         if (version && version != "") {
             query.state = version;
         }
-        $.getJSON("/hosts/v1/query", query, (data) => {
+        $.getJSON("/v1/hosts/query", query, (data) => {
             var hostsList: HostData[] = data.data;
             this.filteredHosts.removeAll();
-            this.filteredHosts(hostsList.map((v: HostData)=> { return new HostData(v.hostName, v.metricsSoftwareState);}));
+            this.filteredHosts(hostsList.map((v: HostData)=> { return new HostData(v.hostname, v.metricsSoftwareState);}));
             var pages = Math.floor(data.pagination.total / this.perPage) + 1;
             // If total is a multiple of the page size
             if (data.pagination.total % this.perPage == 0) {

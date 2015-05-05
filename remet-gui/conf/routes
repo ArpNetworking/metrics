@@ -18,16 +18,24 @@
 # ~~~~
 
 # Home page
-GET         /                    controllers.Assets.at(path="/public/html", file="index.html")
+GET        /                            controllers.Assets.at(path="/public/html", file="index.html")
 
 # Configuration
-GET         /config              controllers.MetaController.config()
+GET        /config                      controllers.MetaController.config()
 
 # Health checks
-GET         /ping                controllers.MetaController.ping()
+GET        /ping                        controllers.MetaController.ping()
 
 # Hosts
-GET         /hosts/v1/query      @controllers.HostController.query(name: String ?= null, state: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, sort_by: String ?= null)
+GET        /v1/hosts/query              @controllers.HostController.query(name: String ?= null, state: String ?= null, cluster: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, sort_by: String ?= null)
+
+# Alerts
+GET        /v1/alerts/query             @controllers.AlertController.query(context: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
+GET        /v1/alerts/:id               @controllers.AlertController.get(id: String)
+
+# Expressions
+GET        /v1/expressions/query        @controllers.ExpressionController.query(cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
+GET        /v1/expressions/:id          @controllers.ExpressionController.get(id: String)
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file        controllers.Assets.at(path="/public", file)
+GET        /assets/*file                controllers.Assets.at(path="/public", file)

@@ -23,6 +23,7 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
+import com.arpnetworking.clusteraggregator.configuration.ClusterAggregatorConfiguration;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -39,10 +40,14 @@ public final class AggClientServer extends UntypedActor {
      * Public constructor.
      *
      * @param supervisorProvider Provider to build aggregation client supervisors.
+     * @param clusterConfiguration Configuration for the cluster aggregator.
      */
     @Inject
-    public AggClientServer(@Named("agg-client-supervisor") final Provider<Props> supervisorProvider) {
+    public AggClientServer(
+            @Named("agg-client-supervisor") final Provider<Props> supervisorProvider,
+            final ClusterAggregatorConfiguration clusterConfiguration) {
         _supervisorProvider = supervisorProvider;
+        _clusterConfiguration = clusterConfiguration;
     }
     /**
      * {@inheritDoc}
@@ -51,7 +56,12 @@ public final class AggClientServer extends UntypedActor {
     public void preStart() throws Exception {
         final ActorRef tcp = Tcp.get(getContext().system()).manager();
         _log.info("binding to socket");
-        tcp.tell(TcpMessage.bind(getSelf(), new InetSocketAddress("0.0.0.0", 7065), 15), getSelf());
+        tcp.tell(
+                TcpMessage.bind(
+                        getSelf(),
+                        new InetSocketAddress(_clusterConfiguration.getAggregationHost(), _clusterConfiguration.getAggregationPort()),
+                        15),
+                getSelf());
     }
 
     /**
@@ -76,5 +86,5 @@ public final class AggClientServer extends UntypedActor {
 
     private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
     private final Provider<Props> _supervisorProvider;
+    private final ClusterAggregatorConfiguration _clusterConfiguration;
 }
-

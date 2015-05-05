@@ -15,12 +15,14 @@
  */
 package com.arpnetworking.remet.gui.hosts.impl;
 
+import com.arpnetworking.remet.gui.QueryResult;
+import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostQuery;
-import com.arpnetworking.remet.gui.hosts.HostQueryResult;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Optional;
+
+import java.util.Optional;
 
 /**
  * Default implementation of <code>HostQuery</code>.
@@ -42,8 +44,8 @@ public class DefaultHostQuery implements HostQuery {
      * {@inheritDoc}
      */
     @Override
-    public HostQuery hostName(final Optional<String> partialHostName) {
-        _hostName = partialHostName;
+    public HostQuery partialHostname(final Optional<String> partialHostname) {
+        _partialHostname = partialHostname;
         return this;
     }
 
@@ -60,7 +62,16 @@ public class DefaultHostQuery implements HostQuery {
      * {@inheritDoc}
      */
     @Override
-    public HostQuery limit(final Optional<Integer> limit) {
+    public HostQuery cluster(final Optional<String> cluster) {
+        _cluster = cluster;
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public HostQuery limit(final int limit) {
         _limit = limit;
         return this;
     }
@@ -87,7 +98,7 @@ public class DefaultHostQuery implements HostQuery {
      * {@inheritDoc}
      */
     @Override
-    public HostQueryResult execute() {
+    public QueryResult<Host> execute() {
         return _repository.query(this);
     }
 
@@ -95,8 +106,8 @@ public class DefaultHostQuery implements HostQuery {
      * {@inheritDoc}
      */
     @Override
-    public Optional<String> getHostName() {
-        return _hostName;
+    public Optional<String> getPartialHostname() {
+        return _partialHostname;
     }
 
     /**
@@ -111,7 +122,15 @@ public class DefaultHostQuery implements HostQuery {
      * {@inheritDoc}
      */
     @Override
-    public Optional<Integer> getLimit() {
+    public Optional<String> getCluster() {
+        return _cluster;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getLimit() {
         return _limit;
     }
 
@@ -139,7 +158,7 @@ public class DefaultHostQuery implements HostQuery {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Repository", _repository)
-                .add("HostName", _hostName)
+                .add("PartialHostname", _partialHostname)
                 .add("MetricsSoftwareState", _metricsSoftwareState)
                 .add("Limit", _limit)
                 .add("Offset", _offset)
@@ -147,10 +166,14 @@ public class DefaultHostQuery implements HostQuery {
                 .toString();
     }
 
+
     private final HostRepository _repository;
-    private Optional<String> _hostName = Optional.absent();
-    private Optional<MetricsSoftwareState> _metricsSoftwareState = Optional.absent();
-    private Optional<Integer> _limit = Optional.absent();
-    private Optional<Integer> _offset = Optional.absent();
-    private Optional<Field> _sortBy = Optional.absent();
+    private Optional<String> _partialHostname = Optional.empty();
+    private Optional<MetricsSoftwareState> _metricsSoftwareState = Optional.empty();
+    private Optional<String> _cluster = Optional.empty();
+    private int _limit = DEFAULT_LIMIT;
+    private Optional<Integer> _offset = Optional.empty();
+    private Optional<Field> _sortBy = Optional.empty();
+
+    private static final int DEFAULT_LIMIT = 1000;
 }

@@ -277,23 +277,6 @@ public class BucketTest {
     }
 
     @Test
-    public void testGetThreshold() {
-        final DateTime start = DateTime.parse("2015-02-05T00:00:00Z");
-        final Bucket bucket = new Bucket.Builder()
-                .setSink(Mockito.mock(Sink.class))
-                .setCluster("MyCluster")
-                .setService("MyService")
-                .setHost("MyHost")
-                .setStart(start)
-                .setPeriod(Period.minutes(1))
-                .setCounterStatistics(ImmutableSet.of(new TP0Statistic()))
-                .setGaugeStatistics(ImmutableSet.of(new MedianStatistic()))
-                .setTimerStatistics(ImmutableSet.of(new TP100Statistic()))
-                .build();
-        Assert.assertEquals(start.plus(Duration.standardMinutes(1)), bucket.getThreshold());
-    }
-
-    @Test
     public void testToString() {
         final String asString = new Bucket.Builder()
                 .setSink(Mockito.mock(Sink.class))

@@ -15,21 +15,25 @@
  */
 package com.arpnetworking.remet.gui.hosts.impl;
 
+import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostQuery;
-import com.arpnetworking.remet.gui.hosts.HostQueryResult;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
+import com.arpnetworking.remet.gui.impl.DefaultQueryResult;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -77,20 +81,20 @@ public class LocalHostRepository implements HostRepository {
                 .setMessage("Adding or updating host")
                 .addData("host", host)
                 .log();
-        _temporaryStorage.put(host.getHostName(), host.getMetricsSoftwareState());
+        _temporaryStorage.put(host.getHostname(), host);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void deleteHost(final String hostName) {
+    public void deleteHost(final String hostname) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Deleting host")
-                .addData("hostname", hostName)
+                .addData("hostname", hostname)
                 .log();
-        _temporaryStorage.remove(hostName);
+        _temporaryStorage.remove(hostname);
     }
 
     /**
@@ -107,7 +111,7 @@ public class LocalHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public HostQueryResult query(final HostQuery query) {
+    public QueryResult<Host> query(final HostQuery query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Querying")
@@ -116,26 +120,29 @@ public class LocalHostRepository implements HostRepository {
 
         // Find all matching hosts
         final List<Host> hosts = Lists.newLinkedList();
-        for (final Map.Entry<String, MetricsSoftwareState> entry : _temporaryStorage.entrySet()) {
+        for (final Map.Entry<String, Host> entry : _temporaryStorage.entrySet()) {
             boolean matches = true;
-            if (query.getHostName().isPresent()) {
-                final String queryName = query.getHostName().get().toLowerCase();
+            if (query.getPartialHostname().isPresent()) {
+                final String queryName = query.getPartialHostname().get().toLowerCase();
                 final String hostName = entry.getKey().toLowerCase();
                 if (!hostName.equals(queryName) && !hostName.startsWith(queryName) && !hostName.contains(queryName)) {
                     matches = false;
                 }
             }
             if (query.getMetricsSoftwareState().isPresent()) {
-                final MetricsSoftwareState metricsSoftwareState = entry.getValue();
+                final MetricsSoftwareState metricsSoftwareState = entry.getValue().getMetricsSoftwareState();
                 if (!query.getMetricsSoftwareState().get().equals(metricsSoftwareState)) {
                     matches = false;
                 }
             }
+            if (query.getCluster().isPresent()) {
+                final String cluster = entry.getValue().getCluster();
+                if (!query.getCluster().get().equals(cluster)) {
+                    matches = false;
+                }
+            }
             if (matches) {
-                hosts.add(new DefaultHost.Builder()
-                        .setHostName(entry.getKey())
-                        .setMetricsSoftwareState(entry.getValue())
-                        .build());
+                hosts.add(entry.getValue());
             }
         }
 
@@ -149,13 +156,11 @@ public class LocalHostRepository implements HostRepository {
                 hosts.remove(0);
             }
         }
-        if (query.getLimit().isPresent()) {
-            while (hosts.size() > query.getLimit().get() && !hosts.isEmpty()) {
-                hosts.remove(hosts.size() - 1);
-            }
+        while (hosts.size() > query.getLimit() && !hosts.isEmpty()) {
+            hosts.remove(hosts.size() - 1);
         }
 
-        return new DefaultHostQueryResult(hosts, total);
+        return new DefaultQueryResult<>(hosts, total);
     }
 
     /**
@@ -179,8 +184,8 @@ public class LocalHostRepository implements HostRepository {
                 .addData("state", metricsSoftwareState)
                 .log();
         long count = 0;
-        for (final MetricsSoftwareState state : _temporaryStorage.values()) {
-            if (!metricsSoftwareState.equals(state)) {
+        for (final Host host : _temporaryStorage.values()) {
+            if (!metricsSoftwareState.equals(host.getMetricsSoftwareState())) {
                 ++count;
             }
         }
@@ -204,16 +209,17 @@ public class LocalHostRepository implements HostRepository {
 
     private void assertIsOpen(final boolean expectedState) {
         if (_isOpen.get() != expectedState) {
-            throw new IllegalStateException(String.format("Host repository is %s", expectedState ? "open" : "closed"));
+            throw new IllegalStateException(String.format("Host repository is not %s", expectedState ? "open" : "closed"));
         }
     }
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final Map<String, MetricsSoftwareState> _temporaryStorage = Maps.newConcurrentMap();
+    private final Map<String, Host> _temporaryStorage = Maps.newConcurrentMap();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalHostRepository.class);
 
-    private static class HostComparator implements Comparator<Host> {
+    @SuppressFBWarnings("SE_BAD_FIELD")
+    private static class HostComparator implements Comparator<Host>, Serializable {
 
         public HostComparator(final HostQuery query) {
             _query = query;
@@ -222,8 +228,8 @@ public class LocalHostRepository implements HostRepository {
         @Override
         public int compare(final Host h1, final Host h2) {
             if (_query.getSortBy().isPresent()) {
-                if (HostQuery.Field.HOST_NAME.equals(_query.getSortBy().get())) {
-                    return String.CASE_INSENSITIVE_ORDER.compare(h1.getHostName(), h2.getHostName());
+                if (HostQuery.Field.HOSTNAME.equals(_query.getSortBy().get())) {
+                    return String.CASE_INSENSITIVE_ORDER.compare(h1.getHostname(), h2.getHostname());
                 } else if (HostQuery.Field.METRICS_SOFTWARE_STATE.equals(_query.getSortBy().get())) {
                     return h1.getMetricsSoftwareState().compareTo(h2.getMetricsSoftwareState());
                 } else {
@@ -235,26 +241,26 @@ public class LocalHostRepository implements HostRepository {
             } else {
                 double s1 = 0.0;
                 double s2 = 0.0;
-                if (_query.getHostName().isPresent()) {
+                if (_query.getPartialHostname().isPresent()) {
                     // All comparisons are case-insentive
-                    final String q = _query.getHostName().get().toLowerCase();
-                    final String n1 = h1.getHostName().toLowerCase();
-                    final String n2 = h2.getHostName().toLowerCase();
+                    final String q = _query.getPartialHostname().get().toLowerCase(Locale.getDefault());
+                    final String n1 = h1.getHostname().toLowerCase(Locale.getDefault());
+                    final String n2 = h2.getHostname().toLowerCase(Locale.getDefault());
 
                     // Compute score
                     if (n1.equals(q)) {
                         s1 = 1.0;
                     } else if (n1.startsWith(q)) {
-                        s1 = (1000000 - _query.getHostName().get().length()) / 1000000.0;
+                        s1 = (1000000 - _query.getPartialHostname().get().length()) / 1000000.0;
                     } else if (n1.contains(q)) {
-                        s1 = (1000 - _query.getHostName().get().length()) / 1000000.0;
+                        s1 = (1000 - _query.getPartialHostname().get().length()) / 1000000.0;
                     }
                     if (n2.equals(q)) {
                         s2 = 1.0;
                     } else if (n2.startsWith(q)) {
-                        s2 = (1000000 - _query.getHostName().get().length()) / 1000000.0;
+                        s2 = (1000000 - _query.getPartialHostname().get().length()) / 1000000.0;
                     } else if (n2.contains(q)) {
-                        s2 = (1000 - _query.getHostName().get().length()) / 1000000.0;
+                        s2 = (1000 - _query.getPartialHostname().get().length()) / 1000000.0;
                     }
                 }
 
@@ -264,5 +270,7 @@ public class LocalHostRepository implements HostRepository {
         }
 
         private final HostQuery _query;
+
+        private static final long serialVersionUID = 1L;
     }
 }

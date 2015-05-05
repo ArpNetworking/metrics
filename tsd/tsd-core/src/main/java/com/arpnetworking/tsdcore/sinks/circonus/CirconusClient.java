@@ -17,7 +17,7 @@
 package com.arpnetworking.tsdcore.sinks.circonus;
 
 import akka.dispatch.Mapper;
-import akka.http.model.japi.HttpMethods;
+import akka.http.javadsl.model.HttpMethods;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.tsdcore.sinks.circonus.api.BrokerListResponse;
@@ -32,7 +32,7 @@ import com.google.common.base.Throwables;
 import com.ning.http.client.AsyncHttpClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.libs.ws.WSRequestHolder;
+import play.libs.ws.WSRequest;
 import play.libs.ws.WSResponse;
 import play.libs.ws.ning.NingWSClient;
 import scala.concurrent.ExecutionContext;
@@ -57,7 +57,7 @@ public final class CirconusClient {
      * @return Future with the results.
      */
     public Future<BrokerListResponse> getBrokers() {
-        final WSRequestHolder request = _client
+        final WSRequest request = _client
                 .url(_uri + BROKERS_URL)
                 .setMethod(HttpMethods.GET.value());
         return fireRequest(request)
@@ -125,7 +125,7 @@ public final class CirconusClient {
             throw Throwables.propagate(e);
         }
 
-        final WSRequestHolder requestHolder = _client
+        final WSRequest requestHolder = _client
                 .url(_uri + CHECK_BUNDLE_URL)
                 .setMethod("POST")
                 .setBody(responseBody);
@@ -147,7 +147,7 @@ public final class CirconusClient {
                                 throw new WebServiceException(
                                         String.format(
                                                 "Received non 200 response looking up checkbundle; request=%s, response=%s",
-                                                request,
+                                                requestHolder,
                                                 response));
 
                             }
@@ -155,7 +155,7 @@ public final class CirconusClient {
                         _executionContext);
     }
 
-    private Future<WSResponse> fireRequest(final WSRequestHolder request) {
+    private Future<WSResponse> fireRequest(final WSRequest request) {
         return request
                 .setHeader("X-Circonus-Auth-Token", _authToken)
                 .setHeader("X-Circonus-App-Name", _appName)
