@@ -99,62 +99,7 @@ public class Status extends UntypedActor {
     public void onReceive(final Object message) throws Exception {
         final ActorRef sender = getSender();
         if (message instanceof StatusRequest) {
-            final ExecutionContextExecutor executor = getContext().dispatcher();
-            // Call the bookkeeper
-            final Future<BookkeeperData> bookkeeperFuture = Patterns.ask(
-                    _metricsBookkeeper,
-                    new MetricsRequest(),
-                    Timeout.apply(3, TimeUnit.SECONDS))
-                    .map(new CastMapper<>(), executor)
-                    .recover(
-                            new Recover<BookkeeperData>() {
-                                 @Override
-                                 public BookkeeperData recover(final Throwable failure) {
-                                     return null;
-                                 }
-                             },
-                            executor);
-            final Future<ClusterStatusCache.StatusResponse> clusterStateFuture = Patterns.ask(
-                    _clusterStatusCache,
-                    new ClusterStatusCache.GetRequest(),
-                    Timeout.apply(3, TimeUnit.SECONDS)).map(CAST_MAPPER, executor);
-
-            final Future<Map<Period, PeriodMetrics>> localMetricsFuture = Patterns.ask(
-                    _localMetrics,
-                    new MetricsRequest(),
-                    Timeout.apply(3, TimeUnit.SECONDS))
-                    .map(
-                            new CastMapper<Object, Map<Period, PeriodMetrics>>(),
-                            executor);
-
-            final Future<StatusResponse> future = new CollectFutureBuilder<StatusResponse>()
-                    .addFuture(bookkeeperFuture)
-                    .addFuture(clusterStateFuture)
-                    .addFuture(localMetricsFuture)
-                    .map(new AbstractFunction0<StatusResponse>() {
-                        @Override
-                        public StatusResponse apply() {
-                            return new StatusResponse.Builder()
-                                    .setClusterMetrics(bookkeeperFuture.value().get().get())
-                                    .setClusterState(clusterStateFuture.value().get().get())
-                                    .setLocalMetrics(localMetricsFuture.value().get().get())
-                                    .setLocalAddress(_cluster.selfAddress())
-                                    .build();
-                        }
-                    })
-                    .build(executor);
-            future.onComplete(
-                    new OnComplete<StatusResponse>() {
-                        @Override
-                        public void onComplete(final Throwable failure, final StatusResponse success) {
-                            if (failure != null) {
-                                sender.tell(new Failure<StatusResponse>(failure), getSelf());
-                            } else {
-                                sender.tell(success, getSelf());
-                            }
-                        }
-                    },
-                    executor);
+            processStatusRequest(sender);
         } else if (message instanceof HealthRequest) {
             final ExecutionContextExecutor executor = getContext().dispatcher();
             final Future<ClusterStatusCache.StatusResponse> stateFuture = Patterns
@@ -175,6 +120,82 @@ public class Status extends UntypedActor {
         } else {
             unhandled(message);
         }
+    }
+
+    private void processStatusRequest(final ActorRef sender) {
+        final ExecutionContextExecutor executor = getContext().dispatcher();
+        // Call the bookkeeper
+        final Future<BookkeeperData> bookkeeperFuture = Patterns.ask(
+                _metricsBookkeeper,
+                new MetricsRequest(),
+                Timeout.apply(3, TimeUnit.SECONDS))
+                .map(new CastMapper<>(), executor)
+                .recover(
+                        new Recover<BookkeeperData>() {
+                             @Override
+                             public BookkeeperData recover(final Throwable failure) {
+                                 return null;
+                             }
+                         },
+                        executor);
+        final Future<ClusterStatusCache.StatusResponse> clusterStateFuture =
+                Patterns.ask(
+                        _clusterStatusCache,
+                        new ClusterStatusCache.GetRequest(),
+                        Timeout.apply(3, TimeUnit.SECONDS))
+                .map(CAST_MAPPER, executor)
+                .recover(
+                        new Recover<ClusterStatusCache.StatusResponse>() {
+                            @Override
+                            public ClusterStatusCache.StatusResponse recover(final Throwable failure) throws Throwable {
+                                return null;
+                            }
+                        },
+                        executor);
+
+        final Future<Map<Period, PeriodMetrics>> localMetricsFuture =
+                Patterns.ask(
+                        _localMetrics,
+                        new MetricsRequest(),
+                        Timeout.apply(3, TimeUnit.SECONDS))
+                .map(new CastMapper<Object, Map<Period, PeriodMetrics>>(), executor)
+                .recover(
+                        new Recover<Map<Period, PeriodMetrics>>() {
+                            @Override
+                            public Map<Period, PeriodMetrics> recover(final Throwable failure) throws Throwable {
+                                return null;
+                            }
+                        },
+                        executor);
+
+        final Future<StatusResponse> future = new CollectFutureBuilder<StatusResponse>()
+                .addFuture(bookkeeperFuture)
+                .addFuture(clusterStateFuture)
+                .addFuture(localMetricsFuture)
+                .map(new AbstractFunction0<StatusResponse>() {
+                    @Override
+                    public StatusResponse apply() {
+                        return new StatusResponse.Builder()
+                                .setClusterMetrics(bookkeeperFuture.value().get().get())
+                                .setClusterState(clusterStateFuture.value().get().get())
+                                .setLocalMetrics(localMetricsFuture.value().get().get())
+                                .setLocalAddress(_cluster.selfAddress())
+                                .build();
+                    }
+                })
+                .build(executor);
+        future.onComplete(
+                new OnComplete<StatusResponse>() {
+                    @Override
+                    public void onComplete(final Throwable failure, final StatusResponse success) {
+                        if (failure != null) {
+                            sender.tell(new Failure<StatusResponse>(failure), getSelf());
+                        } else {
+                            sender.tell(success, getSelf());
+                        }
+                    }
+                },
+                executor);
     }
 
     private final ActorRef _metricsBookkeeper;

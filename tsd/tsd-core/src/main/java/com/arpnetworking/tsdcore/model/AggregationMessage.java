@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import akka.util.ByteIterator;
+import akka.util.ByteString;
 import com.arpnetworking.tsdcore.Messages;
 import com.google.common.base.Optional;
 import com.google.protobuf.GeneratedMessage;
@@ -24,6 +26,8 @@ import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vertx.java.core.buffer.Buffer;
+
+import java.nio.ByteOrder;
 
 /**
  * Class for building messages from the raw, on-the-wire bytes in the TCP stream.
@@ -51,7 +55,7 @@ public final class AggregationMessage {
      * @return The deserialized <code>AggregationMessage</code> or absent if
      * the <code>Buffer</code> could not be deserialized.
      */
-    public static Optional<AggregationMessage> deserialize(final Buffer data) {
+    public static Optional<AggregationMessage> deserialize(final ByteString data) {
         int position = 0;
         // Make sure we have enough data to get the size
         if (data.length() < HEADER_SIZE_IN_BYTES) {
@@ -59,19 +63,23 @@ public final class AggregationMessage {
         }
 
         // Deserialize and validate buffer length
-        final int length = data.getInt(position);
+        final ByteIterator reader = data.iterator();
+        final int length = reader.getInt(ByteOrder.BIG_ENDIAN);
         position += INTEGER_SIZE_IN_BYTES;
         if (data.length() < length) {
-            LOGGER.trace(String.format("we only have %d of %d bytes.", data.length(), length));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("we only have %d of %d bytes.", data.length(), length));
+            }
             return Optional.absent();
         }
 
         // Deserialize message type
-        final byte type = data.getByte(position);
+        final byte type = reader.getByte();
         position += BYTE_SIZE_IN_BYTES;
 
         // Obtain the serialized payload
-        final byte[] payloadBytes = data.getBytes(position, length);
+        final byte[] payloadBytes = new byte [length - position];
+        reader.getBytes(payloadBytes);
 
         // Deserialize the message based on the type
         try {

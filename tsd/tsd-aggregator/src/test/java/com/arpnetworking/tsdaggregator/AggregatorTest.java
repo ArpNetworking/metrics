@@ -15,12 +15,30 @@
  */
 package com.arpnetworking.tsdaggregator;
 
+import com.arpnetworking.tsdaggregator.model.DefaultMetric;
+import com.arpnetworking.tsdaggregator.model.DefaultRecord;
+import com.arpnetworking.tsdaggregator.model.MetricType;
+import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.Quantity;
+import com.arpnetworking.tsdcore.sinks.Sink;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.TP100Statistic;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.joda.time.Period;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Tests for the <code>Aggregator</code> class.
@@ -29,93 +47,82 @@ import org.junit.Test;
  */
 public class AggregatorTest {
 
-    @Test
-    public void testGetStartTime() {
-        // 1-second period
-        Assert.assertEquals(
-                createDateTime(0, 0, 7, 0),
-                Aggregator.getStartTime(createDateTime(0, 0, 7, 0), Period.seconds(1)));
-        Assert.assertEquals(
-                createDateTime(0, 0, 7, 0),
-                Aggregator.getStartTime(createDateTime(0, 0, 7, 1), Period.seconds(1)));
-        Assert.assertEquals(
-                createDateTime(0, 0, 7, 0),
-                Aggregator.getStartTime(createDateTime(0, 0, 7, 500), Period.seconds(1)));
-        Assert.assertEquals(
-                createDateTime(0, 0, 7, 0),
-                Aggregator.getStartTime(createDateTime(0, 0, 7, 999), Period.seconds(1)));
-
-        // 1-minute period
-        Assert.assertEquals(
-                createDateTime(0, 11, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 11, 0, 0), Period.minutes(1)));
-        Assert.assertEquals(
-                createDateTime(0, 11, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 11, 0, 1), Period.minutes(1)));
-        Assert.assertEquals(
-                createDateTime(0, 11, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 11, 1, 0), Period.minutes(1)));
-        Assert.assertEquals(
-                createDateTime(0, 11, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 11, 30, 500), Period.minutes(1)));
-        Assert.assertEquals(
-                createDateTime(0, 11, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 11, 59, 0), Period.minutes(1)));
-        Assert.assertEquals(
-                createDateTime(0, 11, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 11, 59, 500), Period.minutes(1)));
-
-        // 15-minute period
-        Assert.assertEquals(
-                createDateTime(0, 45, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 45, 0, 0), Period.minutes(15)));
-        Assert.assertEquals(
-                createDateTime(0, 45, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 45, 0, 1), Period.minutes(15)));
-        Assert.assertEquals(
-                createDateTime(0, 45, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 45, 1, 0), Period.minutes(15)));
-        Assert.assertEquals(
-                createDateTime(0, 45, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 53, 57, 133), Period.minutes(15)));
-        Assert.assertEquals(
-                createDateTime(0, 45, 0, 0),
-                Aggregator.getStartTime(createDateTime(0, 59, 59, 999), Period.minutes(15)));
-
-        // 1-hour period
-        Assert.assertEquals(
-                createDateTime(13, 0, 0, 0),
-                Aggregator.getStartTime(createDateTime(13, 0, 0, 0), Period.hours(1)));
-        Assert.assertEquals(
-                createDateTime(13, 0, 0, 0),
-                Aggregator.getStartTime(createDateTime(13, 0, 0, 1), Period.hours(1)));
-        Assert.assertEquals(
-                createDateTime(13, 0, 0, 0),
-                Aggregator.getStartTime(createDateTime(13, 0, 1, 0), Period.hours(1)));
-        Assert.assertEquals(
-                createDateTime(13, 0, 0, 0),
-                Aggregator.getStartTime(createDateTime(13, 1, 0, 0), Period.hours(1)));
-        Assert.assertEquals(
-                createDateTime(13, 0, 0, 0),
-                Aggregator.getStartTime(createDateTime(13, 33, 57, 133), Period.hours(1)));
-        Assert.assertEquals(
-                createDateTime(13, 0, 0, 0),
-                Aggregator.getStartTime(createDateTime(13, 59, 59, 999), Period.hours(1)));
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    public void testGetPeriodTimeout() {
-        Assert.assertEquals(new Duration(1500), Aggregator.getPeriodTimeout(Period.seconds(1)));
-        Assert.assertEquals(new Duration(22500), Aggregator.getPeriodTimeout(Period.seconds(15)));
-        Assert.assertEquals(new Duration(90000), Aggregator.getPeriodTimeout(Period.seconds(60)));
-        Assert.assertEquals(new Duration(90000), Aggregator.getPeriodTimeout(Period.minutes(1)));
-        Assert.assertEquals(new Duration(900000), Aggregator.getPeriodTimeout(Period.minutes(10)));
-        Assert.assertEquals(new Duration(1800000), Aggregator.getPeriodTimeout(Period.minutes(20)));
-        Assert.assertEquals(new Duration(2400000), Aggregator.getPeriodTimeout(Period.minutes(30)));
-        Assert.assertEquals(new Duration(4200000), Aggregator.getPeriodTimeout(Period.hours(1)));
+    public void testCloseAfterElapsed() throws InterruptedException {
+        final DateTime dataTimeInThePast = new DateTime(DateTimeZone.UTC)
+                .minus(Duration.standardSeconds(10));
+
+        // Create aggregator
+        final Sink sink = Mockito.mock(Sink.class);
+        final Aggregator aggregator = new Aggregator.Builder()
+                .setCluster("MyCluster")
+                .setService("MyService")
+                .setHost("MyHost")
+                .setSink(sink)
+                .setCounterStatistics(Collections.singleton(MAX_STATISTIC))
+                .setTimerStatistics(Collections.singleton(MAX_STATISTIC))
+                .setGaugeStatistics(Collections.singleton(MAX_STATISTIC))
+                .setPeriods(Collections.singleton(Period.seconds(1)))
+                .build();
+        try {
+            aggregator.launch();
+
+            // Send data to aggregator
+            aggregator.notify(
+                    null,
+                    new DefaultRecord.Builder()
+                            .setMetrics(Collections.singletonMap(
+                                    "MyMetric",
+                                    new DefaultMetric.Builder()
+                                            .setType(MetricType.GAUGE)
+                                            .setValues(Collections.singletonList(
+                                                    new Quantity.Builder().setValue(1d).build()))
+                                            .build()))
+                            .setTime(dataTimeInThePast)
+                            .build());
+
+            // Wait for the period to close
+            Thread.sleep(2000);
+
+            // Verify the aggregation was emitted
+            Mockito.verify(sink).recordAggregateData(_dataCaptor.capture(), _conditionsCaptor.capture());
+            Mockito.verifyNoMoreInteractions(sink);
+
+            final List<Condition> conditions = _conditionsCaptor.getValue();
+            Assert.assertTrue(conditions.isEmpty());
+
+            final List<AggregatedData> data = _dataCaptor.getValue();
+            Assert.assertEquals(1, data.size());
+            Assert.assertEquals(
+                    new AggregatedData.Builder()
+                            .setFQDSN(new FQDSN.Builder()
+                                    .setCluster("MyCluster")
+                                    .setService("MyService")
+                                    .setMetric("MyMetric")
+                                    .setStatistic(MAX_STATISTIC)
+                                    .build())
+                            .setHost("MyHost")
+                            .setPeriod(Period.seconds(1))
+                            .setPopulationSize(1L)
+                            .setSamples(Collections.singletonList(new Quantity.Builder().setValue(1d).build()))
+                            .setStart(dataTimeInThePast.withMillisOfSecond(0))
+                            .setValue(new Quantity.Builder().setValue(1d).build())
+                            .build(),
+                    data.get(0));
+        } finally {
+            aggregator.shutdown();
+        }
     }
 
-    private static DateTime createDateTime(final int hour, final int minute, final int second, final int millisecond) {
-        return new DateTime(2014, 1, 1, hour, minute, second, millisecond, DateTimeZone.UTC);
-    }
+    @Captor
+    private ArgumentCaptor<List<AggregatedData>> _dataCaptor;
+    @Captor
+    private ArgumentCaptor<List<Condition>> _conditionsCaptor;
+
+    private static final Statistic MAX_STATISTIC = new TP100Statistic();
 }

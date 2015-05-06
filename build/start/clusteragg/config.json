@@ -1,6 +1,8 @@
 {
   "httpPort": 7066,
   "httpHost": "0.0.0.0",
+  "aggregationHost": "0.0.0.0",
+  "aggregationPort": 7065,
   "logDirectory": "logs",
   "pipelineConfiguration": "../../build/start/clusteragg/pipeline.json",
   "maxConnectionTimeout": "PT2M",
@@ -20,7 +22,13 @@
         "debug": {
           "unhandled": "on"
         },
-        "provider": "akka.cluster.ClusterActorRefProvider"
+        "provider": "akka.cluster.ClusterActorRefProvider",
+        "serializers": {
+          "loggingJava": "com.arpnetworking.akka.LoggingSerializer"
+        },
+        "serialization-bindings" : {
+          "\"com.arpnetworking.tsdcore.model.AggregatedData\"": "loggingJava"
+        }
       },
       "cluster": {
         "seed-nodes": [

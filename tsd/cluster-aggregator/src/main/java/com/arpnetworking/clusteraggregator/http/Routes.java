@@ -22,15 +22,15 @@ import akka.cluster.Member;
 import akka.dispatch.Futures;
 import akka.dispatch.Mapper;
 import akka.dispatch.OnComplete;
-import akka.http.model.HttpRequest;
-import akka.http.model.HttpResponse;
-import akka.http.model.HttpResponse$;
-import akka.http.model.japi.HttpHeader;
-import akka.http.model.japi.HttpMethods;
-import akka.http.model.japi.MediaTypes;
-import akka.http.model.japi.StatusCodes;
-import akka.http.model.japi.headers.CacheControl;
-import akka.http.model.japi.headers.CacheDirectives;
+import akka.http.javadsl.model.ContentType;
+import akka.http.javadsl.model.HttpHeader;
+import akka.http.javadsl.model.HttpMethods;
+import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.MediaTypes;
+import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.headers.CacheControl;
+import akka.http.javadsl.model.headers.CacheDirectives;
 import akka.japi.JavaPartialFunction;
 import akka.pattern.Patterns;
 import akka.util.Timeout;
@@ -60,7 +60,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Future<HttpResponse>> {
+public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>> {
 
     /**
      * Public constructor.
@@ -79,7 +79,7 @@ public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Futur
      * {@inheritDoc}
      */
     @Override
-    public Future<HttpResponse> apply(final akka.http.model.HttpRequest request) {
+    public Future<HttpResponse> apply(final HttpRequest request) {
         final Metrics metrics = _metricsFactory.create();
         final Timer timer = metrics.createTimer(createTimerName(request));
         if (LOGGER.isTraceEnabled()) {
@@ -138,17 +138,12 @@ public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Futur
     }
 
     private HttpResponse response() {
-        return HttpResponse.apply(
-                HttpResponse$.MODULE$.apply$default$1(),
-                HttpResponse$.MODULE$.apply$default$2(),
-                HttpResponse$.MODULE$.apply$default$3(),
-                HttpResponse$.MODULE$.apply$default$4()
-        );
+        return HttpResponse.create();
     }
 
     private <T> Future<T> ask(final String actorPath, final Object request, final T defaultValue) {
         return _actorSystem.actorSelection(actorPath)
-                .resolveOne(Timeout.apply(1, TimeUnit.SECONDS))
+                .resolveOne(TIMEOUT)
                 .flatMap(
                         new Mapper<ActorRef, Future<T>>() {
                             @Override
@@ -157,7 +152,7 @@ public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Futur
                                 final Future<T> future = (Future<T>) Patterns.ask(
                                         actor,
                                         request,
-                                        Timeout.apply(1, TimeUnit.SECONDS));
+                                        TIMEOUT);
                                 return future;
                             }
                         },
@@ -166,6 +161,7 @@ public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Futur
                         new JavaPartialFunction<Throwable, T>() {
                             @Override
                             public T apply(final Throwable t, final boolean isCheck) throws Exception {
+                                LOGGER.error(String.format("Error when asking actor; actorPath=%s, request=%s", actorPath, request), t);
                                 return defaultValue;
                             }
                         },
@@ -183,6 +179,7 @@ public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Futur
         return nameBuilder.toString();
     }
 
+
     private final ActorSystem _actorSystem;
     private final MetricsFactory _metricsFactory;
 
@@ -199,8 +196,8 @@ public class Routes extends AbstractFunction1<akka.http.model.HttpRequest, Futur
     private static final String UNHEALTHY_STATE = "UNHEALTHY";
     private static final String HEALTHY_STATE = "HEALTHY";
 
-    private static final akka.http.model.japi.ContentType JSON_CONTENT_TYPE =
-            akka.http.model.japi.ContentType.create(MediaTypes.APPLICATION_JSON);
+    private static final ContentType JSON_CONTENT_TYPE = ContentType.create(MediaTypes.APPLICATION_JSON);
+    private static final Timeout TIMEOUT = Timeout.apply(5, TimeUnit.SECONDS);
     private final ObjectMapper _mapper = ObjectMapperFactory.createInstance();
 
     private static class MemberSerializer extends JsonSerializer<Member> {

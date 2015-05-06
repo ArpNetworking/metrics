@@ -19,6 +19,7 @@ import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
@@ -170,6 +171,26 @@ public final class FQDSN implements Serializable {
         public Builder setStatistic(final Statistic value) {
             _statistic = value;
             return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public FQDSN build() {
+            if (Strings.isNullOrEmpty(_cluster)) {
+                throw new IllegalStateException("cluster must not be null or empty");
+            }
+            if (Strings.isNullOrEmpty(_service)) {
+                throw new IllegalStateException("service must not be null or empty");
+            }
+            if (Strings.isNullOrEmpty(_metric)) {
+                throw new IllegalStateException("metric must not be null or empty");
+            }
+            if (_statistic == null) {
+                throw new IllegalStateException("statistic must not be null");
+            }
+            return new FQDSN(this);
         }
 
         @NotNull

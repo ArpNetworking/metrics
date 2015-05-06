@@ -35,12 +35,12 @@ public final class PagedContainer<T> {
      * @param data <code>List</code> of data elements.
      * @param pagination <code>Pagination</code> metadata.
      */
-    public PagedContainer(final List<T> data, final Pagination pagination) {
+    public PagedContainer(final List<? extends T> data, final Pagination pagination) {
         _data = data;
         _pagination = pagination;
     }
 
-    public List<T> getData() {
+    public List<? extends T> getData() {
         return Collections.unmodifiableList(_data);
     }
 
@@ -60,6 +60,6 @@ public final class PagedContainer<T> {
                 .toString();
     }
 
-    private final List<T> _data;
+    private final List<? extends T> _data;
     private final Pagination _pagination;
 }

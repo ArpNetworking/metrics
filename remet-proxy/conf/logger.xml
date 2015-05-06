@@ -43,8 +43,14 @@
 
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
+  <logger name="actors" level="DEBUG" />
+  <logger name="com.arpnetworking" level="DEBUG" />
+  <logger name="controllers" level="DEBUG" />
+  <logger name="global" level="DEBUG" />
+  <logger name="models" level="DEBUG" />
+  <logger name="org.reflections.Reflections" level="ERROR" />
 
-  <root level="DEBUG">
+  <root level="INFO">
     <appender-ref ref="RemetProxyAsync" />
   </root>
 

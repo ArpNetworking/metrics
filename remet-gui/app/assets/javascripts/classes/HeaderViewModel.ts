@@ -36,10 +36,10 @@ class HeaderViewModel implements ViewModel {
     autocompleteOpts: any = {
         source: {
             source: (request: string, response: ResponseCallback) => {
-                $.getJSON("/hosts/v1/query", {name: request, limit: 10}, (result:any) => {
-                    var hosts:{hostName: string; metricsSoftwareState: string}[] = result.data;
+                $.getJSON("/v1/hosts/query", {name: request, limit: 10}, (result:any) => {
+                    var hosts:{hostname: string; metricsSoftwareState: string}[] = result.data;
                     var transformed = hosts.map((host) => {
-                        return {value: host.hostName}
+                        return {value: host.hostname}
                     });
                     response(transformed);
                 });

@@ -57,10 +57,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
      */
     public void close() {
         if (_isOpen.getAndSet(false)) {
-            LOGGER.debug()
-                    .setMessage("Bucket closed")
-                    .addData("bucket", this)
-                    .log();
             final Collection<AggregatedData> data = Lists.newArrayList();
             computeStatistics(_counterMetricSamples, _counterStatistics, data);
             computeStatistics(_gaugeMetricSamples, _gaugeStatistics, data);
@@ -97,17 +93,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
             switch (metric.getType()) {
                 case COUNTER: {
                     final boolean sorted = _counterStatistics.stream().anyMatch((s) -> s instanceof OrderedStatistic);
-                    addMetric(name, metric, _counterMetricSamples, sorted);
+                    addMetric(name, metric, record.getTime(), _counterMetricSamples, sorted);
                     break;
                 }
                 case GAUGE: {
                     final boolean sorted = _gaugeStatistics.stream().anyMatch((s) -> s instanceof OrderedStatistic);
-                    addMetric(name, metric, _gaugeMetricSamples, sorted);
+                    addMetric(name, metric, record.getTime(), _gaugeMetricSamples, sorted);
                     break;
                 }
                 case TIMER: {
                     final boolean sorted = _timerStatistics.stream().anyMatch((s) -> s instanceof OrderedStatistic);
-                    addMetric(name, metric, _timerMetricSamples, sorted);
+                    addMetric(name, metric, record.getTime(), _timerMetricSamples, sorted);
                     break;
                 }
                 default:
@@ -121,8 +117,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
         }
     }
 
-    public DateTime getThreshold() {
-        return _start.plus(_period);
+    public DateTime getStart() {
+        return _start;
+    }
+
+    public boolean isOpen() {
+        return _isOpen.get();
     }
 
     /**
@@ -184,6 +184,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
     private void addMetric(
             final String name,
             final Metric metric,
+            final DateTime time,
             final Map<String, Collection<Quantity>> data,
             final boolean sorted) {
 
@@ -205,8 +206,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
                 LOGGER.warn()
                         .setMessage("Discarding metric")
                         .addData("reason", "added after close")
+                        .addData("bucket", this)
                         .addData("name", name)
                         .addData("metric", metric)
+                        .addData("time", time)
                         .log();
                 return;
             }

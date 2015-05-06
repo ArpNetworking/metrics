@@ -23,11 +23,11 @@ import akka.cluster.Cluster;
 import akka.contrib.pattern.ClusterSharding;
 import akka.contrib.pattern.ClusterSingletonManager;
 import akka.contrib.pattern.ClusterSingletonProxy;
-import akka.http.Http;
-import akka.http.HttpExt;
+import akka.http.javadsl.Http;
+import akka.http.javadsl.IncomingConnection;
+import akka.http.javadsl.ServerBinding;
 import akka.stream.ActorFlowMaterializer;
 import akka.stream.ActorFlowMaterializerSettings;
-import akka.stream.scaladsl.Source;
 import com.arpnetworking.clusteraggregator.aggregation.AggMessageExtractor;
 import com.arpnetworking.clusteraggregator.aggregation.Aggregator;
 import com.arpnetworking.clusteraggregator.aggregation.Bookkeeper;
@@ -39,9 +39,9 @@ import com.arpnetworking.clusteraggregator.configuration.ConfigurableActorProxy;
 import com.arpnetworking.clusteraggregator.configuration.EmitterConfiguration;
 import com.arpnetworking.clusteraggregator.configuration.RebalanceConfiguration;
 import com.arpnetworking.clusteraggregator.http.Routes;
-import com.arpnetworking.configuration.FileTrigger;
 import com.arpnetworking.configuration.jackson.DynamicConfiguration;
 import com.arpnetworking.configuration.jackson.JsonNodeFileSource;
+import com.arpnetworking.configuration.triggers.FileTrigger;
 import com.arpnetworking.guice.akka.GuiceActorCreator;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Sink;
@@ -57,7 +57,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import scala.compat.java8.JFunction;
 import scala.concurrent.Future;
 
 import java.util.Collections;
@@ -171,7 +170,7 @@ public class GuiceModule extends AbstractModule {
     @Singleton
     @Named("tcp-server")
     private ActorRef provideTcpServer(final Injector injector, final ActorSystem system) {
-        return system.actorOf(Props.create(new GuiceActorCreator(injector, AggClientServer.class)), "tcp-server");
+        return system.actorOf(GuiceActorCreator.props(injector, AggClientServer.class), "tcp-server");
     }
 
     @Provides
@@ -188,7 +187,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("http-server")
-    private Source<Http.IncomingConnection, Future<Http.ServerBinding>> provideHttpServer(
+    private akka.stream.javadsl.Source<IncomingConnection, Future<ServerBinding>> provideHttpServer(
             final ActorSystem system,
             final MetricsFactory metricsFactory) {
         final ActorFlowMaterializerSettings materializerSettings = ActorFlowMaterializerSettings.apply(system);
@@ -196,18 +195,14 @@ public class GuiceModule extends AbstractModule {
 
         // Create and bind Http server
         final Routes routes = new Routes(system, metricsFactory);
-        final HttpExt httpExt = (HttpExt) Http.get(system);
-        final Source<Http.IncomingConnection, Future<Http.ServerBinding>> binding = httpExt.bind(
+        final Http http = Http.get(system);
+        final akka.stream.javadsl.Source<IncomingConnection, Future<ServerBinding>> binding = http.bind(
                 _configuration.getHttpHost(),
                 _configuration.getHttpPort(),
-                httpExt.bind$default$3(),
-                httpExt.bind$default$4(),
-                httpExt.bind$default$5(),
-                httpExt.bind$default$6(),
                 materializer);
         binding.runForeach(
-                        JFunction.proc(r -> r.handleWithAsyncHandler(routes, materializer)),
-                        materializer);
+                connection -> connection.handleWithAsyncHandler(routes, materializer),
+                materializer);
         return binding;
     }
 
@@ -230,7 +225,7 @@ public class GuiceModule extends AbstractModule {
         final RebalanceConfiguration rebalanceConfiguration = _configuration.getRebalanceConfiguration();
         return clusterSharding.start(
                 "Aggregator",
-                Props.create(new GuiceActorCreator(injector, Aggregator.class)),
+                GuiceActorCreator.props(injector, Aggregator.class),
                 extractor,
                 new ParallelLeastShardAllocationStrategy(
                         rebalanceConfiguration.getMaxParallel(),
@@ -254,7 +249,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Named("agg-client-supervisor")
     private Props provideAggClientSupervisorProvider(final Injector injector) {
-        return Props.create(new GuiceActorCreator(injector, AggClientSupervisor.class));
+        return GuiceActorCreator.props(injector, AggClientSupervisor.class);
     }
 
     private final ClusterAggregatorConfiguration _configuration;

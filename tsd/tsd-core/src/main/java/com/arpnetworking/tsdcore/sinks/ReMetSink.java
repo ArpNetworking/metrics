@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.metrics.com.arpnetworking.steno.Logger;
+import com.arpnetworking.metrics.com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.google.common.base.Charsets;
@@ -48,9 +50,10 @@ public final class ReMetSink extends HttpPostSink {
     @Override
     protected Collection<String> serialize(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
         // TODO(vkoskela): Send conditions to ReMet [MAI-451]
-        final StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(HEADER);
-        int byteLength = HEADER_BYTE_LENGTH;
+        final StringBuilder buffer = new StringBuilder();
+        buffer.append(HEADER);
+        int bufferLength = HEADER_BYTE_LENGTH;
+        int chunkCount = 0;
 
         final List<String> serializedData = Lists.newArrayList();
 
@@ -69,21 +72,36 @@ public final class ReMetSink extends HttpPostSink {
                     .append("\"},");
             final String nextChunk = nextChunkBuilder.toString();
             final int nextChunkSize = nextChunk.getBytes(Charsets.UTF_8).length;
-            if (byteLength + nextChunkSize > _maxRequestSize) {
-                // Close the string builder and add the string to the serialized list
-                stringBuilder.setCharAt(stringBuilder.length() - 1, ']');
-                serializedData.add(stringBuilder.toString());
+            if (bufferLength + nextChunkSize > _maxRequestSize) {
+                if (chunkCount > 0) {
+                    // TODO(vkoskela): Add chunk size metric. [MAI-?]
 
-                // Truncate all but the beginning '[' to prepare the next entries
-                stringBuilder.setLength(HEADER_BYTE_LENGTH);
-                byteLength = HEADER_BYTE_LENGTH;
+                    // Close the string builder and add the string to the serialized list
+                    buffer.setCharAt(buffer.length() - 1, ']');
+                    serializedData.add(buffer.toString());
+
+                    // Truncate all but the beginning '[' to prepare the next entries
+                    buffer.setLength(HEADER_BYTE_LENGTH);
+                    bufferLength = HEADER_BYTE_LENGTH;
+                    chunkCount = 0;
+                } else {
+                    LOGGER.warn(
+                            String.format(
+                                    "First chunk too big; bufferLength=%d nextChunkSize=%d maxRequestSize=%d",
+                                    bufferLength,
+                                    nextChunkSize,
+                                    _maxRequestSize));
+                }
             }
 
-            stringBuilder.append(nextChunk);
-            byteLength += nextChunkSize;
+            buffer.append(nextChunk);
+            bufferLength += nextChunkSize;
+            ++chunkCount;
         }
-        stringBuilder.setCharAt(stringBuilder.length() - 1, ']');
-        serializedData.add(stringBuilder.toString());
+        if (bufferLength > 1) {
+            buffer.setCharAt(buffer.length() - 1, ']');
+            serializedData.add(buffer.toString());
+        }
         return serializedData;
     }
 
@@ -96,6 +114,7 @@ public final class ReMetSink extends HttpPostSink {
 
     private static final String HEADER = "[";
     private static final int HEADER_BYTE_LENGTH = HEADER.getBytes(Charsets.UTF_8).length;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReMetSink.class);
 
     /**
      * Implementation of builder pattern for <code>ReMetSink</code>.

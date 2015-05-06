@@ -31,7 +31,7 @@ import com.google.common.base.Optional;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class Configurator<T extends Launchable, S> implements Launchable, Listener {
+public class Configurator<T extends Launchable, S> implements Listener, Launchable {
 
     /**
      * Public constructor.
@@ -98,6 +98,7 @@ public class Configurator<T extends Launchable, S> implements Launchable, Listen
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("ConfigurationClass", _configurationClass)
+                .add("Launchable", _launchable)
                 .toString();
     }
 

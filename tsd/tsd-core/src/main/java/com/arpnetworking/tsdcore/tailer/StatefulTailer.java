@@ -18,7 +18,6 @@ package com.arpnetworking.tsdcore.tailer;
 import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.TimerTrigger;
 import com.arpnetworking.utility.Trigger;
-import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -34,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.StandardOpenOption;
@@ -478,14 +476,12 @@ public final class StatefulTailer implements Tailer {
     private final ByteBuffer _buffer;
     private final ByteArrayOutputStream _lineBuffer;
     private final MessageDigest _md5;
-    private final Charset _characterSet = Charsets.UTF_8;
     private final InitialPosition _initialPosition;
     private final Trigger _trigger;
 
     private volatile boolean _isRunning = true;
     private Optional<String> _hash = Optional.absent();
 
-    private static final Long ZERO = 0L;
     private static final int REQUIRED_BYTES_FOR_HASH = 512;
     private static final int INITIAL_BUFFER_SIZE = 65536;
     private static final Logger LOGGER = LoggerFactory.getLogger(StatefulTailer.class);
@@ -606,7 +602,7 @@ public final class StatefulTailer implements Tailer {
         @NotNull
         private TailerListener _listener;
         @NotNull
-        private Duration _readInterval = Duration.millis(500);
+        private Duration _readInterval = Duration.millis(250);
         @NotNull
         private InitialPosition _initialPosition = InitialPosition.START;
     }

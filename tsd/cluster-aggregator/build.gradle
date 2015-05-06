@@ -24,15 +24,15 @@ repositories {
     }
 }
 
-def akka_version = '2.3.9'
+def akka_version = '2.3.10'
 def scala_version = '2.11'
 def jackson_version = '2.5.0'
 def guice_version = '4.0-beta5'
 
 dependencies {
     compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.2'
-    compile group: 'com.arpnetworking.logback', name: 'logback-steno', version: '1.3.2'
-    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.2'
+    compile group: 'com.arpnetworking.logback', name: 'logback-steno', version: '1.4.0'
+    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.3'
     compile group: 'com.arpnetworking.metrics.extras', name: 'jvm-extra', version: '0.3.1'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jackson_version
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jackson_version
@@ -46,7 +46,7 @@ dependencies {
     compile group: 'com.typesafe.akka', name: "akka-cluster_$scala_version", version: akka_version
     compile group: 'com.typesafe.akka', name: "akka-remote_$scala_version", version: akka_version
     compile group: 'com.typesafe.akka', name: "akka-contrib_$scala_version", version: akka_version
-    compile group: 'com.typesafe.akka', name: "akka-http-java-experimental_$scala_version", version: '1.0-M4'
+    compile group: 'com.typesafe.akka', name: "akka-http-java-experimental_$scala_version", version: '1.0-RC1'
     compile group: 'com.typesafe.akka', name: "akka-slf4j_$scala_version", version: akka_version
     compile group: 'com.typesafe.akka', name: "akka-persistence-experimental_$scala_version", version: akka_version
     compile group: 'com.github.krasserm', name: "akka-persistence-cassandra_$scala_version", version: "0.3.3"

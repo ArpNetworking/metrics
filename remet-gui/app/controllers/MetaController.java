@@ -53,13 +53,17 @@ public final class MetaController extends Controller {
         final boolean healthy = isHealthy();
         final ObjectNode result = JsonNodeFactory.instance.objectNode();
         response().setHeader(CACHE_CONTROL, "private, no-cache, no-store, must-revalidate");
-        result.put("status", healthy ? HEALTHY_STATE : UNHEALTHY_STATE);
-        return healthy ? ok(result) : internalServerError(result);
+        if (healthy) {
+            result.put("status", HEALTHY_STATE);
+            return ok(result);
+        }
+        result.put("status", UNHEALTHY_STATE);
+        return internalServerError(result);
     }
 
     private static boolean isHealthy() {
         // TODO(vkoskela): Deep health check when features warrant it [MAI-83].
-        return true;
+        return Boolean.TRUE;
     }
 
     // TODO(vkoskela): Convert this to a JSON serializer [MAI-65]
@@ -94,7 +98,7 @@ public final class MetaController extends Controller {
 
     // TODO(vkoskela): Convert this to a JSON serializer [MAI-65]
     private static void put(final ObjectNode node, final String remaining, final ConfigValue value) {
-        final int dotIndex = remaining.indexOf(".");
+        final int dotIndex = remaining.indexOf('.');
         final boolean leaf = dotIndex == -1;
         if (leaf) {
             node.set(remaining, getConfigNode(value.unwrapped()));

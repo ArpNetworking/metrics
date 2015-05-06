@@ -51,7 +51,7 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
      * {@inheritDoc}
      */
     @Override
-    public void launch() {
+    public synchronized void launch() {
         _legacyLimiter = new com.arpnetworking.tsdcore.limiter.legacy.DefaultMetricsLimiter.Builder()
                 .setAgeOutThreshold(_ageOutThreshold.toStandardDuration())
                 .setEnableStateAutoWriter(Boolean.TRUE)
@@ -68,7 +68,7 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
      * {@inheritDoc}
      */
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         _legacyLimiter.close();
         _legacyLimiter = null;
     }

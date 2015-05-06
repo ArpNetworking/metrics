@@ -34,8 +34,8 @@ public final class DefaultHost implements Host {
      * {@inheritDoc}
      */
     @Override
-    public String getHostName() {
-        return _hostName;
+    public String getHostname() {
+        return _hostname;
     }
 
     /**
@@ -44,6 +44,14 @@ public final class DefaultHost implements Host {
     @Override
     public MetricsSoftwareState getMetricsSoftwareState() {
         return _metricsSoftwareState;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getCluster() {
+        return _cluster;
     }
 
     /**
@@ -60,8 +68,9 @@ public final class DefaultHost implements Host {
         }
 
         final DefaultHost otherHost = (DefaultHost) other;
-        return Objects.equal(_hostName, otherHost._hostName)
-                && Objects.equal(_metricsSoftwareState, otherHost._metricsSoftwareState);
+        return Objects.equal(_hostname, otherHost._hostname)
+                && Objects.equal(_metricsSoftwareState, otherHost._metricsSoftwareState)
+                && Objects.equal(_cluster, otherHost._cluster);
     }
 
     /**
@@ -69,7 +78,7 @@ public final class DefaultHost implements Host {
      */
     @Override
     public int hashCode() {
-        return Objects.hashCode(_hostName, _metricsSoftwareState);
+        return Objects.hashCode(_hostname, _metricsSoftwareState);
     }
 
     /**
@@ -79,18 +88,21 @@ public final class DefaultHost implements Host {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("HostName", _hostName)
+                .add("Hostname", _hostname)
                 .add("MetricsSoftwareState", _metricsSoftwareState)
+                .add("Cluster", _cluster)
                 .toString();
     }
 
     private DefaultHost(final Builder builder) {
-        _hostName = builder._hostName;
+        _hostname = builder._hostname;
         _metricsSoftwareState = builder._metricsSoftwareState;
+        _cluster = builder._cluster;
     }
 
-    private final String _hostName;
+    private final String _hostname;
     private final MetricsSoftwareState _metricsSoftwareState;
+    private final String _cluster;
 
     /**
      * Implementation of builder pattern for <code>DefaultHost</code>.
@@ -112,8 +124,19 @@ public final class DefaultHost implements Host {
          * @param value The hostname.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setHostName(final String value) {
-            _hostName = value;
+        public Builder setHostname(final String value) {
+            _hostname = value;
+            return this;
+        }
+
+        /**
+         * The cluster. Cannot be null or empty.
+         *
+         * @param value The cluster.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setCluster(final String value) {
+            _cluster = value;
             return this;
         }
 
@@ -130,8 +153,10 @@ public final class DefaultHost implements Host {
 
         @NotNull
         @NotEmpty
-        private String _hostName;
+        private String _hostname;
         @NotNull
         private MetricsSoftwareState _metricsSoftwareState;
+        @NotEmpty
+        private String _cluster;
     }
 }

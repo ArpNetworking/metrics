@@ -76,7 +76,7 @@ public class AggClientSupervisor extends UntypedActor {
             connection.tell(TcpMessage.register(handler, true, true), getSelf());
             getContext().watch(handler);
         } else if (message instanceof Terminated) {
-            _log.debug("handler shutdown, shutting down supervisor");
+            _log.info("handler shutdown, shutting down supervisor");
             getContext().stop(getSelf());
         } else {
             unhandled(message);
@@ -102,7 +102,7 @@ public class AggClientSupervisor extends UntypedActor {
                 1, // Number of retries
                 Duration.create(5, TimeUnit.MINUTES), // Within 5 minutes
                 throwable -> {
-                    _log.debug("supervisor caught exception: ", throwable);
+                    _log.warning("supervisor caught exception: ", throwable);
                      //if any of the children throw an exception, stop this actor to clean up all the resources
                      // the client will need to reconnect
                      return SupervisorStrategy.stop();

@@ -16,12 +16,12 @@
 package models;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Optional;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Model class containing metadata about paginated results.
@@ -44,32 +44,23 @@ public class Pagination {
             final String path,
             final long total,
             final int size,
-            final Optional<Integer> limit,
+            final int limit,
             final Optional<Integer> offset,
             final Map<String, String> conditions) {
         _total = total;
         _size = size;
         _offset = offset.isPresent() ? offset.get() : 0;
 
-        Optional<URI> previous = Optional.absent();
-        Optional<URI> next = Optional.absent();
+        Optional<URI> previous = Optional.empty();
+        Optional<URI> next = Optional.empty();
         if (_offset + _size < _total) {
             final int newOffset = _offset + _size;
-            final int newLimit = limit.isPresent() ? limit.get() : _size;
+            final int newLimit = limit;
             next = Optional.of(createReference(path, newLimit, newOffset, conditions));
         }
         if (_offset > 0) {
-            // This is somewhat stupid; the user specified an offset but
-            // no limit; so we page backwards by the number of records
-            // returned in this call. It might be more correct to return
-            // the "other" records but this is more dangerous (e.g. look at
-            // the last ten, then see all the others).
-            int newOffset = Math.max(_offset - _size, 0);
-            int newLimit = _offset - newOffset;
-            if (limit.isPresent()) {
-                newOffset = Math.max(_offset - limit.get(), 0);
-                newLimit = Math.min(_offset - newOffset, limit.get());
-            }
+            final int newOffset = Math.max(_offset - limit, 0);
+            final int newLimit = Math.min(_offset - newOffset, limit);
             previous = Optional.of(createReference(path, newLimit, newOffset, conditions));
         }
         _next = next;

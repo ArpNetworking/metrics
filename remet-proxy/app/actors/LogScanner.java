@@ -21,7 +21,6 @@ import akka.actor.UntypedActor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -36,7 +35,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nullable;
 
 /**
  * Actor responsible for discovering files that are created or removed.
@@ -57,13 +55,7 @@ public class LogScanner extends UntypedActor {
         _fileSourceManagerActor = fileSourceManager;
         _logs = FluentIterable
                 .from(configuration.getStringList("logs"))
-                .transform(new Function<String, Path>() {
-                    @Nullable
-                    @Override
-                    public Path apply(@Nullable final String file) {
-                        return Paths.get(file);
-                    }
-                })
+                .transform(Paths::get)
                 .toList();
 
         LOGGER.debug()

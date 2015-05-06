@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.Iterables;
-import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
 import scala.collection.JavaConversions;
 
@@ -151,7 +150,6 @@ public final class StatusResponse {
 
         private ClusterStatusCache.StatusResponse _clusterState;
         private BookkeeperData _bookkeeperData;
-        @NotNull
         private Address _localAddress;
         private Map<Period, PeriodMetrics> _localMetrics;
     }

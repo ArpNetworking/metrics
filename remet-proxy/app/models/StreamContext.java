@@ -41,7 +41,6 @@ import models.messages.MetricsListRequest;
 import models.messages.NewLog;
 import models.messages.NewMetric;
 import models.messages.Quit;
-import play.libs.F.Callback;
 import play.libs.F.Callback0;
 import play.mvc.WebSocket;
 import scala.concurrent.duration.FiniteDuration;
@@ -175,13 +174,7 @@ public class StreamContext extends UntypedActor {
             }
         });
 
-        message.getInputChannel().onMessage(new Callback<JsonNode>() {
-            @Override
-            public void invoke(final JsonNode event) {
-                // Send the command to the child actor
-                context.tell(new Command(event), ActorRef.noSender());
-            }
-        });
+        message.getInputChannel().onMessage(m -> context.tell(new Command(m), ActorRef.noSender()));
 
         LOGGER.info()
                 .setMessage("Connection opened")

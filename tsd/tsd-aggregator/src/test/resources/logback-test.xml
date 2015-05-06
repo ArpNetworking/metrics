@@ -15,14 +15,18 @@
   ~ limitations under the License.
   -->
 <configuration>
-    <!-- IMPORTANT: This logger is only used during testing -->
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg %n</pattern>
-        </encoder>
-    </appender>
+  <!-- IMPORTANT: This logger is only used during testing -->
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="com.arpnetworking.logback.KeyValueEncoder">
+      <layout class="ch.qos.logback.classic.PatternLayout">
+        <pattern>%relative %date %t [%level] %logger : %message %ex%n</pattern>
+      </layout>
+    </encoder>
+  </appender>
 
-    <root level="DEBUG">
-        <appender-ref ref="STDOUT"/>
-    </root>
+  <logger name="org.reflections.Reflections" level="ERROR" />
+
+  <root level="TRACE">
+    <appender-ref ref="STDOUT"/>
+  </root>
 </configuration>

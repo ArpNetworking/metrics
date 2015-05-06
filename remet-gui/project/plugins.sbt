@@ -18,17 +18,19 @@ logLevel := Level.Info
 // The Typesafe repository
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 
+// The SBT Community repository
+resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin-releases/"
+
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.4.0-M2")
+addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.4.0-RC1")
 
-// TODO(vkoskela): Enable Findbugs in Play [MAI-456]
-//addSbtPlugin("de.johoop" % "findbugs4sbt" % "1.3.0")
+addSbtPlugin("de.johoop" %% "findbugs4sbt" % "1.4.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.1")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-rjs" % "1.0.7")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.0.0")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-digest" % "1.1.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.0")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-gzip" % "1.0.0")
 
 libraryDependencies ++= Seq(
     "com.puppycrawl.tools" % "checkstyle" % "6.3"

@@ -17,15 +17,15 @@ package com.arpnetworking.tsdaggregator;
 
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import akka.http.HttpExt;
-import akka.http.model.japi.Http;
+import akka.http.javadsl.Http;
+import akka.http.javadsl.IncomingConnection;
+import akka.http.javadsl.ServerBinding;
 import akka.stream.ActorFlowMaterializer;
 import akka.stream.ActorFlowMaterializerSettings;
-import akka.stream.scaladsl.Source;
 import ch.qos.logback.classic.LoggerContext;
-import com.arpnetworking.configuration.FileTrigger;
 import com.arpnetworking.configuration.jackson.DynamicConfiguration;
 import com.arpnetworking.configuration.jackson.JsonNodeFileSource;
+import com.arpnetworking.configuration.triggers.FileTrigger;
 import com.arpnetworking.http.Routes;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
@@ -50,7 +50,6 @@ import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import scala.compat.java8.JFunction;
 import scala.concurrent.Future;
 
 import java.io.File;
@@ -138,7 +137,7 @@ public final class Main implements Launchable {
      * {@inheritDoc}
      */
     @Override
-    public void launch() {
+    public synchronized void launch() {
         final Injector injector = launchGuice();
         launchAkka(injector);
         launchLimiters();
@@ -150,7 +149,7 @@ public final class Main implements Launchable {
      * {@inheritDoc}
      */
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         shutdownJvmMetricsCollector();
         shutdownPipelines();
         shutdownLimiters();
@@ -207,17 +206,13 @@ public final class Main implements Launchable {
         final ActorFlowMaterializer materializer = ActorFlowMaterializer.create(materializerSettings, _actorSystem);
 
         // Create and bind Http server
-        final HttpExt httpExt = (HttpExt) Http.get(_actorSystem);
-        final Source<akka.http.Http.IncomingConnection, Future<akka.http.Http.ServerBinding>> binding = httpExt.bind(
+        final Http http = Http.get(_actorSystem);
+        final akka.stream.javadsl.Source<IncomingConnection, Future<ServerBinding>> binding = http.bind(
                 _configuration.getHttpHost(),
                 _configuration.getHttpPort(),
-                httpExt.bind$default$3(),
-                httpExt.bind$default$4(),
-                httpExt.bind$default$5(),
-                httpExt.bind$default$6(),
                 materializer);
         binding.runForeach(
-                JFunction.proc(b -> b.handleWithAsyncHandler(routes, materializer)),
+                connection -> connection.handleWithAsyncHandler(routes, materializer),
                 materializer);
     }
 
@@ -318,11 +313,11 @@ public final class Main implements Launchable {
         public PipelinesLaunchable(final ObjectMapper objectMapper, final File directory) {
             _objectMapper = objectMapper;
             _directory = directory;
-            _fileToPipelineLaunchables = Maps.newHashMap();
+            _fileToPipelineLaunchables = Maps.newConcurrentMap();
         }
 
         @Override
-        public void launch() {
+        public synchronized void launch() {
             _pipelinesExecutor = Executors.newSingleThreadScheduledExecutor();
             _pipelinesExecutor.scheduleAtFixedRate(
                     this,
@@ -332,8 +327,13 @@ public final class Main implements Launchable {
         }
 
         @Override
-        public void shutdown() {
+        public synchronized void shutdown() {
             _pipelinesExecutor.shutdown();
+            try {
+                _pipelinesExecutor.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (final InterruptedException e) {
+                LOGGER.warn("Unable to shutdown pipeline executor", e);
+            }
             _pipelinesExecutor = null;
 
             _fileToPipelineLaunchables.keySet()

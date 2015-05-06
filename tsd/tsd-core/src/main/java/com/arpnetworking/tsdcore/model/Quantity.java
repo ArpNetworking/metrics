@@ -226,6 +226,17 @@ public final class Quantity implements Comparable<Quantity>, Serializable {
             return this;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Quantity build() {
+            if (_value == null) {
+                throw new IllegalStateException("value cannot be null");
+            }
+            return new Quantity(this);
+        }
+
         @NotNull
         private Double _value;
         private Unit _unit;

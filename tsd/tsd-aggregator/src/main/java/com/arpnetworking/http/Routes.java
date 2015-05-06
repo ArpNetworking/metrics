@@ -20,15 +20,15 @@ import akka.actor.ActorSystem;
 import akka.dispatch.Futures;
 import akka.dispatch.Mapper;
 import akka.dispatch.OnComplete;
-import akka.http.model.HttpRequest;
-import akka.http.model.HttpResponse;
-import akka.http.model.HttpResponse$;
-import akka.http.model.japi.HttpHeader;
-import akka.http.model.japi.HttpMethods;
-import akka.http.model.japi.MediaTypes;
-import akka.http.model.japi.StatusCodes;
-import akka.http.model.japi.headers.CacheControl;
-import akka.http.model.japi.headers.CacheDirectives;
+import akka.http.javadsl.model.ContentType;
+import akka.http.javadsl.model.HttpHeader;
+import akka.http.javadsl.model.HttpMethods;
+import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.MediaTypes;
+import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.headers.CacheControl;
+import akka.http.javadsl.model.headers.CacheDirectives;
 import akka.japi.JavaPartialFunction;
 import akka.pattern.Patterns;
 import akka.util.Timeout;
@@ -66,16 +66,15 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
      * {@inheritDoc}
      */
     @Override
-    public Future<HttpResponse> apply(final akka.http.model.HttpRequest request) {
+    public Future<HttpResponse> apply(final HttpRequest request) {
         final Metrics metrics = _metricsFactory.create();
         final Timer timer = metrics.createTimer(createTimerName(request));
         // TODO(vkoskela): Add a request UUID and include in MDC. [MAI-462]
         LOGGER.trace()
                 .setEvent("http.in.start")
                 .addData("method", request.method())
-                .addData("url", request.uri())
-                .addData("headers", request.headers())
-                .addData("cookies", request.cookies())
+                .addData("url", request.getUri())
+                .addData("headers", request.getHeaders())
                 .log();
         final Future<HttpResponse> futureResponse = process(request);
         futureResponse.onComplete(
@@ -87,10 +86,9 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                         final LogBuilder log = LOGGER.trace()
                                 .setEvent("http.in")
                                 .addData("method", request.method())
-                                .addData("url", request.uri())
+                                .addData("url", request.getUri())
                                 .addData("status", response.status().intValue())
-                                .addData("headers", request.headers())
-                                .addData("cookies", request.cookies());
+                                .addData("headers", request.getHeaders());
                         if (failure != null) {
                             log.setEvent("http.in.error").addData("exception", failure);
                         }
@@ -109,7 +107,7 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                                 new Mapper<Boolean, HttpResponse>() {
                                     @Override
                                     public HttpResponse apply(final Boolean isHealthy) {
-                                        return (HttpResponse) response()
+                                        return (HttpResponse) HttpResponse.create()
                                                 .withStatus(isHealthy ? StatusCodes.OK : StatusCodes.INTERNAL_SERVER_ERROR)
                                                 .addHeader(PING_CACHE_CONTROL_HEADER)
                                                 .withEntity(
@@ -123,16 +121,7 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                         );
             }
         }
-        return Futures.successful((HttpResponse) response().withStatus(404));
-    }
-
-    private HttpResponse response() {
-        return HttpResponse.apply(
-                HttpResponse$.MODULE$.apply$default$1(),
-                HttpResponse$.MODULE$.apply$default$2(),
-                HttpResponse$.MODULE$.apply$default$3(),
-                HttpResponse$.MODULE$.apply$default$4()
-        );
+        return Futures.successful(HttpResponse.create().withStatus(404));
     }
 
     private <T> Future<T> ask(final String actorPath, final Object request, final T defaultValue) {
@@ -187,6 +176,6 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
     private static final String UNHEALTHY_STATE = "UNHEALTHY";
     private static final String HEALTHY_STATE = "HEALTHY";
 
-    private static final akka.http.model.japi.ContentType JSON_CONTENT_TYPE =
-            akka.http.model.japi.ContentType.create(MediaTypes.APPLICATION_JSON);
+    private static final ContentType JSON_CONTENT_TYPE = ContentType.create(MediaTypes.APPLICATION_JSON);
+
 }

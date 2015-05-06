@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.configuration;
+package com.arpnetworking.configuration.triggers;
 
+import com.arpnetworking.configuration.Trigger;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
+import net.sf.oval.constraint.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,6 +154,7 @@ public final class FileTrigger implements Trigger {
             return this;
         }
 
+        @NotNull
         private File _file;
     }
 }

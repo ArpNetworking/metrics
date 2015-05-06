@@ -15,7 +15,7 @@
   -->
 
 <configuration>
-    
+
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
   <conversionRule conversionWord="sThrowable" converterClass="com.arpnetworking.logback.SingleLineExceptionConverter" />
 
@@ -35,7 +35,7 @@
       <compressLoggerName>true</compressLoggerName>
     </encoder>
   </appender>
-   
+
   <appender name="RemetProxyAsync" class="ch.qos.logback.classic.AsyncAppender">
     <discardingThreshold>0</discardingThreshold>
     <appender-ref ref="RemetProxyLogger"/>
@@ -43,9 +43,15 @@
 
   <logger name="play" level="WARN" />
   <logger name="application" level="INFO" />
+  <logger name="actors" level="INFO" />
+  <logger name="com.arpnetworking" level="INFO" />
+  <logger name="controllers" level="INFO" />
+  <logger name="global" level="INFO" />
+  <logger name="models" level="INFO" />
+  <logger name="org.reflections.Reflections" level="ERROR" />
 
   <root level="WARN">
     <appender-ref ref="RemetProxyAsync" />
   </root>
-  
+
 </configuration>

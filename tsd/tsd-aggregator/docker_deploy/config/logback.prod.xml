@@ -42,6 +42,7 @@
     </appender>
 
     <logger name="com.arpnetworking" level="INFO" />
+    <logger name="org.reflections.Reflections" level="ERROR" />
 
     <root level="INFO">
         <appender-ref ref="TsdAggregatorAsync"/>

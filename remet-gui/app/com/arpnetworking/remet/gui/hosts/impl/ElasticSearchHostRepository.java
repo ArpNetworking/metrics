@@ -18,11 +18,12 @@ package com.arpnetworking.remet.gui.hosts.impl;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostQuery;
-import com.arpnetworking.remet.gui.hosts.HostQueryResult;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
+import com.arpnetworking.remet.gui.impl.DefaultQueryResult;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -52,6 +53,7 @@ import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import play.Application;
 import play.Configuration;
 
 import java.io.IOException;
@@ -71,9 +73,10 @@ public class ElasticSearchHostRepository implements HostRepository {
      * Public constructor.
      *
      * @param configuration Instance of Play's <code>Configuration</code>.
+     * @param application Instance of Play <code>Application</code>.
      */
     @Inject
-    public ElasticSearchHostRepository(final Configuration configuration) {
+    public ElasticSearchHostRepository(final Configuration configuration, final Application application) {
         // For more information about these settings please see:
         //
         // Elastic Search Configuration:
@@ -81,21 +84,7 @@ public class ElasticSearchHostRepository implements HostRepository {
         //
         // Index Settings:
         // http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-update-settings.html
-        this(
-                ImmutableSettings.settingsBuilder()
-                        .put("cluster.name", configuration.getString("elasticSearch.cluster.name"))
-                        .put("node.local", configuration.getString("elasticSearch.node.local"))
-                        .put("node.data", configuration.getString("elasticSearch.node.data"))
-                        .put("path.logs", ConfigurationHelper.getFile(configuration, "elasticSearch.path.logs").getAbsolutePath())
-                        .put("path.data", ConfigurationHelper.getFile(configuration, "elasticSearch.path.data").getAbsolutePath())
-                        .put("discovery.zen.ping.unicast.hosts", configuration.getString("elasticSearch.discovery.zen.ping.unicast.hosts"))
-                        .put("discovery.zen.minimum_master_nodes", configuration.getInt("elasticSearch.discovery.zen.minimum_master_nodes"))
-                        .build(),
-                ImmutableSettings.settingsBuilder()
-                        .put("number_of_shards", configuration.getString("elasticSearch.index.hosts.shards"))
-                        .put("number_of_replicas", configuration.getString("elasticSearch.index.hosts.replicas"))
-                        .put("refresh_interval", configuration.getString("elasticSearch.index.hosts.refresh"))
-                        .build());
+        this(buildNodeSettings(configuration, application), buildIndexSettings(configuration));
     }
 
     /**
@@ -124,21 +113,28 @@ public class ElasticSearchHostRepository implements HostRepository {
                             .settings(_indexSettings)
                             .mapping(
                                     TYPE,
-                                    "{"
-                                    + "    \"properties\" : {"
-                                    + "        \"hostName\" : {"
-                                    + "            \"type\" : \"string\", "
-                                    + "            \"store\" : true, "
-                                    + "            \"fields\": {"
-                                    + "                \"raw\": {"
-                                    + "                    \"type\":  \"string\", "
-                                    + "                    \"index\": \"not_analyzed\""
-                                    + "                }"
-                                    + "            }"
-                                    + "        },"
-                                    + "        \"metricsSoftwareState\" : {\"type\" : \"string\", \"store\" : true}"
-                                    + "    }"
-                                    + "}")
+                                    "{\n"
+                                            + "    \"properties\" : {\n"
+                                            + "        \"hostname\" : {\n"
+                                            + "            \"type\" : \"string\",\n"
+                                            + "            \"store\" : true,\n"
+                                            + "            \"fields\": {\n"
+                                            + "                \"raw\": {\n"
+                                            + "                    \"type\":  \"string\",\n"
+                                            + "                    \"index\": \"not_analyzed\"\n"
+                                            + "                }\n"
+                                            + "            }\n"
+                                            + "        },\n"
+                                            + "        \"metricsSoftwareState\" : {\n"
+                                            + "            \"type\" : \"string\", \n"
+                                            + "            \"store\" : true\n"
+                                            + "        },\n"
+                                            + "        \"cluster\" : {\n"
+                                            + "            \"type\" : \"string\",\n"
+                                            + "            \"store\": true\n"
+                                            + "        }\n"
+                                            + "    }\n"
+                                            + "}")
                             ).actionGet();
 
             _client.admin().cluster().health(new ClusterHealthRequest(INDEX).waitForGreenStatus()).actionGet();
@@ -180,10 +176,10 @@ public class ElasticSearchHostRepository implements HostRepository {
             throw new RuntimeException(String.format("Unable to serialize host; host=%s", host), e);
         }
 
-        final IndexRequest indexRequest = new IndexRequest(INDEX, TYPE, host.getHostName())
+        final IndexRequest indexRequest = new IndexRequest(INDEX, TYPE, host.getHostname())
                 .source(hostJson);
 
-        final UpdateRequest updateRequest = new UpdateRequest(INDEX, TYPE, host.getHostName())
+        final UpdateRequest updateRequest = new UpdateRequest(INDEX, TYPE, host.getHostname())
                 .doc(hostJson)
                 .upsert(indexRequest);
 
@@ -199,26 +195,26 @@ public class ElasticSearchHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public void deleteHost(final String hostName) {
+    public void deleteHost(final String hostname) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Deleting host")
-                .addData("hostname", hostName)
+                .addData("hostname", hostname)
                 .log();
 
-        final DeleteResponse response = _client.prepareDelete(INDEX, TYPE, hostName)
+        final DeleteResponse response = _client.prepareDelete(INDEX, TYPE, hostname)
                 .setRefresh(true)
                 .execute()
                 .actionGet();
         if (response.isFound()) {
             LOGGER.info()
                     .setMessage("Deleted host")
-                    .addData("hostname", hostName)
+                    .addData("hostname", hostname)
                     .log();
         } else {
             LOGGER.info()
                     .setMessage("Host not found")
-                    .addData("hostname", hostName)
+                    .addData("hostname", hostname)
                     .log();
         }
     }
@@ -237,7 +233,7 @@ public class ElasticSearchHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public HostQueryResult query(final HostQuery query) {
+    public QueryResult<Host> query(final HostQuery query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Querying")
@@ -245,12 +241,15 @@ public class ElasticSearchHostRepository implements HostRepository {
                 .log();
 
         QueryBuilder esQuery = null;
-        if (query.getHostName().isPresent()) {
-            final QueryBuilder queryHostName = QueryBuilders.matchPhrasePrefixQuery("hostName", query.getHostName().get());
-            esQuery = esQuery == null ? queryHostName : QueryBuilders.boolQuery().must(esQuery).must(queryHostName);
+        if (query.getPartialHostname().isPresent()) {
+            esQuery = QueryBuilders.matchPhrasePrefixQuery("hostname", query.getPartialHostname().get()).maxExpansions(MAX_EXPANSIONS);
         }
         if (query.getMetricsSoftwareState().isPresent()) {
             final QueryBuilder queryState = QueryBuilders.matchQuery("metricsSoftwareState", query.getMetricsSoftwareState().get());
+            esQuery = esQuery == null ? queryState : QueryBuilders.boolQuery().must(esQuery).must(queryState);
+        }
+        if (query.getCluster().isPresent()) {
+            final QueryBuilder queryState = QueryBuilders.matchQuery("cluster", query.getCluster().get());
             esQuery = esQuery == null ? queryState : QueryBuilders.boolQuery().must(esQuery).must(queryState);
         }
 
@@ -266,12 +265,10 @@ public class ElasticSearchHostRepository implements HostRepository {
         } else {
             request.addSort(new ScoreSortBuilder());
         }
-        if (query.getLimit().isPresent()) {
-            request.setSize(query.getLimit().get());
-        }
         if (query.getOffset().isPresent()) {
             request.setFrom(query.getOffset().get());
         }
+        request.setSize(query.getLimit());
 
         return deserializeHits(request.execute().actionGet());
     }
@@ -323,8 +320,8 @@ public class ElasticSearchHostRepository implements HostRepository {
 
     private String mapField(final HostQuery.Field field) {
         switch (field) {
-            case HOST_NAME:
-                return "hostName.raw";
+            case HOSTNAME:
+                return "hostname.raw";
             case METRICS_SOFTWARE_STATE:
                 return "metricsSoftwareState";
             default:
@@ -332,7 +329,7 @@ public class ElasticSearchHostRepository implements HostRepository {
         }
     }
 
-    private HostQueryResult deserializeHits(final SearchResponse response) {
+    private QueryResult<Host> deserializeHits(final SearchResponse response) {
         final List<Host> hosts = Lists.newArrayList();
         for (final SearchHit hit : response.getHits().hits()) {
             try {
@@ -350,7 +347,7 @@ public class ElasticSearchHostRepository implements HostRepository {
                 deleteHost(hit.getId());
             }
         }
-        return new DefaultHostQueryResult(hosts, response.getHits().getTotalHits());
+        return new DefaultQueryResult<>(hosts, response.getHits().getTotalHits());
     }
 
     private void assertIsOpen() {
@@ -368,6 +365,26 @@ public class ElasticSearchHostRepository implements HostRepository {
         _indexSettings = indexSettings;
     }
 
+    private static Settings buildIndexSettings(final Configuration configuration) {
+        return ImmutableSettings.settingsBuilder()
+                .put("number_of_shards", configuration.getString("elasticSearch.index.hosts.shards"))
+                .put("number_of_replicas", configuration.getString("elasticSearch.index.hosts.replicas"))
+                .put("refresh_interval", configuration.getString("elasticSearch.index.hosts.refresh"))
+                .build();
+    }
+
+    private static Settings buildNodeSettings(final Configuration configuration, final Application application) {
+        return ImmutableSettings.settingsBuilder()
+                .put("cluster.name", configuration.getString("elasticSearch.cluster.name"))
+                .put("node.local", configuration.getString("elasticSearch.node.local"))
+                .put("node.data", configuration.getString("elasticSearch.node.data"))
+                .put("path.logs", ConfigurationHelper.getFile(configuration, "elasticSearch.path.logs", application).getAbsolutePath())
+                .put("path.data", ConfigurationHelper.getFile(configuration, "elasticSearch.path.data", application).getAbsolutePath())
+                .put("discovery.zen.ping.unicast.hosts", configuration.getString("elasticSearch.discovery.zen.ping.unicast.hosts"))
+                .put("discovery.zen.minimum_master_nodes", configuration.getInt("elasticSearch.discovery.zen.minimum_master_nodes"))
+                .build();
+    }
+
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final Settings _settings;
     private final Settings _indexSettings;
@@ -378,6 +395,7 @@ public class ElasticSearchHostRepository implements HostRepository {
     private static final String TYPE = "host";
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchHostRepository.class);
+    private static final int MAX_EXPANSIONS = 10000;
 
     static {
         final SimpleModule module = new SimpleModule("ElasticSearchHostRepository");

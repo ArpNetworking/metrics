@@ -27,6 +27,7 @@ import com.google.common.util.concurrent.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -207,12 +208,14 @@ public class ConfigurableActorProxy<T> extends UntypedActor {
      * Message class to send to the {@link com.arpnetworking.clusteraggregator.configuration.ConfigurableActorProxy} to
      * indicate you want to receive event notifications.
      */
-    public static final class SubscribeToNotifications {}
+    public static final class SubscribeToNotifications implements Serializable {
+        private static final long serialVersionUID = 1L;
+    }
 
     /**
      * Message class to tell observers that a new actor has started due to a configuration change.
      */
-    public static final class ConfigurableActorStarted {
+    public static final class ConfigurableActorStarted implements Serializable {
         /**
          * Public constructor.
          *
@@ -227,5 +230,6 @@ public class ConfigurableActorProxy<T> extends UntypedActor {
         }
 
         private final ActorRef _actor;
+        private static final long serialVersionUID = 1L;
     }
 }

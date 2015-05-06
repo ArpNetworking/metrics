@@ -30,44 +30,56 @@ public final class MetricsUtilTest {
 
     @Test
     public void convertToSnakeCaseUpperCaseStringWithSpaces() {
-        final String camelCased = MetricsUtil.convertToSnakeCase("Test String");
-        Assert.assertEquals("test_string", camelCased);
+        final String snakeCased = MetricsUtil.convertToSnakeCase("Test String");
+        Assert.assertEquals("test_string", snakeCased);
     }
 
     @Test
     public void convertToSnakeCaseLowerCaseStringWithSpaces() {
-        final String camelCased = MetricsUtil.convertToSnakeCase("test string");
-        Assert.assertEquals("test_string", camelCased);
+        final String snakeCased = MetricsUtil.convertToSnakeCase("test string");
+        Assert.assertEquals("test_string", snakeCased);
     }
 
     @Test
     public void convertToSnakeCaseMixedCaseStringWithSpaces() {
-        final String camelCased = MetricsUtil.convertToSnakeCase("Test string");
-        Assert.assertEquals("test_string", camelCased);
+        final String snakeCased = MetricsUtil.convertToSnakeCase("Test string");
+        Assert.assertEquals("test_string", snakeCased);
     }
 
     @Test
     public void convertToSnakeCaseLowerCaseStringWithoutSpaces() {
-        final String camelCased = MetricsUtil.convertToSnakeCase("teststring");
-        Assert.assertEquals("teststring", camelCased);
+        final String snakeCased = MetricsUtil.convertToSnakeCase("teststring");
+        Assert.assertEquals("teststring", snakeCased);
     }
 
     @Test
     public void convertToSnakeCaseUpperCaseStringWithoutSpaces() {
-        final String camelCased = MetricsUtil.convertToSnakeCase("Teststring");
-        Assert.assertEquals("teststring", camelCased);
+        final String snakeCased = MetricsUtil.convertToSnakeCase("Teststring");
+        Assert.assertEquals("teststring", snakeCased);
     }
 
     @Test
     public void convertToSnakeCaseAlreadyCamelCase() {
-        final String camelCased = MetricsUtil.convertToSnakeCase("TestString");
-        Assert.assertEquals("testString", camelCased);
+        final String snakeCased = MetricsUtil.convertToSnakeCase("TestStringAt");
+        Assert.assertEquals("test_string_at", snakeCased);
     }
 
     @Test
     public void convertToSnakeCaseStartingWithDigit() {
-        final String camelCased = MetricsUtil.convertToSnakeCase("1 Test String");
-        Assert.assertEquals("1_test_string", camelCased);
+        final String snakeCased = MetricsUtil.convertToSnakeCase("1 Test String");
+        Assert.assertEquals("1_test_string", snakeCased);
+    }
+
+    @Test
+    public void convertToSnakeCaseWithUpperCaseElements() {
+        final String snakeCased = MetricsUtil.convertToSnakeCase("PS Survivor Space");
+        Assert.assertEquals("ps_survivor_space", snakeCased);
+    }
+
+    @Test
+    public void convertToSnakeCaseWithUpperCaseElementsWithoutSpace() {
+        final String snakeCased = MetricsUtil.convertToSnakeCase("PS MarkSweep");
+        Assert.assertEquals("ps_mark_sweep", snakeCased);
     }
 
     @Test

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.clusteraggregator.configuration;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import akka.actor.UntypedActor;
 import akka.testkit.CallingThreadDispatcher;
 import akka.testkit.TestActorRef;
@@ -72,24 +72,30 @@ public class ConfigurableActorProxyTest extends BaseActorTest {
         ref.tell(new ConfigurableActorProxy.ApplyConfiguration<>(dummyConfig), ActorRef.noSender());
         // Make sure we start the first one
         Mockito.verify(_factoryMock).create(Mockito.same(dummyConfig));
+        final ActorRef firstChild = probe.expectMsgClass(
+                FiniteDuration.apply(2000, TimeUnit.MILLISECONDS),
+                ConfigurableActorProxy.ConfigurableActorStarted.class).getActor();
 
-        final scala.collection.immutable.Iterable<ActorRef> firstChildren = ref.children();
         final Object newConfig = new Object();
-        ref.tell(new ConfigurableActorProxy.ApplyConfiguration<>(newConfig), ActorRef.noSender());
-        Assert.assertEquals(1, firstChildren.size());
-        final ActorRef firstChild = firstChildren.head();
 
+        final TestProbe deathwatchProbe = TestProbe.apply(getSystem());
+        deathwatchProbe.watch(firstChild);
+
+        // Swap the config to a new one
+        ref.tell(new ConfigurableActorProxy.ApplyConfiguration<>(newConfig), ActorRef.noSender());
+
+        // Make sure the first actor dies
+        deathwatchProbe.expectMsgClass(FiniteDuration.apply(2000, TimeUnit.MILLISECONDS), Terminated.class);
 
         // NOTE: lifecycle monitoring does not execute in the CallingThreadDispatcher as expected.
         // There is an arbitrary 2000ms wait for the termination message to be dispatched
         Mockito.verify(_factoryMock, Mockito.timeout(2000)).create(Mockito.same(newConfig));
-        probe.expectMsgClass(
+        final ActorRef started = probe.expectMsgClass(
                 FiniteDuration.apply(2000, TimeUnit.MILLISECONDS),
-                ConfigurableActorProxy.ConfigurableActorStarted.class);
-        final scala.collection.immutable.Iterable<ActorRef> newChildren = ref.children();
-        Assert.assertEquals(1, newChildren.size());
-        final ActorRef newChild = newChildren.head();
-        Assert.assertNotSame(firstChild, newChild);
+                ConfigurableActorProxy.ConfigurableActorStarted.class).getActor();
+
+        // Make sure that a new actor was started from the config
+        Assert.assertNotEquals(firstChild, started);
     }
 
     private Props mockProps() {

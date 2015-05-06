@@ -1,12 +1,12 @@
 {
-    "kind":"discovery#restDescription",
-    "name":"cluster_aggregator",
-    "title":"Cluster Aggregator",
-    "description":"Provides cluster-level aggregation of host level aggregates produced by Time Series Data Aggregator over periods of time.",
-    "baseUrl":"http://localhost:7066",
-    "protocol":"rest",
-    "version":"v1",
-    "auth":{},
-    "schemas":{},
-    "resources":{}
+  "kind": "discovery#restDescription",
+  "name": "cluster_aggregator",
+  "title": "Cluster Aggregator",
+  "description": "Provides cluster-level aggregation of host level aggregates produced by Time Series Data Aggregator over periods of time.",
+  "baseUrl": "http://localhost:7066",
+  "protocol": "rest",
+  "version": "v1",
+  "auth": {},
+  "schemas": {},
+  "resources": {}
 }

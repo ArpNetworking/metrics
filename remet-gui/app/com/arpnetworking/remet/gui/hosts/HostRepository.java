@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.remet.gui.hosts;
 
+import com.arpnetworking.remet.gui.QueryResult;
+
 /**
  * Interface for repository of hosts available to ReMet. The repository is
  * designed around the host name as the primary key.
@@ -42,11 +44,11 @@ public interface HostRepository extends AutoCloseable {
     void addOrUpdateHost(Host host);
 
     /**
-     * Remove the host by host name from the repository.
+     * Remove the host by hostname from the repository.
      *
-     * @param hostName The host name of the host to remove.
+     * @param hostname The hostname of the host to remove.
      */
-    void deleteHost(String hostName);
+    void deleteHost(String hostname);
 
     /**
      * Create a query against the hosts repository.
@@ -61,7 +63,7 @@ public interface HostRepository extends AutoCloseable {
      * @param query Instance of <code>HostQuery</code>.
      * @return Instance of <code>HostQueryResult</code>.
      */
-    HostQueryResult query(final HostQuery query);
+    QueryResult<Host> query(final HostQuery query);
 
     /**
      * Retrieve the total number of hosts in the repository.

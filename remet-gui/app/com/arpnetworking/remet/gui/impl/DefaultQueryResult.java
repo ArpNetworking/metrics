@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Groupon.com
+ * Copyright 2015 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.remet.gui.hosts.impl;
+package com.arpnetworking.remet.gui.impl;
 
-import com.arpnetworking.remet.gui.hosts.Host;
-import com.arpnetworking.remet.gui.hosts.HostQueryResult;
+import com.arpnetworking.remet.gui.QueryResult;
 import com.google.common.base.MoreObjects;
 
 import java.util.List;
@@ -24,18 +23,20 @@ import java.util.List;
 /**
  * Default implementation of <code>HostQueryResult</code>.
  *
+ * @param <T> The result value type.
+ *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class DefaultHostQueryResult implements HostQueryResult {
+public class DefaultQueryResult<T> implements QueryResult<T> {
 
     /**
      * Public constructor.
      *
-     * @param hosts The <code>List</code> of <code>Host</code> instances.
+     * @param values The <code>List</code> of <code>Host</code> instances.
      * @param total The total number of matching <code>Host</code> instances.
      */
-    public DefaultHostQueryResult(final List<Host> hosts, final long total) {
-        _hosts = hosts;
+    public DefaultQueryResult(final List<? extends T> values, final long total) {
+        _values = values;
         _total = total;
     }
 
@@ -43,8 +44,8 @@ public class DefaultHostQueryResult implements HostQueryResult {
      * {@inheritDoc}
      */
     @Override
-    public List<Host> hosts() {
-        return _hosts;
+    public List<? extends T> values() {
+        return _values;
     }
 
     /**
@@ -62,11 +63,11 @@ public class DefaultHostQueryResult implements HostQueryResult {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Hosts", _hosts)
+                .add("Values", _values)
                 .add("Total", _total)
                 .toString();
     }
 
-    private final List<Host> _hosts;
+    private final List<? extends T> _values;
     private final long _total;
 }

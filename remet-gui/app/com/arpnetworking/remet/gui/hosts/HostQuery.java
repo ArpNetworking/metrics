@@ -15,7 +15,9 @@
  */
 package com.arpnetworking.remet.gui.hosts;
 
-import com.google.common.base.Optional;
+import com.arpnetworking.remet.gui.QueryResult;
+
+import java.util.Optional;
 
 /**
  * Interface describing a query to the <code>HostRepository</code>.
@@ -25,13 +27,13 @@ import com.google.common.base.Optional;
 public interface HostQuery {
 
     /**
-     * Set the host name to query for. Optional. Defaults to all hosts. If this field is not set it is strongly
+     * Set the hostname to query for. Optional. Defaults to all hosts. If this field is not set it is strongly
      * encouraged that the <code>limit</code> field is set.
      *
-     * @param partialHostName The partial or complete host name to match.
+     * @param partialHostname The partial or complete hostname to match.
      * @return This instance of <code>HostQuery</code>.
      */
-    HostQuery hostName(final Optional<String> partialHostName);
+    HostQuery partialHostname(final Optional<String> partialHostname);
 
     /**
      * Set the metrics software state to query for. Optional. Defaults to any state.
@@ -42,12 +44,20 @@ public interface HostQuery {
     HostQuery metricsSoftwareState(final Optional<MetricsSoftwareState> metricsSoftwareState);
 
     /**
-     * The maximum number of hosts to return. Optional. Default is not set (e.g. unbounded).
+     * Set the cluster to query for. Optional. Defaults to all clusters.
+     *
+     * @param cluster The complete cluster to match.
+     * @return This instance of <code>HostQuery</code>.
+     */
+    HostQuery cluster(final Optional<String> cluster);
+
+    /**
+     * The maximum number of hosts to return. Optional. Default is 1000.
      *
      * @param limit The maximum number of hosts to return.
      * @return This instance of <code>HostQuery</code>.
      */
-    HostQuery limit(final Optional<Integer> limit);
+    HostQuery limit(final int limit);
 
     /**
      * The offset into the result set. Optional. Default is not set.
@@ -70,16 +80,23 @@ public interface HostQuery {
     /**
      * Execute the query and return the results.
      *
-     * @return The results of the query as an <code>HostQueryResult</code> instance.
+     * @return The results of the query as an {@code QueryResult<Host>} instance.
      */
-    HostQueryResult execute();
+    QueryResult<Host> execute();
 
     /**
-     * Accessor for the host name.
+     * Accessor for the hostname.
      *
-     * @return The host name.
+     * @return The hostname.
      */
-    Optional<String> getHostName();
+    Optional<String> getPartialHostname();
+
+    /**
+     * Accessor for the cluster.
+     *
+     * @return The cluster.
+     */
+    Optional<String> getCluster();
 
     /**
      * Accessor for the metrics software state.
@@ -93,7 +110,7 @@ public interface HostQuery {
      *
      * @return The limit.
      */
-    Optional<Integer> getLimit();
+    int getLimit();
 
     /**
      * Accessor for the offset.
@@ -115,7 +132,7 @@ public interface HostQuery {
         /**
          * The hostname.
          */
-        HOST_NAME,
+        HOSTNAME,
         /**
          * The state of the metrics software.
          */

@@ -56,16 +56,7 @@ public class MetricsActionWrapper extends Action.Simple {
 
         final Metrics metrics = getMetrics(context);
         final Timer timer = metrics.createTimer(createTimerName(context));
-        return delegate.call(context).map(new F.Function<Result, Result>() {
-            @Override
-            // CHECKSTYLE.OFF: IllegalThrow
-            public Result apply(final Result result) throws Throwable {
-                // CHECKSTYLE.ON: IllegalThrow
-                timer.stop();
-                metrics.close();
-                return result;
-            }
-        });
+        return delegate.call(context).map(r -> { timer.stop(); metrics.close(); return r; });
         // TODO(vkoskela): Add success/failure counter by mapping on return code. [MAI-279]
     }
 

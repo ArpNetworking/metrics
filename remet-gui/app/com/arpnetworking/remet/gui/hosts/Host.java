@@ -24,11 +24,11 @@ package com.arpnetworking.remet.gui.hosts;
 public interface Host {
 
     /**
-     * Accessor for the host name.
+     * Accessor for the hostname.
      *
-     * @return The host name.
+     * @return The hostname.
      */
-    String getHostName();
+    String getHostname();
 
     /**
      * Accessor for the state of the metrics software stack on the host.
@@ -36,4 +36,11 @@ public interface Host {
      * @return The state of the metrics software stack on the host.
      */
     MetricsSoftwareState getMetricsSoftwareState();
+
+    /**
+     * Accessor for the cluster.
+     *
+     * @return The cluster.
+     */
+    String getCluster();
 }
