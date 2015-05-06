@@ -1,6 +1,8 @@
 Metrics
 =======
 
+[![Join the chat at https://gitter.im/ArpNetworking/metrics](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ArpNetworking/metrics?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Provides a platform for recording, aggregating, publishing and accessing metrics produced by your host system, shared resource, or application. 
 
 
