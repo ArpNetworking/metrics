@@ -35,7 +35,7 @@ class StatisticNodeVM implements BrowseNode {
         this.metricName = ko.observable(spec.metric);
         this.statisticName = ko.observable(spec.statistic);
         this.id = ko.observable(id);
-        this.children = ko.observableArray<BrowseNode>();
+        this.children = ko.observableArray<BrowseNode>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });;
         this.expanded = ko.observable(false);
         this.name = this.statisticName;
 

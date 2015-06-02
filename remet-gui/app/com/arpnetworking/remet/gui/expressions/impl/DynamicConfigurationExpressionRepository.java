@@ -16,8 +16,10 @@
 package com.arpnetworking.remet.gui.expressions.impl;
 
 import com.arpnetworking.configuration.jackson.DynamicConfiguration;
-import com.arpnetworking.configuration.jackson.JsonNodeUrlSource;
-import com.arpnetworking.configuration.triggers.UrlTrigger;
+import com.arpnetworking.configuration.jackson.JsonNodeFileSource;
+import com.arpnetworking.configuration.jackson.JsonNodeUriSource;
+import com.arpnetworking.configuration.triggers.FileTrigger;
+import com.arpnetworking.configuration.triggers.UriTrigger;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.remet.gui.QueryResult;
@@ -39,8 +41,9 @@ import com.google.inject.Inject;
 import net.sf.oval.constraint.NotNull;
 import play.Configuration;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -65,8 +68,8 @@ public class DynamicConfigurationExpressionRepository
     @Inject
     public DynamicConfigurationExpressionRepository(final Configuration playConfiguration) {
         try {
-            _configurationUrl = new URL(playConfiguration.getString("expressionRepository.url"));
-        } catch (final MalformedURLException e) {
+            _configurationUri = new URI(playConfiguration.getString("expressionRepository.uri"));
+        } catch (final URISyntaxException e) {
             throw Throwables.propagate(e);
         }
     }
@@ -80,16 +83,31 @@ public class DynamicConfigurationExpressionRepository
         LOGGER.debug().setMessage("Opening expression repository").log();
         final Reconfigurator<DynamicConfigurationExpressionRepository, ExpressionConfiguration> reconfigurator =
                 new Reconfigurator<>(this, ExpressionConfiguration.class);
-        _dynamicConfiguration = new DynamicConfiguration.Builder()
-                .setObjectMapper(OBJECT_MAPPER)
-                .addSourceBuilder(new JsonNodeUrlSource.Builder()
-                        .setObjectMapper(OBJECT_MAPPER)
-                        .setUrl(_configurationUrl))
-                .addTrigger(new UrlTrigger.Builder()
-                        .setUrl(_configurationUrl)
-                        .build())
-                .addListener(reconfigurator)
-                .build();
+        if ("http".equalsIgnoreCase(_configurationUri.getScheme())
+                || "https".equalsIgnoreCase(_configurationUri.getScheme())) {
+            _dynamicConfiguration = new DynamicConfiguration.Builder()
+                    .setObjectMapper(OBJECT_MAPPER)
+                    .addSourceBuilder(new JsonNodeUriSource.Builder()
+                            .setObjectMapper(OBJECT_MAPPER)
+                            .setUri(_configurationUri))
+                    .addTrigger(new UriTrigger.Builder()
+                            .setUri(_configurationUri)
+                            .build())
+                    .addListener(reconfigurator)
+                    .build();
+        } else {
+            final File configurationFile = new File(_configurationUri.getPath());
+            _dynamicConfiguration = new DynamicConfiguration.Builder()
+                    .setObjectMapper(OBJECT_MAPPER)
+                    .addSourceBuilder(new JsonNodeFileSource.Builder()
+                            .setObjectMapper(OBJECT_MAPPER)
+                            .setFile(configurationFile))
+                    .addTrigger(new FileTrigger.Builder()
+                            .setFile(configurationFile)
+                            .build())
+                    .addListener(reconfigurator)
+                    .build();
+        }
 
         _dynamicConfiguration.launch();
         // NOTE: Do not mark the repository as open until the dynamic
@@ -135,11 +153,16 @@ public class DynamicConfigurationExpressionRepository
         final List<? extends Expression> expressions = _expressions.stream()
                 .filter(expression -> query.getCluster().map(cluster -> cluster.equals(expression.getCluster())).orElse(true))
                 .filter(expression -> query.getService().map(service -> service.equals(expression.getService())).orElse(true))
+                .filter(expression -> query.getContains().map(contains -> {
+                    return expression.getCluster().contains(contains)
+                            || expression.getService().contains(contains)
+                            || expression.getMetric().contains(contains);
+                }).orElse(true))
                 .sorted(EXPRESSION_COMPARATOR)
                 .collect(Collectors.toList());
         final int start = query.getOffset().orElse(0);
         final int end = start + Math.max(Math.min(expressions.size() - start, query.getLimit()), 0);
-        return new DefaultQueryResult<>(expressions.subList(start, end), expressions.size());
+        return new DefaultQueryResult<>(expressions.subList(start, end), expressions.size(), Integer.toHexString(_expressions.hashCode()));
     }
 
     /**
@@ -185,7 +208,7 @@ public class DynamicConfigurationExpressionRepository
     }
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final URL _configurationUrl;
+    private final URI _configurationUri;
 
     private DynamicConfiguration _dynamicConfiguration;
     private volatile List<Expression> _expressions = Collections.emptyList();

@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.tsdcore.sinks.circonus;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.sinks.BaseSink;
@@ -46,6 +47,19 @@ public final class CirconusSink extends BaseSink {
      */
     @Override
     public void close() {  }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    @Override
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "SinkActor", _sinkActor);
+    }
 
     private CirconusSink(final Builder builder) {
         super(builder);

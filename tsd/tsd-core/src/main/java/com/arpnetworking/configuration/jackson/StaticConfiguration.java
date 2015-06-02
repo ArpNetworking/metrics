@@ -16,7 +16,8 @@
 package com.arpnetworking.configuration.jackson;
 
 import com.arpnetworking.configuration.Configuration;
-import com.google.common.base.MoreObjects;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
 
@@ -32,11 +33,12 @@ public final class StaticConfiguration extends BaseJacksonConfiguration implemen
     /**
      * {@inheritDoc}
      */
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("Source", _source)
-                .toString();
+    @LogValue
+    @Override
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "Source", _source);
     }
 
     /**

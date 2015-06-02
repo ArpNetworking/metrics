@@ -27,6 +27,14 @@ import java.util.Optional;
 public interface ExpressionQuery {
 
     /**
+     * Set the text to query for. Optional. Defaults to no text.
+     *
+     * @param contains The text to match.
+     * @return This instance of <code>ExpressionQuery</code>.
+     */
+    ExpressionQuery contains(final Optional<String> contains);
+
+    /**
      * Set the cluster to query for. Optional. Defaults to all clusters.
      *
      * @param cluster The cluster to match.
@@ -64,6 +72,13 @@ public interface ExpressionQuery {
      * @return The results of the query as an {@code QueryResult<Expression>} instance.
      */
     QueryResult<Expression> execute();
+
+    /**
+     * Accessor for the contains.
+     *
+     * @return The contains.
+     */
+    Optional<String> getContains();
 
     /**
      * Accessor for the cluster.

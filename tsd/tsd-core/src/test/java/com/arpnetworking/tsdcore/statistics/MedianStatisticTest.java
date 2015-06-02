@@ -18,7 +18,6 @@ package com.arpnetworking.tsdcore.statistics;
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -42,8 +41,9 @@ public class MedianStatisticTest {
     @Test
     public void testAliases() {
         final MedianStatistic statistic = new MedianStatistic();
-        Assert.assertEquals(1, statistic.getAliases().size());
-        Assert.assertEquals("tp50", Iterables.getFirst(statistic.getAliases(), null));
+        Assert.assertEquals(2, statistic.getAliases().size());
+        Assert.assertTrue(statistic.getAliases().contains("tp50"));
+        Assert.assertTrue(statistic.getAliases().contains("p50"));
     }
 
     @Test

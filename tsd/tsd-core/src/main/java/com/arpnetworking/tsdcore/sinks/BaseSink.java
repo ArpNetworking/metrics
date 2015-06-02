@@ -15,10 +15,11 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
@@ -50,14 +51,24 @@ public abstract class BaseSink implements Sink {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "Name", _name);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Name", _name)
-                .toString();
+        return toLogValue().toString();
     }
 
     /**

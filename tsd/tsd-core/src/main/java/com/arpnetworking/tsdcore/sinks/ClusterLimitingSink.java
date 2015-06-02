@@ -15,13 +15,16 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.limiter.DefaultMetricsLimiter;
 import com.arpnetworking.tsdcore.limiter.MetricsLimiter;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.fasterxml.jackson.annotation.JacksonInject;
-import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -31,8 +34,6 @@ import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Collection;
@@ -56,18 +57,23 @@ public final class ClusterLimitingSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        final Multimap<String, AggregatedData> dataByCluster = Multimaps.index(data, new Function<AggregatedData, String>() {
-                @Override
-                public String apply(final AggregatedData input) {
-                    return input.getFQDSN().getCluster();
-                }
-        });
-        final Multimap<String, Condition> conditionsByCluster = Multimaps.index(conditions, new Function<Condition, String>() {
-                @Override
-                public String apply(final Condition condition) {
-                    return condition.getFQDSN().getCluster();
-                }
-        });
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
+
+        final Multimap<String, AggregatedData> dataByCluster = Multimaps.index(
+                data,
+                input -> {
+                        return input.getFQDSN().getCluster();
+                });
+        final Multimap<String, Condition> conditionsByCluster = Multimaps.index(
+                conditions,
+                condition -> {
+                        return condition.getFQDSN().getCluster();
+                });
         for (final String cluster : dataByCluster.keySet()) {
             // Obtain or create this cluster's limiting sink
             Sink clusterLimitingSink = _clusterMetricsLimitingSinks.get(cluster);
@@ -79,10 +85,12 @@ public final class ClusterLimitingSink extends BaseSink {
 
                 clusterLimitingSink = _clusterMetricsLimitingSinks.putIfAbsent(cluster, newClusterLimitingSink);
                 if (clusterLimitingSink == null) {
-                    LOGGER.debug(String.format(
-                            "Registered new limiting sink for cluster; cluster=%s, sink=%s",
-                            cluster,
-                            newClusterLimitingSink));
+                    LOGGER.debug()
+                            .setMessage("Registered new limiting sink for cluster")
+                            .addData("sink", getName())
+                            .addData("cluster", cluster)
+                            .addData("sink", newClusterLimitingSink)
+                            .log();
                     clusterLimitingSink = newClusterLimitingSink;
                 }
             }
@@ -109,15 +117,16 @@ public final class ClusterLimitingSink extends BaseSink {
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("ClusterMetricsLimitingSinks", _clusterMetricsLimitingSinks)
-                .add("Sink", _sink)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "ClusterMetricsLimitingSinks", _clusterMetricsLimitingSinks);
     }
 
     private ClusterLimitingSink(final Builder builder) {

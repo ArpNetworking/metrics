@@ -18,10 +18,12 @@ package com.arpnetworking.tsdcore.statistics;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Base class for percentile based statistics.
@@ -35,7 +37,15 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
      */
     @Override
     public String getName() {
-        return "tp" + FORMAT.format(_percentile);
+        return _defaultName;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<String> getAliases() {
+        return Collections.unmodifiableSet(_aliases);
     }
 
     /**
@@ -68,9 +78,17 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
      */
     protected TPStatistic(final double percentile) {
         _percentile = percentile;
+        _defaultName = "tp" + FORMAT.format(_percentile);
+        _aliases = Sets.newHashSet();
+        _aliases.add(_defaultName);
+        _aliases.add(_defaultName.substring(1));
+        _aliases.add(_defaultName.replace(".", "p"));
+        _aliases.add(_defaultName.substring(1).replace(".", "p"));
     }
 
     private final double _percentile;
+    private final String _defaultName;
+    private final Set<String> _aliases;
 
     private static final DecimalFormat FORMAT = new DecimalFormat("##0.#");
 

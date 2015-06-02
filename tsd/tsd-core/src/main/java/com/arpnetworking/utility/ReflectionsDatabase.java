@@ -15,6 +15,9 @@
  */
 package com.arpnetworking.utility;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.LogValueMapFactory;
 import org.reflections.Reflections;
 
 import java.lang.annotation.Annotation;
@@ -29,7 +32,7 @@ public final class ReflectionsDatabase implements InterfaceDatabase, AnnotationD
 
     /**
      * Create a new instance of <code>InterfaceDatabase</code>.
-     * 
+     *
      * @return New instance of <code>InterfaceDatabase</code>.
      */
     public static ReflectionsDatabase newInstance() {
@@ -56,6 +59,27 @@ public final class ReflectionsDatabase implements InterfaceDatabase, AnnotationD
             throw new IllegalArgumentException(String.format("Class must be an interface; class=%s", interfaceClass));
         }
         return _reflections.getSubTypesOf(interfaceClass);
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "Reflections", LogReferenceOnly.of(_reflections));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     // NOTE: Package private for testing

@@ -15,12 +15,13 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.com.arpnetworking.steno.Logger;
 import com.arpnetworking.metrics.com.arpnetworking.steno.LoggerFactory;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.google.common.base.Charsets;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
 
@@ -35,13 +36,16 @@ import java.util.List;
 public final class ReMetSink extends HttpPostSink {
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "MaxRequestSize", _maxRequestSize);
     }
 
     /**

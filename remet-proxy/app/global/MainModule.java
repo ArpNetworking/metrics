@@ -71,7 +71,9 @@ public class MainModule extends AbstractModule {
     @Singleton
     @Named("FileSourceManager")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private ActorRef getFileSourceManager(final Injector injector, final ActorSystem system) {
+    private ActorRef getFileSourceManager(
+            final Injector injector,
+            final ActorSystem system) {
         return system.actorOf(
                 GuiceActorCreator.props(
                         injector,

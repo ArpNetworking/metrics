@@ -15,13 +15,12 @@
  */
 package com.arpnetworking.configuration.jackson;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import net.sf.oval.constraint.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -43,13 +42,13 @@ public final class JsonNodeLiteralSource extends BaseJsonNodeSource implements J
     /**
      * {@inheritDoc}
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Source", _source)
-                .add("JsonNode", _jsonNode)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "Source", _source,
+                "JsonNode", _jsonNode);
     }
 
     /* package private */ Optional<JsonNode> getJsonNode() {
@@ -71,8 +70,6 @@ public final class JsonNodeLiteralSource extends BaseJsonNodeSource implements J
 
     private final String _source;
     private final Optional<JsonNode> _jsonNode;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonNodeLiteralSource.class);
 
     /**
      * Builder for <code>JsonNodeLiteralSource</code>.

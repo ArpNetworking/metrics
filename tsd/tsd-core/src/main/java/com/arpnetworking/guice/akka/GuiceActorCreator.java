@@ -18,6 +18,9 @@ package com.arpnetworking.guice.akka;
 import akka.actor.Actor;
 import akka.actor.IndirectActorProducer;
 import akka.actor.Props;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.google.inject.Injector;
 
 /**
@@ -61,6 +64,28 @@ public class GuiceActorCreator implements IndirectActorProducer {
     @Override
     public Class<? extends Actor> actorClass() {
         return _clazz;
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "Injector", LogReferenceOnly.of(_injector),
+                "Class", _clazz);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private final Injector _injector;

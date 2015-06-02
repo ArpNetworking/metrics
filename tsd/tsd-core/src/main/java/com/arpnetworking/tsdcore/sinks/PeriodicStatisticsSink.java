@@ -15,20 +15,21 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Unit;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.fasterxml.jackson.annotation.JacksonInject;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Set;
@@ -68,7 +69,12 @@ public final class PeriodicStatisticsSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        LOGGER.debug(String.format("%s: Writing aggregated data; size=%d", getName(), data.size()));
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
 
         final long now = System.currentTimeMillis();
         _aggregatedData.addAndGet(data.size());
@@ -111,18 +117,18 @@ public final class PeriodicStatisticsSink extends BaseSink {
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("AggregatedDataName", _aggregatedDataName)
-                .add("UnqiueMetricsName", _uniqueMetricsName)
-                .add("UniqueStatisticsName", _uniqueStatisticsName)
-                .add("AgeName", _ageName)
-                .add("AggregatedData", _aggregatedData)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "AggregatedData", _aggregatedData,
+                "UniqueMetrics", _uniqueMetrics.get().size(),
+                "UniqueStatistics", _uniqueStatistics.get().size());
     }
 
     private void flushMetrics(final Metrics metrics) {

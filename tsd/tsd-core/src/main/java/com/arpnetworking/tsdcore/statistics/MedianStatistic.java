@@ -15,9 +15,6 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
-import java.util.Collections;
-import java.util.Set;
-
 /**
  * Top median statistic (aka 50th percentile).
  *
@@ -38,14 +35,6 @@ public class MedianStatistic extends TPStatistic {
     @Override
     public String getName() {
         return "median";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Set<String> getAliases() {
-        return Collections.singleton("tp50");
     }
 
     private static final long serialVersionUID = 1L;

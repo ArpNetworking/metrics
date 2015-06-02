@@ -15,8 +15,10 @@
  */
 
 ///<reference path="BrowseNode.ts" />
+///<reference path="../libs/naturalSort/naturalSort.d.ts" />
 import ServiceNodeVM = require('./ServiceNodeVM');
 import ko = require('knockout');
+import ns = require('naturalSort');
 
 class FolderNodeVM implements BrowseNode {
     name: KnockoutObservable<string>;
@@ -32,11 +34,32 @@ class FolderNodeVM implements BrowseNode {
         this.name = ko.observable(name);
         this.id = ko.observable(id);
         this.isFolder = isFolder;
-        this.subFolders = ko.observableArray<FolderNodeVM>();
-        this.children = ko.observableArray<any>();
+        this.subFolders = ko.observableArray<FolderNodeVM>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });;
+        this.children = ko.observableArray<any>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });;
         this.expanded = ko.observable(false);
         this.visible = ko.observable(false);
         this.display = ko.computed<string>(() => { return this.name(); });
+    }
+
+    sortChildren(recursive: boolean = false) {
+        if (recursive) {
+            ko.utils.arrayForEach(this.children(), (child: ServiceNodeVM) => { child.sort(true) });
+        }
+        this.children.sort((left:ServiceNodeVM, right:ServiceNodeVM) => {
+            ns.insensitive = true;
+            return ns.naturalSort(left.name(), right.name());
+        });
+    }
+
+    sortSubFolders(recursive: boolean = false) {
+        if (recursive) {
+            ko.utils.arrayForEach(this.children(), (child: ServiceNodeVM) => { child.sort(true) });
+            ko.utils.arrayForEach(this.subFolders(), (child: FolderNodeVM) => { child.sortChildren(true); child.sortSubFolders(true) });
+        }
+        this.subFolders.sort((left:FolderNodeVM, right:FolderNodeVM) => {
+            ns.insensitive = true;
+            return ns.naturalSort(left.name(), right.name());
+        });
     }
 
     expandMe() {

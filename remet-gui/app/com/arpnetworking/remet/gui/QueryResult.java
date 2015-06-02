@@ -16,6 +16,7 @@
 package com.arpnetworking.remet.gui;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Interface describing the result of a generic query.
@@ -40,4 +41,12 @@ public interface QueryResult<T> {
      * @return The total number of matching hosts.
      */
     long total();
+
+    /**
+     * The etag representing the current state of the repository for this query. This should always exclude the
+     * pagination. Otherwise, the etag may be specific to the query or general to the data store.
+     *
+     * @return The <code>Optional</code> etag.
+     */
+    Optional<String> etag();
 }

@@ -62,7 +62,7 @@ public final class JvmMetricsCollector extends UntypedActor {
     public void preStart() {
         LOGGER.info()
                 .setMessage("Starting JVM metrics collector actor.")
-                .addData("actor", self().toString())
+                .addData("actor", self())
                 .log();
         _cancellable = _scheduler.schedule(
                 INITIAL_DELAY,
@@ -89,7 +89,7 @@ public final class JvmMetricsCollector extends UntypedActor {
     public void onReceive(final Object message) throws Exception {
         LOGGER.trace().setMessage("Message received")
                 .addData("data", message)
-                .addData("actor", self().toString())
+                .addData("actor", self())
                 .log();
         if (message instanceof CollectJvmMetrics) {
             _jvmMetricsRunnable.run();

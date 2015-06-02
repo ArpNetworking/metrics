@@ -15,9 +15,12 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
 import org.apache.http.HttpEntity;
@@ -34,8 +37,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -54,7 +55,13 @@ public abstract class HttpPostSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        LOGGER.debug(getName() + ": Writing aggregated data; size=" + data.size() + " uri=" + _uri);
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .addData("uri", _uri)
+                .log();
 
         if (!data.isEmpty() || !conditions.isEmpty()) {
             // TODO(vkoskela): Support parallel post requests [MAI-97]
@@ -68,25 +75,30 @@ public abstract class HttpPostSink extends BaseSink {
                     final int responseStatusCode = result.getStatusLine().getStatusCode();
 
                     if (responseStatusCode == HttpStatus.SC_OK) {
-                        LOGGER.debug(getName() + ": Post response ok");
+                        LOGGER.debug()
+                                .setMessage("Post accepted")
+                                .addData("sink", getName())
+                                .addData("uri", _uri)
+                                .addData("status", responseStatusCode)
+                                .log();
                     } else {
-                        LOGGER.warn(
-                                String.format(
-                                        "%s: Post was not accepted; uri=%s, status=%d, requestSize=%d",
-                                        getName(),
-                                        _uri,
-                                        responseStatusCode,
-                                        getContentLength(request)));
+                        LOGGER.warn()
+                                .setMessage("Post rejected")
+                                .addData("sink", getName())
+                                .addData("uri", _uri)
+                                .addData("status", responseStatusCode)
+                                .addData("requestSize", getContentLength(request))
+                                .log();
                     }
                     _postRequests.incrementAndGet();
                 } catch (final IOException e) {
-                    LOGGER.error(
-                            String.format(
-                                    "%s: Error posting; uri=%s, requestSize=%d",
-                                    getName(),
-                                    _uri,
-                                    getContentLength(request)),
-                            e);
+                    LOGGER.error()
+                            .setMessage("Post error")
+                            .addData("sink", getName())
+                            .addData("uri", _uri)
+                            .addData("requestSize", getContentLength(request))
+                            .setThrowable(e)
+                            .log();
                 } finally {
                     if (responseEntity != null) {
                         try {
@@ -94,7 +106,13 @@ public abstract class HttpPostSink extends BaseSink {
                             // CHECKSTYLE.OFF: IllegalCatch - Catch all exceptions
                         } catch (final Exception e) {
                             // CHECKSTYLE.ON: IllegalCatch
-                            LOGGER.warn(getName() + ": Error closing response content stream", e);
+                            LOGGER.warn()
+                                    .setMessage("Error closing response content stream")
+                                    .addData("sink", getName())
+                                    .addData("uri", _uri)
+                                    .addData("requestSize", getContentLength(request))
+                                    .setThrowable(e)
+                                    .log();
                         }
                     }
                 }
@@ -102,35 +120,31 @@ public abstract class HttpPostSink extends BaseSink {
         }
     }
 
-    private static long getContentLength(final HttpUriRequest request) {
-        if (request instanceof HttpEntityEnclosingRequestBase) {
-            final HttpEntityEnclosingRequestBase entityRequest = (HttpEntityEnclosingRequestBase) request;
-            final HttpEntity entity = entityRequest.getEntity();
-            if (entity != null) {
-                return entity.getContentLength();
-            }
-        }
-        return -1;
-    }
-
     /**
      * {@inheritDoc}
      */
     @Override
     public void close() {
-        LOGGER.info(getName() + ": Closing sink; postRequests=" + _postRequests + " uri=" + _uri);
+        LOGGER.info()
+                .setMessage("Closing sink")
+                .addData("sink", getName())
+                .addData("recordsWritten", _postRequests)
+                .addData("uri", _uri)
+                .log();
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("Uri", _uri)
-                .add("PostRequests", _postRequests)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "Uri", _uri,
+                "PostRequests", _postRequests);
     }
 
     /**
@@ -167,6 +181,15 @@ public abstract class HttpPostSink extends BaseSink {
     }
 
     /**
+     * Accessor for the <code>URI</code>.
+     *
+     * @return The <code>URI</code>.
+     */
+    protected URI getUri() {
+        return _uri;
+    }
+
+    /**
      * Serialize the <code>AggregatedData</code> and <code>Condition</code> instances
      * for posting.
      *
@@ -180,6 +203,18 @@ public abstract class HttpPostSink extends BaseSink {
             final Collection<AggregatedData> data,
             final Collection<Condition> conditions);
 
+
+    private static long getContentLength(final HttpUriRequest request) {
+        if (request instanceof HttpEntityEnclosingRequestBase) {
+            final HttpEntityEnclosingRequestBase entityRequest = (HttpEntityEnclosingRequestBase) request;
+            final HttpEntity entity = entityRequest.getEntity();
+            if (entity != null) {
+                return entity.getContentLength();
+            }
+        }
+        return -1;
+    }
+
     /**
      * Protected constructor.
      *
@@ -188,10 +223,6 @@ public abstract class HttpPostSink extends BaseSink {
     protected HttpPostSink(final Builder<?, ?> builder) {
         super(builder);
         _uri = builder._uri;
-    }
-
-    protected URI getUri() {
-        return _uri;
     }
 
     private final URI _uri;

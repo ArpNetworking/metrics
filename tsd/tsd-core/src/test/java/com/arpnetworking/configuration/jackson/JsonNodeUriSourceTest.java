@@ -26,14 +26,14 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 
 /**
  * Tests for the <code>JsonNodeUrlSource</code> class.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class JsonNodeUrlSourceTest {
+public class JsonNodeUriSourceTest {
 
     @Test
     public void test() throws MalformedURLException {
@@ -47,16 +47,16 @@ public class JsonNodeUrlSourceTest {
                         .withHeader("Content-Type", "application/json; charset=utf-8")
                         .withBody("{\"values\":[\"foo\",\"bar\"]}")));
 
-        final JsonNodeUrlSource jsonNodeUrlSource = new JsonNodeUrlSource.Builder()
-                .setUrl(new URL("http://localhost:" + server.port() + "/configuration"))
+        final JsonNodeUriSource jsonNodeUriSource = new JsonNodeUriSource.Builder()
+                .setUri(URI.create("http://localhost:" + server.port() + "/configuration"))
                 .build();
 
-        final Optional<JsonNode> jsonNode = jsonNodeUrlSource.getJsonNode();
+        final Optional<JsonNode> jsonNode = jsonNodeUriSource.getJsonNode();
         Assert.assertTrue(jsonNode.isPresent());
         Assert.assertTrue(jsonNode.get().isObject());
         Assert.assertEquals(1, Iterators.size(((ObjectNode) jsonNode.get()).fieldNames()));
 
-        final Optional<JsonNode> valuesJsonNode = jsonNodeUrlSource.getValue("values");
+        final Optional<JsonNode> valuesJsonNode = jsonNodeUriSource.getValue("values");
         Assert.assertTrue(valuesJsonNode.isPresent());
         Assert.assertTrue(valuesJsonNode.get().isArray());
         Assert.assertEquals(2, ((ArrayNode) valuesJsonNode.get()).size());

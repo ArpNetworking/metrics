@@ -22,7 +22,9 @@ import com.arpnetworking.metrics.Unit;
 
 import org.vertx.java.core.shareddata.Shareable;
 
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 /**
  * Metrics object that extends Vertx's <code>SharedData</code> object which allows use in a shared data map.
@@ -181,6 +183,24 @@ public class SharedMetrics implements Metrics, Shareable {
     @Override
     public void close() {
         _wrappedMetrics.close();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public Instant getOpenTime() {
+        return _wrappedMetrics.getOpenTime();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Nullable
+    public Instant getCloseTime() {
+        return _wrappedMetrics.getCloseTime();
     }
 
     private final Metrics _wrappedMetrics;

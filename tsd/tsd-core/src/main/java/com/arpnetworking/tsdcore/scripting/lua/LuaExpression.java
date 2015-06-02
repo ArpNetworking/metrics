@@ -15,6 +15,10 @@
  */
 package com.arpnetworking.tsdcore.scripting.lua;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.PeriodicData;
@@ -28,7 +32,6 @@ import com.arpnetworking.utility.InterfaceDatabase;
 import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.ReflectionsDatabase;
 import com.google.common.base.Charsets;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
@@ -59,8 +62,6 @@ import org.luaj.vm2.lib.jse.CoerceLuaToJava;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import org.luaj.vm2.parser.LuaParser;
 import org.luaj.vm2.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Modifier;
@@ -103,11 +104,12 @@ public class LuaExpression implements Expression {
         // Check dependencies
         for (final FQDSN dependency : _dependencies) {
             if (!periodicData.getDataByFQDSN(dependency).isPresent()) {
-                LOGGER.debug(String.format(
-                        "Data does not contain dependency; expression=%s, dependency=%s, data=%s",
-                        this,
-                        dependency,
-                        periodicData));
+                LOGGER.debug()
+                        .setMessage("Data does not contain dependency")
+                        .addData("expression", this)
+                        .addData("dependency", dependency)
+                        .addData("periodicData", periodicData)
+                        .log();
                 return Optional.absent();
             }
         }
@@ -155,15 +157,25 @@ public class LuaExpression implements Expression {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "FQDSN", _fqdsn,
+                "Script", _script.replace("\n", "\\n").replace("\r", "\\r"));
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("FQDSN", _fqdsn)
-                .add("Script", _script.replace("\n", "\\n").replace("\r", "\\r"))
-                .toString();
+        return toLogValue().toString();
     }
 
     private LuaValue createMetricsTable(final PeriodicData periodicData) {
@@ -201,7 +213,10 @@ public class LuaExpression implements Expression {
 
         // Insert statistic (value)
         if (!LuaValue.NIL.equals(metricTable.get(fqdsn.getStatistic().getName()))) {
-            LOGGER.warn(String.format("Duplicate statistic found; duplicate=%s", datum));
+            LOGGER.warn()
+                    .setMessage("Duplicate statistic found")
+                    .addData("duplicate", datum)
+                    .log();
         } else {
             metricTable.set(
                     fqdsn.getStatistic().getName(),
@@ -268,14 +283,14 @@ public class LuaExpression implements Expression {
 
         _fqdsn = new FQDSN.Builder()
                 .setCluster(builder._cluster)
-                .setMetric(builder._name)
+                .setMetric(builder._metric)
                 .setService(builder._service)
                 .setStatistic(EXPRESSION_STATISTIC)
                 .build();
 
         _globals = JsePlatform.standardGlobals();
         _globals.set("createQuantity", CREATE_QUANTITY_LUA_FUNCTION);
-        _expression = _globals.load(_script, builder._name);
+        _expression = _globals.load(_script, builder._metric);
 
         _dependencies = discoverDependencies(_script);
     }
@@ -452,10 +467,11 @@ public class LuaExpression implements Expression {
                             .setStatistic(STATISTICS.get(_tokens.get(3)))
                             .build();
 
-                    LOGGER.debug(String.format(
-                            "Expression dependency discovered; expression=%s, dependency=%s",
-                            LuaExpression.this,
-                            fqdsn));
+                    LOGGER.debug()
+                            .setMessage("Expression dependency discovered")
+                            .addData("expression", LuaExpression.this)
+                            .addData("dependency", fqdsn)
+                            .log();
 
                     _dependencies.add(fqdsn);
                     endDependency();
@@ -480,10 +496,11 @@ public class LuaExpression implements Expression {
                             .setStatistic(STATISTICS.get(_tokens.get(3)))
                             .build();
 
-                    LOGGER.debug(String.format(
-                            "Expression dependency discovered; expression=%s, dependency=%s",
-                            LuaExpression.this,
-                            fqdsn));
+                    LOGGER.debug()
+                            .setMessage("Expression dependency discovered")
+                            .addData("expression", LuaExpression.this)
+                            .addData("dependency", fqdsn)
+                            .log();
 
                     _dependencies.add(fqdsn);
                     endDependency();
@@ -700,13 +717,13 @@ public class LuaExpression implements Expression {
         }
 
         /**
-         * Set the expression name.
+         * Set the metric under which the expression is to be published.
          *
-         * @param value The expression name.
+         * @param value The metric name.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setName(final String value) {
-            _name = value;
+        public Builder setMetric(final String value) {
+            _metric = value;
             return this;
         }
 
@@ -745,7 +762,7 @@ public class LuaExpression implements Expression {
 
         @NotNull
         @NotEmpty
-        private String _name;
+        private String _metric;
         @NotNull
         @NotEmpty
         private String _cluster;

@@ -72,8 +72,8 @@ public class MetricsLimiterTestBase {
      *
      * @return New instance of <code>MetricsLimiter</code>.
      */
-    public static DefaultMetricsLimiter testLimiter() {
-        return new DefaultMetricsLimiter.Builder()
+    public static LegacyMetricsLimiter testLimiter() {
+        return new LegacyMetricsLimiter.Builder()
                 .setEnableStateAutoWriter(Boolean.FALSE)
                 .setMaxAggregations(Long.MAX_VALUE)
                 .setStateManagerBuilder(new MetricsLimiterStateManager.Builder()

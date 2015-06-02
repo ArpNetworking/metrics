@@ -15,6 +15,8 @@
  */
 
 import com.arpnetworking.sbt.typescript.Import.TypescriptKeys
+import com.typesafe.sbt.SbtAspectj._
+import com.typesafe.sbt.SbtAspectj.AspectjKeys._
 import com.typesafe.sbt.rjs.Import._
 import com.typesafe.sbt.web.Import._
 import com.typesafe.sbt.digest.Import._
@@ -24,31 +26,31 @@ import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
 import RjsKeys._
 import de.johoop.findbugs4sbt.FindBugs._
 import de.johoop.findbugs4sbt.{Effort, Priority, ReportType}
-import play.PlayImport._
 import sbt._
 import Keys._
 
 object ApplicationBuild extends Build {
 
     val appName = "remet-gui"
-    val appVersion = "0.3.3"
+    val appVersion = "0.3.4"
     val akkaVersion = "2.3.9"
+    val jacksonVersion = "2.5.3"
 
-    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask
+    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings
 
     val appDependencies = Seq(
-      javaWs,
-      // Play 2.4 uses version 1.1.1 and although some transitive dependencies
-      // may use a newer version we force the known working version.
-      "ch.qos.logback" % "logback-classic" % "1.1.1" force(),
-      "ch.qos.logback" % "logback-core" % "1.1.1" force(),
-      "com.arpnetworking.metrics" % "tsd-core" % "0.3.3",
-      "com.arpnetworking.metrics" % "metrics-client" % "0.3.3",
-      "com.arpnetworking.logback" % "logback-steno" % "1.4.0",
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.5.0",
+      "com.arpnetworking.metrics" % "tsd-core" % "0.3.4",
+      "com.arpnetworking.metrics" % "metrics-client" % "0.3.4",
+      "com.arpnetworking.logback" % "logback-steno" % "1.8.0",
+      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk7" % jacksonVersion,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonVersion,
       "com.google.code.findbugs" % "annotations" % "3.0.0",
       "com.google.guava" % "guava" % "18.0",
-      "com.google.inject" % "guice" % "4.0-beta5",
+      "com.google.inject" % "guice" % "4.0",
+      "com.google.inject.extensions" % "guice-assistedinject" % "4.0",
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-contrib" % akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
@@ -58,7 +60,7 @@ object ApplicationBuild extends Build {
       "org.webjars" % "d3js" % "3.4.8",
       "org.webjars" % "durandal" % "2.1.0",
       "org.webjars" % "flotr2" % "d43f8566e8",
-      "org.webjars" % "font-awesome" % "4.1.0",
+      "org.webjars" % "font-awesome" % "4.3.0-2",
       "org.webjars" % "jQRangeSlider" % "5.7.0",
       "org.webjars" % "jquery" % "2.1.1",
       "org.webjars" % "jquery-ui" % "1.11.1",
@@ -97,10 +99,18 @@ object ApplicationBuild extends Build {
 
       version := appVersion,
 
-      scalaVersion := "2.11.1",
-      resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
+      scalaVersion := "2.11.6",
+      resolvers += Resolver.mavenLocal,
 
-        // Findbugs
+      // AspectJ
+      binaries in Aspectj <++= update map { report =>
+        report.matching(moduleFilter(organization = "com.arpnetworking.logback", name = "logback-steno"))
+      },
+      inputs in Aspectj <+= compiledClasses,
+      products in Compile <<= products in Aspectj,
+      products in Runtime <<= products in Compile,
+
+      // Findbugs
       findbugsReportType := Some(ReportType.Html),
       findbugsReportPath := Some(crossTarget.value / "findbugs.html"),
       findbugsPriority := Priority.Low,

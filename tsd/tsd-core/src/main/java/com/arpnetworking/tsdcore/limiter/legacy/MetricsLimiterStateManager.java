@@ -15,16 +15,17 @@
  */
 package com.arpnetworking.tsdcore.limiter.legacy;
 
-import com.arpnetworking.tsdcore.limiter.legacy.DefaultMetricsLimiter.Mark;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
+import com.arpnetworking.tsdcore.limiter.legacy.LegacyMetricsLimiter.Mark;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.joda.time.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -62,16 +63,13 @@ public final class MetricsLimiterStateManager implements Runnable {
         final Path newFilePath = _stateFile.resolveSibling(_stateFile.getFileName() + ".tmp");
         try {
             com.google.common.io.Files.asCharSink(newFilePath.toFile(), Charsets.UTF_8).writeLines(
-                    Iterables.transform(_marks.entrySet(), new Function<Map.Entry<String, Mark>, String>() {
-                        @Override
-                        public String apply(final Map.Entry<String, Mark> aggregationMarkTime) {
-                            return String.format(
+                    Iterables.transform(
+                            _marks.entrySet(),
+                            aggregationMarkTime -> String.format(
                                     "%d %d %s",
                                     aggregationMarkTime.getValue().getTime(),
                                     aggregationMarkTime.getValue().getCount(),
-                                    aggregationMarkTime.getKey());
-                        }
-                    })
+                                    aggregationMarkTime.getKey()))
                     );
         } catch (final IOException e) {
             throw new IllegalArgumentException(
@@ -88,13 +86,16 @@ public final class MetricsLimiterStateManager implements Runnable {
         } catch (final IOException e) {
             throw new IllegalArgumentException(
                     String.format(
-                        "Failed to flush state file; could not move temp file; stateFile=%s, tempFile=%s",
-                        _stateFile,
+                            "Failed to flush state file; could not move temp file; stateFile=%s, tempFile=%s",
+                            _stateFile,
                             newFilePath),
                     e);
         }
 
-        LOGGER.info(String.format("State file flushed; stateFile=%s", _stateFile));
+        LOGGER.info()
+                .setMessage("State file flushed")
+                .addData("file", _stateFile)
+                .log();
     }
 
     /**
@@ -114,10 +115,11 @@ public final class MetricsLimiterStateManager implements Runnable {
             for (final String line : Files.readAllLines(_stateFile, Charsets.UTF_8)) {
                 final Matcher match = STATE_FILE_LINE_PATTERN.matcher(line);
                 if (!match.lookingAt()) {
-                    LOGGER.warn(String.format(
-                            "Ignoring unparsable line in state file; stateFile=%s, line=%s",
-                            _stateFile,
-                            line));
+                    LOGGER.warn()
+                            .setMessage("Ignoring unparsable line in state file")
+                            .addData("file", _stateFile)
+                            .addData("line", line)
+                            .log();
                     continue;
                 }
 
@@ -128,12 +130,12 @@ public final class MetricsLimiterStateManager implements Runnable {
                     final long time = Long.parseLong(match.group(1));
                     mark = new Mark(count, time);
                 } catch (final NumberFormatException e) {
-                    LOGGER.warn(
-                            String.format(
-                                "Parsing error on line in state file; stateFile=%s, line=%s",
-                                _stateFile,
-                                line),
-                            e);
+                    LOGGER.warn()
+                            .setMessage("Parsing error on line in state file")
+                            .addData("file", _stateFile)
+                            .addData("line", line)
+                            .setThrowable(e)
+                            .log();
                     continue;
                 }
 
@@ -141,11 +143,11 @@ public final class MetricsLimiterStateManager implements Runnable {
             }
             return marks;
         } catch (final IOException e) {
-            LOGGER.error(
-                    String.format(
-                            "Could not read state file; stateFile=%s",
-                            _stateFile),
-                    e);
+            LOGGER.error()
+                    .setMessage("Could not read state file")
+                    .addData("file", _stateFile)
+                    .setThrowable(e)
+                    .log();
             return Collections.emptyMap();
         }
     }
@@ -156,13 +158,19 @@ public final class MetricsLimiterStateManager implements Runnable {
     public void startAutoWriter() {
         synchronized (_autoWriterMutex) {
             if (_autoWriterThread == null) {
-                LOGGER.info(String.format("AutoWriter starting; stateFile=%s", _stateFile));
+                LOGGER.info()
+                        .setMessage("AutoWriter starting")
+                        .addData("file", _stateFile)
+                        .log();
                 _stop = false;
                 _autoWriterThread = new Thread(this, "AutoWriter");
                 Runtime.getRuntime().addShutdownHook(_autoWriterShutdown);
                 _autoWriterThread.start();
             } else {
-                LOGGER.warn(String.format("AutoWriter already started; stateFile=%s", _stateFile));
+                LOGGER.warn()
+                        .setMessage("AutoWriter already started")
+                        .addData("file", _stateFile)
+                        .log();
             }
         }
     }
@@ -172,21 +180,31 @@ public final class MetricsLimiterStateManager implements Runnable {
     void stopAutoWriter(final boolean removeShutdownHook) {
         synchronized (_autoWriterMutex) {
             if (_autoWriterThread != null) {
-                LOGGER.info(String.format("AutoWriter stopping; stateFile=%s", _stateFile));
+                LOGGER.info()
+                        .setMessage("AutoWriter stopping")
+                        .addData("file", _stateFile)
+                        .log();
                 _stop = true;
                 _autoWriterThread.interrupt();
                 // Wait up to 500ms for thread to die
                 try {
                     _autoWriterThread.join(500);
                 } catch (final InterruptedException e) {
-                    LOGGER.warn(String.format("AutoWriter failed to terminate; stateFile=%s", _stateFile), e);
+                    LOGGER.warn()
+                            .setMessage("AutoWriter failed to terminate")
+                            .addData("file", _stateFile)
+                            .setThrowable(e)
+                            .log();
                 }
                 if (removeShutdownHook) {
                     Runtime.getRuntime().removeShutdownHook(_autoWriterShutdown);
                 }
                 _autoWriterThread = null;
             } else {
-                LOGGER.warn(String.format("AutoWriter not running; stateFile=%s", _stateFile));
+                LOGGER.warn()
+                        .setMessage("AutoWriter not running")
+                        .addData("file", _stateFile)
+                        .log();
             }
         }
     }
@@ -196,7 +214,10 @@ public final class MetricsLimiterStateManager implements Runnable {
      */
     @Override
     public void run() {
-        LOGGER.debug(String.format("AutoWriter running; stateFile=%s", _stateFile));
+        LOGGER.debug()
+                .setMessage("AutoWriter running")
+                .addData("file", _stateFile)
+                .log();
         try {
             while (true) {
                 try {
@@ -224,8 +245,33 @@ public final class MetricsLimiterStateManager implements Runnable {
         } finally {
             // Write the file one last time
             writeState();
-            LOGGER.debug(String.format("AutoWriter stopped; stateFile=%s", _stateFile));
+            LOGGER.debug()
+                    .setMessage("AutoWriter stopped")
+                    .addData("file", _stateFile)
+                    .log();
         }
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "StateFile", _stateFile,
+                "FlushInterval", _stateFileFlushInterval);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED")
@@ -257,8 +303,9 @@ public final class MetricsLimiterStateManager implements Runnable {
 
         // Using tmp defeats the purpose
         if (_stateFile.startsWith("/tmp")) {
-            LOGGER.warn("Storing the aggregator state file in /tmp is not recommended because"
-                    + "on many platforms /tmp is not persisted across reboots");
+            LOGGER.warn(
+                    "Storing the aggregator state file in /tmp is not recommended because"
+                            + "on many platforms /tmp is not persisted across reboots");
         }
     }
 

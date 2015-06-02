@@ -18,7 +18,7 @@ apply plugin: 'build-dashboard'
 apply plugin: 'idea'
 apply plugin: 'maven'
 
-version = '0.3.3'
+version = '0.3.4'
 group = 'com.arpnetworking.metrics'
 
 subprojects {

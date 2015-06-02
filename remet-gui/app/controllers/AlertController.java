@@ -20,11 +20,14 @@ import com.arpnetworking.remet.gui.alerts.Alert;
 import com.arpnetworking.remet.gui.alerts.AlertQuery;
 import com.arpnetworking.remet.gui.alerts.AlertRepository;
 import com.arpnetworking.remet.gui.alerts.Context;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import models.PagedContainer;
 import models.Pagination;
+import org.apache.http.HttpHeaders;
 import play.Configuration;
 import play.libs.Json;
 import play.mvc.Controller;
@@ -58,6 +61,7 @@ public class AlertController extends Controller {
     /**
      * Query for alerts.
      *
+     * @param contains The text to search for. Optional.
      * @param context The context of the alert. Optional.
      * @param cluster The cluster of the statistic to evaluate as part of the alert. Optional.
      * @param service The service of the statistic to evaluate as part of the alert. Optional.
@@ -67,6 +71,7 @@ public class AlertController extends Controller {
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(
+            final String contains,
             final String context,
             final String cluster,
             final String service,
@@ -75,6 +80,7 @@ public class AlertController extends Controller {
         // CHECKSTYLE.ON: ParameterNameCheck
 
         // Convert and validate parameters
+        final Optional<String> argContains = Optional.ofNullable(contains);
         final Context contextValue;
         try {
             contextValue = context == null ? null : Context.valueOf(context);
@@ -95,6 +101,9 @@ public class AlertController extends Controller {
 
         // Build conditions map
         final Map<String, String> conditions = Maps.newHashMap();
+        if (argContains.isPresent()) {
+            conditions.put("contains", argContains.get());
+        }
         if (argContext.isPresent()) {
             conditions.put("context", argContext.get().toString());
         }
@@ -107,6 +116,7 @@ public class AlertController extends Controller {
 
         // Build a host repository query
         final AlertQuery query = _alertRepository.createQuery()
+                .contains(argContains)
                 .context(argContext)
                 .service(argService)
                 .cluster(argCluster)
@@ -114,9 +124,23 @@ public class AlertController extends Controller {
                 .offset(argOffset);
 
         // Execute the query
-        final QueryResult<Alert> result = query.execute();
+        final QueryResult<Alert> result;
+        try {
+            result = query.execute();
+            // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error()
+                    .setMessage("Alert query failed")
+                    .setThrowable(e)
+                    .log();
+            return internalServerError();
+        }
 
         // Wrap the query results and return as JSON
+        if (result.etag().isPresent()) {
+            response().setHeader(HttpHeaders.ETAG, result.etag().get());
+        }
         return ok(Json.toJson(new PagedContainer<Alert>(
                 result.values(),
                 new Pagination(
@@ -153,4 +177,5 @@ public class AlertController extends Controller {
     private final AlertRepository _alertRepository;
 
     private static final int DEFAULT_MAX_LIMIT = 1000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
 }

@@ -16,7 +16,6 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.google.common.base.MoreObjects;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
 
@@ -26,16 +25,6 @@ import org.vertx.java.core.net.NetSocket;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public final class CarbonSink extends VertxSink {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .toString();
-    }
 
     /**
      * {@inheritDoc}

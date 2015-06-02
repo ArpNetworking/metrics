@@ -15,13 +15,14 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
@@ -40,11 +41,12 @@ public final class MultiSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        LOGGER.debug(String.format(
-                "%s: Recording; dataSize=%d, conditionsSize=%d",
-                getName(), 
-                data.size(),
-                conditions.size()));
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
 
         for (final Sink sink : _sinks) {
             sink.recordAggregateData(data, conditions);
@@ -56,21 +58,26 @@ public final class MultiSink extends BaseSink {
      */
     @Override
     public void close() {
-        LOGGER.info(String.format("%s: Closing sink", getName()));
+        LOGGER.info()
+                .setMessage("Closing sink")
+                .addData("sink", getName())
+                .log();
         for (final Sink sink : _sinks) {
             sink.close();
         }
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("Sinks", _sinks)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "Sinks", _sinks);
     }
 
     private MultiSink(final Builder builder) {

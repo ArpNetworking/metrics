@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.tsdcore.limiter.legacy;
 
-import com.arpnetworking.tsdcore.limiter.legacy.DefaultMetricsLimiter.Mark;
+import com.arpnetworking.tsdcore.limiter.legacy.LegacyMetricsLimiter.Mark;
 
 import org.hamcrest.Matchers;
 import org.joda.time.Duration;
@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Test cases for MetricsLimiterStateManager class.
- * 
+ *
  * @author Joe Frisbie (jfrisbie at groupon dot com)
  */
 public class MetricsLimiterStateManagerTest extends MetricsLimiterTestBase {

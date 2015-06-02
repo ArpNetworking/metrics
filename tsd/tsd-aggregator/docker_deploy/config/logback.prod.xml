@@ -17,8 +17,6 @@
 
 <configuration>
 
-    <conversionRule conversionWord="sThrowable" converterClass="com.arpnetworking.logback.SingleLineExceptionConverter" />
-
     <!-- IMPORTANT: This logger is less verbose and intended for production! -->
     <appender name="TsdAggregatorLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>/opt/tsd-aggregator/logs/tsd-aggregator.log</file>
@@ -32,10 +30,15 @@
         </rollingPolicy>
         <encoder class="com.arpnetworking.logback.StenoEncoder">
             <injectContextLogger>true</injectContextLogger>
-          <compressLoggerName>true</compressLoggerName>
+            <compressLoggerName>true</compressLoggerName>
+            <jacksonModule class="com.fasterxml.jackson.datatype.joda.JodaModule" />
+            <jacksonModule class="com.fasterxml.jackson.datatype.guava.GuavaModule" />
+            <jacksonModule class="com.fasterxml.jackson.datatype.jdk7.Jdk7Module" />
+            <jacksonModule class="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" />
+            <jacksonModule class="com.arpnetworking.configuration.jackson.akka.AkkaLoggingModule" />
         </encoder>
     </appender>
-    
+
     <appender name="TsdAggregatorAsync" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="TsdAggregatorLogger"/>
         <discardingThreshold>0</discardingThreshold>

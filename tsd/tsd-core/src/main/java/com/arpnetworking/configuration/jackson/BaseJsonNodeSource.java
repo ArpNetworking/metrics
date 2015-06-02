@@ -16,6 +16,9 @@
 package com.arpnetworking.configuration.jackson;
 
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +31,27 @@ import net.sf.oval.constraint.NotNull;
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
 public abstract class BaseJsonNodeSource implements JsonNodeSource {
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "ObjectMapper", LogReferenceOnly.of(_objectMapper));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
 
     /**
      * Find the <code>JsonNode</code> if one exists from a specified root node

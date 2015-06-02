@@ -25,7 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 
 /**
  * Tests for the <code>JsonNodePaginatedUrlSource</code> class.
@@ -58,8 +58,8 @@ public class JsonNodePaginatedUrlSourceTest {
                         .withHeader("Content-Type", "application/json; charset=utf-8")
                         .withBody("{\"metadata\":{\"next\":null},\"data\":[\"mouse\"]}")));
 
-        final JsonNodePaginatedUrlSource jsonNodePaginatedUrlSource = new JsonNodePaginatedUrlSource.Builder()
-                .setUrl(new URL("http://localhost:" + server.port() + "/animals?offset=0&limit=1"))
+        final JsonNodePaginatedUriSource jsonNodePaginatedUrlSource = new JsonNodePaginatedUriSource.Builder()
+                .setUri(URI.create("http://localhost:" + server.port() + "/animals?offset=0&limit=1"))
                 .setDataKeys(ImmutableList.of("data"))
                 .setNextPageKeys(ImmutableList.of("metadata", "next"))
                 .build();

@@ -18,7 +18,6 @@ package com.arpnetworking.tsdcore.scripting;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.PeriodicData;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -31,10 +30,6 @@ import java.util.Set;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.CLASS,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = "type")
 public interface Expression {
 
     /**

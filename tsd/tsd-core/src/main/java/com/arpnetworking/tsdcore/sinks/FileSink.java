@@ -15,15 +15,16 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.google.common.base.Charsets;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -44,7 +45,13 @@ public final class FileSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        LOGGER.debug(getName() + ": Writing aggregated data; size=" + data.size() + " fileName=" + _fileName);
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .addData("fileName", _fileName)
+                .log();
 
         if (!data.isEmpty()) {
             final StringBuilder stringBuilder = new StringBuilder();
@@ -68,7 +75,12 @@ public final class FileSink extends BaseSink {
                 try {
                     _writer.append(stringBuilder.toString());
                 } catch (final IOException e) {
-                    LOGGER.error(getName() + ": Error writing output to file; fileName=" + _fileName, e);
+                    LOGGER.error()
+                            .setMessage("Error writing output to file")
+                            .addData("sink", getName())
+                            .addData("fileName", _fileName)
+                            .setThrowable(e)
+                            .log();
                 }
                 stringBuilder.setLength(0);
                 _recordsWritten.incrementAndGet();
@@ -81,26 +93,38 @@ public final class FileSink extends BaseSink {
      */
     @Override
     public void close() {
-        LOGGER.info(getName() + ": Closing sink; recordsWritten=" + _recordsWritten + " fileName=" + _fileName);
+        LOGGER.info()
+                .setMessage("Closing sink")
+                .addData("sink", getName())
+                .addData("fileName", _fileName)
+                .addData("recordsWritten", _recordsWritten)
+                .log();
 
         try {
             // Calling close will flush the writer automatically
             _writer.close();
         } catch (final IOException e) {
-            LOGGER.error(getName() + ": Error closing output file; fileName=" + _fileName, e);
+            LOGGER.error()
+                    .setMessage("Error closing output file")
+                    .addData("sink", getName())
+                    .addData("fileName", _fileName)
+                    .setThrowable(e)
+                    .log();
         }
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("FileName", _fileName)
-                .add("RecordsWriten", _recordsWritten)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "FileName", _fileName,
+                "RecordsWritten", _recordsWritten);
     }
 
     private FileSink(final Builder builder) {

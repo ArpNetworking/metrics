@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.utility;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import org.joda.time.Duration;
 
 /**
@@ -24,6 +25,7 @@ import org.joda.time.Duration;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class TimerTrigger implements Trigger {
+
     /**
      * Public constructor.
      *
@@ -39,6 +41,27 @@ public class TimerTrigger implements Trigger {
     @Override
     public void waitOnTrigger() throws InterruptedException {
         Thread.sleep(_duration.getMillis());
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "Duration", _duration);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private final Duration _duration;

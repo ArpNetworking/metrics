@@ -16,8 +16,11 @@
 package com.arpnetworking.akka;
 
 import akka.actor.ExtendedActorSystem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 
 /**
  * Serializer that logs the size of serialized objects.
@@ -57,10 +60,33 @@ public class LoggingSerializer extends akka.serialization.JavaSerializer {
     @Override
     public byte[] toBinary(final Object o) {
         final byte[] bytes = super.toBinary(o);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Serialized a %s; size=%d", o.getClass().getCanonicalName(), bytes.length));
-        }
+        LOGGER.debug()
+                .setMessage("Serialized object")
+                .addData("class", o.getClass().getCanonicalName())
+                .addData("size", bytes.length)
+                .log();
         return bytes;
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "ActorSystem", LogReferenceOnly.of(_system));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private final ExtendedActorSystem _system;

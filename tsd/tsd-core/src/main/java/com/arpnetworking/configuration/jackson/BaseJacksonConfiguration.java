@@ -17,12 +17,14 @@ package com.arpnetworking.configuration.jackson;
 
 import com.arpnetworking.configuration.Configuration;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import net.sf.oval.constraint.NotNull;
 
@@ -147,11 +149,12 @@ public abstract class BaseJacksonConfiguration extends com.arpnetworking.configu
     /**
      * {@inheritDoc}
      */
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("ObjectMapper", _objectMapper)
-                .toString();
+    @LogValue
+    @Override
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "ObjectMapper", LogReferenceOnly.of(_objectMapper));
     }
 
     /**

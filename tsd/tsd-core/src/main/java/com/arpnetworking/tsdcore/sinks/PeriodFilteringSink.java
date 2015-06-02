@@ -15,9 +15,10 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -70,18 +71,21 @@ public final class PeriodFilteringSink extends BaseSink {
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("Include", _include)
-                .add("Exclude", _exclude)
-                .add("ExcludeLessThan", _excludeLessThan)
-                .add("ExcludeGreaterThan", _excludeGreaterThan)
-                .add("Sink", _sink)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.<String, Object>builder()
+                .put("super", super.toLogValue())
+                .put("Include", _include)
+                .put("Exclude", _exclude)
+                .put("ExcludeLessThan", _excludeLessThan)
+                .put("ExcludeGreaterThan", _excludeGreaterThan)
+                .put("Sink", _sink)
+                .build();
     }
 
     private PeriodFilteringSink(final Builder builder) {

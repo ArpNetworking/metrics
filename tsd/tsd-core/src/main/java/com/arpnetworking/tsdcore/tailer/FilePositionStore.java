@@ -17,6 +17,10 @@ package com.arpnetworking.tsdcore.tailer;
 
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -29,8 +33,6 @@ import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -91,6 +93,32 @@ public final class FilePositionStore implements PositionStore {
         flush();
     }
 
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.<String, Object>builder()
+                .put("id", Integer.toHexString(System.identityHashCode(this)))
+                .put("class", this.getClass())
+                .put("File", _file)
+                .put("FlushInterval", _flushInterval)
+                .put("FlushThreshold", _flushThreshold)
+                .put("Retention", _retention)
+                .put("LastFlush", _lastFlush)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
+
     private void flush() {
         // Age out old state
         final DateTime now = DateTime.now();
@@ -109,10 +137,11 @@ public final class FilePositionStore implements PositionStore {
         }
         final long sizeAfter = _state.size();
         if (sizeBefore != sizeAfter) {
-            LOGGER.debug(String.format(
-                    "Removed old entries from file position store; sizeBefore=%d, sizeAfter=%d",
-                    sizeBefore,
-                    sizeAfter));
+            LOGGER.debug()
+                    .setMessage("Removed old entries from file position store")
+                    .addData("sizeBefore", sizeBefore)
+                    .addData("sizeAfter", sizeAfter)
+                    .log();
         }
 
         // Persist the state to disk
@@ -121,10 +150,11 @@ public final class FilePositionStore implements PositionStore {
             OBJECT_MAPPER.writeValue(temporaryFile, _state);
             Files.move(temporaryFile.toPath(), _file.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-            LOGGER.debug(String.format(
-                    "Persisted file position state to disk; size=%d, file=%s",
-                    _state.size(),
-                    _file));
+            LOGGER.debug()
+                    .setMessage("Persisted file position state to disk")
+                    .addData("size", _state.size())
+                    .addData("file", _file)
+                    .log();
         } catch (final IOException ioe) {
             throw Throwables.propagate(ioe);
         } finally {
@@ -142,7 +172,11 @@ public final class FilePositionStore implements PositionStore {
         try {
             state = OBJECT_MAPPER.readValue(_file, STATE_MAP_TYPE_REFERENCE);
         } catch (final IOException e) {
-            LOGGER.warn(String.format("Unable to load state; file=%s", _file), e);
+            LOGGER.warn()
+                    .setMessage("Unable to load state")
+                    .addData("file", _file)
+                    .setThrowable(e)
+                    .log();
         }
         _state = state;
     }

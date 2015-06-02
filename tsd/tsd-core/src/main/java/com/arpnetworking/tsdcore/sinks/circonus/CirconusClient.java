@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.tsdcore.sinks.circonus;
 
 import akka.dispatch.Mapper;
 import akka.http.javadsl.model.HttpMethods;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.sinks.circonus.api.BrokerListResponse;
 import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundleRequest;
 import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundleResponse;
@@ -30,8 +33,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.base.Throwables;
 import com.ning.http.client.AsyncHttpClientConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import play.libs.ws.WSRequest;
 import play.libs.ws.WSResponse;
 import play.libs.ws.ning.NingWSClient;
@@ -66,12 +67,11 @@ public final class CirconusClient {
                             @Override
                             public BrokerListResponse checkedApply(final WSResponse response) throws IOException {
                                 final String body = response.getBody();
-                                if (LOGGER.isTraceEnabled()) {
-                                    LOGGER.trace(String.format(
-                                            "Response from get brokers: response=%s, body=%s",
-                                            response,
-                                            body));
-                                }
+                                LOGGER.trace()
+                                        .setMessage("Response from get brokers")
+                                        .addData("response", response)
+                                        .addData("body", body)
+                                        .log();
                                 if (response.getStatus() / 100 == 2) {
                                     final List<BrokerListResponse.Broker> brokers = OBJECT_MAPPER.readValue(
                                             body,
@@ -135,12 +135,11 @@ public final class CirconusClient {
                             @Override
                             public CheckBundleResponse checkedApply(final WSResponse response) throws IOException {
                                 final String body = response.getBody();
-                                if (LOGGER.isTraceEnabled()) {
-                                    LOGGER.trace(String.format(
-                                            "Response from create checkBundle: response=%s, body=%s",
-                                            response,
-                                            body));
-                                }
+                                LOGGER.trace()
+                                        .setMessage("Response from create checkBundle")
+                                        .addData("response", response)
+                                        .addData("body", body)
+                                        .log();
                                 if (response.getStatus() / 100 == 2) {
                                     return OBJECT_MAPPER.readValue(body, CheckBundleResponse.class);
                                 }
@@ -153,6 +152,29 @@ public final class CirconusClient {
                             }
                         },
                         _executionContext);
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "Uri", _uri,
+                "AppName", _appName,
+                "AuthToken", _authToken);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private Future<WSResponse> fireRequest(final WSRequest request) {

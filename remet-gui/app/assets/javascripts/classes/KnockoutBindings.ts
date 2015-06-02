@@ -12,7 +12,7 @@ import $ = require('jquery');
 
 module kobindings {
     ko.bindingHandlers['slider'] = {
-        init: function(element, valueAccessor) {
+        update: function(element, valueAccessor) {
             // First get the latest data that we're bound to
             var value = valueAccessor();
             var valueUnwrapped: any = ko.utils.unwrapObservable(value);
@@ -39,12 +39,11 @@ module kobindings {
             } else {
                 $(element).hide("slide", effectOptions, duration, after);
             }
-
         }
     };
 
     ko.bindingHandlers['tooltip'] = {
-        init: function(element, valueAccessor) {
+        update: function(element, valueAccessor) {
             var value = valueAccessor();
             var valueUnwrapped = ko.utils.unwrapObservable(value);
             //TODO: tooltip this
@@ -52,7 +51,7 @@ module kobindings {
     };
 
     ko.bindingHandlers['stackdrag'] = {
-        init: function(element, valueAccessor) {
+        update: function(element, valueAccessor) {
             var thisLevel = $(element).parent().children();
             var value = valueAccessor();
             var valueUnwrapped = ko.utils.unwrapObservable(value);
@@ -62,23 +61,6 @@ module kobindings {
     };
 
     ko.bindingHandlers['legendBlock'] = {
-        init: function(element, valueAccessor) {
-            // First get the latest data that we're bound to
-            var value = valueAccessor();
-
-            // Next, whether or not the supplied model property is observable, get its current value
-            var valueUnwrapped = ko.utils.unwrapObservable(value);
-
-            var context = element.getContext('2d');
-
-            context.beginPath();
-            context.rect(3, 3, element.width - 6, element.height - 6);
-            context.fillStyle = valueUnwrapped;
-            context.fill();
-            context.lineWidth = 2;
-            context.strokeStyle = '#F0F0F0';
-            context.stroke();
-        },
         update: function(element, valueAccessor) {
             // First get the latest data that we're bound to
             var value = valueAccessor();
@@ -99,7 +81,7 @@ module kobindings {
     };
 
     ko.bindingHandlers["typeahead"] = {
-        init: function(element, valueAccessor, allValuesAccessor) {
+        update: function(element, valueAccessor, allValuesAccessor) {
             var value = valueAccessor();
             var valueUnwrapped: any = ko.utils.unwrapObservable(value);
 

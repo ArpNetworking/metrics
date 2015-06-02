@@ -21,13 +21,20 @@ import com.arpnetworking.configuration.jackson.DynamicConfiguration;
 import com.arpnetworking.configuration.jackson.DynamicConfigurationFactory;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Counter;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.scripting.Alert;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
+import com.arpnetworking.tsdcore.scripting.lua.LuaAlert;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticDeserializer;
 import com.arpnetworking.utility.InterfaceDatabase;
 import com.arpnetworking.utility.ReflectionsDatabase;
 import com.fasterxml.jackson.annotation.JacksonInject;
@@ -40,17 +47,13 @@ import com.google.inject.internal.MoreTypes;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 
 /**
  * Intermediate publisher which computes and annotates <code>AggregatedData</code>
@@ -65,20 +68,30 @@ public final class AlertSink extends BaseSink implements Sink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
+
         final List<Condition> newConditions = Lists.newArrayList();
 
         try (final Metrics metrics = _metricsFactory.create()) {
             // Check for new clusters or services
             boolean newClusterServices = false;
             for (final AggregatedData datum : data) {
-                final String clusterService = datum.getFQDSN().getCluster() + "." + datum.getFQDSN().getService();
-                if (!_clusterServices.contains(clusterService)) {
-                    LOGGER.debug(String.format(
-                            "Discovered new cluster-service; cluster=%s, service=%s, alertSink=%s",
-                            datum.getFQDSN().getCluster(),
-                            datum.getFQDSN().getService(),
-                            this));
-                    _clusterServices.add(clusterService);
+                final  DynamicConfigurationFactory.Key clusterServiceKey = new DynamicConfigurationFactory.Key(
+                        datum.getFQDSN().getCluster(),
+                        datum.getFQDSN().getService());
+                if (!_clusterServices.contains(clusterServiceKey)) {
+                    LOGGER.debug()
+                            .setMessage("Discovered new cluster-service")
+                            .addData("sink", getName())
+                            .addData("cluster", datum.getFQDSN().getCluster())
+                            .addData("service", datum.getFQDSN().getService())
+                            .log();
+                    _clusterServices.add(clusterServiceKey);
                     newClusterServices = true;
                 }
             }
@@ -91,8 +104,7 @@ public final class AlertSink extends BaseSink implements Sink {
                         new DynamicConfiguration.Builder()
                                 .setObjectMapper(OBJECT_MAPPER)
                                 .addListener(_configurationListener),
-                        _clusterServices,
-                        Collections.<Pattern>emptySet());
+                        _clusterServices);
                 final DynamicConfiguration oldConfiguration = _configuration.getAndSet(newConfiguration);
                 if (oldConfiguration != null) {
                     oldConfiguration.shutdown();
@@ -123,6 +135,21 @@ public final class AlertSink extends BaseSink implements Sink {
         if (configuration != null) {
             configuration.shutdown();
         }
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    @Override
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "Alerts", _alerts,
+                "ClusterServices", _clusterServices,
+                "Sink", _sink);
     }
 
     private void evaluateAlerts(
@@ -164,12 +191,12 @@ public final class AlertSink extends BaseSink implements Sink {
                 } catch (final ScriptingException e) {
                     // TODO(vkoskela): Configure an alert failure alert! [MAI-450]
                     failures.increment();
-                    LOGGER.warn(
-                            String.format(
-                                    "Alert evaluation failed; alert=%s, data=%s",
-                                    alert,
-                                    data),
-                            e);
+                    LOGGER.warn()
+                            .setMessage("Failed to evalaute alert")
+                            .addData("alert", alert)
+                            .addData("data", data)
+                            .setThrowable(e)
+                            .log();
                 }
             }
         }
@@ -187,24 +214,21 @@ public final class AlertSink extends BaseSink implements Sink {
     private final DynamicConfigurationFactory _dynamicConfigurationFactory;
     private final Listener _configurationListener;
     private final Sink _sink;
-    private final Set<String> _clusterServices = Sets.newConcurrentHashSet();
+    private final Set<DynamicConfigurationFactory.Key> _clusterServices = Sets.newConcurrentHashSet();
     private final AtomicReference<DynamicConfiguration> _configuration = new AtomicReference<>();
     private final AtomicReference<List<Alert>> _alerts = new AtomicReference<>();
 
     private static final ParameterizedType ALERT_TYPE = new MoreTypes.ParameterizedTypeImpl(
             null, // OwnerType
-            Map.class,
-            String.class,
-            new MoreTypes.ParameterizedTypeImpl(
-                null, // OwnerType
-                List.class,
-                Alert.class));
+            List.class,
+            LuaAlert.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
     private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertSink.class);
 
     static {
         final SimpleModule module = new SimpleModule("AlertSink");
+        module.addDeserializer(Statistic.class, new StatisticDeserializer());
 
         final Set<Class<? extends Alert>> alertClasses = INTERFACE_DATABASE.findClassesWithInterface(Alert.class);
         for (final Class<? extends Alert> alertClass : alertClasses) {
@@ -218,19 +242,19 @@ public final class AlertSink extends BaseSink implements Sink {
 
         @Override
         public void offerConfiguration(final Configuration configuration) throws Exception {
-            final Map<String, List<Alert>> alerts = configuration.getAs(
+            final List<Alert> alerts = configuration.getAs(
                     ALERT_TYPE,
-                    Collections.<String, List<Alert>>emptyMap());
-            _offeredAlerts = Lists.newArrayList();
-            for (final List<Alert> list : alerts.values()) {
-                _offeredAlerts.addAll(list);
-            }
+                    Collections.<Alert>emptyList());
+            _offeredAlerts = Lists.newArrayList(alerts);
         }
 
         @Override
         public void applyConfiguration() {
             _alerts.set(_offeredAlerts);
-            LOGGER.debug(String.format("Updated alerts; alerts=%s", _alerts));
+            LOGGER.debug()
+                    .setMessage("Updaetd alerts")
+                    .addData("alerts", _alerts)
+                    .log();
         }
 
         private List<Alert> _offeredAlerts = Collections.emptyList();

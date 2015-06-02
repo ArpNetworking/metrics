@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.google.common.collect.Lists;
@@ -33,6 +34,7 @@ import java.util.List;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public final class RandomMetricNameFilterSink extends BaseSink {
+
     /**
      * {@inheritDoc}
      */
@@ -54,6 +56,21 @@ public final class RandomMetricNameFilterSink extends BaseSink {
     public void close() {
         _sink.close();
     }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    @Override
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "PassPercent", _passPercent,
+                "Sink", _sink);
+    }
+
 
     /**
      * Determines if an {@link com.arpnetworking.tsdcore.model.AggregatedData} should be sent to the wrapped Sink.

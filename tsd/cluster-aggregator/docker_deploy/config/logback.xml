@@ -17,8 +17,6 @@
 
 <configuration>
 
-    <conversionRule conversionWord="sThrowable" converterClass="com.arpnetworking.logging.SingleLineExceptionConverter" />
-
     <!-- IMPORTANT: This logger is the default and intended for testing -->
     <appender name="clusteragg-logger" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>/opt/cluster-aggregator/logs/cluster-aggregator.log</file>
@@ -32,6 +30,11 @@
         <encoder class="com.arpnetworking.logback.StenoEncoder">
             <injectContextLogger>true</injectContextLogger>
             <compressLoggerName>true</compressLoggerName>
+            <jacksonModule class="com.fasterxml.jackson.datatype.joda.JodaModule" />
+            <jacksonModule class="com.fasterxml.jackson.datatype.guava.GuavaModule" />
+            <jacksonModule class="com.fasterxml.jackson.datatype.jdk7.Jdk7Module" />
+            <jacksonModule class="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" />
+            <jacksonModule class="com.arpnetworking.configuration.jackson.akka.AkkaLoggingModule" />
         </encoder>
     </appender>
 

@@ -20,6 +20,7 @@ import com.arpnetworking.tsdcore.statistics.CountStatistic;
 import com.arpnetworking.tsdcore.statistics.MeanStatistic;
 import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.arpnetworking.tsdcore.statistics.SumStatistic;
 import com.arpnetworking.tsdcore.statistics.TP0Statistic;
 import com.arpnetworking.tsdcore.statistics.TP100Statistic;
@@ -48,16 +49,14 @@ public class StatisticFactoryTest {
         return a(
                 a(l("mean"), MeanStatistic.class),
                 a(l("sum"), SumStatistic.class),
-                a(l("count"), CountStatistic.class),
-                a(l("n"), CountStatistic.class),
-                a(l("min"), TP0Statistic.class),
-                a(l("tp50"), MedianStatistic.class),
-                a(l("median"), MedianStatistic.class),
-                a(l("tp90"), TP90Statistic.class),
-                a(l("tp95"), TP95Statistic.class),
-                a(l("tp99"), TP99Statistic.class),
-                a(l("tp99.9"), TP99p9Statistic.class),
-                a(l("max"), TP100Statistic.class)
+                a(l("count", "n"), CountStatistic.class),
+                a(l("p0", "tp0", "min"), TP0Statistic.class),
+                a(l("p50", "tp50", "median"), MedianStatistic.class),
+                a(l("p90", "tp90"), TP90Statistic.class),
+                a(l("p95", "tp95"), TP95Statistic.class),
+                a(l("p99", "tp99"), TP99Statistic.class),
+                a(l("p99.9", "tp99.9", "p99p9", "tp99p9"), TP99p9Statistic.class),
+                a(l("p100", "tp100", "max"), TP100Statistic.class)
         );
     }
 
@@ -77,8 +76,10 @@ public class StatisticFactoryTest {
 
         for (final String name : names) {
             final Optional<Statistic> statistic = factory.createStatistic(name);
-            Assert.assertTrue(statistic.isPresent());
-            Assert.assertTrue(clazz.isInstance(statistic.get()));
+            Assert.assertTrue("Not found: " + name, statistic.isPresent());
+            Assert.assertTrue(
+                    "Expected: " + clazz + " but was: " + statistic.get().getClass(),
+                    clazz.isInstance(statistic.get()));
         }
     }
 

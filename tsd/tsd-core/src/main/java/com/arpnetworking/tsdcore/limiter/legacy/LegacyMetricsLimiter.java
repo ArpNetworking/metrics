@@ -15,17 +15,18 @@
  */
 package com.arpnetworking.tsdcore.limiter.legacy;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.util.Collections;
@@ -69,7 +70,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Joe Frisbie (jfrisbie at groupon dot com)
  */
-public final class DefaultMetricsLimiter implements Closeable {
+public final class LegacyMetricsLimiter implements Closeable {
 
     /**
      * Consider whether a <code>AggregatedData</code> instance should be
@@ -118,10 +119,11 @@ public final class DefaultMetricsLimiter implements Closeable {
         // If we get here, there was no room for the new aggregations, log it (but not too often) and then ignore
         final Long lastLogged = _lastLogged.get(key);
         if (lastLogged == null || now - lastLogged >= _loggingInterval.getMillis()) {
-            LOGGER.error(String.format(
-                    "Limited aggregate %s; already aggregating %d",
-                    key,
-                    _nAggregations));
+            LOGGER.error()
+                    .setMessage("Limited aggregate")
+                    .addData("key", key)
+                    .addData("count", _nAggregations)
+                    .log();
             _lastLogged.put(key, now);
         }
 
@@ -136,6 +138,29 @@ public final class DefaultMetricsLimiter implements Closeable {
         if (_enableStateAutoWriter) {
             _stateManager.stopAutoWriter(true);
         }
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "MaxAggregations", _maxAggregations,
+                "NumberAggregations", _nAggregations,
+                "StateManager", _stateManager);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     // Stuff below here has package scope for test access
@@ -158,7 +183,10 @@ public final class DefaultMetricsLimiter implements Closeable {
                 final String key = aggregationMarkTime.getKey();
                 entries.remove();
                 _nAggregations -= aggregationMarkTime.getValue()._count;
-                LOGGER.info(String.format("Aggregation %s aged out", key));
+                LOGGER.info()
+                        .setMessage("Aggregation aged out")
+                        .addData("key", key)
+                        .log();
                 removedSome = true;
             }
         }
@@ -203,7 +231,7 @@ public final class DefaultMetricsLimiter implements Closeable {
         return _nAggregations;
     }
 
-    private DefaultMetricsLimiter(final Builder builder) {
+    private LegacyMetricsLimiter(final Builder builder) {
         _maxAggregations = builder._maxAggregations;
         _loggingInterval = builder._loggingInterval;
         _ageOutThreshold = builder._ageOutThreshold;
@@ -233,11 +261,10 @@ public final class DefaultMetricsLimiter implements Closeable {
     // The current number of aggregations that have ad tsd data recorded
     private int _nAggregations;
 
-    private static final long DEFAULT_MAX_AGGREGATIONS = 1000;
     private static final Duration DEFAULT_LOGGING_INTERVAL = Duration.standardMinutes(5);
     private static final Duration DEFAULT_AGE_OUT_THRESHOLD = Duration.standardDays(7);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultMetricsLimiter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LegacyMetricsLimiter.class);
 
     /**
      * Hold the number of aggregations and the last time a metric produced a
@@ -265,15 +292,25 @@ public final class DefaultMetricsLimiter implements Closeable {
         }
 
         /**
+         * Generate a Steno log compatible representation.
+         *
+         * @return Steno log compatible representation.
+         */
+        @LogValue
+        public Object toLogValue() {
+            return LogValueMapFactory.of(
+                    "id", Integer.toHexString(System.identityHashCode(this)),
+                    "class", this.getClass(),
+                    "Count", _count,
+                    "Time", _time);
+        }
+
+        /**
          * {@inheritDoc}
          */
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("id", Integer.toHexString(System.identityHashCode(this)))
-                    .add("Count", _count)
-                    .add("Timer", _time)
-                    .toString();
+            return toLogValue().toString();
         }
 
         /**
@@ -311,13 +348,13 @@ public final class DefaultMetricsLimiter implements Closeable {
     /**
      * Builder for a MetricsLimiter.
      */
-    public static final class Builder extends OvalBuilder<DefaultMetricsLimiter> {
+    public static final class Builder extends OvalBuilder<LegacyMetricsLimiter> {
 
         /**
          * Public constructor.
          */
         public Builder() {
-            super(DefaultMetricsLimiter.class);
+            super(LegacyMetricsLimiter.class);
         }
 
         /**

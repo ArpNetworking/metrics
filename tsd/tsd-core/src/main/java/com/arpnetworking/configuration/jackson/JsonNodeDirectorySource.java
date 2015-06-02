@@ -15,21 +15,18 @@
  */
 package com.arpnetworking.configuration.jackson;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import net.sf.oval.constraint.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -55,15 +52,15 @@ public final class JsonNodeDirectorySource extends BaseJsonNodeSource implements
     /**
      * {@inheritDoc}
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Directory", _directory)
-                .add("FileNames", _fileNames)
-                .add("FileNamePatterns", _fileNamePatterns)
-                .add("JsonNode", _jsonNode)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "Directory", _directory,
+                "FileNames", _fileNames,
+                "FileNamePatterns", _fileNamePatterns,
+                "JsonNode", _jsonNode);
     }
 
     /* package private */ Optional<JsonNode> getJsonNode() {
@@ -98,46 +95,27 @@ public final class JsonNodeDirectorySource extends BaseJsonNodeSource implements
         _directory = builder._directory;
         _fileNames = Sets.newHashSet(builder._fileNames);
         _fileNamePatterns = builder._fileNamePatterns;
-        _fileToKey = builder._fileToKey;
 
         // Build the unified configuration
-        final StringBuilder jsonBuilder = new StringBuilder();
-        jsonBuilder.append("{");
+        final JsonNodeMergingSource.Builder jsonNodeMergingSourceBuilder = new JsonNodeMergingSource.Builder();
 
         // Process all matching files
-        JsonNode jsonNode = null;
         if (_directory.exists() && _directory.isDirectory() && _directory.canRead()) {
             for (final File file : MoreObjects.firstNonNull(_directory.listFiles(), EMPTY_FILE_ARRAY)) {
                 if (isFileMonitored(file)) {
                     LOGGER.debug(String.format("Loading configuration file; file=%s", file));
-                    try {
-                        writeKeyValue(_fileToKey.apply(file), Files.toString(file, Charsets.UTF_8), jsonBuilder);
-                        jsonBuilder.append(",");
-                    } catch (final IOException ioe) {
-                        throw Throwables.propagate(ioe);
-                    }
+                    jsonNodeMergingSourceBuilder.addSource(new JsonNodeFileSource.Builder()
+                            .setFile(file)
+                            .build());
                 }
             }
-
-            // Complete and parse the configuration
-            if (jsonBuilder.length() > 1) {
-                jsonBuilder.setCharAt(jsonBuilder.length() - 1, '}');
-            } else {
-                jsonBuilder.append("}");
-            }
-            try {
-                jsonNode = _objectMapper.readTree(jsonBuilder.toString());
-            } catch (final IOException e) {
-                throw Throwables.propagate(e);
-            }
         }
-        _jsonNode = Optional.fromNullable(jsonNode);
+        _jsonNode = jsonNodeMergingSourceBuilder.build().getJsonNode();
     }
 
     private final File _directory;
     private final Set<String> _fileNames;
     private final List<Pattern> _fileNamePatterns;
-    private Function<File, String> _fileToKey;
     private final Optional<JsonNode> _jsonNode;
 
     private static final File[] EMPTY_FILE_ARRAY = new File[0];
@@ -227,18 +205,6 @@ public final class JsonNodeDirectorySource extends BaseJsonNodeSource implements
         }
 
         /**
-         * Set the file to key function. Optional. The default uses the file
-         * name removing the ".json" extension if one exists.
-         *
-         * @param value The file to key function.
-         * @return This <code>Builder</code> instance.
-         */
-        public Builder setFileToKey(final Function<File, String> value) {
-            _fileToKey = value;
-            return this;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @Override
@@ -252,20 +218,5 @@ public final class JsonNodeDirectorySource extends BaseJsonNodeSource implements
         private List<String> _fileNames = Lists.newArrayList();
         @NotNull
         private List<Pattern> _fileNamePatterns = Lists.newArrayList();
-        @NotNull
-        private Function<File, String> _fileToKey = DEFAULT_FILE_TO_KEY_FUNCTION;
-
-        private static final Function<File, String> DEFAULT_FILE_TO_KEY_FUNCTION = new Function<File, String>() {
-
-            @Override
-            public String apply(final File file) {
-                final String fileName = file != null ? file.getName() : "";
-                if (fileName.endsWith(".json")) {
-                    return fileName.substring(0, fileName.length() - 5);
-                } else {
-                    return fileName;
-                }
-            }
-        };
     }
 }

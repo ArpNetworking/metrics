@@ -27,6 +27,14 @@ import java.util.Optional;
 public interface AlertQuery {
 
     /**
+     * Set the text to query for. Optional. Defaults to no text.
+     *
+     * @param contains The text to match.
+     * @return This instance of <code>ExpressionQuery</code>.
+     */
+    AlertQuery contains(final Optional<String> contains);
+
+    /**
      * Set the context to query for. Optional. Defaults to all context types.
      *
      * @param context The context to match.
@@ -72,6 +80,13 @@ public interface AlertQuery {
      * @return The results of the query as an {@code QueryResult<Alert>} instance.
      */
     QueryResult<Alert> execute();
+
+    /**
+     * Accessor for the contains.
+     *
+     * @return The contains.
+     */
+    Optional<String> getContains();
 
     /**
      * Accessor for the context.

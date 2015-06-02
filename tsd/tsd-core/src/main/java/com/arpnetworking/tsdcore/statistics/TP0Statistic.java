@@ -24,7 +24,6 @@ import java.util.List;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-
 public class TP0Statistic extends TPStatistic {
 
     /**

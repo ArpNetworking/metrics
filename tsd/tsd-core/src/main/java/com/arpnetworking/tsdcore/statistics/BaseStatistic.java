@@ -15,6 +15,9 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -34,11 +37,25 @@ public abstract class BaseStatistic implements Statistic {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "Name", getName(),
+                "Aliases", getAliases());
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return getName();
+        return toLogValue().toString();
     }
 
     /**

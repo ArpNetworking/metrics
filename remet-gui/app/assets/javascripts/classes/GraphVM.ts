@@ -25,7 +25,7 @@ import GraphSpec = require('./GraphSpec');
 
 import Flotr = require('flotr2');
 
-// requestAnimFrame shim  with setTimeout fallback
+// requestAnimFrame shim with setTimeout fallback
 window.requestAnimationFrame = (function () {
     return window.requestAnimationFrame ||
         (<any>window).webkitRequestAnimationFrame ||
@@ -46,6 +46,7 @@ class GraphVM implements StatisticView {
     dataStreams: { [key: string]: number } = {};
     stop: boolean = false;
     paused: boolean = false;
+    targetFrameRate: number = 60;
     duration: number = 30000;
     endAt: number = 0;
     dataLength: number = 600000;
@@ -120,17 +121,21 @@ class GraphVM implements StatisticView {
         this.started = true;
         this.container = document.getElementById(this.id);
 
-        var animate = () => {
-            var tickTime = 50;
+        var previousTimestamp: number = 0.0;
+        var animate = (timestamp: number) => {
+
             if (this.stop) {
                 return;
             }
 
             if (this.paused || this.container.clientWidth == 0) {
-                // Animate
-                setTimeout(function() {
-                    animate();
-                }, tickTime);
+                // Delayed animate
+                var stepTimeInMillis = 100;
+                setTimeout(
+                    () => {
+                        window.requestAnimationFrame(animate);
+                    },
+                    stepTimeInMillis);
                 return;
             }
 
@@ -156,8 +161,8 @@ class GraphVM implements StatisticView {
                 var lower = this.data[series].data.length;
                 var upper = 0;
                 for (var iter = this.data[series].data.length - 1; iter >= 0; iter--) {
-                    var timestamp = this.data[series].data[iter][0];
-                    if (timestamp >= graphStart && timestamp <= graphEnd) {
+                    var dataTimestamp = this.data[series].data[iter][0];
+                    if (dataTimestamp >= graphStart && dataTimestamp <= graphEnd) {
                         if (iter < lower) {
                             lower = iter;
                         }
@@ -226,10 +231,26 @@ class GraphVM implements StatisticView {
                 }
             });
 
-            // Animate
+            // Render
+            if (previousTimestamp != null) {
+                var currentRate = 1000 / (timestamp - previousTimestamp);
+                if (currentRate > this.targetFrameRate) {
+                    // Delayed animate
+                    var stepTimeInMillis = 1000 * (1 / this.targetFrameRate - 1 / currentRate);
+                    previousTimestamp = timestamp;
+                    setTimeout(
+                        () => {
+                            window.requestAnimationFrame(animate);
+                        },
+                        stepTimeInMillis);
+                    return;
+                }
+            }
+            previousTimestamp = timestamp;
             window.requestAnimationFrame(animate);
         };
-        animate();
+
+        window.requestAnimationFrame(animate);
     }
 }
 

@@ -3,7 +3,6 @@
         <div class="col-md-12">
             <h2>Host Registry</h2>
 
-            <!--<form role="form" class="form-horizontal col-md-4 col-sm-6 col-lg-3">-->
             <div class="col-md-12 col-sm-12 col-lg-12 search-header">
                 <form role="form" class="container-fluid form-inline col-md-8 col-sm-12 col-lg-6">
                     <div class="form-group has-feedback">
@@ -25,7 +24,6 @@
                 <div data-bind="foreach: filteredHosts" class="row">
                     <div style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap" class="col-md-4 col-lg-3 col-sm-6">
                         <button class="btn btn-default btn-xs" data-bind="enable: connectable, click: $parent.click">
-                        <!--<button class="btn btn-default btn-xs" data-bind="click: $parent.click">-->
                             <i class="glyphicon" data-bind="css: connectionStyle"></i>
                         </button>
                         <span data-bind="text: hostname, tooltip:{ title: hostname, tooltipClass: 'host-tip'}, attr: {title: hostname}"></span>

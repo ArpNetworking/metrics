@@ -17,6 +17,9 @@ package com.arpnetworking.configuration.jackson.akka;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -47,6 +50,27 @@ public class ActorRefSerializer extends JsonSerializer<ActorRef> {
             final JsonGenerator gen,
             final SerializerProvider serializers) throws IOException {
         gen.writeString(value.path().toStringWithAddress(_system.provider().getDefaultAddress()));
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "ActorSystem", LogReferenceOnly.of(_system));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private final ActorSystem _system;

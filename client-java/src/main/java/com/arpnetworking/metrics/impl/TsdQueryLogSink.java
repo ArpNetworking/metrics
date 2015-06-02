@@ -39,7 +39,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -153,7 +153,7 @@ public class TsdQueryLogSink implements Sink {
 
     /**
      * Protected constructor.
-     * 
+     *
      * @param builder Instance of <code>Builder</code>.
      */
     protected TsdQueryLogSink(final Builder builder) {
@@ -219,6 +219,7 @@ public class TsdQueryLogSink implements Sink {
         simpleModule.addSerializer(Quantity.class, QuantitySerializer.newInstance());
         OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.ALWAYS);
         OBJECT_MAPPER.registerModule(simpleModule);
+        OBJECT_MAPPER.registerModule(new AfterburnerModule());
     }
 
     private static final class Entry {
@@ -343,7 +344,7 @@ public class TsdQueryLogSink implements Sink {
 
     /**
      * Builder for <code>TsdQueryLogSink</code>.
-     * 
+     *
      * This class is thread safe.
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
@@ -352,7 +353,7 @@ public class TsdQueryLogSink implements Sink {
 
         /**
          * Create an instance of <code>Sink</code>.
-         * 
+         *
          * @return Instance of <code>Sink</code>.
          */
         public Sink build() {
@@ -380,7 +381,7 @@ public class TsdQueryLogSink implements Sink {
         /**
          * Set the path. Optional; default is empty string which defaults to a
          * the current working directory of the application.
-         * 
+         *
          * @param value The value for path.
          * @return This <code>Builder</code> instance.
          */
@@ -392,7 +393,7 @@ public class TsdQueryLogSink implements Sink {
         /**
          * Set the file name without extension. Optional; default is "query".
          * The file name without extension cannot be empty.
-         * 
+         *
          * @param value The value for name.
          * @return This <code>Builder</code> instance.
          */
@@ -403,7 +404,7 @@ public class TsdQueryLogSink implements Sink {
 
         /**
          * Set the file extension. Optional; default is ".log".
-         * 
+         *
          * @param value The value for extension.
          * @return This <code>Builder</code> instance.
          */
@@ -413,9 +414,9 @@ public class TsdQueryLogSink implements Sink {
         }
 
         /**
-         * Set whether entries are flushed immediately. Entries are still 
+         * Set whether entries are flushed immediately. Entries are still
          * written asynchronously. Optional; default is true.
-         * 
+         *
          * @param value Whether to flush immediately.
          * @return This <code>Builder</code> instance.
          */

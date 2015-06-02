@@ -22,6 +22,7 @@ requirejs.config({
         'bootstrap' : '/assets/lib/bootstrap/js/bootstrap.min',
         'd3' : '/assets/lib/d3js/d3.min',
         'gauge' : 'gauge.min',
+        'naturalSort' : 'naturalSort',
 
         //Durandal
         'durandal/activator': '/assets/lib/durandal/js/activator',

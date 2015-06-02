@@ -25,6 +25,7 @@ import com.arpnetworking.tsdcore.statistics.CountStatistic;
 import com.arpnetworking.tsdcore.statistics.MeanStatistic;
 import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticDeserializer;
 import com.arpnetworking.tsdcore.statistics.SumStatistic;
 import com.arpnetworking.tsdcore.statistics.TP0Statistic;
 import com.arpnetworking.tsdcore.statistics.TP100Statistic;
@@ -70,6 +71,7 @@ public final class PipelineConfiguration {
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
 
         final SimpleModule module = new SimpleModule("Pipeline");
+        module.addDeserializer(Statistic.class, new StatisticDeserializer());
         BuilderDeserializer.addTo(module, PipelineConfiguration.class);
 
         final Set<Class<? extends Sink>> sinkClasses = INTERFACE_DATABASE.findClassesWithInterface(Sink.class);

@@ -26,14 +26,14 @@ repositories {
 
 def akka_version = '2.3.10'
 def scala_version = '2.11'
-def jackson_version = '2.5.0'
+def jackson_version = '2.5.3'
 def guice_version = '4.0-beta5'
 
 dependencies {
     compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.2'
-    compile group: 'com.arpnetworking.logback', name: 'logback-steno', version: '1.4.0'
-    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.3'
-    compile group: 'com.arpnetworking.metrics.extras', name: 'jvm-extra', version: '0.3.1'
+    compile group: 'com.arpnetworking.logback', name: 'logback-steno', version: '1.8.0'
+    compile group: 'com.arpnetworking.metrics', name: 'metrics-client', version: '0.3.4'
+    compile group: 'com.arpnetworking.metrics.extras', name: 'jvm-extra', version: '0.3.3'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jackson_version
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jackson_version
     compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-guava', version: jackson_version

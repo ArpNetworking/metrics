@@ -21,6 +21,7 @@ import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -83,6 +84,40 @@ public final class DefaultExpression implements Expression {
                 .add("Metric", _metric)
                 .add("Script", _script)
                 .toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(final Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof DefaultExpression)) {
+            return false;
+        }
+
+        final DefaultExpression otherExpression = (DefaultExpression) other;
+        return Objects.equals(_id, otherExpression._id)
+                && Objects.equals(_cluster, otherExpression._cluster)
+                && Objects.equals(_service, otherExpression._service)
+                && Objects.equals(_metric, otherExpression._metric)
+                && Objects.equals(_script, otherExpression._script);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                _id,
+                _cluster,
+                _service,
+                _metric,
+                _script);
     }
 
     private DefaultExpression(final Builder builder) {

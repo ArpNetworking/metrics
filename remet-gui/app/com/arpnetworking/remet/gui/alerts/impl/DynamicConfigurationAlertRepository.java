@@ -16,8 +16,10 @@
 package com.arpnetworking.remet.gui.alerts.impl;
 
 import com.arpnetworking.configuration.jackson.DynamicConfiguration;
-import com.arpnetworking.configuration.jackson.JsonNodeUrlSource;
-import com.arpnetworking.configuration.triggers.UrlTrigger;
+import com.arpnetworking.configuration.jackson.JsonNodeFileSource;
+import com.arpnetworking.configuration.jackson.JsonNodeUriSource;
+import com.arpnetworking.configuration.triggers.FileTrigger;
+import com.arpnetworking.configuration.triggers.UriTrigger;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.remet.gui.QueryResult;
@@ -40,8 +42,9 @@ import com.google.inject.Inject;
 import net.sf.oval.constraint.NotNull;
 import play.Configuration;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -66,8 +69,8 @@ public class DynamicConfigurationAlertRepository
     @Inject
     public DynamicConfigurationAlertRepository(final Configuration playConfiguration) {
         try {
-            _configurationUrl = new URL(playConfiguration.getString("alertRepository.url"));
-        } catch (final MalformedURLException e) {
+            _configurationUri = new URI(playConfiguration.getString("alertRepository.uri"));
+        } catch (final URISyntaxException e) {
             throw Throwables.propagate(e);
         }
     }
@@ -81,16 +84,31 @@ public class DynamicConfigurationAlertRepository
         LOGGER.debug().setMessage("Opening alert repository").log();
         final Reconfigurator<DynamicConfigurationAlertRepository, AlertConfiguration> reconfigurator =
                 new Reconfigurator<>(this, AlertConfiguration.class);
-        _dynamicConfiguration = new DynamicConfiguration.Builder()
-                .setObjectMapper(OBJECT_MAPPER)
-                .addSourceBuilder(new JsonNodeUrlSource.Builder()
-                        .setObjectMapper(OBJECT_MAPPER)
-                        .setUrl(_configurationUrl))
-                .addTrigger(new UrlTrigger.Builder()
-                        .setUrl(_configurationUrl)
-                        .build())
-                .addListener(reconfigurator)
-                .build();
+        if ("http".equalsIgnoreCase(_configurationUri.getScheme())
+                || "https".equalsIgnoreCase(_configurationUri.getScheme())) {
+            _dynamicConfiguration = new DynamicConfiguration.Builder()
+                    .setObjectMapper(OBJECT_MAPPER)
+                    .addSourceBuilder(new JsonNodeUriSource.Builder()
+                            .setObjectMapper(OBJECT_MAPPER)
+                            .setUri(_configurationUri))
+                    .addTrigger(new UriTrigger.Builder()
+                            .setUri(_configurationUri)
+                            .build())
+                    .addListener(reconfigurator)
+                    .build();
+        } else {
+            final File configurationFile = new File(_configurationUri.getPath());
+            _dynamicConfiguration = new DynamicConfiguration.Builder()
+                    .setObjectMapper(OBJECT_MAPPER)
+                    .addSourceBuilder(new JsonNodeFileSource.Builder()
+                            .setObjectMapper(OBJECT_MAPPER)
+                            .setFile(configurationFile))
+                    .addTrigger(new FileTrigger.Builder()
+                            .setFile(configurationFile)
+                            .build())
+                    .addListener(reconfigurator)
+                    .build();
+        }
 
         _dynamicConfiguration.launch();
         // NOTE: Do not mark the repository as open until the dynamic
@@ -137,11 +155,17 @@ public class DynamicConfigurationAlertRepository
                 .filter(alert -> query.getContext().map(context -> context.equals(alert.getContext())).orElse(true))
                 .filter(alert -> query.getCluster().map(cluster -> cluster.equals(alert.getCluster())).orElse(true))
                 .filter(alert -> query.getService().map(service -> service.equals(alert.getService())).orElse(true))
+                .filter(alert -> query.getContains().map(contains -> {
+                    return alert.getCluster().contains(contains)
+                            || alert.getService().contains(contains)
+                            || alert.getMetric().contains(contains)
+                            || alert.getName().contains(contains);
+                }).orElse(true))
                 .sorted(ALERT_COMPARATOR)
                 .collect(Collectors.toList());
         final int start = query.getOffset().orElse(0);
         final int end = start + Math.max(Math.min(alerts.size() - start, query.getLimit()), 0);
-        return new DefaultQueryResult<>(alerts.subList(start, end), alerts.size());
+        return new DefaultQueryResult<>(alerts.subList(start, end), alerts.size(), Integer.toHexString(_alerts.hashCode()));
     }
 
     /**
@@ -187,7 +211,7 @@ public class DynamicConfigurationAlertRepository
     }
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final URL _configurationUrl;
+    private final URI _configurationUri;
 
     private DynamicConfiguration _dynamicConfiguration;
     private volatile List<Alert> _alerts = Collections.emptyList();

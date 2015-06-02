@@ -15,11 +15,13 @@
  */
 
 ///<reference path="../../libs/knockout/knockout.d.ts" />
+///<reference path="../../libs/jqueryui/jqueryui.d.ts"/>
 import ko = require('knockout');
 import HostData = require('./HostData');
 import Hosts = require('../Hosts');
 import MetricsSoftwareState = require('./MetricsSoftwareState');
 import GraphViewModel = require('../GraphViewModel');
+import $ = require('jquery');
 
 interface PagerElement { name: string; page: number; disabled: boolean; active: boolean}
 
@@ -80,7 +82,6 @@ class HostRegistryViewModel {
         }, self);
 
         this.gotoPage = (element: PagerElement) => {
-            console.log("element", element);
             if (element.disabled || element.page == this.page()) {
                 return;
             }

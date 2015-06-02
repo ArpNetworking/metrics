@@ -27,6 +27,7 @@ class GaugeVM implements StatisticView {
     gauge: Gauge = null;
     name: string;
     paused: boolean;
+    targetFrameRate: number = 60;
     spec: GraphSpec;
 
     constructor(id: string, name: string, spec: GraphSpec) {
@@ -53,6 +54,7 @@ class GaugeVM implements StatisticView {
 
         this.gauge = new Gauge(this.id, config);
         this.gauge.render();
+        // TODO(vkoskela): Support target frame rate in gauge [AINT-?]
     }
 
     postData(server: string, timestamp: number, dataValue: number, cvm: ConnectionVM) {

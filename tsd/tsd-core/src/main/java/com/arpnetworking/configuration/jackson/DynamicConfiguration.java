@@ -18,16 +18,17 @@ package com.arpnetworking.configuration.jackson;
 import com.arpnetworking.configuration.Configuration;
 import com.arpnetworking.configuration.Listener;
 import com.arpnetworking.configuration.Trigger;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.Launchable;
 import com.google.common.base.Function;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -42,18 +43,20 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class DynamicConfiguration extends BaseJacksonConfiguration implements Configuration, Launchable {
 
+
     /**
      * {@inheritDoc}
      */
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("Snapshot", _snapshot)
-                .add("SourceBuilders", _sourceBuilders)
-                .add("Listeners", _listeners)
-                .add("TriggerEvaluator", _triggerEvaluator)
-                .add("TriggerEvaluatorExecutor", _triggerEvaluatorExecutor)
-                .toString();
+    @LogValue
+    @Override
+    public Object toLogValue() {
+        return LogValueMapFactory.builder()
+                .put("super", super.toLogValue())
+                .put("Snapshot", _snapshot)
+                .put("SourceBuilders", _sourceBuilders)
+                .put("Listeners", _listeners)
+                .put("TriggerEvaluator", _triggerEvaluator)
+                .build();
     }
 
     /**
@@ -69,7 +72,10 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
      */
     @Override
     public synchronized void launch() {
-        LOGGER.debug(String.format("Launching dynamic configuration; this=%s", this));
+        LOGGER.debug()
+                .setMessage("Launching")
+                .addData("component", this)
+                .log();
         _triggerEvaluatorExecutor = Executors.newSingleThreadExecutor();
         _triggerEvaluatorExecutor.submit(_triggerEvaluator);
     }
@@ -79,19 +85,32 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
      */
     @Override
     public synchronized void shutdown() {
-        LOGGER.debug(String.format("Shutting down dynamic configuration; this=%s", this));
+        LOGGER.debug()
+                .setMessage("Stopping")
+                .addData("component", this)
+                .log();
         try {
             _triggerEvaluator.stop();
             // CHECKSTYLE.OFF: IllegalCatch - Prevent dynamic configuration from shutting down.
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
-            LOGGER.error(String.format("Exception shutting down dynamic configuration; configuration=%s", this), e);
+            LOGGER.error()
+                    .setMessage("Stop failed")
+                    .addData("component", this)
+                    .addData("reason", "trigger evaluator failed to stop")
+                    .setThrowable(e)
+                    .log();
         }
         _triggerEvaluatorExecutor.shutdown();
         try {
             _triggerEvaluatorExecutor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
-            LOGGER.warn("Unable to shutdown trigger evaluator executor", e);
+            LOGGER.warn()
+                    .setMessage("Stop failed")
+                    .addData("component", this)
+                    .addData("reason", "trigger evaluator executor failed to stop")
+                    .setThrowable(e)
+                    .log();
         }
     }
 
@@ -112,17 +131,20 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
 
         for (final Listener listener : _listeners) {
             try {
-                LOGGER.debug(String.format("Offering configuration; listener=%s", listener));
+                LOGGER.debug()
+                        .setMessage("Offering configuration")
+                        .addData("listener", listener)
+                        .log();
                 listener.offerConfiguration(snapshot);
                 // CHECKSTYLE.OFF: IllegalCatch - Any exception is considered validation failure.
             } catch (final Exception e) {
                 // CHECKSTYLE.ON: IllegalCatch
-                LOGGER.error(
-                        String.format(
-                                "Validation of offered configuration failed; listener=%s, configuration=%s",
-                                listener,
-                                snapshot),
-                        e);
+                LOGGER.error()
+                        .setMessage("Validation of offered configuration failed")
+                        .addData("listener", listener)
+                        .addData("configuration", snapshot)
+                        .setThrowable(e)
+                        .log();
 
                 // TODO(vkoskela): Persist "good" configuration across restarts [MAI-?]
                 // The code will leave the good configuration in the running instance
@@ -138,17 +160,20 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
 
         for (final Listener listener : _listeners) {
             try {
-                LOGGER.debug(String.format("Applying configuration; listener=%s", listener));
+                LOGGER.debug()
+                        .setMessage("Applying configuration")
+                        .addData("listener", listener)
+                        .log();
                 listener.applyConfiguration();
                 // CHECKSTYLE.OFF: IllegalCatch - Apply configuration to all instances.
             } catch (final Exception e) {
                 // CHECKSTYLE.ON: IllegalCatch
-                LOGGER.warn(
-                        String.format(
-                                "Applying new configuration failed; listener=%s, configuration=%s",
-                                listener,
-                                _snapshot),
-                        e);
+                LOGGER.warn()
+                        .setMessage("Application of new configuration failed")
+                        .addData("listener", listener)
+                        .addData("configuration", _snapshot)
+                        .setThrowable(e)
+                        .log();
             }
         }
     }
@@ -187,7 +212,10 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
                 public void uncaughtException(final Thread thread, final Throwable throwable) {
-                    LOGGER.error("Unhandled exception!", throwable);
+                    LOGGER.error()
+                            .setMessage("Unhandled exception")
+                            .setThrowable(throwable)
+                            .log();
                 }
             });
 
@@ -201,7 +229,11 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
                         // CHECKSTYLE.OFF: IllegalCatch - Evaluate and reset all triggers
                     } catch (final Throwable t) {
                         // CHECKSTYLE.ON: IllegalCatch
-                        LOGGER.warn(String.format("Trigger evaluate and reset failed; trigger=%s", trigger), t);
+                        LOGGER.warn()
+                                .setMessage("Failed to evaluate and reset trigger")
+                                .addData("trigger", trigger)
+                                .setThrowable(t)
+                                .log();
                     }
                 }
 
@@ -212,7 +244,10 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
                         // CHECKSTYLE.OFF: IllegalCatch - Prevent thread from being killed
                     } catch (final Exception e) {
                         // CHECKSTYLE.ON: IllegalCatch
-                        LOGGER.error("Failed to load configuration", e);
+                        LOGGER.error()
+                                .setMessage("Failed to load configuration")
+                                .setThrowable(e)
+                                .log();
                     }
                 }
 
@@ -223,18 +258,27 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
                         Thread.sleep(100);
                     }
                 } catch (final InterruptedException e) {
-                    LOGGER.debug(String.format("Interrupted; isRunning=%s", _isRunning), e);
+                    LOGGER.debug()
+                            .setMessage("Interrupted")
+                            .addData("isRunning", _isRunning)
+                            .setThrowable(e)
+                            .log();
                 }
             }
         }
 
+        @LogValue
+        public Object toLogValue() {
+            return LogValueMapFactory.of(
+                    "id", Integer.toHexString(System.identityHashCode(this)),
+                    "class", this.getClass(),
+                    "IsRunning", _isRunning,
+                    "Triggers", _triggers);
+        }
+
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(TriggerEvaluator.class)
-                    .add("id", Integer.toHexString(System.identityHashCode(this)))
-                    .add("IsRunning", _isRunning)
-                    .add("Triggers", _triggers)
-                    .toString();
+            return toLogValue().toString();
         }
 
         private final List<Trigger> _triggers;
@@ -300,10 +344,9 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
          */
         public Builder addTrigger(final Trigger value) {
             if (_triggers == null) {
-                _triggers = Lists.newArrayList(value);
-            } else {
-                _triggers.add(value);
+                _triggers = Lists.newArrayList();
             }
+            _triggers.add(value);
             return self();
         }
 
@@ -327,10 +370,9 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
          */
         public Builder addListener(final Listener value) {
             if (_listeners == null) {
-                _listeners = Lists.newArrayList(value);
-            } else {
-                _listeners.add(value);
+                _listeners = Lists.newArrayList();
             }
+            _listeners.add(value);
             return self();
         }
 

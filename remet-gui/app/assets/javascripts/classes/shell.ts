@@ -24,7 +24,9 @@ class shell {
             { route: '', title: 'ReMet', moduleId: 'classes/GraphViewModel', nav: false },
             { route: 'graph/*spec', title: 'ReMet', moduleId: 'classes/GraphViewModel', nav: false },
             { route: 'live-logging', title: 'ReMet Live Logging', moduleId: 'classes/logging/LiveLoggingViewModel', nav: false },
-            { route: 'host-registry', title: 'ReMet Host Registry', moduleId: 'classes/hostregistry/HostRegistryViewModel', nav: false }
+            { route: 'host-registry', title: 'ReMet Host Registry', moduleId: 'classes/hostregistry/HostRegistryViewModel', nav: false },
+            { route: 'expressions', title: 'ReMet Expressions', moduleId: 'classes/expressions/ExpressionsViewModel', nav: false },
+            { route: 'alerts', title: 'ReMet Alerts', moduleId: 'classes/alerts/AlertsViewModel', nav: false }
         ]).buildNavigationModel();
 
         return router.activate();

@@ -15,25 +15,27 @@
  */
 package com.arpnetworking.configuration.jackson;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.http.client.utils.URIBuilder;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 /**
- * <code>JsonNode</code> based configuration sourced from a file.
+ * <code>JsonNode</code> based configuration sourced from a paginated <code>URI</code>.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public final class JsonNodePaginatedUrlSource extends BaseJsonNodeSource implements JsonNodeSource {
+public final class JsonNodePaginatedUriSource extends BaseJsonNodeSource implements JsonNodeSource {
 
     /**
      * {@inheritDoc}
@@ -46,85 +48,94 @@ public final class JsonNodePaginatedUrlSource extends BaseJsonNodeSource impleme
     /**
      * {@inheritDoc}
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Url", _url)
-                .add("DataKey", _dataKeys)
-                .add("NextPageKey", _nextPageKeys)
-                .add("MergingSource", _mergingSource)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "Uri", _uri,
+                "DataKeys", _dataKeys,
+                "NextPageKeys", _nextPageKeys,
+                "MergingSource", _mergingSource);
     }
+
 
     /* package private */ Optional<JsonNode> getJsonNode() {
         return _mergingSource.getValue(_dataKeys);
     }
 
-    private JsonNodePaginatedUrlSource(final Builder builder) {
+    private JsonNodePaginatedUriSource(final Builder builder) {
         super(builder);
-        _url = builder._url;
+        _uri = builder._uri;
         _dataKeys = builder._dataKeys.toArray(new String[builder._dataKeys.size()]);
         _nextPageKeys = builder._nextPageKeys.toArray(new String[builder._nextPageKeys.size()]);
 
         final JsonNodeMergingSource.Builder mergingSourceBuilder = new JsonNodeMergingSource.Builder();
-        final String baseUrl = _url.getProtocol() + "://" + _url.getHost() + ":" + _url.getPort() + "/";
-        URL currentUrl = _url;
-        while (currentUrl != null) {
-            LOGGER.debug(String.format("Creating JsonNodeUrlSource; url=%s", currentUrl));
+        try {
+            final URIBuilder uriBuilder = new URIBuilder(_uri);
+            URI currentUri = uriBuilder.build();
+            while (currentUri != null) {
+                LOGGER.debug()
+                        .setMessage("Creating JsonNodeUriSource for page")
+                        .addData("uri", currentUri)
+                        .log();
 
-            // Create a URL source for the page
-            final JsonNodeUrlSource urlSource = new JsonNodeUrlSource.Builder()
-                    .setUrl(currentUrl)
-                    .build();
-            mergingSourceBuilder.addSource(urlSource);
+                // Create a URI source for the page
+                final JsonNodeUriSource uriSource = new JsonNodeUriSource.Builder()
+                        .setUri(currentUri)
+                        .build();
+                mergingSourceBuilder.addSource(uriSource);
 
-            // Extract the link for the next page
-            final Optional<JsonNode> nextPageNode = urlSource.getValue(_nextPageKeys);
-            if (nextPageNode.isPresent() && !nextPageNode.get().isNull()) {
-                try {
-                    currentUrl = new URL(baseUrl + nextPageNode.get().asText());
-                } catch (final MalformedURLException e) {
-                    throw Throwables.propagate(e);
+                // Extract the link for the next page
+                final Optional<JsonNode> nextPageNode = uriSource.getValue(_nextPageKeys);
+                if (nextPageNode.isPresent() && !nextPageNode.get().isNull()) {
+                    final String nextPagePath = nextPageNode.get().asText();
+                    final URI nextPageUri = URI.create(nextPagePath.startsWith("/") ? nextPagePath : "/" + nextPagePath);
+                    currentUri = uriBuilder
+                            .setPath(nextPageUri.getPath())
+                            .setQuery(nextPageUri.getQuery())
+                            .build();
+                } else {
+                    currentUri = null;
                 }
-            } else {
-                currentUrl = null;
             }
+        } catch (final URISyntaxException e) {
+            throw Throwables.propagate(e);
         }
 
         _mergingSource = mergingSourceBuilder.build();
     }
 
-    private final URL _url;
+    private final URI _uri;
     private final String[] _dataKeys;
     private final String[] _nextPageKeys;
     private final JsonNodeMergingSource _mergingSource;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonNodePaginatedUrlSource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonNodePaginatedUriSource.class);
 
     /**
      * Builder for <code>JsonNodeUrlSource</code>.
      */
-    public static final class Builder extends BaseJsonNodeSource.Builder<Builder, JsonNodePaginatedUrlSource> {
+    public static final class Builder extends BaseJsonNodeSource.Builder<Builder, JsonNodePaginatedUriSource> {
 
         /**
          * Public constructor.
          */
         public Builder() {
-            super(JsonNodePaginatedUrlSource.class);
+            super(JsonNodePaginatedUriSource.class);
         }
 
         /**
-         * Set the source <code>URL</code>. Required. The full URL to
+         * Set the source <code>URI</code>. Required. The full URI to
          * the first page's results. The protocol, host and port will
-         * be used from this url to complete the path-only url found
+         * be used from this uri to complete the path-only uri found
          * at each next page key.
          *
          * @param value The source <code>URL</code>.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setUrl(final URL value) {
-            _url = value;
+        public Builder setUri(final URI value) {
+            _uri = value;
             return this;
         }
 
@@ -142,12 +153,12 @@ public final class JsonNodePaginatedUrlSource extends BaseJsonNodeSource impleme
         }
 
         /**
-         * Set the keys to the next page url. Required. Cannot
+         * Set the keys to the next page uri. Required. Cannot
          * be null or empty. The value at this key should be a path-only
          * URL (e.g. without protocol, host or port) to the next
          * page's results.
          *
-         * @param value The keys from the root to the next page url.
+         * @param value The keys from the root to the next page uri.
          * @return This <code>Builder</code> instance.
          */
         public Builder setNextPageKeys(final List<String> value) {
@@ -164,7 +175,7 @@ public final class JsonNodePaginatedUrlSource extends BaseJsonNodeSource impleme
         }
 
         @NotNull
-        private URL _url;
+        private URI _uri;
         @NotEmpty
         @NotNull
         private List<String> _dataKeys;

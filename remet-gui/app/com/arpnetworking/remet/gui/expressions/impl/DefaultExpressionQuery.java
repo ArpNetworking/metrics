@@ -43,6 +43,15 @@ public class DefaultExpressionQuery implements ExpressionQuery {
      * {@inheritDoc}
      */
     @Override
+    public ExpressionQuery contains(final Optional<String> contains) {
+        _contains = contains;
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public ExpressionQuery cluster(final Optional<String> cluster) {
         _cluster = cluster;
         return this;
@@ -87,6 +96,14 @@ public class DefaultExpressionQuery implements ExpressionQuery {
      * {@inheritDoc}
      */
     @Override
+    public Optional<String> getContains() {
+        return _contains;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Optional<String> getCluster() {
         return _cluster;
     }
@@ -123,6 +140,7 @@ public class DefaultExpressionQuery implements ExpressionQuery {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Repository", _repository)
+                .add("Contains", _contains)
                 .add("Cluster", _cluster)
                 .add("Service", _service)
                 .add("Limit", _limit)
@@ -131,6 +149,7 @@ public class DefaultExpressionQuery implements ExpressionQuery {
     }
 
     private final ExpressionRepository _repository;
+    private Optional<String> _contains = Optional.empty();
     private Optional<String> _cluster = Optional.empty();
     private Optional<String> _service = Optional.empty();
     private int _limit = DEFAULT_LIMIT;

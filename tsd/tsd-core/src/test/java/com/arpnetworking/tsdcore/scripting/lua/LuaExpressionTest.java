@@ -46,7 +46,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testReturnValue")
+                .setMetric("LuaExpressionTest.testReturnValue")
                 .setScript("return 1\n")
                 .build();
         final Optional<AggregatedData> result = expression.evaluate(
@@ -64,7 +64,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testReturnQuantity")
+                .setMetric("LuaExpressionTest.testReturnQuantity")
                 .setScript("return {value = 1, unit = \"SECOND\"}\n")
                 .build();
         final Optional<AggregatedData> result = expression.evaluate(
@@ -83,7 +83,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testReturnQuantityNoUnit")
+                .setMetric("LuaExpressionTest.testReturnQuantityNoUnit")
                 .setScript("return {value = 1}\n")
                 .build();
         final Optional<AggregatedData> result = expression.evaluate(
@@ -101,7 +101,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testReturnQuantityInvalidUnit")
+                .setMetric("LuaExpressionTest.testReturnQuantityInvalidUnit")
                 .setScript("return {value = 1, unit = \"INVALID\"}\n")
                 .build()
                 .evaluate(
@@ -116,7 +116,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testReturnQuantityInvalidUnitType")
+                .setMetric("LuaExpressionTest.testReturnQuantityInvalidUnitType")
                 .setScript("return {value = 1, unit = 2}\n")
                 .build()
                 .evaluate(
@@ -131,7 +131,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testReturnQuantityMissingValue")
+                .setMetric("LuaExpressionTest.testReturnQuantityMissingValue")
                 .setScript("return {unit = \"SECOND\"}\n")
                 .build()
                 .evaluate(
@@ -146,7 +146,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testReturnQuantityInvalidValueType")
+                .setMetric("LuaExpressionTest.testReturnQuantityInvalidValueType")
                 .setScript("return {value = \"ABC\", unit = \"SECOND\"}\n")
                 .build()
                 .evaluate(
@@ -161,7 +161,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityCoercion")
+                .setMetric("LuaExpressionTest.testLuaQuantityCoercion")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]\n")
                 .build();
         final Optional<AggregatedData> result = expression.evaluate(
@@ -197,7 +197,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityAccessDataValue")
+                .setMetric("LuaExpressionTest.testLuaQuantityAccessDataValue")
                 .setScript("return {value = metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:getValue()"
                         + " * 1000, unit = \"MILLISECOND\"}\n")
                 .build();
@@ -234,7 +234,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityAccessDataUnit")
+                .setMetric("LuaExpressionTest.testLuaQuantityAccessDataUnit")
                 .setScript("return {value = 0, unit = metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:getUnit()}\n")
                 .build();
         final Optional<AggregatedData> result = expression.evaluate(
@@ -270,7 +270,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityCreation")
+                .setMetric("LuaExpressionTest.testLuaQuantityCreation")
                 .setScript("return createQuantity(1, \"SECOND\")\n")
                 .build();
         final Optional<AggregatedData> result = expression.evaluate(
@@ -289,7 +289,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityCreationNilUnit")
+                .setMetric("LuaExpressionTest.testLuaQuantityCreationNilUnit")
                 .setScript("return createQuantity(1, nil)\n")
                 .build();
         final Optional<AggregatedData> result = expression.evaluate(
@@ -307,7 +307,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityCreationNoUnit")
+                .setMetric("LuaExpressionTest.testLuaQuantityCreationNoUnit")
                 .setScript("return createQuantity(1)\n")
                 .build();
         final Optional<AggregatedData> result = expression.evaluate(
@@ -325,7 +325,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityConversion")
+                .setMetric("LuaExpressionTest.testLuaQuantityConversion")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:convertTo(\"SECOND\")\n")
                 .build();
         final Optional<AggregatedData> result = expression.evaluate(
@@ -361,7 +361,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityConversionFromNil")
+                .setMetric("LuaExpressionTest.testLuaQuantityConversionFromNil")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:convertTo(\"SECOND\")\n")
                 .build()
                 .evaluate(
@@ -392,7 +392,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityConversionToNil")
+                .setMetric("LuaExpressionTest.testLuaQuantityConversionToNil")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:convertTo(nil)\n")
                 .build()
                 .evaluate(
@@ -424,7 +424,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityConversionToIncompatible")
+                .setMetric("LuaExpressionTest.testLuaQuantityConversionToIncompatible")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:convertTo(\"BYTE\")\n")
                 .build()
                 .evaluate(
@@ -456,7 +456,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityConversionToMissingArgument")
+                .setMetric("LuaExpressionTest.testLuaQuantityConversionToMissingArgument")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:convertTo()\n")
                 .build()
                 .evaluate(
@@ -488,7 +488,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityComparisonLessThan")
+                .setMetric("LuaExpressionTest.testLuaQuantityComparisonLessThan")
                 .setScript(
                         "newQuantity = createQuantity(2, \"SECOND\")\n"
                         + "return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:compareTo(newQuantity)\n")
@@ -525,7 +525,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityComparisonEqualTo")
+                .setMetric("LuaExpressionTest.testLuaQuantityComparisonEqualTo")
                 .setScript(
                         "newQuantity = createQuantity(1, \"SECOND\")\n"
                         + "return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:compareTo(newQuantity)\n")
@@ -562,7 +562,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityComparisonGreaterThan")
+                .setMetric("LuaExpressionTest.testLuaQuantityComparisonGreaterThan")
                 .setScript(
                         "newQuantity = createQuantity(0, \"SECOND\")\n"
                         + "return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:compareTo(newQuantity)\n")
@@ -599,7 +599,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityComparisonLessThanDifferentUnit")
+                .setMetric("LuaExpressionTest.testLuaQuantityComparisonLessThanDifferentUnit")
                 .setScript(
                         "newQuantity = createQuantity(1, \"SECOND\")\n"
                         + "return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:compareTo(newQuantity)\n")
@@ -636,7 +636,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityComparisonEqualToDifferentUnit")
+                .setMetric("LuaExpressionTest.testLuaQuantityComparisonEqualToDifferentUnit")
                 .setScript(
                         "newQuantity = createQuantity(1000, \"MILLISECOND\")\n"
                         + "return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:compareTo(newQuantity)\n")
@@ -673,7 +673,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testLuaQuantityComparisonGreaterThanDifferentUnit")
+                .setMetric("LuaExpressionTest.testLuaQuantityComparisonGreaterThanDifferentUnit")
                 .setScript(
                         "newQuantity = createQuantity(1, \"MILLISECOND\")\n"
                         + "return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]:compareTo(newQuantity)\n")
@@ -710,7 +710,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testNoReturnStatement")
+                .setMetric("LuaExpressionTest.testNoReturnStatement")
                 .setScript("val = 1 + 1\n")
                 .build()
                 .evaluate(
@@ -725,7 +725,7 @@ public class LuaExpressionTest {
         new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testBadScript")
+                .setMetric("LuaExpressionTest.testBadScript")
                 .setScript("this is invalid lua\n")
                 .build();
     }
@@ -735,7 +735,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testDependencyDiscovery")
+                .setMetric("LuaExpressionTest.testDependencyDiscovery")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"tp99\"]\n")
                 .build();
         final Set<FQDSN> dependencies = expression.getDependencies();
@@ -754,7 +754,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testDependencyDiscovery")
+                .setMetric("LuaExpressionTest.testDependencyDiscovery")
                 .setScript("return metrics.MyCluster.MyService.MyMetric.tp99\n")
                 .build();
         final Set<FQDSN> dependencies = expression.getDependencies();
@@ -773,7 +773,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testDependencyDiscovery")
+                .setMetric("LuaExpressionTest.testDependencyDiscovery")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"].MyMetric.tp99\n")
                 .build();
         final Set<FQDSN> dependencies = expression.getDependencies();
@@ -792,7 +792,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testDependencyDiscovery")
+                .setMetric("LuaExpressionTest.testDependencyDiscovery")
                 .setScript("return metrics.MyCluster.MyService[\"MyMetric\"][\"tp99\"]\n")
                 .build();
         final Set<FQDSN> dependencies = expression.getDependencies();
@@ -811,7 +811,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testMultipleDependencyDiscovery")
+                .setMetric("LuaExpressionTest.testMultipleDependencyDiscovery")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"sum\"]:getValue() / "
                         + "metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"count\"]:getValue()\n")
                 .build();
@@ -837,7 +837,7 @@ public class LuaExpressionTest {
         final Expression expression = new LuaExpression.Builder()
                 .setCluster("MyClsuter")
                 .setService("MyService")
-                .setName("LuaExpressionTest.testMissingDependency")
+                .setMetric("LuaExpressionTest.testMissingDependency")
                 .setScript("return metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"sum\"]:getValue() / "
                         + "metrics[\"MyCluster\"][\"MyService\"][\"MyMetric\"][\"count\"]:getValue()\n")
                 .build();
@@ -865,6 +865,6 @@ public class LuaExpressionTest {
                                 .build()));
         Assert.assertFalse(result.isPresent());
     }
-    
+
     private static final DateTime NOW = DateTime.now();
 }

@@ -15,15 +15,16 @@
  */
 package com.arpnetworking.tsdcore.sources;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.observer.ObservableDelegate;
 import com.arpnetworking.utility.observer.Observer;
-import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 /**
- * Abstract base class for common functionality for reading 
+ * Abstract base class for common functionality for reading
  * <code>AggregatedData</code>. This class is thread safe.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
@@ -64,19 +65,29 @@ public abstract class BaseSource implements Source {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "Name", _name);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Name", _name)
-                .toString();
+        return toLogValue().toString();
     }
 
     /**
      * Protected constructor.
-     * 
+     *
      * @param builder Instance of <code>Builder</code>.
      */
     protected BaseSource(final Builder<?> builder) {
@@ -95,7 +106,7 @@ public abstract class BaseSource implements Source {
 
         /**
          * Sets name. Cannot be null or empty.
-         * 
+         *
          * @param value The name.
          * @return This instance of <code>Builder</code>.
          */
@@ -105,17 +116,17 @@ public abstract class BaseSource implements Source {
         }
 
         /**
-         * Called by setters to always return appropriate subclass of 
+         * Called by setters to always return appropriate subclass of
          * <code>Builder</code>, even from setters of base class.
-         * 
+         *
          * @return instance with correct <code>Builder</code> class type.
          */
         protected abstract B self();
 
         /**
          * Protected constructor for subclasses.
-         * 
-         * @param targetClass The concrete type to be created by the builder of 
+         *
+         * @param targetClass The concrete type to be created by the builder of
          * <code>Source</code> implementation.
          */
         protected Builder(final Class<? extends Source> targetClass) {

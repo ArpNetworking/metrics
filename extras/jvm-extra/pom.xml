@@ -21,7 +21,7 @@
   <name>Jvm Extra</name>
   <groupId>com.arpnetworking.metrics.extras</groupId>
   <artifactId>jvm-extra</artifactId>
-  <version>0.3.2</version>
+  <version>0.3.3</version>
   <packaging>jar</packaging>
   <properties>
     <main.basedir>${project.basedir}</main.basedir>
@@ -31,7 +31,7 @@
 
     <!--Dependency versions-->
     <slf4j.version>1.7.10</slf4j.version>
-    <metrics.client.version>0.3.3</metrics.client.version>
+    <metrics.client.version>0.3.4</metrics.client.version>
     <junit.version>4.12</junit.version>
     <mockito.version>1.10.19</mockito.version>
 
@@ -41,7 +41,7 @@
     <maven.jar.plugin.version>2.5</maven.jar.plugin.version>
     <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
     <maven.findbugs.plugin.version>3.0.0</maven.findbugs.plugin.version>
-    <maven.checkstyle.plugin.version>2.13</maven.checkstyle.plugin.version>
+    <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
     <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
     <maven.source.plugin.version>2.4</maven.source.plugin.version>
     <maven.javadoc.plugin.version>2.10.1</maven.javadoc.plugin.version>
@@ -169,6 +169,11 @@
                   <limits>
                     <limit>
                       <counter>COMPLEXITY</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>1.0</minimum>
+                    </limit>
+                    <limit>
+                      <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
                       <minimum>1.0</minimum>
                     </limit>

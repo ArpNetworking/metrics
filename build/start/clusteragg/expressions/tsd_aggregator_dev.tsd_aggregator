@@ -1,37 +1,32 @@
 [
     {
-        "type": "com.arpnetworking.tsdcore.scripting.lua.LuaExpression",
-        "name": "Sinks/ExpressionSink/tsd_aggregator_expression_sink/FailureRate",
+        "metric": "Sinks/ExpressionSink/tsd_aggregator_expression_sink/FailureRate",
         "cluster": "tsd_aggregator_dev",
         "service": "tsd_aggregator",
         "script": "dividend = metrics[\"tsd_aggregator_dev\"][\"tsd_aggregator\"][\"Sinks/ExpressionSink/tsd_aggregator_expression_sink/Failures\"][\"sum\"]:getValue()\ndivisor = metrics[\"tsd_aggregator_dev\"][\"tsd_aggregator\"][\"Sinks/ExpressionSink/tsd_aggregator_expression_sink/Evaluations\"][\"sum\"]:getValue()\nif divisor == 0 then return 0 end\nreturn dividend / divisor"
     },
     {
-        "type": "com.arpnetworking.tsdcore.scripting.lua.LuaExpression",
-        "name": "Sinks/ExpressionSink/remet_gui_expression_sink/FailureRate",
+        "metric": "Sinks/ExpressionSink/remet_gui_expression_sink/FailureRate",
         "cluster": "tsd_aggregator_dev",
         "service": "tsd_aggregator",
         "script": "dividend = metrics[\"tsd_aggregator_dev\"][\"tsd_aggregator\"][\"Sinks/ExpressionSink/remet_gui_expression_sink/Failures\"][\"sum\"]:getValue()\ndivisor= metrics[\"tsd_aggregator_dev\"][\"tsd_aggregator\"][\"Sinks/ExpressionSink/remet_gui_expression_sink/Evaluations\"][\"sum\"]:getValue()\nif divisor == 0 then return 0 end\nreturn dividend / divisor"
     },
     {
-        "type": "com.arpnetworking.tsdcore.scripting.lua.LuaExpression",
-        "name": "Sinks/ExpressionSink/remet_proxy_expression_sink/FailureRate",
+        "metric": "Sinks/ExpressionSink/remet_proxy_expression_sink/FailureRate",
         "cluster": "tsd_aggregator_dev",
         "service": "tsd_aggregator",
         "script": "dividend = metrics[\"tsd_aggregator_dev\"][\"tsd_aggregator\"][\"Sinks/ExpressionSink/remet_proxy_expression_sink/Failures\"][\"sum\"]:getValue()\ndivisor = metrics[\"tsd_aggregator_dev\"][\"tsd_aggregator\"][\"Sinks/ExpressionSink/remet_proxy_expression_sink/Evaluations\"][\"sum\"]:getValue()\nif divisor == 0 then return 0 end\nreturn dividend / divisor"
     },
     {
-        "type": "com.arpnetworking.tsdcore.scripting.lua.LuaExpression",
-        "name": "Sinks/ExpressionSink/cluster_aggregator_expression_sink/FailureRate",
+        "metric": "Sinks/ExpressionSink/cluster_aggregator_expression_sink/FailureRate",
         "cluster": "tsd_aggregator_dev",
         "service": "tsd_aggregator",
         "script": "dividend = metrics[\"tsd_aggregator_dev\"][\"tsd_aggregator\"][\"Sinks/ExpressionSink/cluster_aggregator_expression_sink/Failures\"][\"sum\"]:getValue()\ndivisor = metrics[\"tsd_aggregator_dev\"][\"tsd_aggregator\"][\"Sinks/ExpressionSink/cluster_aggregator_expression_sink/Evaluations\"][\"sum\"]:getValue()\nif divisor == 0 then return 0 end\nreturn dividend / divisor"
     },
     {
-        "type": "com.arpnetworking.tsdcore.scripting.lua.LuaExpression",
-        "name": "constants/zero",
+        "metric": "constants/two",
         "cluster": "tsd_aggregator_dev",
         "service": "tsd_aggregator",
-        "script": "return 0"
+        "script": "return 2"
     }
 ]

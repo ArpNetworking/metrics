@@ -15,9 +15,10 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.base.MoreObjects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -76,16 +77,18 @@ public final class MetricNameFilteringSink extends BaseSink {
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("ExcludeFilters", _excludeFilters)
-                .add("IncludeFilters", _includeFilters)
-                .add("Sink", _sink)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "ExcludeFilters", _excludeFilters,
+                "IncludeFilters", _includeFilters,
+                "Sink", _sink);
     }
 
     private boolean includeMetric(final String metric) {

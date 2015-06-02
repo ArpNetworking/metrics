@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.jackson;
 
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.Builder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.core.JsonParser;
@@ -24,9 +26,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -125,8 +124,11 @@ public final class BuilderDeserializer<T> extends JsonDeserializer<T> {
                 final Class<? extends Builder<? extends Object>> builderClass = getBuilderForClass(targetClass);
                 deserializerMap.put(targetClass, BuilderDeserializer.of(builderClass));
 
-                LOGGER.info("Registered builder for class; builderClass=" + builderClass
-                        + " targetClass=" + targetClass);
+                LOGGER.debug()
+                        .setMessage("Registered builder for class")
+                        .addData("targetClass", targetClass)
+                        .addData("targetClassBuilder", builderClass)
+                        .log();
 
                 // Process all setters on the builder
                 for (final Method method : builderClass.getMethods()) {
@@ -138,7 +140,10 @@ public final class BuilderDeserializer<T> extends JsonDeserializer<T> {
                 }
             } catch (final ClassNotFoundException e) {
                 // Log that the class is not build-able
-                LOGGER.debug("Ignoring class without builder; targetClass=" + targetClass);
+                LOGGER.trace()
+                        .setMessage("Ignoring class without builder")
+                        .addData("targetClass", targetClass)
+                        .log();
             }
 
             // Support for JsonSubTypes annotation
@@ -168,7 +173,10 @@ public final class BuilderDeserializer<T> extends JsonDeserializer<T> {
     @SuppressWarnings("unchecked")
     static <T> Class<? extends Builder<? extends T>> getBuilderForClass(final Class<? extends T> clazz)
             throws ClassNotFoundException {
-        return (Class<? extends Builder<? extends T>>) (Class.forName(clazz.getName() + "$Builder"));
+        return (Class<? extends Builder<? extends T>>) (Class.forName(
+                clazz.getName() + "$Builder",
+                true, // initialize
+                clazz.getClassLoader()));
     }
 
     // NOTE: Package private for testing.

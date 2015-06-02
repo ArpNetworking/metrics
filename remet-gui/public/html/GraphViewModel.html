@@ -8,7 +8,7 @@
                 <li>
                     <form class="form-inline" role="form" data-bind="">
                         <div class="form-group col-xs-8">
-                            <input class="input-medium" type="text" id="searchQuery" placeholder="Search" data-bind="value: searchQuery, valueUpdate: 'afterkeydown'">
+                            <input class="input-medium" type="text" id="searchQuery" placeholder="Search" data-bind="value: searchQuery, valueUpdate: 'afterkeydown'" title="Filter the available metrics.&#013;1) Type any characters in the metric name.&#013;2) Use ? to match a single character and * to match multiple characters.&#013;3) Use regular expressions by enclosing in //.">
                         </div>
                     </form>
                 </li>
@@ -24,7 +24,11 @@
 
         <div class="col-md-10 col-md-offset-2 main">
             <h3 class="page-header">
-                Graphs &nbsp;<span id="graph-icon" class="glyphicon glyphicon-align-justify" data-bind="click: switchGraphLayout" data-toggle="tooltip" data-placement="right" title="Click Me!"></span>
+                Graphs
+                &nbsp;
+                <i id="graph-icon" class="fa fa-align-justify" data-bind="click: switchGraphLayout" data-toggle="tooltip" data-placement="right" title="Click for Row Layout"></i>
+                &nbsp;
+                <i id="render-icon" class="fa fa-spinner" data-bind="click: switchRenderRate" data-toggle="tooltip" data-placement="right" title="Click for Stepped"></i>
             </h3>
             <div data-bind="foreach: {data: graphs, afterAdd: startGraph}" class="row sort-parent">
                 <div class="nomargin graph-container sortable" data-bind="attr: {'id': 'graph_div_' + id}, css: $root.getGraphWidth">
@@ -60,24 +64,24 @@
     </div>
 
     <script type="text/html" id="folders_template">
-<!-- ko foreach: subFolders -->
-<li class="sub-folder" data-bind="visible: visible">
-    <a data-bind="click: expandMe"><span class="glyphicon glyphicon-folder-close">&nbsp;</span><span data-bind="text: name"></span></a>
-    <ul class="nav sub-item" data-bind="template: {name: 'folders_template'}">
-    </ul>
-</li>
-<!-- /ko -->
-<!-- ko foreach: children -->
-<!-- ko foreach: children -->
-<li class="sub-folder" data-bind="visible: expanded">
-    <a href="#" data-toggle="dropdown"><span data-bind="text: shortName"></span></a>
-    <ul class="dropdown-menu" data-bind="foreach: children, attr: { 'aria-labelledby': 'dropDownMenu' + name()}">
-        <li data-bind="attr: {'id' : 'category_' + id()}">
-            <a href="#" data-bind="click: expandMe"><span data-bind="text: name"></span></a>
-        </li>
-    </ul>
-</li>
-<!-- /ko -->
-<!-- /ko -->
-</script>
+        <!-- ko foreach: subFolders() -->
+            <li class="sub-folder" data-bind="visible: visible">
+                <a data-bind="click: expandMe"><span class="glyphicon glyphicon-folder-close">&nbsp;</span><span data-bind="text: name"></span></a>
+                <ul class="nav sub-item" data-bind="template: {name: 'folders_template'}">
+                </ul>
+            </li>
+        <!-- /ko -->
+        <!-- ko foreach: children() -->
+            <!-- ko foreach: children() -->
+                <li class="sub-folder" data-bind="visible: expanded">
+                    <a href="#" data-toggle="dropdown"><span data-bind="text: shortName"></span></a>
+                    <ul class="dropdown-menu" data-bind="foreach: children, attr: { 'aria-labelledby': 'dropDownMenu' + name()}">
+                        <li data-bind="attr: {'id' : 'category_' + id()}">
+                            <a href="#" data-bind="click: expandMe"><span data-bind="text: name"></span></a>
+                        </li>
+                    </ul>
+                </li>
+            <!-- /ko -->
+        <!-- /ko -->
+    </script>
 </div>

@@ -177,6 +177,15 @@ body {
     width: auto;
 }
 
+.box {
+    border-style: inset;
+    border-width: 1px
+}
+
+.box:hover {
+    border-style: outset;
+}
+
 .log-view-holder {
   height: 80vh;
   left: 20px;
