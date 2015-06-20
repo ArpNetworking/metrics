@@ -19,6 +19,7 @@
 import GraphViewModel = require('./GraphViewModel');
 import StatisticNodeVM = require('./StatisticNodeVM');
 import ko = require('knockout');
+import ns = require('naturalSort');
 
 class MetricNodeVM implements BrowseNode {
     name: KnockoutObservable<string>;
@@ -30,10 +31,17 @@ class MetricNodeVM implements BrowseNode {
 
     constructor(name: string, id: string) {
         this.name = ko.observable(name);
-        this.children = ko.observableArray<StatisticNodeVM>();
+        this.children = ko.observableArray<StatisticNodeVM>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });;
         this.id = ko.observable(id);
         this.expanded = ko.observable(false);
         this.display = ko.computed<string>(() => { return this.name(); });
+    }
+
+    sort(recursive: boolean = false) {
+        this.children.sort((left:StatisticNodeVM, right:StatisticNodeVM) => {
+            ns.insensitive = true;
+            return ns.naturalSort(left.name(), right.name());
+        });
     }
 
     expandMe() {

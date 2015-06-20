@@ -16,9 +16,6 @@
 
 <configuration>
 
-  <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
-  <conversionRule conversionWord="sThrowable" converterClass="com.arpnetworking.logback.SingleLineExceptionConverter" />
-
   <!-- IMPORTANT: This logger is the default and intended for testing -->
   <appender name="RemetGuiLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>/opt/remet-gui/logs/remet-gui.log</file>
@@ -31,8 +28,11 @@
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
     <encoder class="com.arpnetworking.logback.StenoEncoder">
-      <injectContextLogger>true</injectContextLogger>
-      <compressLoggerName>true</compressLoggerName>
+      <jacksonModule class="com.fasterxml.jackson.datatype.joda.JodaModule" />
+      <jacksonModule class="com.fasterxml.jackson.datatype.guava.GuavaModule" />
+      <jacksonModule class="com.fasterxml.jackson.datatype.jdk7.Jdk7Module" />
+      <jacksonModule class="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" />
+      <jacksonModule class="com.arpnetworking.configuration.jackson.akka.AkkaLoggingModule" />
     </encoder>
   </appender>
 

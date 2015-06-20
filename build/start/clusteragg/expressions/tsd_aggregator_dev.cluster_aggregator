@@ -1,7 +1,6 @@
 [
     {
-        "type": "com.arpnetworking.tsdcore.scripting.lua.LuaExpression",
-        "name": "Sinks/ExpressionSink/emitter_expression_sink/FailureRate",
+        "metric": "Sinks/ExpressionSink/emitter_expression_sink/FailureRate",
         "cluster": "tsd_aggregator_dev",
         "service": "cluster_aggregator",
         "script": "dividend = metrics[\"tsd_aggregator_dev\"][\"cluster_aggregator\"][\"Sinks/ExpressionSink/emitter_expression_sink/Failures\"][\"sum\"]:getValue()\ndivisor = metrics[\"tsd_aggregator_dev\"][\"cluster_aggregator\"][\"Sinks/ExpressionSink/emitter_expression_sink/Evaluations\"][\"sum\"]:getValue()\nif divisor == 0 then return 0 end\nreturn dividend / divisor"

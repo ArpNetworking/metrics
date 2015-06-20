@@ -15,14 +15,15 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -43,6 +44,12 @@ public final class TimeThresholdSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
 
         final Collection<AggregatedData> filtered;
         if (_logOnly) {
@@ -65,17 +72,19 @@ public final class TimeThresholdSink extends BaseSink {
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("ExcludedServices", _excludedServices)
-                .add("Sink", _sink)
-                .add("LogOnly", _logOnly)
-                .add("Threshold", _threshold)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "ExcludedServices", _excludedServices,
+                "Sink", _sink,
+                "LogOnly", _logOnly,
+                "Threshold", _threshold);
     }
 
     private TimeThresholdSink(final Builder builder) {
@@ -85,7 +94,12 @@ public final class TimeThresholdSink extends BaseSink {
         _logOnly = builder._logOnly;
         _threshold = builder._threshold;
         _logger = (AggregatedData data) ->
-                LOGGER.warn(String.format("%s: Dropped stale data; threshold=%s, data=%s", getName(), _threshold, data));
+                LOGGER.warn()
+                        .setMessage("Dropped stale data")
+                        .addData("sink", getName())
+                        .addData("threshold", _threshold)
+                        .addData("data", data)
+                        .log();
         _filterPredicate = new FilterPredicate(_threshold, _logger, _excludedServices);
     }
 

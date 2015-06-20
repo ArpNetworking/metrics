@@ -11,28 +11,28 @@ Please refer to the README under each project for information on how to build an
 
 |Project           |Build System                                                                                        |Documentation                            |Prerequisites                          |
 |------------------|----------------------------------------------------------------------------------------------------|-----------------------------------------|---------------------------------------|
-|Java Client       |[Maven](http://maven.apache.org/)                                                                   |[README](client-java/README.md)          |JDK7, Maven 3.0.5+,                    |
+|Java Client       |[Maven](http://maven.apache.org/)                                                                   |[README](client-java/README.md)          |JDK8, Maven 3.2.5+,                    |
 |Ruby Client       |[Gem](https://rubygems.org/)                                                                        |[README](client-ruby/README.md)          |RVM (w/ Ruby 1.9.3+)                   |
-|Node Client       |[Npm](https://www.npmjs.org/)                                                                       |[README](client-nodejs/README.md)        |NodeJs 0.10.26+, Typescript 1.0.1.0+   |
-|Tsd Core          |[Gradle](http://www.gradle.org/)                                                                    |[README](tsd/README.md)                  |JDK7, Protobuf 2.5.0                   |
+|Node Client       |[Npm](https://www.npmjs.org/)                                                                       |[README](client-nodejs/README.md)        |NodeJs 0.10.26+, Typescript 1.5-beta   |
+|Tsd Core          |[Gradle](http://www.gradle.org/)                                                                    |[README](tsd/README.md)                  |JDK8, Protobuf 2.5.0                   |
 |Tsd Aggregator    |[Gradle](http://www.gradle.org/)                                                                    |See above.                               |See above.                             |
 |Cluster Aggregator|[Gradle](http://www.gradle.org/)                                                                    |See above.                               |See above.                             |
-|ReMet Proxy       |[Play](http://www.playframework.com/)/[SBT](http://www.scala-sbt.org/)                              |[README](remet-proxy/README.md)          |JDK7, Play 2.3.0                       |
-|ReMet Gui         |[Play](http://www.playframework.com/)/[SBT](http://www.scala-sbt.org/)                              |[README](remet-gui/README.md)            |JDK7, Play 2.3.0                       |
+|ReMet Proxy       |[Play](http://www.playframework.com/)/[SBT](http://www.scala-sbt.org/)                              |[README](remet-proxy/README.md)          |JDK8, Play 2.4.0                       |
+|ReMet Gui         |[Play](http://www.playframework.com/)/[SBT](http://www.scala-sbt.org/)                              |[README](remet-gui/README.md)            |JDK8, Play 2.4.0                       |
 |CollectD Extra    |[Autoconf](https://www.gnu.org/software/autoconf/)+[Automake](http://www.gnu.org/software/automake/)|[README](extras/collectd-extra/README.md)|Autoconf, Automake, C-compiler         |
-|Vertx Extra       |[Maven](http://maven.apache.org/)                                                                   |[README](extras/vertx-extra/README.md)   |JDK7, Maven 3.0.5+                     |
-|Yammer Extra      |[Maven](http://maven.apache.org/)                                                                   |[README](extras/yammer-extra/README.md)  |JDK7, Maven 3.0.5+                     |
-|JVM Extra         |[Maven](http://maven.apache.org/)                                                                   |[README](extras/jvm-extra/README.md)     |JDK7, Maven 3.0.5+                     |
+|Vertx Extra       |[Maven](http://maven.apache.org/)                                                                   |[README](extras/vertx-extra/README.md)   |JDK8, Maven 3.2.5+                     |
+|Yammer Extra      |[Maven](http://maven.apache.org/)                                                                   |[README](extras/yammer-extra/README.md)  |JDK8, Maven 3.2.5+                     |
+|JVM Extra         |[Maven](http://maven.apache.org/)                                                                   |[README](extras/jvm-extra/README.md)     |JDK8, Maven 3.2.5+                     |
 
 ### Prerequisites
 
-* [JDK7](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
+* [JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 * [Maven 3.2.5+](http://maven.apache.org/download.cgi)
 * [Protobuf 2.5.0](https://code.google.com/p/protobuf/downloads/list)
 * [Play 2.4.0](http://www.playframework.com/download)
 * [RVM](https://rvm.io/rvm/install) (w/ Ruby 1.9.3+)
 * [NodeJs 0.10.26+](http://nodejs.org/download/)
-* [Typescript 1.0.1.0+](http://www.typescriptlang.org/#Download)
+* [Typescript 1.5-beta](http://www.typescriptlang.org/#Download)
 * [Autoconf](https://www.gnu.org/software/autoconf/)
 * [Automake](http://www.gnu.org/software/automake/)
 * [GCC] (http://gcc.gnu.org/)

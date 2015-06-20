@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.configuration.jackson;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
 import org.junit.Assert;
@@ -24,6 +26,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 
 /**
@@ -63,16 +66,17 @@ public class JsonNodeDirectorySourceTest {
         final File directory = new File("./target/tmp/test/JsonNodeDirectorySourceTest/testDirectoryAll");
         deleteDirectory(directory);
         Files.createDirectory(directory.toPath());
-        Files.write(directory.toPath().resolve("foo.json"), "\"one\"".getBytes(Charsets.UTF_8));
-        Files.write(directory.toPath().resolve("bar.txt"), "\"two\"".getBytes(Charsets.UTF_8));
+        Files.write(directory.toPath().resolve("foo.json"), "[\"one\"]".getBytes(Charsets.UTF_8));
+        Files.write(directory.toPath().resolve("bar.txt"), "[\"two\"]".getBytes(Charsets.UTF_8));
         final JsonNodeDirectorySource source = new JsonNodeDirectorySource.Builder()
                 .setDirectory(directory)
                 .build();
         Assert.assertTrue(source.getJsonNode().isPresent());
-        Assert.assertTrue(source.getJsonNode().get().has("foo"));
-        Assert.assertTrue(source.getJsonNode().get().has("bar.txt"));
-        Assert.assertEquals("one", source.getJsonNode().get().get("foo").asText());
-        Assert.assertEquals("two", source.getJsonNode().get().get("bar.txt").asText());
+        Assert.assertTrue(source.getJsonNode().get().isArray());
+        final ArrayNode arrayNode = (ArrayNode) source.getJsonNode().get();
+        Assert.assertEquals(2, arrayNode.size());
+        Assert.assertTrue(arrayNodeContains(arrayNode, "one"));
+        Assert.assertTrue(arrayNodeContains(arrayNode, "two"));
     }
 
     @Test
@@ -80,16 +84,17 @@ public class JsonNodeDirectorySourceTest {
         final File directory = new File("./target/tmp/test/JsonNodeDirectorySourceTest/testDirectoryOnlyMatchingNames");
         deleteDirectory(directory);
         Files.createDirectory(directory.toPath());
-        Files.write(directory.toPath().resolve("foo.json"), "\"one\"".getBytes(Charsets.UTF_8));
-        Files.write(directory.toPath().resolve("bar.txt"), "\"two\"".getBytes(Charsets.UTF_8));
+        Files.write(directory.toPath().resolve("foo.json"), "[\"one\"]".getBytes(Charsets.UTF_8));
+        Files.write(directory.toPath().resolve("bar.txt"), "[\"two\"]".getBytes(Charsets.UTF_8));
         final JsonNodeDirectorySource source = new JsonNodeDirectorySource.Builder()
                 .setDirectory(directory)
                 .addFileName("foo.json")
                 .build();
         Assert.assertTrue(source.getJsonNode().isPresent());
-        Assert.assertTrue(source.getJsonNode().get().has("foo"));
-        Assert.assertFalse(source.getJsonNode().get().has("bar.txt"));
-        Assert.assertEquals("one", source.getJsonNode().get().get("foo").asText());
+        Assert.assertTrue(source.getJsonNode().get().isArray());
+        final ArrayNode arrayNode = (ArrayNode) source.getJsonNode().get();
+        Assert.assertEquals(1, arrayNode.size());
+        Assert.assertTrue(arrayNodeContains(arrayNode, "one"));
     }
 
     @Test
@@ -97,16 +102,17 @@ public class JsonNodeDirectorySourceTest {
         final File directory = new File("./target/tmp/test/JsonNodeDirectorySourceTest/testDirectoryOnlyMatchingNamePatterns");
         deleteDirectory(directory);
         Files.createDirectory(directory.toPath());
-        Files.write(directory.toPath().resolve("foo.json"), "\"one\"".getBytes(Charsets.UTF_8));
-        Files.write(directory.toPath().resolve("bar.txt"), "\"two\"".getBytes(Charsets.UTF_8));
+        Files.write(directory.toPath().resolve("foo.json"), "[\"one\"]".getBytes(Charsets.UTF_8));
+        Files.write(directory.toPath().resolve("bar.txt"), "[\"two\"]".getBytes(Charsets.UTF_8));
         final JsonNodeDirectorySource source = new JsonNodeDirectorySource.Builder()
                 .setDirectory(directory)
                 .addFileNamePattern(Pattern.compile(".*\\.json"))
                 .build();
         Assert.assertTrue(source.getJsonNode().isPresent());
-        Assert.assertTrue(source.getJsonNode().get().has("foo"));
-        Assert.assertFalse(source.getJsonNode().get().has("bar.txt"));
-        Assert.assertEquals("one", source.getJsonNode().get().get("foo").asText());
+        Assert.assertTrue(source.getJsonNode().get().isArray());
+        final ArrayNode arrayNode = (ArrayNode) source.getJsonNode().get();
+        Assert.assertEquals(1, arrayNode.size());
+        Assert.assertTrue(arrayNodeContains(arrayNode, "one"));
     }
 
     @Test(expected = RuntimeException.class)
@@ -121,6 +127,16 @@ public class JsonNodeDirectorySourceTest {
                 .build();
     }
 
+    private static boolean arrayNodeContains(final ArrayNode arrayNode, final String value) {
+        final Iterator<JsonNode> iterator = arrayNode.iterator();
+        while (iterator.hasNext()) {
+            final JsonNode node = iterator.next();
+            if (node.asText().equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private static void deleteDirectory(final File directory) throws IOException {
         if (directory.exists() && directory.isDirectory()) {

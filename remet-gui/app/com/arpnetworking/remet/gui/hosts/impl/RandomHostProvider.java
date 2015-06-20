@@ -16,6 +16,7 @@
 package com.arpnetworking.remet.gui.hosts.impl;
 
 import akka.actor.UntypedActor;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
@@ -23,6 +24,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import org.joda.time.Duration;
+import play.Configuration;
 
 /**
  * This is an actor that finds "random" hosts. The primary purpose of this
@@ -37,10 +39,18 @@ public class RandomHostProvider extends UntypedActor {
      * Public constructor.
      *
      * @param hostRepository The <code>HostRepository</code> instance.
+     * @param configuration Play configuration.
      */
     @Inject
-    public RandomHostProvider(final HostRepository hostRepository) {
+    public RandomHostProvider(final HostRepository hostRepository, final Configuration configuration) {
         _hostRepository = hostRepository;
+        getContext().system().scheduler().schedule(
+                ConfigurationHelper.getFiniteDuration(configuration, "hostProvider.initialDelay"),
+                ConfigurationHelper.getFiniteDuration(configuration, "hostProvider.interval"),
+                getSelf(),
+                "tick",
+                getContext().dispatcher(),
+                getSelf());
     }
 
     /**
@@ -51,7 +61,7 @@ public class RandomHostProvider extends UntypedActor {
         if ("tick".equals(message)) {
             LOGGER.trace()
                     .setMessage("Searching for added/updated/deleted hosts")
-                    .addData("actor", self().toString())
+                    .addData("actor", self())
                     .log();
 
             if (System.currentTimeMillis() - _lastTime > INTERVAL.getMillis()) {
@@ -62,7 +72,7 @@ public class RandomHostProvider extends UntypedActor {
                         .build();
                 LOGGER.debug()
                         .setMessage("Found a new host")
-                        .addData("actor", self().toString())
+                        .addData("actor", self())
                         .addData("hostname", newHost.getHostname())
                         .log();
                 _hostRepository.addOrUpdateHost(newHost);
@@ -74,7 +84,7 @@ public class RandomHostProvider extends UntypedActor {
                             .build();
                     LOGGER.debug()
                             .setMessage("Found an updated host")
-                            .addData("actor", self().toString())
+                            .addData("actor", self())
                             .addData("hostname", updatedHost.getHostname())
                             .log();
                     _hostRepository.addOrUpdateHost(updatedHost);
@@ -87,7 +97,7 @@ public class RandomHostProvider extends UntypedActor {
                             .build();
                     LOGGER.debug()
                             .setMessage("Found an updated host")
-                            .addData("actor", self().toString())
+                            .addData("actor", self())
                             .addData("hostname", updatedHost.getHostname())
                             .log();
                     _hostRepository.addOrUpdateHost(updatedHost);
@@ -96,7 +106,7 @@ public class RandomHostProvider extends UntypedActor {
                     final String deletedHostName = "test-app" + _hostRemove + ".example..com";
                     LOGGER.debug()
                             .setMessage("Found host to delete")
-                            .addData("actor", self().toString())
+                            .addData("actor", self())
                             .addData("hostname", deletedHostName)
                             .log();
                     _hostRepository.deleteHost(deletedHostName);

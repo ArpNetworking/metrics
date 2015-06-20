@@ -16,17 +16,19 @@
 package com.arpnetworking.configuration.jackson;
 
 import com.arpnetworking.configuration.triggers.DirectoryTrigger;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of <code>DynamicConfigurationFactory</code> which maps keys
- * and key patterns to to file names and file name patterns.
+ * to file names in a directory.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
@@ -38,23 +40,67 @@ public final class DirectoryDynamicConfigurationFactory implements DynamicConfig
     @Override
     public DynamicConfiguration create(
             final DynamicConfiguration.Builder builder,
-            final Collection<String> keys,
-            final Collection<Pattern> keyPatterns) {
+            final Collection<Key> keys) {
+        update(builder, keys);
+        return builder.build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void update(
+            final DynamicConfiguration.Builder builder,
+            final Collection<Key> keys) {
+        // TODO(vkoskela): The source and trigger need to be paired [AINT-553]
+        // -> At the moment any trigger will cause all sources to reload which is
+        // not as bad as it sounds since all the sources need to be reloaded in
+        // order to merge them properly. Of course this could be changed by keeping
+        // the unmerged data around.
+        final Collection<String> fileNames = keys.stream().map(this::keyToFileName).collect(Collectors.toList());
         for (final File directory : _directories) {
             builder
                     .addSourceBuilder(
                             new JsonNodeDirectorySource.Builder()
                                     .setDirectory(directory)
-                                    .setFileNames(keys)
-                                    .setFileNamePatterns(keyPatterns))
-                    .addTrigger(new DirectoryTrigger.Builder()
-                            .setDirectory(directory)
-                            .setFileNames(keys)
-                            .setFileNamePatterns(keyPatterns)
-                            .build());
+                                    .setFileNames(fileNames))
+                    .addTrigger(
+                            new DirectoryTrigger.Builder()
+                                    .setDirectory(directory)
+                                    .setFileNames(fileNames)
+                                    .build());
         }
+    }
 
-        return builder.build();
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "Directories", _directories);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
+
+    /**
+     * Convert the <code>Key</code> to a file name.
+     *
+     * @param key The <code>Key</code> to convert.
+     * @return The corresponding file name.
+     */
+    protected String keyToFileName(final Key key) {
+        return key.getParts().stream().collect(Collectors.joining("."));
     }
 
     private DirectoryDynamicConfigurationFactory(final Builder builder) {

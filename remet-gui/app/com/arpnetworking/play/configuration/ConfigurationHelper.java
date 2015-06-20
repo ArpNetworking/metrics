@@ -15,9 +15,12 @@
  */
 package com.arpnetworking.play.configuration;
 
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Throwables;
 import play.Application;
 import play.Configuration;
+import play.Environment;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -63,15 +66,25 @@ public final class ConfigurationHelper {
     /**
      * Return the value of a configuration key as a <code>Class</code> instance.
      *
+     * @param environment Play <code>Environment</code> instance.
      * @param configuration Play <code>Configuration</code> instance.
      * @param key The name of the configuration key to interpret as a <code>Class</code> reference.
      * @param <T> The type parameter for the <code>Class</code> instance to return.
      * @return Instance of <code>Class</code> as defined by key in configuration.
      */
-    public static <T> Class<? extends T> getType(final Configuration configuration, final String key) {
+    public static <T> Class<? extends T> getType(
+            final Environment environment,
+            final Configuration configuration,
+            final String key) {
+        final String className = configuration.getString(key);
         try {
             @SuppressWarnings("unchecked")
-            final Class<? extends T> clazz = (Class<? extends T>) Class.forName(configuration.getString(key));
+            final Class<? extends T> clazz = (Class<? extends T>) environment.classLoader().loadClass(className);
+            LOGGER.debug()
+                    .setMessage("Loaded class")
+                    .addData("classLoader", environment.classLoader())
+                    .addData("className", className)
+                    .log();
             return clazz;
         } catch (final ClassNotFoundException e) {
             throw Throwables.propagate(e);
@@ -79,4 +92,6 @@ public final class ConfigurationHelper {
     }
 
     private ConfigurationHelper() {}
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationHelper.class);
 }

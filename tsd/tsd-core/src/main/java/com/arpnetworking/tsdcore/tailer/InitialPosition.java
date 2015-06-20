@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.tsdcore.tailer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
@@ -52,7 +52,11 @@ public enum InitialPosition {
             try {
                 return channel.size();
             } catch (final IOException exception) {
-                LOGGER.warn(String.format("Unable to seek to end of byte channel, channel = %s", channel), exception);
+                LOGGER.warn()
+                        .setMessage("Unable to see to end of byte channel")
+                        .addData("channel", LogReferenceOnly.of(channel))
+                        .setThrowable(exception)
+                        .log();
                 return 0;
             }
         }

@@ -17,7 +17,8 @@ package com.arpnetworking.utility;
 
 import com.arpnetworking.configuration.Configuration;
 import com.arpnetworking.configuration.Listener;
-import com.google.common.base.MoreObjects;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.google.common.base.Optional;
 
 /**
@@ -91,16 +92,27 @@ public class Configurator<T extends Launchable, S> implements Listener, Launchab
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public synchronized Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "ConfigurationClass", _configurationClass,
+                "Launchable", _launchable);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("ConfigurationClass", _configurationClass)
-                .add("Launchable", _launchable)
-                .toString();
+        return toLogValue().toString();
     }
+
 
     /* package private */ Optional<T> getLaunchable() {
         return _launchable;

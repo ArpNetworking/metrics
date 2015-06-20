@@ -37,14 +37,10 @@ class V1Protocol extends BaseProtocol {
         if (data.command == "metricsList") {
             var mlCommand: Command<MetricsListData> = data;
             this.graphViewModel.loadFolderMetricsList(mlCommand.data);
-            this.graphViewModel.sortCategories(this.graphViewModel.foldersList);
-            this.graphViewModel.sortCategories(this.graphViewModel.metricsList);
         }
         else if (data.command == "newMetric") {
             var nmCommand: Command<NewMetricData> = data;
             this.graphViewModel.addNewMetric(nmCommand.data);
-            this.graphViewModel.sortCategories(this.graphViewModel.foldersList);
-            this.graphViewModel.sortCategories(this.graphViewModel.metricsList);
         }
         else if (data.command == "report") {
             var rdCommand: Command<ReportData> = data;

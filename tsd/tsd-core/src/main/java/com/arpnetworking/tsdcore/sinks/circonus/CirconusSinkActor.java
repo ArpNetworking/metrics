@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.tsdcore.sinks.circonus;
 
 import akka.actor.Props;
@@ -21,14 +20,17 @@ import akka.actor.UntypedActor;
 import akka.dispatch.Mapper;
 import akka.dispatch.OnComplete;
 import akka.dispatch.Recover;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import akka.pattern.Patterns;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogBuilder;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
+import com.arpnetworking.steno.RateLimitLogBuilder;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.sinks.circonus.api.BrokerListResponse;
 import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundleRequest;
 import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundleResponse;
-import com.arpnetworking.utility.RateLimitLogger;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
@@ -101,6 +103,28 @@ public final class CirconusSinkActor extends UntypedActor {
         lookupBrokers();
     }
 
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "Actor", this.self(),
+                "BrokerName", _brokerName);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
+
     private void lookupBrokers() {
         final Future<BrokerListResponse> responseFuture = _client.getBrokers();
         Patterns.pipe(responseFuture, _dispatcher)
@@ -113,19 +137,17 @@ public final class CirconusSinkActor extends UntypedActor {
                        if (failure != null) {
                            // On failure, retry again in 5 seconds
                            next = FiniteDuration.apply(5, TimeUnit.SECONDS);
-                           _log.error(failure, "Failed to lookup broker, trying again in 5 seconds");
+                           LOGGER.error()
+                                    .setMessage("Failed to lookup broker, trying again in 5 seconds")
+                                    .setThrowable(failure)
+                                    .log();
                        } else {
                            // On success, refresh in 1 hour
                            next = FiniteDuration.apply(1, TimeUnit.HOURS);
                        }
                        getContext().system().scheduler().scheduleOnce(
                                next,
-                               new Runnable() {
-                                   @Override
-                                   public void run() {
-                                       lookupBrokers();
-                                   }
-                               },
+                               () -> { lookupBrokers(); },
                                _dispatcher);
                    }
                },
@@ -142,15 +164,19 @@ public final class CirconusSinkActor extends UntypedActor {
             final BrokerListResponse response = (BrokerListResponse) message;
             final Optional<BrokerListResponse.Broker> selectedBroker = getBroker(response);
             if (!selectedBroker.isPresent()) {
-                _log.warning(String.format(
-                        "Broker list does not contain desired broker; brokers=%s, desired=%s",
-                        response.getBrokers(),
-                        _brokerName));
+                LOGGER.warn()
+                        .setMessage("Broker list does not contain desired broker")
+                        .addData("brokers", response.getBrokers())
+                        .addData("desired", _brokerName)
+                        .addData("actor", self())
+                        .log();
             } else {
-                _log.info(String.format(
-                        "Broker list contains desired broker; brokers=%s, desired=%s",
-                        response.getBrokers(),
-                        _brokerName));
+                LOGGER.info()
+                        .setMessage("Broker list contains desired broker")
+                        .addData("brokers", response.getBrokers())
+                        .addData("desired", _brokerName)
+                        .addData("actor", self())
+                        .log();
                 _selectedBrokerCid = Optional.of(selectedBroker.get().getCid());
             }
         } else if (message instanceof EmitAggregation) {
@@ -159,7 +185,9 @@ public final class CirconusSinkActor extends UntypedActor {
                 final Collection<AggregatedData> data = aggregation.getData();
                 publish(data);
             } else {
-                _noBrokerYetLogger.log();
+                NO_BROKER_LOG_BUILDER
+                        .addData("actor", self())
+                        .log();
             }
         } else if (message instanceof CheckBundleLookupResponse) {
             final CheckBundleLookupResponse response = (CheckBundleLookupResponse) message;
@@ -235,11 +263,11 @@ public final class CirconusSinkActor extends UntypedActor {
                 }
 
                 // We can't send the request to it right now, skip this service
-                _noCheckBundleLogger.log();
+                NO_CHECK_BUNDLE_LOG_BUILDER
+                        .addData("actor", self())
+                        .log();
                 continue;
-
             }
-
         }
     }
 
@@ -276,7 +304,12 @@ public final class CirconusSinkActor extends UntypedActor {
                         new Recover<CheckBundleLookupResponse>() {
                             @Override
                             public CheckBundleLookupResponse recover(final Throwable failure) {
-                                _log.error(failure, String.format("Error creating check bundle; request=%s", request));
+                                LOGGER.error()
+                                        .setMessage("Error creating check bundle")
+                                        .addData("request", request)
+                                        .addData("actor", self())
+                                        .setThrowable(failure)
+                                        .log();
                                 return CheckBundleLookupResponse.failure(targetKey, failure);
                             }
                         },
@@ -286,23 +319,22 @@ public final class CirconusSinkActor extends UntypedActor {
     private Optional<String> _selectedBrokerCid = Optional.absent();
 
     private final ExecutionContextExecutor _dispatcher;
-    private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
     private final Set<String> _pendingLookups = Sets.newHashSet();
     private final Map<String, ServiceCheckBinding> _bundleMap = Maps.newHashMap();
     private final CirconusClient _client;
     private final String _brokerName;
-    private final RateLimitLogger _noBrokerYetLogger = new RateLimitLogger.Builder()
-            .setLevel(Logging.levelFor("warning").get())
-            .setLogAdapter(_log)
-            .setMessage("Unable to push data to Circonus, desired broker not yet discovered.")
-            .setPeriod(Period.minutes(1))
-            .build();
-    private final RateLimitLogger _noCheckBundleLogger = new RateLimitLogger.Builder()
-            .setLevel(Logging.levelFor("warning").get())
-            .setLogAdapter(_log)
-            .setMessage("Unable to push data to Circonus, check bundle not yet found or created.")
-            .setPeriod(Period.minutes(1))
-            .build();
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CirconusSinkActor.class);
+    private static final LogBuilder NO_BROKER_LOG_BUILDER = new RateLimitLogBuilder(
+            LOGGER.warn()
+                    .setMessage("Unable to push data to Circonus")
+                    .addData("reason", "desired broker not yet discovered"),
+            Period.minutes(1));
+    private static final LogBuilder NO_CHECK_BUNDLE_LOG_BUILDER = new RateLimitLogBuilder(
+            LOGGER.warn()
+                    .setMessage("Unable to push data to Circonus")
+                    .addData("reason", "check bundle not yet found or created"),
+            Period.minutes(1));
 
     /**
      * Message class to wrap a list of {@link com.arpnetworking.tsdcore.model.AggregatedData}.

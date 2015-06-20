@@ -15,6 +15,11 @@
  */
 package com.arpnetworking.tsdcore.sources;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.parsers.Parser;
 import com.arpnetworking.tsdcore.parsers.exceptions.ParsingException;
 import com.arpnetworking.tsdcore.tailer.FilePositionStore;
@@ -24,15 +29,12 @@ import com.arpnetworking.tsdcore.tailer.PositionStore;
 import com.arpnetworking.tsdcore.tailer.StatefulTailer;
 import com.arpnetworking.tsdcore.tailer.Tailer;
 import com.arpnetworking.tsdcore.tailer.TailerListener;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Period;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.concurrent.ExecutorService;
@@ -67,8 +69,25 @@ public final class FileSource<T> extends BaseSource {
         try {
             _tailerExecutor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
-            LOGGER.warn("Unable to shutdown tailer executor", e);
+            LOGGER.warn()
+                    .setMessage("Unable to shutdown tailer executor")
+                    .setThrowable(e)
+                    .log();
         }
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "SourceFile", _sourceFile,
+                "StateFile", _stateFile,
+                "Parser", LogReferenceOnly.of(_parser));
     }
 
     /**
@@ -76,12 +95,7 @@ public final class FileSource<T> extends BaseSource {
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("SourceFile", _sourceFile)
-                .add("StateFile", _stateFile)
-                .add("Parser", _parser)
-                .toString();
+        return toLogValue().toString();
     }
 
     @SuppressWarnings("unused")
@@ -128,7 +142,10 @@ public final class FileSource<T> extends BaseSource {
 
         @Override
         public void initialize(final Tailer tailer) {
-            _logger.debug(String.format("Tailer initialized; source=%s", FileSource.this));
+            _logger.debug()
+                    .setMessage("Tailer initialized")
+                    .addData("source", FileSource.this)
+                    .log();
         }
 
         @Override
@@ -136,19 +153,28 @@ public final class FileSource<T> extends BaseSource {
             final DateTime now = DateTime.now();
             if (!_lastFileNotFoundWarning.isPresent()
                     || _lastFileNotFoundWarning.get().isBefore(now.minus(FILE_NOT_FOUND_WARNING_INTERVAL))) {
-                _logger.warn(String.format("Tailer file not found; source=%s", FileSource.this));
+                _logger.warn()
+                        .setMessage("Tailer file not found")
+                        .addData("source", FileSource.this)
+                        .log();
                 _lastFileNotFoundWarning = Optional.of(now);
             }
         }
 
         @Override
         public void fileRotated() {
-            _logger.info(String.format("Tailer file rotate; source=%s", FileSource.this));
+            _logger.info()
+                    .setMessage("Tailer file rotate")
+                    .addData("source", FileSource.this)
+                    .log();
         }
 
         @Override
         public void fileOpened() {
-            _logger.info(String.format("Tailer file opened; source=%s", FileSource.this));
+            _logger.info()
+                    .setMessage("Tailer file opened")
+                    .addData("source", FileSource.this)
+                    .log();
         }
 
         @Override
@@ -157,7 +183,10 @@ public final class FileSource<T> extends BaseSource {
             try {
                 record = _parser.parse(line);
             } catch (final ParsingException e) {
-                _logger.error("Failed to parse data", e);
+                _logger.error()
+                        .setMessage("Failed to parse data")
+                        .setThrowable(e)
+                        .log();
                 return;
             }
             FileSource.this.notify(record);
@@ -165,7 +194,11 @@ public final class FileSource<T> extends BaseSource {
 
         @Override
         public void handle(final Throwable t) {
-            _logger.error(String.format("Tailer exception; source=%s", FileSource.this), t);
+            _logger.error()
+                    .setMessage("Tailer exception")
+                    .addData("source", FileSource.this)
+                    .setThrowable(t)
+                    .log();
         }
 
         private Optional<DateTime> _lastFileNotFoundWarning = Optional.absent();

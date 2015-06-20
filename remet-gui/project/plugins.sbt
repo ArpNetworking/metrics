@@ -24,6 +24,8 @@ resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.4.0-RC1")
 
+addSbtPlugin("com.typesafe.sbt" % "sbt-aspectj" % "0.10.0")
+
 addSbtPlugin("de.johoop" %% "findbugs4sbt" % "1.4.0")
 
 addSbtPlugin("com.typesafe.sbt" %% "sbt-rjs" % "1.0.7")
@@ -36,4 +38,4 @@ libraryDependencies ++= Seq(
     "com.puppycrawl.tools" % "checkstyle" % "6.3"
 )
 
-addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.1.4")
+addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.1.5")

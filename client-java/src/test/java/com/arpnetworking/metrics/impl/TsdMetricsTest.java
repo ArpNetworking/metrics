@@ -34,6 +34,8 @@ import org.mockito.Mockito;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -725,13 +727,35 @@ public class TsdMetricsTest {
                 MockitoHelper.<Map<String, List<Quantity>>>argThat(Matchers.anEmptyMap()));
     }
 
+    @Test
+    public void testGetOpenAndCloseTime() {
+        final Clock clock = Mockito.mock(Clock.class);
+        final Instant start = Instant.now();
+        final Instant end = start.plusMillis(1000);
+        Mockito.when(clock.instant()).thenReturn(start, end);
+
+        final Sink sink = Mockito.mock(Sink.class);
+        @SuppressWarnings("resource")
+        final TsdMetrics metrics = createTsdMetrics(clock, createSlf4jLoggerMock(), sink);
+        Assert.assertEquals(start, metrics.getOpenTime());
+        Assert.assertNull(metrics.getCloseTime());
+
+        metrics.close();
+        Assert.assertEquals(end, metrics.getCloseTime());
+    }
+
     private TsdMetrics createTsdMetrics(final Sink... sinks) {
         return createTsdMetrics(createSlf4jLoggerMock(), sinks);
     }
 
     private TsdMetrics createTsdMetrics(final org.slf4j.Logger logger, final Sink... sinks) {
+        return createTsdMetrics(Clock.systemUTC(), logger, sinks);
+    }
+
+    private TsdMetrics createTsdMetrics(final Clock clock, final org.slf4j.Logger logger, final Sink... sinks) {
         return new TsdMetrics(
                 Arrays.asList(sinks),
+                clock,
                 logger);
     }
 

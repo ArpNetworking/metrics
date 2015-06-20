@@ -15,17 +15,18 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.Range;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Context;
@@ -85,19 +86,38 @@ public abstract class VertxSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
+
         for (final AggregatedData datum : data) {
             try {
-                LOGGER.debug(getName() + ": Appending data to pending queue; size=" + data.size());
+                LOGGER.debug()
+                        .setMessage("Appending data to pending queue")
+                        .addData("sink", getName())
+                        .addData("size", data.size())
+                        .log();
                 // TODO(vkoskela): This should support sending conditions [MAI-452]
                 // NOTE: This will block in the case where the queue is full, putting back-pressure on the producer of the data.
                 // This the same behavior we get with the other sinks that write synchronously.
                 _pendingData.put(datum);
             } catch (final InterruptedException e) {
-                LOGGER.error(String.format("%s: Interrupted while inserting data into pending queue", getName()), e);
+                LOGGER.error()
+                        .setMessage("Interrupted while inserting data into pending queue")
+                        .addData("sink", getName())
+                        .setThrowable(e)
+                        .log();
                 // CHECKSTYLE.OFF: IllegalCatch - Vertx might not log
             } catch (final Exception e) {
                 // CHECKSTYLE.ON: IllegalCatch
-                LOGGER.error(String.format("%s: Error recording aggregated data", getName()), e);
+                LOGGER.error()
+                        .setMessage("Error recording aggregated data")
+                        .addData("sink", getName())
+                        .setThrowable(e)
+                        .log();
                 throw e;
             }
         }
@@ -118,48 +138,19 @@ public abstract class VertxSink extends BaseSink {
     }
 
     /**
-     * Sends a <code>Buffer</code> of bytes to the socket if the client is connected.
+     * Generate a Steno log compatible representation.
      *
-     * @param data the data to send
+     * @return Steno log compatible representation.
      */
-    protected void sendRawData(final Buffer data) {
-        dispatch(
-                event -> {
-                    try {
-                        final NetSocket socket = _socket.get();
-                        if (socket != null) {
-                            socket.write(data);
-                        } else {
-                            LOGGER.warn(getName() + ": Could not write data to socket, socket is not connected");
-                        }
-
-                    // CHECKSTYLE.OFF: IllegalCatch - Vertx might not log
-                    } catch (final Exception e) {
-                    // CHECKSTYLE.ON: IllegalCatch
-                        LOGGER.error(String.format("%s: Error writing data to socket", getName()), e);
-                        throw e;
-                    }
-                });
-    }
-
-    private void dispatch(final Handler<Void> handler) {
-        if (_context != null) {
-            _context.runOnContext(handler);
-        } else {
-            _vertx.runOnContext(handler);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("ServerAddress", _serverAddress)
-                .add("ServerPort", _serverPort)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "ServerAddress", _serverAddress,
+                "ServerPort", _serverPort,
+                "Connecting", _connecting,
+                "PendingDataSize", _pendingData.size());
     }
 
     /**
@@ -180,6 +171,55 @@ public abstract class VertxSink extends BaseSink {
     protected abstract Buffer serialize(final AggregatedData datum);
 
     /**
+     * Sends a <code>Buffer</code> of bytes to the socket if the client is connected.
+     *
+     * @param data the data to send
+     */
+    protected void sendRawData(final Buffer data) {
+        dispatch(
+                event -> {
+                    try {
+                        final NetSocket socket = _socket.get();
+                        if (socket != null) {
+                            socket.write(data);
+                        } else {
+                            LOGGER.warn()
+                                    .setMessage("Could not write data to socket, socket is not connected")
+                                    .addData("sink", getName())
+                                    .log();
+                        }
+
+                        // CHECKSTYLE.OFF: IllegalCatch - Vertx might not log
+                    } catch (final Exception e) {
+                        // CHECKSTYLE.ON: IllegalCatch
+                        LOGGER.error()
+                                .setMessage("Error writing data to socket")
+                                .addData("sink", getName())
+                                .setThrowable(e)
+                                .log();
+                        throw e;
+                    }
+                });
+    }
+
+    /**
+     * Accessor for <code>Vertx</code> instance.
+     *
+     * @return The <code>Vertx</code> instance.
+     */
+    protected Vertx getVertx() {
+        return _vertx;
+    }
+
+    private void dispatch(final Handler<Void> handler) {
+        if (_context != null) {
+            _context.runOnContext(handler);
+        } else {
+            _vertx.runOnContext(handler);
+        }
+    }
+
+    /**
      * This function need only be called once, now in the constructor.
      */
     //TODO(barp): Move to a start/stop model for Sinks [MAI-257]
@@ -192,21 +232,32 @@ public abstract class VertxSink extends BaseSink {
         // Block if already connecting
         final boolean isConnecting = _connecting.getAndSet(true);
         if (isConnecting) {
-            LOGGER.debug(getName() + ": Already connecting, not attempting another connection at this time");
+            LOGGER.debug()
+                    .setMessage("Already connecting, not attempting another connection at this time")
+                    .addData("sink", getName())
+                    .log();
             return;
         }
 
         // Don't try to connect too frequently
         final long currentTime = System.currentTimeMillis();
         if (currentTime - _lastConnectionAttempt < _currentReconnectWait) {
-            LOGGER.debug(getName() + ": Not attempting connection");
+            LOGGER.debug()
+                    .setMessage("Not attempting connection")
+                    .addData("sink", getName())
+                    .log();
             _connecting.set(false);
             return;
         }
 
         // Attempt to connect
-        LOGGER.info(getName() + ": Connecting to server; attempt=" + _connectionAttempt
-                + " address=" + _serverAddress + " port=" + _serverPort);
+        LOGGER.info()
+                .setMessage("Connecting to server")
+                .addData("sink", getName())
+                .addData("attempt", _connectionAttempt)
+                .addData("address", _serverAddress)
+                .addData("port", _serverPort)
+                .log();
         _lastConnectionAttempt = currentTime;
         _client.connect(
                 _serverPort,
@@ -219,7 +270,10 @@ public abstract class VertxSink extends BaseSink {
             if (socket != null) {
                 socket.close();
             }
-            LOGGER.warn(getName() + ": Server socket closed; forcing reconnect attempt");
+            LOGGER.warn()
+                    .setMessage("Server socket closed; forcing reconnect attempt")
+                    .addData("sink", getName())
+                    .log();
             _socket.set(null);
             _lastConnectionAttempt = 0;
             connectToServer();
@@ -227,7 +281,11 @@ public abstract class VertxSink extends BaseSink {
     }
 
     private Handler<Throwable> createSocketExceptionHandler() {
-        return event -> LOGGER.warn(getName() + ": Server socket exception", event);
+        return event -> LOGGER.warn()
+                .setMessage("Server socket exception")
+                .addData("sink", getName())
+                .setThrowable(event)
+                .log();
     }
 
     private void consumeLoop() {
@@ -236,7 +294,11 @@ public abstract class VertxSink extends BaseSink {
             boolean done = false;
             NetSocket socket = _socket.get();
             if (!_pendingData.isEmpty()) {
-                LOGGER.debug(String.format("Pending data; size=%s", _pendingData.size()));
+                LOGGER.debug()
+                        .setMessage("Pending data")
+                        .addData("sink", getName())
+                        .addData("size", _pendingData.size())
+                        .log();
             }
             while (socket != null && !done) {
                 if (_pendingData.size() > 0 && flushedBytes < MAX_FLUSH_BYTES) {
@@ -250,14 +312,22 @@ public abstract class VertxSink extends BaseSink {
             if (socket == null
                     && (_lastNotConnectedNotify == null
                     || _lastNotConnectedNotify.plus(Duration.standardSeconds(30)).isBeforeNow())) {
-                LOGGER.debug(getName() + ": Not connected to server. Data will be flushed when reconnected. "
-                        + "Suppressing this message for 30 seconds.");
+                LOGGER.debug()
+                        .setMessage(
+                                "Not connected to server. Data will be flushed when reconnected. "
+                                + "Suppressing this message for 30 seconds.")
+                        .addData("sink", getName())
+                        .log();
                 _lastNotConnectedNotify = DateTime.now();
             }
             // CHECKSTYLE.OFF: IllegalCatch - Vertx might not log
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
-            LOGGER.error(String.format("%s: error in consume loop", getName()), e);
+            LOGGER.error()
+                    .setMessage("Error in consume loop")
+                    .addData("sink", getName())
+                    .setThrowable(e)
+                    .log();
             throw e;
         } finally {
             if (flushedBytes > 0) {
@@ -273,17 +343,24 @@ public abstract class VertxSink extends BaseSink {
         try {
             final Buffer buffer = serialize(datum);
             final int bufferLength = buffer.length();
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("Writing buffer to socket; length=%s buffer=%s", bufferLength, buffer.toString("utf-8")));
-            } else {
-                LOGGER.debug(String.format("Writing buffer to socket; length=%s", bufferLength));
-            }
+            // TODO(vkoskela): Add conditional logging [AINT-552]
+            //LOGGER.trace(String.format("Writing buffer to socket; length=%s buffer=%s", bufferLength, buffer.toString("utf-8")));
+            LOGGER.debug()
+                    .setMessage("Writing buffer to socket")
+                    .addData("sink", getName())
+                    .addData("length", bufferLength)
+                    .log();
             socket.write(buffer);
             return bufferLength;
         // CHECKSTYLE.OFF: IllegalCatch - Vertx might not log
         } catch (final Exception e) {
         // CHECKSTYLE.ON: IllegalCatch
-            LOGGER.error(String.format("%s: Error writing AggregatedData data to socket; datum=%s", getName(), datum), e);
+            LOGGER.error()
+                    .setMessage("Error writing AggregatedData data to socket")
+                    .addData("sink", getName())
+                    .addData("datum", datum)
+                    .setThrowable(e)
+                    .log();
             throw e;
         }
     }
@@ -306,7 +383,10 @@ public abstract class VertxSink extends BaseSink {
             _context = context;
         } else {
             _context = null;
-            LOGGER.warn("vertx instance not a DefaultVertx as expected. Threading may be incorrect.");
+            LOGGER.warn()
+                    .setMessage("Vertx instance not a DefaultVertx as expected. Threading may be incorrect.")
+                    .addData("sink", getName())
+                    .log();
         }
 
         _client = _vertx.createNetClient()
@@ -320,10 +400,6 @@ public abstract class VertxSink extends BaseSink {
 
         connectToServer();
         consumeLoop();
-    }
-
-    protected Vertx getVertx() {
-        return _vertx;
     }
 
     private final String _serverAddress;
@@ -349,8 +425,13 @@ public abstract class VertxSink extends BaseSink {
         @Override
         public void handle(final AsyncResult<NetSocket> event) {
             if (event.succeeded()) {
-                LOGGER.info(getName() + ": Connected to server; attempt=" + _connectionAttempt
-                        + ", address=" + _serverAddress + " port=" + _serverPort);
+                LOGGER.info()
+                        .setMessage("Connected to server")
+                        .addData("sink", getName())
+                        .addData("address", _serverAddress)
+                        .addData("port", _serverPort)
+                        .addData("attempt", _connectionAttempt)
+                        .log();
                 final NetSocket socket = event.result();
                 socket.exceptionHandler(createSocketExceptionHandler());
                 socket.endHandler(createSocketCloseHandler(socket));
@@ -361,8 +442,13 @@ public abstract class VertxSink extends BaseSink {
                 _connecting.set(false);
                 _socket.set(socket);
             } else if (event.failed()) {
-                LOGGER.warn(getName() + ": Error connecting to server; address=" + _serverAddress + " port="
-                        + _serverPort, event.cause());
+                LOGGER.warn()
+                        .setMessage("Error connecting to server")
+                        .addData("sink", getName())
+                        .addData("address", _serverAddress)
+                        .addData("port", _serverPort)
+                        .setThrowable(event.cause())
+                        .log();
                 _connectionAttempt++;
                 //Calculate the next reconnect delay.  Exponential backoff formula.
 
@@ -370,7 +456,11 @@ public abstract class VertxSink extends BaseSink {
                         * Math.pow(1.3, Math.min(_connectionAttempt, 20)))) //1.3^x where x = min(attempt, 20)
                         +  1) //make sure we don't wait 0
                         *  _exponentialBackoffBase; //the milliseconds base
-                LOGGER.info(getName() + ": waiting " + _currentReconnectWait + " ms to try again");
+                LOGGER.info()
+                        .setMessage("Waiting")
+                        .addData("sink", getName())
+                        .addData("curentReconnectWait", _currentReconnectWait)
+                        .log();
                 getVertx().setTimer(_currentReconnectWait, handler -> connectToServer());
                 _connecting.set(false);
                 _socket.set(null);

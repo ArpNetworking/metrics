@@ -2,7 +2,7 @@
     "name": "ReMetGUIPipeline",
     "service": "remet_gui",
     "cluster": "tsd_aggregator_dev",
-    "host": "localhost",
+    "host": "tsd-agg-test1.local",
     "sources":
     [
         {
@@ -23,8 +23,18 @@
             "name": "remet_gui_expression_sink",
             "dynamicConfigurationFactory":
             {
-                "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
-                "directories": ["../../build/start/tsdagg/expressions"]
+                "type": "com.arpnetworking.configuration.jackson.MergingDynamicConfigurationFactory",
+                "factories":
+                [
+                    {
+                        "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
+                        "directories": ["../../build/start/tsdagg/expressions"]
+                    },
+                    {
+                        "type": "com.arpnetworking.remet.gui.ReMetGuiDynamicConfigurationFactory",
+                        "uri": "http://localhost:8080/v1/expressions/query?limit=1"
+                    }
+                ]
             },
             "sink":
             {
@@ -32,8 +42,18 @@
                 "name": "remet_gui_alert_sink",
                 "dynamicConfigurationFactory":
                 {
-                    "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
-                    "directories": ["../../build/start/tsdagg/alerts"]
+                    "type": "com.arpnetworking.configuration.jackson.MergingDynamicConfigurationFactory",
+                    "factories":
+                    [
+                        {
+                            "type": "com.arpnetworking.configuration.jackson.DirectoryDynamicConfigurationFactory",
+                            "directories": ["../../build/start/tsdagg/alerts"]
+                        },
+                        {
+                            "type": "com.arpnetworking.remet.gui.ReMetGuiDynamicConfigurationFactory",
+                            "uri": "http://localhost:8080/v1/alerts/query?limit=1&context=HOST"
+                        }
+                    ]
                 },
                 "sink":
                 {

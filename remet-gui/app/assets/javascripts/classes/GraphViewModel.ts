@@ -16,6 +16,7 @@
 
 ///<reference path="../libs/jqueryui/jqueryui.d.ts"/>
 ///<reference path="../libs/bootstrap/bootstrap.d.ts"/>
+///<reference path="../libs/naturalSort/naturalSort.d.ts" />
 ///<reference path="BrowseNode.ts"/>
 ///<reference path="ViewModel.ts"/>
 ///<amd-dependency path="jquery.ui"/>
@@ -30,16 +31,19 @@ import StatisticView = require('./StatisticView');
 import ServiceNodeVM = require('./ServiceNodeVM');
 import StatisticNodeVM = require('./StatisticNodeVM');
 import ServiceData = require('./ServiceData');
+import StatisticData = require('./StatisticData');
 import FolderNodeVM = require('./FolderNodeVM');
 import ViewDuration = require('./ViewDuration');
 import MetricsListData = require('./MetricsListData');
 import NewMetricData = require('./NewMetricData');
 import ReportData = require('./ReportData');
 import ko = require('knockout');
+import kob = require('./KnockoutBindings')
 import $ = require('jquery');
 import GraphSpec = require('./GraphSpec');
 import Hosts = require('./Hosts');
 import ConnectionVM = require('./ConnectionVM')
+import ns = require('naturalSort');
 
 module GraphViewModel {
     console.log("defining graphviewmodel");
@@ -47,8 +51,8 @@ module GraphViewModel {
     export var graphs: KnockoutObservableArray<StatisticView> = ko.observableArray<StatisticView>();
     export var graphsById: { [id: string]: StatisticView } = {};
     export var subscriptions: GraphSpec[] = [];
-    export var metricsList = ko.observableArray<ServiceNodeVM>().extend({ rateLimit: 500 });
-    export var foldersList = ko.observableArray<FolderNodeVM>().extend({ rateLimit: 500 });
+    export var metricsList = ko.observableArray<ServiceNodeVM>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });
+    export var foldersList = ko.observableArray<FolderNodeVM>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });
     export var viewDuration: ViewDuration = new ViewDuration();
     export var paused = ko.observable<boolean>(false);
     export var metricsVisible = ko.observable<boolean>(true);
@@ -161,6 +165,7 @@ module GraphViewModel {
             graph = new GaugeVM(id, displayName, graphSpec);
         }
         graph.setViewDuration(viewDuration);
+        graph.targetFrameRate = targetFrameRate;
         graphsById[id] = graph;
         graphs.push(graph);
     };
@@ -218,31 +223,13 @@ module GraphViewModel {
         return idify(spec.service) + "_" + idify(spec.metric) + "_" + idify(spec.statistic);
     };
 
-    export var sortCategories = (obsArray: KnockoutObservableArray<BrowseNode>) => {
-        for (var i = 0; i < obsArray().length; i++) {
-            var children = obsArray()[i].children;
-            sortCategories(children);
-        }
-        obsArray.sort(function(left, right) {
-            return left.name() == right.name() ? 0 : (left.name() < right.name() ? -1 : 1)
-        });
-    };
-
     export var createMetric = (spec: GraphSpec) => {
-        var serviceNode: ServiceNodeVM = getServiceVMNode(spec.service);
-        if (serviceNode === undefined) {
-            serviceNode = new ServiceNodeVM(spec.service, idify(spec.service));
-            metricsList.push(serviceNode);
-        }
-        var metricNode: MetricNodeVM = getMetricVMNode(spec.metric, serviceNode);
-        if (metricNode === undefined) {
-            metricNode = new MetricNodeVM(spec.metric, idify(spec.metric));
-            serviceNode.children.push(metricNode);
-        }
-        var stat: StatisticNodeVM = getStatVMNode(spec, metricNode);
-        if (stat === undefined) {
-            stat = new StatisticNodeVM(spec, getGraphName(spec));
-            metricNode.children.push(stat);
+        var currFolder = getRootFolderMetric(spec.service);
+        var metricSplit = spec.metric.split("/");
+        if (metricSplit.length > 1) {
+            addMetricFolder(spec.service, spec.metric, [spec.statistic], metricSplit, "", currFolder);
+        } else {
+            createFolderMetric(spec, metricSplit[0], currFolder);
         }
     };
 
@@ -251,36 +238,64 @@ module GraphViewModel {
         if (serviceNode === undefined) {
             serviceNode = new ServiceNodeVM(spec.service, idify(spec.service));
             currFolder.children.push(serviceNode);
+            if (!skipSort) {
+                currFolder.sortChildren();
+            }
         }
         var metricNode: MetricNodeVM = getMetricVMNode(spec.metric, serviceNode);
         if (metricNode === undefined) {
             metricNode = new MetricNodeVM(spec.metric, idify(spec.metric));
             metricNode.shortName = ko.observable<string>(metricName);
-            metricNode.expanded(false);
+            metricNode.expanded(serviceNode.expanded());
             serviceNode.children.push(metricNode);
+            if (!skipSort) {
+                serviceNode.sort();
+            }
         }
 
         var stat: StatisticNodeVM = getStatVMNode(spec, metricNode);
         if (stat === undefined) {
             stat = new StatisticNodeVM(spec, getGraphName(spec));
             metricNode.children.push(stat);
+            if (!skipSort) {
+                metricNode.sort();
+            }
         }
     };
 
     export var loadFolderMetricsList = (newMetrics: MetricsListData): void => {
+        skipSort = true;
+
         newMetrics.metrics.forEach((service, index) => {
             var currFolder = getRootFolderMetric(service.name);
             service.children.forEach((metric, index) => {
                 var metricSplit = metric.name.split("/");
                 if (metricSplit.length > 1) {
-                    addMetricFolder(service, metric, metricSplit, "", currFolder);
+                    var statisticNames = metric.children.map((s) =>  {return s.name; });
+                    addMetricFolder(service.name, metric.name, statisticNames, metricSplit, "", currFolder);
                 } else {
                     metric.children.forEach((statistic, index) => {
                         createFolderMetric(new GraphSpec(service.name, metric.name, statistic.name), metricSplit[0], currFolder);
-
                     });
                 }
             });
+        });
+
+        skipSort = false;
+
+        metricsList.sort((left:ServiceNodeVM, right:ServiceNodeVM) => {
+            left.sort(true);
+            right.sort(true);
+            ns.insensitive = true;
+            return ns.naturalSort(left.name(), right.name());
+        });
+        foldersList.sort((left:FolderNodeVM, right:FolderNodeVM) => {
+            left.sortChildren(true);
+            left.sortSubFolders(true);
+            right.sortChildren(true);
+            right.sortSubFolders(true);
+            ns.insensitive = true;
+            return ns.naturalSort(left.name(), right.name());
         });
 
         searchQuery.subscribe(function(searchTerm) {
@@ -297,6 +312,12 @@ module GraphViewModel {
 
         var newFolder = new FolderNodeVM(serviceName, serviceName, true);
         foldersList.push(newFolder);
+        if (!skipSort) {
+            foldersList.sort((left:FolderNodeVM, right:FolderNodeVM) => {
+                ns.insensitive = true;
+                return ns.naturalSort(left.name(), right.name());
+            });
+        }
         return newFolder
     };
 
@@ -309,7 +330,20 @@ module GraphViewModel {
 
     export var searchFolders = (searchTerm: string, currFolder: FolderNodeVM): boolean => {
         $("#folder_" + currFolder.id()).collapse('show');
-        var regex = new RegExp(".*" + searchTerm + ".*", "i");
+        var regex: RegExp = null;
+        if (searchTerm[0] == '/' && searchTerm[searchTerm.length - 1] == '/') {
+            // Treat the search term as a regex
+            regex = new RegExp(searchTerm.substr(1, searchTerm.length - 2), "i");
+        } else if (searchTerm.indexOf("*") >= 0 || searchTerm.indexOf("?") >= 0) {
+            // Treat the search term as a wildcard expression:
+            // ? = match any one character
+            // * = match zero or more characters
+            var escapedSearch = searchTerm.replace(/[-\/\\^$+.()|[\]{}]/g, '\\$&');
+            regex = new RegExp(escapedSearch.replace("?", ".").replace("*", ".*"), "i");
+        } else {
+            // Just search for any path containing the search term
+            regex = new RegExp(searchTerm.replace(/[-\/\\^$+.()|[\]{}]/g, '\\$&'), "i");
+        }
 
         if (searchTerm.length <= 0) {
             currFolder.visible(true);
@@ -351,7 +385,7 @@ module GraphViewModel {
         return metricMatch;
     };
 
-    export var addMetricFolder = (service: ServiceData, metric: MetricData, metricList: string[], path: string, currFolder: FolderNodeVM) => {
+    export var addMetricFolder = (service: string, metric: string, statistics: string[], metricList: string[], path: string, currFolder: FolderNodeVM) => {
         var currMetricName = metricList[0];
         var currPathPart = currMetricName;
         if (currMetricName.length === 0) {
@@ -366,14 +400,20 @@ module GraphViewModel {
             if (metricFolder === undefined) {
                 metricFolder = new FolderNodeVM(currMetricName, path, true);
                 currFolder.subFolders.push(metricFolder);
+                if (!skipSort) {
+                    currFolder.sortSubFolders();
+                }
+                if (currFolder.expanded) {
+                    metricFolder.expandMe();
+                }
             }
 
             metricList.shift();
-            addMetricFolder(service, metric, metricList, path, metricFolder);
+            addMetricFolder(service, metric, statistics, metricList, path, metricFolder);
         } else {
-            for (var k = 0; k < metric.children.length; k++) {
-                var statistic = metric.children[k];
-                createFolderMetric(new GraphSpec(service.name, metric.name, statistic.name), currMetricName, currFolder);
+            for (var k = 0; k < statistics.length; k++) {
+                var statistic = statistics[k];
+                createFolderMetric(new GraphSpec(service, metric, statistic), currMetricName, currFolder);
             }
         }
     };
@@ -447,19 +487,44 @@ module GraphViewModel {
     };
 
     export var switchGraphLayout = () => {
-        if ($('.graph-container.col-md-4').length > 0) {
+        //if ($('.graph-container.col-md-4').length > 0) {
+        if (graphLayout == 'GRID') {
+            graphLayout = 'ROW';
             $('.graph-container.col-md-4').each(function(index, element) { $(element).removeClass('col-md-4') });
-            $('#graph-icon').removeClass('glyphicon-align-justify');
-            $('#graph-icon').addClass('glyphicon-th-large');
+            $('#graph-icon').prop("title", "Click for Grid Layout");
+            $('#graph-icon').removeClass('fa-align-justify');
+            $('#graph-icon').addClass('fa-th-large');
             graphWidth('');
         } else {
+            graphLayout = 'GRID';
             $('.graph-container').each(function(index, element) { $(element).addClass('col-md-4') });
-            $('#graph-icon').removeClass('glyphicon-th-large');
-            $('#graph-icon').addClass('glyphicon-align-justify');
+            $('#graph-icon').prop("title", "Click for Row Layout");
+            $('#graph-icon').removeClass('fa-th-large');
+            $('#graph-icon').addClass('fa-align-justify');
             graphWidth('col-md-4');
         }
     };
+
+    export var switchRenderRate = () => {
+        if (targetFrameRate == 60) {
+            targetFrameRate = 1;
+            $('#render-icon').prop("title", "Click for Continuous");
+            $('#render-icon').removeClass('fa-spinner');
+            $('#render-icon').addClass('fa-circle-o-notch');
+        } else {
+            targetFrameRate = 60;
+            $('#render-icon').prop("title", "Click for Stepped");
+            $('#render-icon').removeClass('fa-circle-o-notch');
+            $('#render-icon').addClass('fa-spinner');
+        }
+        ko.utils.arrayForEach(graphs(), (graph: StatisticView) => { graph.targetFrameRate = targetFrameRate });
+    };
     console.log("done defining GVM");
+
+    var skipSort = false;
+    var graphLayout = 'GRID';
+    var targetFrameRate = 60;
+    var requireJsForceLoadKnockoutBindings = kob;
 }
 
 export = GraphViewModel;

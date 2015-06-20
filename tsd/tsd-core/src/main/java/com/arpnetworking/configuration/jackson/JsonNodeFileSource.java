@@ -15,13 +15,14 @@
  */
 package com.arpnetworking.configuration.jackson;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import net.sf.oval.constraint.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,13 +45,13 @@ public final class JsonNodeFileSource extends BaseJsonNodeSource implements Json
     /**
      * {@inheritDoc}
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("File", _file)
-                .add("JsonNode", _jsonNode)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "File", _file,
+                "JsonNode", _jsonNode);
     }
 
     /* package private */ Optional<JsonNode> getJsonNode() {
@@ -69,9 +70,15 @@ public final class JsonNodeFileSource extends BaseJsonNodeSource implements Json
                 throw Throwables.propagate(e);
             }
         } else if (builder._file.exists()) {
-            LOGGER.warn(String.format("Cannot read file; file=%s", _file));
+            LOGGER.warn()
+                    .setMessage("Cannot read file")
+                    .addData("file", _file)
+                    .log();
         } else {
-            LOGGER.debug(String.format("File does not exist; file=%s", _file));
+            LOGGER.debug()
+                    .setMessage("File does not exist")
+                    .addData("file", _file)
+                    .log();
         }
         _jsonNode = Optional.fromNullable(jsonNode);
     }

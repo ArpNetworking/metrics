@@ -19,11 +19,14 @@ import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.expressions.Expression;
 import com.arpnetworking.remet.gui.expressions.ExpressionQuery;
 import com.arpnetworking.remet.gui.expressions.ExpressionRepository;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import models.PagedContainer;
 import models.Pagination;
+import org.apache.http.HttpHeaders;
 import play.Configuration;
 import play.libs.Json;
 import play.mvc.Controller;
@@ -57,6 +60,7 @@ public class ExpressionController extends Controller {
     /**
      * Query for expressions.
      *
+     * * @param contains The text to search for. Optional.
      * @param cluster The cluster of the statistic to evaluate as part of the exression. Optional.
      * @param service The service of the statistic to evaluate as part of the expression. Optional.
      * @param limit The maximum number of results to return. Optional.
@@ -65,6 +69,7 @@ public class ExpressionController extends Controller {
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(
+            final String contains,
             final String cluster,
             final String service,
             final Integer limit,
@@ -72,6 +77,7 @@ public class ExpressionController extends Controller {
         // CHECKSTYLE.ON: ParameterNameCheck
 
         // Convert and validate parameters
+        final Optional<String> argContains = Optional.ofNullable(contains);
         final Optional<String> argCluster = Optional.ofNullable(cluster);
         final Optional<String> argService = Optional.ofNullable(service);
         final Optional<Integer> argOffset = Optional.ofNullable(offset);
@@ -85,6 +91,9 @@ public class ExpressionController extends Controller {
 
         // Build conditions map
         final Map<String, String> conditions = Maps.newHashMap();
+        if (argContains.isPresent()) {
+            conditions.put("contains", argContains.get());
+        }
         if (argCluster.isPresent()) {
             conditions.put("cluster", argCluster.get());
         }
@@ -94,15 +103,30 @@ public class ExpressionController extends Controller {
 
         // Build a host repository query
         final ExpressionQuery query = _expressionRepository.createQuery()
+                .contains(argContains)
                 .service(argService)
                 .cluster(argCluster)
                 .limit(argLimit)
                 .offset(argOffset);
 
         // Execute the query
-        final QueryResult<Expression> result = query.execute();
+        final QueryResult<Expression> result;
+        try {
+            result = query.execute();
+            // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error()
+                    .setMessage("Expression query failed")
+                    .setThrowable(e)
+                    .log();
+            return internalServerError();
+        }
 
         // Wrap the query results and return as JSON
+        if (result.etag().isPresent()) {
+            response().setHeader(HttpHeaders.ETAG, result.etag().get());
+        }
         return ok(Json.toJson(new PagedContainer<Expression>(
                 result.values(),
                 new Pagination(
@@ -139,4 +163,5 @@ public class ExpressionController extends Controller {
     private final ExpressionRepository _expressionRepository;
 
     private static final int DEFAULT_MAX_LIMIT = 1000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExpressionController.class);
 }

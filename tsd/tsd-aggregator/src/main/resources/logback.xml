@@ -34,8 +34,9 @@
 
     <appender name="tsdagg-async" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="tsdagg-logger"/>
-        <discardingThreshold>0</discardingThreshold>
     </appender>
+
+    <logger name="org.reflections.Reflections" level="ERROR" />
 
     <root level="DEBUG">
         <appender-ref ref="tsdagg-async"/>

@@ -21,14 +21,19 @@ import com.arpnetworking.configuration.jackson.DynamicConfiguration;
 import com.arpnetworking.configuration.jackson.DynamicConfigurationFactory;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Counter;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.scripting.Expression;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
+import com.arpnetworking.tsdcore.scripting.lua.LuaExpression;
 import com.arpnetworking.utility.InterfaceDatabase;
 import com.arpnetworking.utility.ReflectionsDatabase;
 import com.fasterxml.jackson.annotation.JacksonInject;
@@ -43,8 +48,6 @@ import com.google.inject.internal.MoreTypes;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
@@ -53,7 +56,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -69,20 +71,30 @@ public final class ExpressionSink extends BaseSink implements Sink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
+
         Collection<AggregatedData> newData = data;
 
         try (final Metrics metrics = _metricsFactory.create()) {
             // Check for new clusters or services
             boolean newClusterServices = false;
             for (final AggregatedData datum : data) {
-                final String clusterService = datum.getFQDSN().getCluster() + "." + datum.getFQDSN().getService();
-                if (!_clusterServices.contains(clusterService)) {
-                    LOGGER.debug(String.format(
-                            "Discovered new cluster-service; cluster=%s, service=%s, expressionSink=%s",
-                            datum.getFQDSN().getCluster(),
-                            datum.getFQDSN().getService(),
-                            this));
-                    _clusterServices.add(clusterService);
+                final  DynamicConfigurationFactory.Key clusterServiceKey = new DynamicConfigurationFactory.Key(
+                        datum.getFQDSN().getCluster(),
+                        datum.getFQDSN().getService());
+                if (!_clusterServices.contains(clusterServiceKey)) {
+                    LOGGER.debug()
+                            .setMessage("Discovered new cluster-service")
+                            .addData("sink", getName())
+                            .addData("cluster", datum.getFQDSN().getCluster())
+                            .addData("service", datum.getFQDSN().getService())
+                            .log();
+                    _clusterServices.add(clusterServiceKey);
                     newClusterServices = true;
                 }
             }
@@ -95,8 +107,7 @@ public final class ExpressionSink extends BaseSink implements Sink {
                         new DynamicConfiguration.Builder()
                                 .setObjectMapper(OBJECT_MAPPER)
                                 .addListener(_configurationListener),
-                        _clusterServices,
-                        Collections.<Pattern>emptySet());
+                        _clusterServices);
                 final DynamicConfiguration oldConfiguration = _configuration.getAndSet(newConfiguration);
                 if (oldConfiguration != null) {
                     oldConfiguration.shutdown();
@@ -122,6 +133,21 @@ public final class ExpressionSink extends BaseSink implements Sink {
         if (configuration != null) {
             configuration.shutdown();
         }
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    @Override
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "ClusterServices", _clusterServices,
+                "Expressions", _expressions,
+                "Sink", _sink);
     }
 
     private Collection<AggregatedData> evaluateExpressions(
@@ -179,12 +205,12 @@ public final class ExpressionSink extends BaseSink implements Sink {
                     }
                 } catch (final ScriptingException e) {
                     failures.increment();
-                    LOGGER.warn(
-                            String.format(
-                                    "Expression evaluation failed; expression=%s, data=%s",
-                                    expression,
-                                    newData),
-                            e);
+                    LOGGER.warn()
+                            .setMessage("Expression evaluation failed")
+                            .addData("expression", expression)
+                            .addData("data", newData)
+                            .setThrowable(e)
+                            .log();
                 }
             }
         }
@@ -203,18 +229,14 @@ public final class ExpressionSink extends BaseSink implements Sink {
     private final DynamicConfigurationFactory _dynamicConfigurationFactory;
     private final Listener _configurationListener;
     private final Sink _sink;
-    private final Set<String> _clusterServices = Sets.newConcurrentHashSet();
+    private final Set<DynamicConfigurationFactory.Key> _clusterServices = Sets.newConcurrentHashSet();
     private final AtomicReference<DynamicConfiguration> _configuration = new AtomicReference<>();
     private final AtomicReference<List<Expression>> _expressions = new AtomicReference<>();
 
     private static final ParameterizedType EXPRESSION_TYPE = new MoreTypes.ParameterizedTypeImpl(
             null, // OwnerType
-            Map.class,
-            String.class,
-            new MoreTypes.ParameterizedTypeImpl(
-                null, // OwnerType
-                List.class,
-                Expression.class));
+            List.class,
+            LuaExpression.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
     private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpressionSink.class);
@@ -239,15 +261,15 @@ public final class ExpressionSink extends BaseSink implements Sink {
         @Override
         public void offerConfiguration(final Configuration configuration) throws Exception {
             // Deserialize all expressions
-            final Map<String, List<Expression>> expressionsBySource = configuration.getAs(
+            final List<Expression> expressions = configuration.getAs(
                     EXPRESSION_TYPE,
-                    Collections.<String, List<Expression>>emptyMap());
+                    Collections.<Expression>emptyList());
 
             // Index all expressions by target FQDSN
             // NOTE: This will throw an IllegalArgumentException if more than
             // one expression targets the same FQDSN.
             final Map<FQDSN, Expression> expressionsByFqdsn = Maps.uniqueIndex(
-                    expressionsBySource.values().stream().flatMap(l -> l.stream()).collect(Collectors.toList()),
+                    expressions,
                     Expression::getTargetFQDSN);
 
             // Build the ordered set of expressions from bottom-up
@@ -267,7 +289,10 @@ public final class ExpressionSink extends BaseSink implements Sink {
         @Override
         public void applyConfiguration() {
             _acceptedExpressions.set(_offeredExpressions);
-            LOGGER.debug(String.format("Updated expressions; expressions=%s", _acceptedExpressions));
+            LOGGER.debug()
+                    .setMessage("Updated expressions")
+                    .addData("expressions", _acceptedExpressions)
+                    .log();
         }
 
         private void insertExpression(

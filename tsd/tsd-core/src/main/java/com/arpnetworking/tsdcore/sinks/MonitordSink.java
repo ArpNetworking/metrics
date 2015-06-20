@@ -15,11 +15,12 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.base.Function;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -33,8 +34,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -48,13 +47,17 @@ import java.util.Map;
 public final class MonitordSink extends HttpPostSink {
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "SeverityToStatus", _severityToStatus,
+                "UnknownSeverityStatus", _unknownSeverityStatus);
     }
 
     /**
@@ -177,8 +180,6 @@ public final class MonitordSink extends HttpPostSink {
 
     private final Map<String, Integer> _severityToStatus;
     private final int _unknownSeverityStatus;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(MonitordSink.class);
 
     /**
      * Implementation of builder pattern for <code>MonitordSink</code>.

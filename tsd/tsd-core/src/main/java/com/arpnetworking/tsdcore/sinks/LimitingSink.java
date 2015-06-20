@@ -15,15 +15,18 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.limiter.MetricsLimiter;
 import com.arpnetworking.tsdcore.limiter.NoLimitMetricsLimiter;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.fasterxml.jackson.annotation.JacksonInject;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -36,8 +39,6 @@ import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -62,6 +63,13 @@ public final class LimitingSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
+
         final DateTime now = DateTime.now();
         final List<AggregatedData> filteredData = Lists.newArrayListWithExpectedSize(data.size());
         final List<Condition> filteredConditions = Lists.newArrayListWithExpectedSize(conditions.size());
@@ -73,10 +81,11 @@ public final class LimitingSink extends BaseSink {
                 filteredData.add(datum);
                 filteredFQDSNs.add(datum.getFQDSN());
             } else {
-                LOGGER.warn(String.format(
-                        "%s: Skipping publication of limited data; aggregatedData=%s",
-                        getName(),
-                        datum));
+                LOGGER.warn()
+                        .setMessage("Skipping publication of limited data")
+                        .addData("sink", getName())
+                        .addData("aggregatedData", datum)
+                        .log();
                 ++limited;
             }
         }
@@ -104,16 +113,18 @@ public final class LimitingSink extends BaseSink {
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("MetricsLimiter", _metricsLimiter)
-                .add("Sink", _sink)
-                .add("Limited", _limited.get())
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "MetricsLimiter", _metricsLimiter,
+                "Sink", _sink,
+                "Limited", _limited.get());
     }
 
     private void flushMetrics() {
@@ -137,17 +148,21 @@ public final class LimitingSink extends BaseSink {
 
         final MetricsLimiter metricsLimiter;
         if (builder._metricsLimiter != null) {
-            LOGGER.debug(String.format(
-                    "Using injected metrics limiter; limiter=%s",
-                    builder._metricsLimiter));
+            LOGGER.debug()
+                    .setMessage("Using injected metrics limiter")
+                    .addData("sink", getName())
+                    .addData("limiter", builder._metricsLimiter)
+                    .log();
             metricsLimiter = builder._metricsLimiter;
         } else if (builder._injector != null && builder._metricsLimiterName != null) {
-            LOGGER.debug(String.format(
-                    "Using named metrics limiter; limiter=%s",
-                    builder._metricsLimiterName));
+            LOGGER.debug()
+                    .setMessage("Using named metrics limiter")
+                    .addData("sink", getName())
+                    .addData("limiter", builder._metricsLimiterName)
+                    .log();
             metricsLimiter = builder._injector.getInstance(Key.get(MetricsLimiter.class, Names.named(builder._metricsLimiterName)));
         } else {
-            LOGGER.debug("Using no limit metrics limiter");
+            LOGGER.debug("Not using a metrics limiter");
             metricsLimiter = new NoLimitMetricsLimiter();
         }
         _metricsLimiter = metricsLimiter;

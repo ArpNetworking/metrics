@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.arpnetworking.tsdcore.statistics;
 
-package com.arpnetworking.clusteraggregator;
-
-import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.utility.InterfaceDatabase;
 import com.arpnetworking.utility.ReflectionsDatabase;
 import com.google.common.base.Optional;
@@ -46,12 +44,16 @@ public class StatisticFactory {
     }
 
     private static void checkedPut(final Map<String, Statistic> map, final Statistic statistic, final String key) {
-        if (map.containsKey(key)) {
-            LOGGER.error(String.format(
-                    "Statistic already registered; key=%s, existing=%s, new=%s",
-                    key,
-                    map.get(key),
-                    statistic));
+        final Statistic existingStatistic =  map.get(key);
+        if (existingStatistic != null) {
+            if (!existingStatistic.equals(statistic)) {
+                LOGGER.error(String.format(
+                        "Statistic already registered; key=%s, existing=%s, new=%s",
+                        key,
+                        existingStatistic,
+                        statistic));
+            }
+            return;
         }
         map.put(key, statistic);
     }

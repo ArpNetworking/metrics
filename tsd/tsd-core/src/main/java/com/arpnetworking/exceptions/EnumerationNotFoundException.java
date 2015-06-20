@@ -37,7 +37,10 @@ public final class EnumerationNotFoundException extends Exception {
             final Class<E> enumClass,
             final Throwable cause) {
         super(
-                String.format("Cannot found a enumeration value for this key, enum_class=%s, value=%s", enumClass, value),
+                String.format(
+                        "Cannot found a enumeration value for this key, enum_class=%s, value=%s",
+                        enumClass,
+                        value),
                 cause);
     }
 

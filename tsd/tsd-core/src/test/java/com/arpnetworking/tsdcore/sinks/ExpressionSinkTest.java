@@ -24,7 +24,7 @@ import com.arpnetworking.tsdcore.scripting.ScriptingException;
 import com.arpnetworking.tsdcore.statistics.ExpressionStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.google.common.base.Optional;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.joda.time.DateTime;
@@ -43,7 +43,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -244,9 +243,9 @@ public class ExpressionSinkTest {
 
     private Configuration createConfiguration(final Expression... expressions) {
         final Configuration configuration = Mockito.mock(Configuration.class);
-        final Map<String, List<Expression>> result = Maps.newLinkedHashMap();
+        final List<Expression> result = Lists.newArrayList();
         for (final Expression expression : expressions) {
-            result.put(UUID.randomUUID().toString(), Collections.singletonList(expression));
+            result.add(expression);
         }
         Mockito.doReturn(result).when(configuration).getAs(
                 Matchers.any(ParameterizedType.class),

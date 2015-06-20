@@ -7,7 +7,5 @@ tmp
 .history
 .target
 dist
-app/assets/javascripts/**/*.map
-app/assets/javascripts/**/*.js
 app/assets/unmanaged/**
 data

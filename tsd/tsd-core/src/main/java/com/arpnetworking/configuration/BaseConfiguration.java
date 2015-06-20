@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.configuration;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
 import com.google.common.base.Optional;
 
 import java.lang.reflect.Type;
@@ -304,5 +306,23 @@ public abstract class BaseConfiguration implements Configuration {
             throw new NoSuchElementException("Configuration does not exist");
         }
         return property.get();
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogReferenceOnly.of(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 }

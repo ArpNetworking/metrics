@@ -15,6 +15,11 @@
  */
 package com.arpnetworking.tsdcore.tailer;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.TimerTrigger;
 import com.arpnetworking.utility.Trigger;
@@ -25,8 +30,6 @@ import net.sf.oval.constraint.NotNull;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.joda.time.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -70,7 +73,10 @@ public final class StatefulTailer implements Tailer {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(final Thread thread, final Throwable throwable) {
-                LOGGER.error("Unhandled exception", throwable);
+                LOGGER.error()
+                        .setMessage("Unhandled exception")
+                        .setThrowable(throwable)
+                        .log();
             }
         });
 
@@ -90,6 +96,32 @@ public final class StatefulTailer implements Tailer {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.<String, Object>builder()
+                .put("id", Integer.toHexString(System.identityHashCode(this)))
+                .put("class", this.getClass())
+                .put("File", _file)
+                .put("PositionStore", LogReferenceOnly.of(_positionStore))
+                .put("Listener", _listener)
+                .put("IsRunning", _isRunning)
+                .put("Trigger", _trigger)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
+
+    /**
      * Determine if the <code>Tailer</code> is running.
      *
      * @return <code>True</code> if and only if the <code>Tailer</code> is running.
@@ -106,9 +138,10 @@ public final class StatefulTailer implements Tailer {
                 // Attempt to open the file
                 try {
                     reader = Files.newByteChannel(_file.toPath(), StandardOpenOption.READ);
-                    LOGGER.trace(String.format(
-                            "Opened file; file=%s",
-                            _file));
+                    LOGGER.trace()
+                            .setMessage("Opened file")
+                            .addData("file", _file)
+                            .log();
                 } catch (final NoSuchFileException e) {
                     _listener.fileNotFound();
                     _trigger.waitOnTrigger();
@@ -123,10 +156,11 @@ public final class StatefulTailer implements Tailer {
                     if (_hash.isPresent()) {
                         position = _positionStore.getPosition(_hash.get()).or(position);
                     }
-                    LOGGER.info(String.format(
-                            "Starting tail; file=%s, position=%d",
-                            _file,
-                            position));
+                    LOGGER.info()
+                            .setMessage("Starting tailer")
+                            .addData("file", _file)
+                            .addData("position", position)
+                            .log();
                     reader.position(position);
 
                     // Read the file
@@ -155,9 +189,11 @@ public final class StatefulTailer implements Tailer {
             try {
                 attributes = getAttributes(_file, lastChecked);
             } catch (final NoSuchFileException t) {
-                rotate(Optional.of(reader), String.format(
-                        "File rotation detected based attributes access failure; file=%s",
-                        _file));
+                rotate(
+                        Optional.of(reader),
+                        String.format(
+                                "File rotation detected based attributes access failure; file=%s",
+                                _file));
 
                 // Return to the file loop
                 return;
@@ -167,12 +203,14 @@ public final class StatefulTailer implements Tailer {
                 // File was rotated; either:
                 // 1) Position is past the length of the file
                 // 2) The expected file is smaller than the current file
-                rotate(Optional.of(reader), String.format(
-                        "File rotation detected based on length, position and size; file=%s, length=%d, position=%d, size=%d",
-                        _file,
-                        attributes.getLength(),
-                        reader.position(),
-                        reader.size()));
+                rotate(
+                        Optional.of(reader),
+                        String.format(
+                                "File rotation detected based on length, position and size; file=%s, length=%d, position=%d, size=%d",
+                                _file,
+                                attributes.getLength(),
+                                reader.position(),
+                                reader.size()));
 
                 // Return to the file loop
                 return;
@@ -194,11 +232,13 @@ public final class StatefulTailer implements Tailer {
                         // thereby detecting when the length grows whether we
                         // actually got more data in the current file.
 
-                        rotate(Optional.<SeekableByteChannel>absent(), String.format(
-                                "File rotation detected based on length and no new data; file=%s, length=%d, position=%d",
-                                _file,
-                                attributes.getLength(),
-                                reader.position()));
+                        rotate(
+                                Optional.<SeekableByteChannel>absent(),
+                                String.format(
+                                        "File rotation detected based on length and no new data; file=%s, length=%d, position=%d",
+                                        _file,
+                                        attributes.getLength(),
+                                        reader.position()));
 
                         // Return to the file loop
                         return;
@@ -216,14 +256,16 @@ public final class StatefulTailer implements Tailer {
                     // content. This can happen on periodic systems which log
                     // the same data at the beginning of each period.
 
-                    rotate(Optional.<SeekableByteChannel>absent(), String.format(
-                            "File rotation detected based equal length and position but newer"
-                                    + "; file=%s, length=%d, position=%d, lastChecked=%s, attributes=%s",
-                            _file,
-                            attributes.getLength(),
-                            reader.position(),
-                            lastChecked.get(),
-                            attributes));
+                    rotate(
+                            Optional.<SeekableByteChannel>absent(),
+                            String.format(
+                                    "File rotation detected based equal length and position but newer"
+                                            + "; file=%s, length=%d, position=%d, lastChecked=%s, attributes=%s",
+                                    _file,
+                                    attributes.getLength(),
+                                    reader.position(),
+                                    lastChecked.get(),
+                                    attributes));
 
                     // Return to the file loop
                     return;
@@ -241,9 +283,11 @@ public final class StatefulTailer implements Tailer {
                     final Optional<Boolean> hashesSame = compareByHash(currentReaderPrefixHash, currentReaderPrefixHashLength);
                     if (hashesSame.isPresent() && !hashesSame.get()) {
                         // The file rotated with the same length!
-                        rotate(Optional.<SeekableByteChannel>absent(), String.format(
-                                "File rotation detected based on hash; file=%s",
-                                _file));
+                        rotate(
+                                Optional.<SeekableByteChannel>absent(),
+                                String.format(
+                                        "File rotation detected based on hash; file=%s",
+                                        _file));
 
                         // Return to the file loop
                         return;
@@ -282,11 +326,12 @@ public final class StatefulTailer implements Tailer {
 
     private Attributes getAttributes(final File file, final Optional<Long> lastChecked) throws IOException {
         final BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-        LOGGER.trace(String.format(
-                "File attributes; file=%s, lastModifiedTime=%d, size=%d",
-                file,
-                attributes.lastModifiedTime().toMillis(),
-                attributes.size()));
+        LOGGER.trace()
+                .setMessage("File attributes")
+                .addData("file", file)
+                .addData("lastModifiedTime", attributes.lastModifiedTime().toMillis())
+                .addData("size", attributes.size())
+                .log();
 
         return new Attributes(
                 attributes.size(),
@@ -374,11 +419,12 @@ public final class StatefulTailer implements Tailer {
                     reader,
                     appliedLength);
 
-            LOGGER.trace(String.format(
-                    "Comparing hashes; hash1=%s, hash2=%s, size=%d",
-                    prefixHash,
-                    filePrefixHash,
-                    appliedLength));
+            LOGGER.trace()
+                    .setMessage("Comparing hashes")
+                    .addData("hash1", prefixHash)
+                    .addData("filePrefixHash", filePrefixHash)
+                    .addData("size", appliedLength)
+                    .log();
 
             return Optional.of(Objects.equals(_hash.or(prefixHash).orNull(), filePrefixHash.orNull()));
         } catch (final IOException e) {
@@ -397,10 +443,11 @@ public final class StatefulTailer implements Tailer {
         reader.position(0);
         if (reader.size() < hashSize) {
             reader.position(oldPosition);
-            LOGGER.trace(String.format(
-                    "Reader size insufficient to compute hash; hashSize=%d, hashSize=%d",
-                    hashSize,
-                    reader.size()));
+            LOGGER.trace()
+                    .setMessage("Reader size insufficient to compute hash")
+                    .addData("hashSize", hashSize)
+                    .addData("readerSize", reader.size())
+                    .log();
             return Optional.absent();
         }
 
@@ -410,9 +457,10 @@ public final class StatefulTailer implements Tailer {
         while (totalBytesRead < hashSize) {
             final int bytesRead = reader.read(buffer);
             if (bytesRead < 0) {
-                LOGGER.warn(String.format(
-                        "Unexpected end of file reached; totalBytesRead=%d",
-                        totalBytesRead));
+                LOGGER.warn()
+                        .setMessage("Unexpected end of file reached")
+                        .addData("totalBytesRead", totalBytesRead)
+                        .log();
                 return Optional.absent();
             }
             totalBytesRead += bytesRead;
@@ -422,7 +470,10 @@ public final class StatefulTailer implements Tailer {
         _md5.reset();
         final byte[] digest = _md5.digest(buffer.array());
         final String hash = Hex.encodeHexString(digest);
-        LOGGER.trace(String.format("Computed hash; hash=%s, bytes=%s", hash, Hex.encodeHexString(buffer.array())));
+        LOGGER.trace()
+                .setMessage("Computed hash")
+                .addData("hash", hash)
+                .log();
 
         // Return the reader to its original state
         reader.position(oldPosition);

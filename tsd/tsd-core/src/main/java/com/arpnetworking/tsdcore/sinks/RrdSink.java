@@ -15,17 +15,18 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -49,7 +50,12 @@ public final class RrdSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        LOGGER.debug(getName() + ": Writing aggregated data; size=" + data.size());
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
 
         for (final AggregatedData datum : data) {
             final String name = (datum.getHost() + "."
@@ -74,15 +80,17 @@ public final class RrdSink extends BaseSink {
     public void close() {}
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("Path", _path)
-                .add("RrdTool", _rrdTool)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "Path", _path,
+                "RrdTool", _rrdTool);
     }
 
     private final HashMap<String, RrdNode> _listeners = Maps.newHashMap();
@@ -172,7 +180,11 @@ public final class RrdSink extends BaseSink {
             if (new File(_fileName).exists()) {
                 return;
             }
-            LOGGER.info("Creating rrd file; fileName=" + _fileName);
+            LOGGER.info()
+                    .setMessage("Creating rrd file")
+                    .addData("sink", getName())
+                    .addData("fileName", _fileName)
+                    .log();
             // TODO(barp): Address assumptions on type and timing [MAI-101]
             // Also add more assertions to the unit tests for each command
             // execution.
@@ -204,16 +216,28 @@ public final class RrdSink extends BaseSink {
                     try {
                         process.waitFor();
                     } catch (final InterruptedException e) {
-                        LOGGER.error(getName() + ": Interrupted waiting for process to exit", e);
+                        LOGGER.error()
+                                .setMessage("Interrupted waiting for process to exit")
+                                .addData("sink", getName())
+                                .setThrowable(e)
+                                .log();
                     }
                     if (process.exitValue() != 0) {
-                        LOGGER.error(getName() + ": Execution result in an error; command=" + Joiner.on(" ").join(args)
-                                + " exitValue=" + process.exitValue()
-                                + " output=" + processOutput.toString());
+                        LOGGER.error()
+                                .setMessage("Execution result in an error")
+                                .addData("sink", getName())
+                                .addData("command",  Joiner.on(" ").join(args))
+                                .addData("exitValue", process.exitValue())
+                                .addData("output", processOutput.toString())
+                                .log();
                     }
                 }
             } catch (final IOException e) {
-                LOGGER.error(getName() + ": Error executing rrd", e);
+                LOGGER.error()
+                        .setMessage("Error executing rrd")
+                        .addData("sink", getName())
+                        .setThrowable(e)
+                        .log();
             }
         }
 

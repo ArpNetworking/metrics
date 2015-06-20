@@ -92,7 +92,7 @@ public class ConnectionContext extends UntypedActor {
     public void onReceive(final Object message) throws Exception {
         LOGGER.trace()
                 .setMessage("Received message")
-                .addData("actor", self().toString())
+                .addData("actor", self())
                 .addData("data", message)
                 .addData("channel", _connection)
                 .log();
@@ -114,7 +114,7 @@ public class ConnectionContext extends UntypedActor {
                 _metrics.incrementCounter(UNKONOWN_COMMAND_COUNTER);
                 LOGGER.warn()
                         .setMessage("Unsupported command")
-                        .addData("actor", self().toString())
+                        .addData("actor", self())
                         .addData("data", message)
                         .log();
                 unhandled(message);
@@ -122,7 +122,7 @@ public class ConnectionContext extends UntypedActor {
                 _metrics.incrementCounter("Actors/Connection/UNKNOWN");
                 LOGGER.warn()
                         .setMessage("Unsupported message")
-                        .addData("actor", self().toString())
+                        .addData("actor", self())
                         .addData("data", message)
                         .log();
                 unhandled(message);

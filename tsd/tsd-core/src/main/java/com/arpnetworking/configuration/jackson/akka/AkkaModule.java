@@ -15,17 +15,19 @@
  */
 package com.arpnetworking.configuration.jackson.akka;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.datatype.jdk8.PackageVersion;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogReferenceOnly;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 /**
  * Jackson module for serializing and deserializing Akka objects.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class AkkaModule extends Module {
+public class AkkaModule extends SimpleModule {
     /**
      * Public constructor.
      *
@@ -40,40 +42,30 @@ public class AkkaModule extends Module {
      */
     @Override
     public void setupModule(final SetupContext context) {
-        context.addSerializers(new AkkaSerializers(_system));
-        context.addDeserializers(new AkkaDeserializers(_system));
+        addSerializer(ActorRef.class, new ActorRefSerializer(_system));
+        addDeserializer(ActorRef.class, new ActorRefDeserializer(_system));
+        super.setupModule(context);
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "ActorSystem", LogReferenceOnly.of(_system));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Version version() {
-        return PackageVersion.VERSION;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(final Object o) {
-        return this == o;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getModuleName() {
-        return "AkkaModule";
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private final ActorSystem _system;

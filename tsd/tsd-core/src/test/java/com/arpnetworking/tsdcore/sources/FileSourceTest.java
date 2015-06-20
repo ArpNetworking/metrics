@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdcore.sources;
 
+import com.arpnetworking.steno.LogBuilder;
+import com.arpnetworking.steno.Logger;
 import com.arpnetworking.tsdcore.parsers.Parser;
 import com.arpnetworking.tsdcore.parsers.exceptions.ParsingException;
 import com.arpnetworking.tsdcore.tailer.InitialPosition;
@@ -28,7 +30,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
-import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -54,6 +55,17 @@ public class FileSourceTest {
         _observer = Mockito.mock(Observer.class);
         _parser = Mockito.mock(Parser.class);
         _logger = Mockito.mock(Logger.class);
+        _logBuilder = Mockito.mock(LogBuilder.class);
+        Mockito.when(_logger.trace()).thenReturn(_logBuilder);
+        Mockito.when(_logger.debug()).thenReturn(_logBuilder);
+        Mockito.when(_logger.info()).thenReturn(_logBuilder);
+        Mockito.when(_logger.warn()).thenReturn(_logBuilder);
+        Mockito.when(_logger.error()).thenReturn(_logBuilder);
+        Mockito.when(_logBuilder.setMessage(Matchers.anyString())).thenReturn(_logBuilder);
+        Mockito.when(_logBuilder.addData(Matchers.anyString(), Matchers.anyString())).thenReturn(_logBuilder);
+        Mockito.when(_logBuilder.addContext(Matchers.anyString(), Matchers.anyString())).thenReturn(_logBuilder);
+        Mockito.when(_logBuilder.setEvent(Matchers.anyString())).thenReturn(_logBuilder);
+        Mockito.when(_logBuilder.setThrowable(Matchers.any(Throwable.class))).thenReturn(_logBuilder);
     }
 
     @Test
@@ -70,8 +82,8 @@ public class FileSourceTest {
         final String expectedData = "Expected Data";
         Mockito.when(_parser.parse(expectedData.getBytes(Charsets.UTF_8))).thenReturn(expectedData);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -82,7 +94,6 @@ public class FileSourceTest {
         source.start();
 
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         Files.write(
                 file.toPath(),
                 (expectedData + "\n").getBytes(Charsets.UTF_8),
@@ -115,8 +126,8 @@ public class FileSourceTest {
 
         Mockito.when(_parser.parse(expectedData.getBytes(Charsets.UTF_8))).thenReturn(expectedData);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setInitialPosition(InitialPosition.END)
                         .setParser(_parser)
@@ -127,7 +138,6 @@ public class FileSourceTest {
         source.start();
 
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         Files.write(
                 file.toPath(),
                 (expectedData + "\n").getBytes(Charsets.UTF_8),
@@ -144,8 +154,8 @@ public class FileSourceTest {
     public void testTailerFileNotFound() throws InterruptedException, IOException {
         final File state = new File(_directory, "testTailerFileNotFound.log.state");
         Files.deleteIfExists(state.toPath());
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(new File("/dne/" + UUID.randomUUID().toString() + ".log"))
                         .setStateFile(state)
                         .setParser(_parser)
@@ -154,7 +164,8 @@ public class FileSourceTest {
 
         source.start();
         Thread.sleep(INTERVAL / 2);
-        Mockito.verify(_logger).warn(Mockito.anyString());
+        Mockito.verify(_logger).warn();
+        Mockito.verify(_logBuilder, Mockito.atLeastOnce()).setMessage("Tailer file not found");
         source.stop();
     }
 
@@ -162,21 +173,19 @@ public class FileSourceTest {
     public void testTailerFileNotFoundInterval() throws InterruptedException, IOException {
         final File state = new File(_directory, "testTailerFileNotFoundInterval.log.state");
         Files.deleteIfExists(state.toPath());
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(new File("/dne/" + UUID.randomUUID().toString() + ".log"))
                         .setStateFile(state)
                         .setParser(_parser)
                         .setInterval(Duration.millis(INTERVAL)),
                 _logger);
 
-        Mockito.reset(_logger);
         source.start();
         Thread.sleep(SLEEP_INTERVAL);
-        Mockito.verify(_logger).warn(Mockito.contains("Tailer file not found"));
-        Mockito.reset(_logger);
+        Mockito.verify(_logger).warn();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file not found"));
         Thread.sleep(SLEEP_INTERVAL * 2);
-        Mockito.verifyZeroInteractions(_logger);
         source.stop();
     }
 
@@ -191,8 +200,8 @@ public class FileSourceTest {
 
         Files.write(file.toPath(), "Existing data in the log file\n".getBytes(Charsets.UTF_8));
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -201,12 +210,12 @@ public class FileSourceTest {
 
         source.start();
         Thread.sleep(SLEEP_INTERVAL);
-        Mockito.reset(_logger);
         renameRotate(file);
         Files.createFile(file.toPath());
         Thread.sleep(2 * SLEEP_INTERVAL);
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage("Tailer file rotate");
         source.stop();
     }
 
@@ -221,8 +230,8 @@ public class FileSourceTest {
         Files.createFile(file.toPath());
         Files.deleteIfExists(state.toPath());
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -231,12 +240,12 @@ public class FileSourceTest {
 
         source.start();
         Thread.sleep(SLEEP_INTERVAL);
-        Mockito.reset(_logger);
         renameRotate(file);
         Files.createFile(file.toPath());
         Thread.sleep(2 * SLEEP_INTERVAL);
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -251,8 +260,8 @@ public class FileSourceTest {
 
         Files.write(file.toPath(), "Existing data in the log file\n".getBytes(Charsets.UTF_8));
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -261,12 +270,12 @@ public class FileSourceTest {
 
         source.start();
         Thread.sleep(SLEEP_INTERVAL);
-        Mockito.reset(_logger);
         copyRotate(file);
         truncate(file);
         Thread.sleep(2 * SLEEP_INTERVAL);
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -282,8 +291,8 @@ public class FileSourceTest {
         Files.createFile(file.toPath());
         Files.deleteIfExists(state.toPath());
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -292,12 +301,12 @@ public class FileSourceTest {
 
         source.start();
         Thread.sleep(SLEEP_INTERVAL);
-        Mockito.reset(_logger);
         copyRotate(file);
         truncate(file);
         Thread.sleep(2 * SLEEP_INTERVAL);
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -315,8 +324,8 @@ public class FileSourceTest {
         final String expectedData = "Expected Data";
         Mockito.when(_parser.parse(expectedData.getBytes(Charsets.UTF_8))).thenReturn(expectedData);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -327,7 +336,6 @@ public class FileSourceTest {
         source.start();
 
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         Files.write(
                 file.toPath(),
                 (expectedData + "\n").getBytes(Charsets.UTF_8),
@@ -340,7 +348,8 @@ public class FileSourceTest {
 
         Mockito.verify(_parser).parse(expectedData.getBytes(Charsets.UTF_8));
         Mockito.verify(_observer).notify(source, expectedData);
-        Mockito.verify(_logger, Mockito.timeout(10000)).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder, Mockito.after(10000)).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -363,8 +372,8 @@ public class FileSourceTest {
         final String expectedData = "Expected Data";
         Mockito.when(_parser.parse(expectedData.getBytes(Charsets.UTF_8))).thenReturn(expectedData);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -375,7 +384,6 @@ public class FileSourceTest {
         source.start();
 
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         Files.write(
                 file.toPath(),
                 (expectedData + "\n").getBytes(Charsets.UTF_8),
@@ -388,7 +396,8 @@ public class FileSourceTest {
 
         Mockito.verify(_parser).parse(expectedData.getBytes(Charsets.UTF_8));
         Mockito.verify(_observer).notify(source, expectedData);
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -408,8 +417,8 @@ public class FileSourceTest {
         Mockito.when(_parser.parse(expectedData1.getBytes(Charsets.UTF_8))).thenReturn(expectedData1);
         Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -420,7 +429,6 @@ public class FileSourceTest {
         source.start();
 
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         Files.write(
                 file.toPath(),
                 (expectedData1 + "\n").getBytes(Charsets.UTF_8),
@@ -452,7 +460,8 @@ public class FileSourceTest {
         Assert.assertEquals(expectedData1, notifyValues.get(0));
         Assert.assertEquals(expectedData2, notifyValues.get(1));
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -479,8 +488,8 @@ public class FileSourceTest {
         Mockito.when(_parser.parse(expectedData1.getBytes(Charsets.UTF_8))).thenReturn(expectedData1);
         Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -491,7 +500,6 @@ public class FileSourceTest {
         source.start();
 
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         Files.write(
                 file.toPath(),
                 (expectedData1 + "\n").getBytes(Charsets.UTF_8),
@@ -523,7 +531,8 @@ public class FileSourceTest {
         Assert.assertEquals(expectedData1, notifyValues.get(0));
         Assert.assertEquals(expectedData2, notifyValues.get(1));
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -546,8 +555,8 @@ public class FileSourceTest {
         Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
         Mockito.when(_parser.parse(expectedData3.getBytes(Charsets.UTF_8))).thenReturn(expectedData3);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -562,7 +571,6 @@ public class FileSourceTest {
                 (expectedData1 + "\n").getBytes(Charsets.UTF_8),
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         Files.write(
                 file.toPath(),
                 (expectedData2 + "\n").getBytes(Charsets.UTF_8),
@@ -595,7 +603,8 @@ public class FileSourceTest {
         Assert.assertEquals(expectedData2, notifyValues.get(1));
         Assert.assertEquals(expectedData3, notifyValues.get(2));
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -625,8 +634,8 @@ public class FileSourceTest {
         Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
         Mockito.when(_parser.parse(expectedData3.getBytes(Charsets.UTF_8))).thenReturn(expectedData3);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -641,7 +650,6 @@ public class FileSourceTest {
                 (expectedData1 + "\n").getBytes(Charsets.UTF_8),
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         Files.write(
                 file.toPath(),
                 (expectedData2 + "\n").getBytes(Charsets.UTF_8),
@@ -674,7 +682,8 @@ public class FileSourceTest {
         Assert.assertEquals(expectedData2, notifyValues.get(1));
         Assert.assertEquals(expectedData3, notifyValues.get(2));
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -695,8 +704,8 @@ public class FileSourceTest {
         Mockito.when(_parser.parse(expectedData1.getBytes(Charsets.UTF_8))).thenReturn(expectedData1);
         Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -711,7 +720,6 @@ public class FileSourceTest {
                 (expectedData1 + "\n").getBytes(Charsets.UTF_8),
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         renameRotate(file);
         Files.createFile(file.toPath());
         Files.write(
@@ -737,7 +745,8 @@ public class FileSourceTest {
         Assert.assertEquals(expectedData1, notifyValues.get(0));
         Assert.assertEquals(expectedData2, notifyValues.get(1));
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -768,8 +777,8 @@ public class FileSourceTest {
         Mockito.when(_parser.parse(expectedData1.getBytes(Charsets.UTF_8))).thenReturn(expectedData1);
         Mockito.when(_parser.parse(expectedData2.getBytes(Charsets.UTF_8))).thenReturn(expectedData2);
 
-        final FileSource<Object> source = new FileSource<Object>(
-                new FileSource.Builder<Object>()
+        final FileSource<Object> source = new FileSource<>(
+                new FileSource.Builder<>()
                         .setSourceFile(file)
                         .setStateFile(state)
                         .setParser(_parser)
@@ -784,7 +793,6 @@ public class FileSourceTest {
                 (expectedData1 + "\n").getBytes(Charsets.UTF_8),
                 StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
         Thread.sleep(sleepInterval);
-        Mockito.reset(_logger);
         copyRotate(file);
         truncate(file);
         Files.write(
@@ -810,7 +818,8 @@ public class FileSourceTest {
         Assert.assertEquals(expectedData1, notifyValues.get(0));
         Assert.assertEquals(expectedData2, notifyValues.get(1));
 
-        Mockito.verify(_logger).info(Mockito.contains("Tailer file rotate"));
+        Mockito.verify(_logger).info();
+        Mockito.verify(_logBuilder).setMessage(Mockito.contains("Tailer file rotate"));
         source.stop();
     }
 
@@ -848,6 +857,7 @@ public class FileSourceTest {
 
     private Observer _observer;
     private Logger _logger;
+    private LogBuilder _logBuilder;
     private Parser<Object> _parser;
     private final SimpleDateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH");
     private final File _directory = new File("./target/tmp/test/FileSourceTest");

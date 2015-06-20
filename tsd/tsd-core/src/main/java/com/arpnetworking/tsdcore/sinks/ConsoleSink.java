@@ -15,11 +15,12 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.base.MoreObjects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.PrintStream;
 import java.util.Collection;
@@ -38,7 +39,12 @@ public final class ConsoleSink extends BaseSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        LOGGER.debug(getName() + ": Writing aggregated data; size=" + data.size());
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
 
         if (!data.isEmpty()) {
             final StringBuilder builder = new StringBuilder();
@@ -77,21 +83,27 @@ public final class ConsoleSink extends BaseSink {
      */
     @Override
     public void close() {
-        LOGGER.info(getName() + ": Closing sink; recordsWritten=" + _recordsWritten);
+        LOGGER.info()
+                .setMessage("Closing sink")
+                .addData("sink", getName())
+                .addData("recordsWritten", _recordsWritten)
+                .log();
     }
 
     /**
-     * {@inheritDoc}
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
      */
+    @LogValue
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("RecordsWritten", _recordsWritten)
-                .toString();
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "RecordsWritten", _recordsWritten);
     }
 
-    /* package private */ConsoleSink(final Builder builder, final PrintStream printStream) {
+    /* package private */ ConsoleSink(final Builder builder, final PrintStream printStream) {
         super(builder);
         _printStream = printStream;
     }

@@ -28,6 +28,7 @@ import org.joda.time.Period;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -144,6 +145,52 @@ public final class DefaultAlert implements Alert {
                 .add("Value", _value)
                 .add("Extensions", _extensions)
                 .toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(final Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof DefaultAlert)) {
+            return false;
+        }
+
+        final DefaultAlert otherAlert = (DefaultAlert) other;
+        return Objects.equals(_id, otherAlert._id)
+                && Objects.equals(_context, otherAlert._context)
+                && Objects.equals(_name, otherAlert._name)
+                && Objects.equals(_cluster, otherAlert._cluster)
+                && Objects.equals(_service, otherAlert._service)
+                && Objects.equals(_metric, otherAlert._metric)
+                && Objects.equals(_statistic, otherAlert._statistic)
+                && Objects.equals(_period, otherAlert._period)
+                && Objects.equals(_operator, otherAlert._operator)
+                && Objects.equals(_value, otherAlert._value)
+                && Objects.equals(_extensions, otherAlert._extensions);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                _id,
+                _context,
+                _name,
+                _cluster,
+                _service,
+                _metric,
+                _statistic,
+                _period,
+                _operator,
+                _value,
+                _extensions);
     }
 
     private DefaultAlert(final Builder builder) {

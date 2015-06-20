@@ -33,6 +33,7 @@ jquery                     | MIT                        | http://jquery.com
 jquery-ui                  | MIT                        | http://jqueryui.com/
 jQRangeSlider              | MIT                        | http://ghusse.github.io/jQRangeSlider/
 knockout                   | MIT                        | http://knockoutjs.com/
+naturalsort                | MIT                        | https://github.com/overset/javascript-natural-sort/blob/master/naturalSort.js
 Play Framework 2.3         | Apache License 2           | http://playframework.com
 requirejs-text             | MIT                        | https://github.com/requirejs/text
 typeahead                  | MIT                        | https://github.com/twitter/typeahead.js

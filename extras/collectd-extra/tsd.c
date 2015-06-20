@@ -85,10 +85,10 @@ static bool store_rates = false;
 static FILE* file = NULL;
 static char file_name[512];
 static char* file_buffer = NULL;
-static unsigned long file_timestamp = 0;
+static uint32_t file_timestamp = 0;
 static pthread_mutex_t lock;
 
-static unsigned long tsd_create_timestamp(const time_t* time)
+static uint32_t tsd_create_timestamp(const time_t* time)
 {
   const struct tm* time_info = gmtime(time);
   return (time_info->tm_year + 1900) * 1000000
@@ -97,7 +97,7 @@ static unsigned long tsd_create_timestamp(const time_t* time)
       + time_info->tm_hour;
 }
 
-static time_t tsd_from_timestamp(const unsigned long timestamp)
+static time_t tsd_from_timestamp(const uint32_t timestamp)
 {
   // NOTE: tm_day and tm_yday are ignored by mktime
   struct tm time_info;
@@ -118,7 +118,7 @@ static bool is_rate_enabled(const data_set_t* data_set, const value_list_t* valu
   return store_rates;
 }
 
-static void tsd_format_file_name(char* buffer, const size_t buffer_size, const unsigned long* timestamp)
+static void tsd_format_file_name(char* buffer, const size_t buffer_size, const uint32_t* timestamp)
 {
   if (timestamp == NULL)
   {
@@ -133,7 +133,7 @@ static void tsd_format_file_name(char* buffer, const size_t buffer_size, const u
     snprintf(
         buffer,
         buffer_size,
-        "%scollectd-query.%lu.log",
+        "%scollectd-query.%"SCNu32".log",
         data_dir,
         *timestamp);
   }
@@ -304,23 +304,41 @@ static void tsd_buffer_append_name(Buffer* buffer, const value_list_t *value_lis
     data_set_name = "lwp";
   }
   if (strcmp(plugin, "processes") == 0
-        && include_plugin_instance
-        && strcmp(type, "ps_pagefaults") == 0
-        && include_data_source_name
-        && strcmp(data_set_name, "minflt")
-        && index == 1)
+      && include_plugin_instance
+      && strcmp(type, "ps_pagefaults") == 0
+      && include_data_source_name
+      && strcmp(data_set_name, "minflt")
+      && index == 1)
   {
     data_set_name = "majflt";
   }
   if (strcmp(plugin, "processes") == 0
-        && include_plugin_instance
-        && strcmp(type, "ps_disk_octets") == 0
-        && include_data_source_name
-        && strcmp(data_set_name, "read")
-        && index == 1)
-    {
-      data_set_name = "write";
-    }
+      && include_plugin_instance
+      && strcmp(type, "ps_disk_octets") == 0
+      && include_data_source_name
+      && strcmp(data_set_name, "read")
+      && index == 1)
+  {
+    data_set_name = "write";
+  }
+  if (strcmp(plugin, "memcached") == 0
+      && strcmp(type, "df") == 0
+      && include_type_instance
+      && strcmp(type_instance, "cache") == 0
+      && include_data_source_name
+      && strcmp(data_set_name, "used") == 0
+      && index == 1)
+  {
+      data_set_name = "free";
+  }
+  if (strcmp(plugin, "memcached") == 0
+      && strcmp(type, "memcached_octets") == 0
+      && include_data_source_name
+      && strcmp(data_set_name, "rx") == 0
+      && index == 1)
+  {
+      data_set_name = "tx";
+  }
 
   // Render the name
   tsd_buffer_append(buffer, plugin);
@@ -464,8 +482,8 @@ static void tsd_format_2c(Buffer* buffer, const data_set_t *data_set, const valu
   tsd_buffer_sprintf(
       buffer,
       "\"annotations\":{\"finalTimestamp\":\"%5.3f\",\"initTimestamp\":\"%5.3f\"},",
-      CDTIME_T_TO_MS(value_list->time) / 1000.0,
-      CDTIME_T_TO_MS(value_list->time - value_list->interval) / 1000.0);
+      CDTIME_T_TO_DOUBLE(value_list->time),
+      CDTIME_T_TO_DOUBLE(value_list->time - value_list->interval));
 
   // Record everything as a gauge
   tsd_buffer_append(buffer, "\"gauges\":{");
@@ -493,7 +511,7 @@ static FILE* tsd_get_file() {
   // Check if the file needs to be rotated
   time_t current_time;
   time(&current_time);
-  const unsigned long current_timestamp = tsd_create_timestamp(&current_time);
+  const uint32_t current_timestamp = tsd_create_timestamp(&current_time);
   if (use_stdio == 0 && file != NULL && file_timestamp != current_timestamp)
   {
     // Close the current file
@@ -520,7 +538,7 @@ static FILE* tsd_get_file() {
     // Check for the n+1-th oldest file and remove if it exists
     // NOTE: On start-up the daemon removes any files in excess of N
     const time_t remove_time = current_time - 3600 * (files_to_retain + 1);
-    const unsigned long remove_timestamp = tsd_create_timestamp(&remove_time);
+    const uint32_t remove_timestamp = tsd_create_timestamp(&remove_time);
     char remove_name[512];
     tsd_format_file_name(remove_name, sizeof(remove_name), &remove_timestamp);
     INFO(
@@ -788,8 +806,8 @@ static int tsd_init()
             "tsd plugin: considering file: %s",
             entry->d_name);
 
-        unsigned long timestamp;
-        if (sscanf(entry->d_name, "collectd-query.%lu.log", &timestamp) == 1)
+        uint32_t timestamp;
+        if (sscanf(entry->d_name, "collectd-query.%"SCNu32".log", &timestamp) == 1)
         {
           // Compute the file age
           time_t current_time;

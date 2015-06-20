@@ -20,7 +20,6 @@
 import system = require('durandal/system');
 import app = require('durandal/app');
 import viewLocator = require('durandal/viewLocator');
-import KnockoutBindings = require('./classes/KnockoutBindings');
 
 app.title = "ReMet";
 app.configurePlugins({

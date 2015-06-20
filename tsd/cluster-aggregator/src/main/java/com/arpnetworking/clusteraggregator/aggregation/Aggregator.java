@@ -37,6 +37,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.joda.time.Period;
+import scala.Option;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
@@ -153,6 +154,16 @@ public class Aggregator extends UntypedActor {
         } else {
             unhandled(message);
         }
+    }
+
+    @Override
+    public void preRestart(final Throwable reason, final Option<Object> message) throws Exception {
+        String messageString = "null";
+        if (message.isDefined()) {
+            messageString = message.get().toString();
+        }
+        _log.error(reason, String.format("Aggregator crashing, self=%s, offendingMessage=%s", self().toString(), messageString));
+        super.preRestart(reason, message);
     }
 
     private void processAggregationMessage(final AggregatedData data) {

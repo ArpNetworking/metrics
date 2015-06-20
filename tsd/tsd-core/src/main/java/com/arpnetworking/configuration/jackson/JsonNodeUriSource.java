@@ -15,23 +15,22 @@
  */
 package com.arpnetworking.configuration.jackson;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import net.sf.oval.constraint.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 
 /**
  * <code>JsonNode</code> based configuration sourced from a file.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public final class JsonNodeUrlSource extends BaseJsonNodeSource implements JsonNodeSource {
+public final class JsonNodeUriSource extends BaseJsonNodeSource implements JsonNodeSource {
 
     /**
      * {@inheritDoc}
@@ -44,57 +43,62 @@ public final class JsonNodeUrlSource extends BaseJsonNodeSource implements JsonN
     /**
      * {@inheritDoc}
      */
+    @LogValue
     @Override
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "super", super.toLogValue(),
+                "Uri", _uri,
+                "JsonNode", _jsonNode);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Url", _url)
-                .add("JsonNode", _jsonNode)
-                .toString();
+        return toLogValue().toString();
     }
 
     /* package private */ Optional<JsonNode> getJsonNode() {
         return _jsonNode;
     }
 
-    private JsonNodeUrlSource(final Builder builder) {
+    private JsonNodeUriSource(final Builder builder) {
         super(builder);
-        _url = builder._url;
+        _uri = builder._uri;
 
         JsonNode jsonNode = null;
         try {
-            jsonNode = _objectMapper.readTree(_url);
+            jsonNode = _objectMapper.readTree(_uri.toURL());
         } catch (final IOException e) {
             throw Throwables.propagate(e);
         }
         _jsonNode = Optional.fromNullable(jsonNode);
     }
 
-    private final URL _url;
+    private final URI _uri;
     private final Optional<JsonNode> _jsonNode;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonNodeUrlSource.class);
-
     /**
-     * Builder for <code>JsonNodeUrlSource</code>.
+     * Builder for <code>JsonNodeUriSource</code>.
      */
-    public static final class Builder extends BaseJsonNodeSource.Builder<Builder, JsonNodeUrlSource> {
+    public static final class Builder extends BaseJsonNodeSource.Builder<Builder, JsonNodeUriSource> {
 
         /**
          * Public constructor.
          */
         public Builder() {
-            super(JsonNodeUrlSource.class);
+            super(JsonNodeUriSource.class);
         }
 
         /**
-         * Set the source <code>URL</code>.
+         * Set the source <code>URI</code>.
          *
-         * @param value The source <code>URL</code>.
+         * @param value The source <code>URI</code>.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setUrl(final URL value) {
-            _url = value;
+        public Builder setUri(final URI value) {
+            _uri = value;
             return this;
         }
 
@@ -107,6 +111,6 @@ public final class JsonNodeUrlSource extends BaseJsonNodeSource implements JsonN
         }
 
         @NotNull
-        private URL _url;
+        private URI _uri;
     }
 }

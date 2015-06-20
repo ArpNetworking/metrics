@@ -16,6 +16,10 @@
 package com.arpnetworking.configuration.triggers;
 
 import com.arpnetworking.configuration.Trigger;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
@@ -23,8 +27,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.sf.oval.constraint.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Collection;
@@ -64,7 +66,10 @@ public final class DirectoryTrigger implements Trigger {
                 // also noting that a deletion should trigger a reload!
                 // TODO(vkoskela): Implement memory saving [MAI-444]
                 if (!_evaluationFileTriggers.containsKey(file.getName()) && isFileMonitored(file)) {
-                    LOGGER.debug(String.format("Directory trigger monitoring new file; file=%s", file));
+                    LOGGER.debug()
+                            .setMessage("Monitoring new file")
+                            .addData("file", file)
+                            .log();
                     _evaluationFileTriggers.put(
                             file.getName(),
                             new FileTrigger.Builder()
@@ -84,25 +89,31 @@ public final class DirectoryTrigger implements Trigger {
 
         // Handle directory creation/removal
         if (!_exists.isPresent()) {
-            LOGGER.debug(String.format(
-                    "Directory trigger initialized; directory=%s",
-                    _directory));
+            LOGGER.debug()
+                    .setMessage("Trigger initialized")
+                    .addData("directory", _directory)
+                    .addData("exists", exists)
+                    .log();
 
             _exists = Optional.of(exists);
             return true;
         } else if (_exists.get() != exists) {
-            LOGGER.debug(String.format(
-                    "Directory created or removed; directory=%s",
-                    _directory));
+            LOGGER.debug()
+                    .setMessage("Directory created or removed")
+                    .addData("directory", _directory)
+                    .addData("exists", exists)
+                    .log();
 
             _exists = Optional.of(exists);
             return true;
         }
 
         if (fileChanged) {
-            LOGGER.debug(String.format(
-                    "Directory contents changed; directory=%s",
-                    _directory));
+            LOGGER.debug()
+                    .setMessage("Directory contents changed")
+                    .addData("directory", _directory)
+                    .addData("exists", true)
+                    .log();
         }
         return fileChanged;
     }
@@ -123,19 +134,31 @@ public final class DirectoryTrigger implements Trigger {
         return false;
     }
 
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.<String, Object>builder()
+                .put("id", Integer.toHexString(System.identityHashCode(this)))
+                .put("class", this.getClass())
+                .put("Directory", _directory)
+                .put("Exists", _exists)
+                .put("FileNames", _fileNames)
+                .put("FileNamePatterns", _fileNamePatterns)
+                .put("EvaluationFileTriggers", _evaluationFileTriggers)
+                .build();
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Directory", _directory)
-                .add("Exists", _exists)
-                .add("FileNames", _fileNames)
-                .add("FileNamePatterns", _fileNamePatterns)
-                .add("EvaluationFileTriggers", _evaluationFileTriggers)
-                .toString();
+        return toLogValue().toString();
     }
 
     private DirectoryTrigger(final Builder builder) {

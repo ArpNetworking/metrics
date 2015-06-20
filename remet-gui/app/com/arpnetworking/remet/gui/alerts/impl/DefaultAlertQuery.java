@@ -44,6 +44,15 @@ public class DefaultAlertQuery implements AlertQuery {
      * {@inheritDoc}
      */
     @Override
+    public AlertQuery contains(final Optional<String> contains) {
+        _contains = contains;
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public AlertQuery context(final Optional<Context> context) {
         _context = context;
         return this;
@@ -97,6 +106,14 @@ public class DefaultAlertQuery implements AlertQuery {
      * {@inheritDoc}
      */
     @Override
+    public Optional<String> getContains() {
+        return _contains;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Optional<Context> getContext() {
         return _context;
     }
@@ -141,6 +158,7 @@ public class DefaultAlertQuery implements AlertQuery {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Repository", _repository)
+                .add("Contains", _contains)
                 .add("Context", _context)
                 .add("Cluster", _cluster)
                 .add("Service", _service)
@@ -150,6 +168,7 @@ public class DefaultAlertQuery implements AlertQuery {
     }
 
     private final AlertRepository _repository;
+    private Optional<String> _contains = Optional.empty();
     private Optional<Context> _context = Optional.empty();
     private Optional<String> _cluster = Optional.empty();
     private Optional<String> _service = Optional.empty();

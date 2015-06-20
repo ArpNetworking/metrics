@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.tsdcore.limiter.legacy;
 
-import com.arpnetworking.tsdcore.limiter.legacy.DefaultMetricsLimiter.Mark;
+import com.arpnetworking.tsdcore.limiter.legacy.LegacyMetricsLimiter.Mark;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -32,11 +32,11 @@ import java.util.Map;
  *
  * @author Joe Frisbie (jfrisbie at groupon dot com)
  */
-public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
+public class LegacyMetricsLimiterTest extends MetricsLimiterTestBase {
 
     @Before
     public void setUp() {
-        _builder = new DefaultMetricsLimiter.Builder()
+        _builder = new LegacyMetricsLimiter.Builder()
                 .setEnableStateAutoWriter(Boolean.FALSE)
                 .setMaxAggregations(1000L)
                 .setStateManagerBuilder(
@@ -47,7 +47,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
 
     @Test
     public void singleAggregationFits() throws Exception {
-        final DefaultMetricsLimiter limiter = _builder
+        final LegacyMetricsLimiter limiter = _builder
                 .setMaxAggregations(6L)
                 .build();
 
@@ -71,7 +71,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     @Test
     public void aggregationsThatDontFitReturnFalse() throws Exception {
         // Only room for TSD_1
-        final DefaultMetricsLimiter limiter = _builder
+        final LegacyMetricsLimiter limiter = _builder
                 .setMaxAggregations(6L)
                 .build();
 
@@ -90,7 +90,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
 
     @Test
     public void aggregationsAddAlreadyAdded() throws Exception {
-        final DefaultMetricsLimiter limiter = _builder
+        final LegacyMetricsLimiter limiter = _builder
                 .setMaxAggregations(1L)
                 .build();
 
@@ -105,7 +105,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     @Test
     public void aggregationsAgeOut() throws Exception {
         // Only room for TSD_1
-        final DefaultMetricsLimiter limiter = _builder
+        final LegacyMetricsLimiter limiter = _builder
                 .setMaxAggregations(1L)
                 .build();
 
@@ -122,7 +122,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
 
     @Test
     public void nAggregationsIncrementAndDecrementConsistently() {
-        final DefaultMetricsLimiter limiter = _builder
+        final LegacyMetricsLimiter limiter = _builder
                 .setMaxAggregations(100L)
                 .setAgeOutThreshold(Duration.standardDays(3))
                 .build();
@@ -163,7 +163,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
         final long t1 = _now;
         final long t2 = t1 - 120 * 1000; //two minutes earlier
 
-        final DefaultMetricsLimiter out = _builder.build();
+        final LegacyMetricsLimiter out = _builder.build();
         out.offer(TSD_1A, new DateTime(t1));
         out.offer(TSD_2A, new DateTime(t2));
 
@@ -171,7 +171,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
         out.getStateManager().writeState();
 
         // Now a new limiter that reads that file
-        final DefaultMetricsLimiter in = _builder
+        final LegacyMetricsLimiter in = _builder
                 .setAgeOutThreshold(Duration.standardMinutes(1))  // one minute, so t2 metrics should not be loaded
                 .build();
 
@@ -183,14 +183,14 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
 
     @Test
     public void stateFileLoadedOnLimiterCreate() throws Exception {
-        final DefaultMetricsLimiter out = _builder.build();
+        final LegacyMetricsLimiter out = _builder.build();
         out.offer(TSD_1A, new DateTime(_now));
         out.offer(TSD_2A, new DateTime(_now));
         out.getStateManager().writeState();
 
         final int nBeforeAggregations = out.getNAggregations();
 
-        final DefaultMetricsLimiter in = _builder.build();
+        final LegacyMetricsLimiter in = _builder.build();
 
         Assert.assertEquals(nBeforeAggregations, in.getNAggregations());
 
@@ -203,7 +203,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
     @Test
     public void stateAffectsCurrentInstanceLimits() throws Exception {
         final long nAggregations = 6;
-        final DefaultMetricsLimiter limiter = _builder.setMaxAggregations(nAggregations).build();
+        final LegacyMetricsLimiter limiter = _builder.setMaxAggregations(nAggregations).build();
 
         // Simulate stateFile load
         limiter.updateMarksAndAggregationCount(
@@ -220,7 +220,7 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
 
     @Test
     public void addingNewMetricForcesStateFileWrite() throws Exception {
-        DefaultMetricsLimiter limiter = null;
+        LegacyMetricsLimiter limiter = null;
         try {
             limiter = _builder.setEnableStateAutoWriter(true).build();
 
@@ -237,5 +237,5 @@ public class DefaultMetricsLimiterTest extends MetricsLimiterTestBase {
         }
     }
 
-    private DefaultMetricsLimiter.Builder _builder;
+    private LegacyMetricsLimiter.Builder _builder;
 }

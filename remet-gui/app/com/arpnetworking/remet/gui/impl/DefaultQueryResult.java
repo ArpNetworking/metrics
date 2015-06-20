@@ -19,6 +19,7 @@ import com.arpnetworking.remet.gui.QueryResult;
 import com.google.common.base.MoreObjects;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Default implementation of <code>HostQueryResult</code>.
@@ -38,6 +39,20 @@ public class DefaultQueryResult<T> implements QueryResult<T> {
     public DefaultQueryResult(final List<? extends T> values, final long total) {
         _values = values;
         _total = total;
+        _etag = Optional.empty();
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param values The <code>List</code> of <code>Host</code> instances.
+     * @param total The total number of matching <code>Host</code> instances.
+     * @param etag The etag.
+     */
+    public DefaultQueryResult(final List<? extends T> values, final long total, final String etag) {
+        _values = values;
+        _total = total;
+        _etag = Optional.of(etag);
     }
 
     /**
@@ -60,14 +75,24 @@ public class DefaultQueryResult<T> implements QueryResult<T> {
      * {@inheritDoc}
      */
     @Override
+    public Optional<String> etag() {
+        return _etag;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("Values", _values)
                 .add("Total", _total)
+                .add("Etag", _etag)
                 .toString();
     }
 
     private final List<? extends T> _values;
     private final long _total;
+    private final Optional<String> _etag;
 }

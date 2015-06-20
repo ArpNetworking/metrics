@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.utility;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import net.sf.oval.ConstraintViolation;
@@ -50,7 +52,10 @@ public abstract class OvalBuilder<T> implements Builder<T> {
     public static <T, B extends Builder<? super T>> B clone(final T source) {
         B builder = null;
         try {
-            final Class<B> builderClass = (Class<B>) Class.forName(source.getClass().getName() + "$Builder");
+            final Class<B> builderClass = (Class<B>) Class.forName(
+                    source.getClass().getName() + "$Builder",
+                    true, // initialize
+                    source.getClass().getClassLoader());
             final Constructor<B> builderConstructor = builderClass.getDeclaredConstructor();
             if (!builderConstructor.isAccessible()) {
                 builderConstructor.setAccessible(true);
@@ -106,6 +111,27 @@ public abstract class OvalBuilder<T> implements Builder<T> {
             throw new ConstraintsViolatedException(violations);
         }
         return construct();
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "TargetClass", _targetClass);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     /**

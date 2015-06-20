@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdcore.scripting.lua;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
@@ -24,7 +26,6 @@ import com.arpnetworking.tsdcore.scripting.Alert;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.NotEmpty;
@@ -134,19 +135,31 @@ public final class LuaAlert implements Alert {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.<String, Object>builder()
+                .put("id", Integer.toHexString(System.identityHashCode(this)))
+                .put("class", this.getClass())
+                .put("Name", _name)
+                .put("FQDSN", _fqdsn)
+                .put("Period", _period)
+                .put("Operator", _operator)
+                .put("Value", _value)
+                .put("Extensions", _extensions)
+                .build();
+    }
+
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Name", _name)
-                .add("FQDSN", _fqdsn)
-                .add("Period", _period)
-                .add("Operator", _operator)
-                .add("Value", _value)
-                .add("Extensions", _extensions)
-                .toString();
+        return toLogValue().toString();
     }
 
     private Optional<Boolean> convertToBoolean(final LuaValue result) throws ScriptingException {

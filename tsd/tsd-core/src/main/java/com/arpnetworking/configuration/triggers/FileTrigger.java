@@ -16,12 +16,13 @@
 package com.arpnetworking.configuration.triggers;
 
 import com.arpnetworking.configuration.Trigger;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import net.sf.oval.constraint.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,11 +47,11 @@ public final class FileTrigger implements Trigger {
     public boolean evaluateAndReset() {
         final boolean exists = _file.exists();
         if (_exists ^ exists) {
-            LOGGER.debug(String.format(
-                    "File created or removed; file=%s previousExists=%s newExists=%s",
-                    _file,
-                    _exists,
-                    exists));
+            LOGGER.debug()
+                    .setMessage("File created or removed")
+                    .addData("file", _file)
+                    .addData("exists", exists)
+                    .log();
 
             _exists = exists;
             _lastModified = _file.lastModified();
@@ -63,16 +64,18 @@ public final class FileTrigger implements Trigger {
                 _lastModified = lastModified;
                 final byte[] hash = createHash(_file);
                 if (!Arrays.equals(hash, _hash)) {
-                    LOGGER.debug(String.format(
-                            "File modified and changes found; file=%s",
-                            _file));
+                    LOGGER.debug()
+                            .setMessage("File modified and changes found")
+                            .addData("file", _file)
+                            .log();
 
                     _hash = hash;
                     return true;
                 } else {
-                    LOGGER.debug(String.format(
-                            "File modified but no changes found; file=%s",
-                            _file));
+                    LOGGER.debug()
+                            .setMessage("File modified but no changes found")
+                            .addData("file", _file)
+                            .log();
                 }
             }
         }
@@ -80,14 +83,26 @@ public final class FileTrigger implements Trigger {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "File", _file,
+                "Exists", _exists,
+                "LastModified", _lastModified);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(FileTrigger.class)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("File", _file)
-                .toString();
+        return toLogValue().toString();
     }
 
     private byte[] createHash(final File file) {

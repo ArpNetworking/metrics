@@ -15,18 +15,19 @@
  */
 package com.arpnetworking.tsdcore.limiter;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.tsdcore.limiter.legacy.LegacyMetricsLimiter;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * Limits the number of unique aggregations that will be emitted by tracking
@@ -52,7 +53,7 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
      */
     @Override
     public synchronized void launch() {
-        _legacyLimiter = new com.arpnetworking.tsdcore.limiter.legacy.DefaultMetricsLimiter.Builder()
+        _legacyLimiter = new LegacyMetricsLimiter.Builder()
                 .setAgeOutThreshold(_ageOutThreshold.toStandardDuration())
                 .setEnableStateAutoWriter(Boolean.TRUE)
                 .setLoggingInterval(_stateFlushInterval.toStandardDuration())
@@ -74,16 +75,25 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public synchronized Map<String, Object> toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "AgeOutThreshold", _ageOutThreshold,
+                "LegacyLimiter", _legacyLimiter);
+    }
+
+    /**
      * {@inheritDoc}
      */
+    @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("MaximumAggregations", _maximumAggregations)
-                .add("StateFile", _stateFile)
-                .add("StateFlushInterval", _stateFlushInterval)
-                .add("AgeOutThreshold", _ageOutThreshold)
-                .toString();
+        return toLogValue().toString();
     }
 
     private DefaultMetricsLimiter(final Builder builder) {
@@ -98,9 +108,7 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
     private final Period _stateFlushInterval;
     private final Period _ageOutThreshold;
 
-    private com.arpnetworking.tsdcore.limiter.legacy.DefaultMetricsLimiter _legacyLimiter;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultMetricsLimiter.class);
+    private LegacyMetricsLimiter _legacyLimiter;
 
     /**
      * Builder for a MetricsLimiter.

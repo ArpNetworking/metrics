@@ -83,6 +83,51 @@ final MetricsFactory metricsFactory = new MetricsFactory.Builder()
 final Metrics metrics = new SharedMetrics(metricsFactory.create());
 ```
 
+To create a shareable MetricsFactory instance in Vertx wrap a MetricsFactory instance in a SharedMetrics instance.  For example:
+
+```java
+final MetricsFactory shareableMetricsFactory = new SharedMetricsFactory(
+    new MetricsFactory.Builder()
+        .setSinks(Collections.singletonList(
+            new TsdQueryLogSink.Builder()
+                .setPath("/var/logs")
+                .setName("myapp-query")
+                .build()));
+        .build());
+```
+
+If you do not want to use a shared MetricsFactory instance, but still have multiple verticles write to the same sink, you will need to implement the abstract class SinkVerticle. For example:
+
+```java
+public final class MySinkVerticle extends SinkVerticle {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Sink> createSinks() {
+        final Sink sink = Arrays.asList(
+            new TsdQueryLogSink.Builder()
+                .setPath("/var/logs")
+                .setName("myapp-query")
+                .build());
+        return ImmutableList.of(sink);
+    }
+}
+```
+
+Once you have implemented the SinkVerticle, you will need to define a MetricsFactory instance that communicates with this verticle. This MetricsFactory instance will wrap a Sink instance of type EventBusSink. Example:
+
+```java
+final Sink sink = new EventBusSink.Builder()
+        .setEventBus(vertx.eventBus())
+        .setSinkAddress(sinkAddress) //This sink address has to be the same as the one that's configured in the SinkVerticle. The default address set is "metrics.sink.default".
+        .build();
+final MetricsFactory metricsFactory = new TsdMetricsFactory.Builder()
+    .setSinks(Collections.singletonList(sink))
+    .build();
+```
+
 Please refer to the Java metrics client documentation [client-java/README.md](../client-java/README.md) for more information on using Metrics and MetricsFactory.
 
 License

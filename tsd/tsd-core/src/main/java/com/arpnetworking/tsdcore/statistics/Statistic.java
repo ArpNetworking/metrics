@@ -17,7 +17,6 @@ package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Quantity;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.io.Serializable;
 import java.util.List;
@@ -28,10 +27,6 @@ import java.util.Set;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.CLASS,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = "type")
 public interface Statistic extends Serializable {
 
     /**

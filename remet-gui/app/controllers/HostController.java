@@ -20,11 +20,14 @@ import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostQuery;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import models.PagedContainer;
 import models.Pagination;
+import org.apache.http.HttpHeaders;
 import play.Configuration;
 import play.libs.Json;
 import play.mvc.Controller;
@@ -127,9 +130,32 @@ public class HostController extends Controller {
                 .sortBy(argSortBy);
 
         // Execute the query
-        final QueryResult<Host> result = query.execute();
+        return executeQuery(argOffset, argLimit, conditions, query);
+    }
+
+    private Result executeQuery(
+            final Optional<Integer> argOffset,
+            final int argLimit,
+            final Map<String, String> conditions,
+            final HostQuery query) {
+
+        final QueryResult<Host> result;
+        try {
+            result = query.execute();
+            // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error()
+                    .setMessage("Host query failed")
+                    .setThrowable(e)
+                    .log();
+            return internalServerError();
+        }
 
         // Wrap the query results and return as JSON
+        if (result.etag().isPresent()) {
+            response().setHeader(HttpHeaders.ETAG, result.etag().get());
+        }
         return ok(Json.toJson(new PagedContainer<Host>(
                 result.values(),
                 new Pagination(
@@ -150,4 +176,5 @@ public class HostController extends Controller {
     private final HostRepository _hostRepository;
 
     private static final int MAX_LIMIT = 1000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(HostController.class);
 }

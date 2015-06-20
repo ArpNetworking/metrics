@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.Messages;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.AggregationMessage;
@@ -23,14 +25,11 @@ import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.statistics.ExpressionStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.google.common.base.Function;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
@@ -50,6 +49,12 @@ public final class AggregationServerSink extends VertxSink {
      */
     @Override
     public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", data.size())
+                .addData("conditionsSize", conditions.size())
+                .log();
         final List<AggregatedData> filteredData = Lists.newArrayList(
                 Iterables.filter(data, new Predicate<AggregatedData>() {
                     @Override
@@ -61,16 +66,6 @@ public final class AggregationServerSink extends VertxSink {
                     }
                 }));
         super.recordAggregateData(filteredData, conditions);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .toString();
     }
 
     /**
@@ -97,7 +92,12 @@ public final class AggregationServerSink extends VertxSink {
                             .setClusterName(cluster)
                             .build();
             buffer.appendBuffer(AggregationMessage.create(identifyHostMessage).serialize());
-            LOGGER.debug(String.format("writing host identification message; hostName=%s, clusterName=%s", host, cluster));
+            LOGGER.debug()
+                    .setMessage("Writing host identification message")
+                    .addData("sink", getName())
+                    .addData("hostName", host)
+                    .addData("clusterName", cluster)
+                    .log();
             _sentHandshake = true;
         }
 
@@ -130,7 +130,10 @@ public final class AggregationServerSink extends VertxSink {
                 .setTimestamp(DateTime.now().toString())
                 .build();
         sendRawData(AggregationMessage.create(message).serialize());
-        LOGGER.debug(getName() + ": Heartbeat sent to aggregation server");
+        LOGGER.debug()
+                .setMessage("Heartbeat sent to aggregation server")
+                .addData("sink", getName())
+                .log();
     }
 
     private AggregationServerSink(final Builder builder) {
@@ -138,7 +141,10 @@ public final class AggregationServerSink extends VertxSink {
         super.getVertx().setPeriodic(15000, new Handler<Long>() {
             @Override
             public void handle(final Long event) {
-                LOGGER.trace("Heartbeat tick.");
+                LOGGER.trace()
+                        .setMessage("Heartbeat tick")
+                        .addData("sink", getName())
+                        .log();
                 heartbeat();
             }
         });
@@ -146,12 +152,8 @@ public final class AggregationServerSink extends VertxSink {
 
     private boolean _sentHandshake = false;
 
-    private static final Function<Quantity, Double> EXTRACT_VALUES_FROM_SAMPLES = new Function<Quantity, Double>() {
-        @Override
-        public Double apply(final Quantity input) {
-            return input != null ? input.getValue() : null;
-        }
-    };
+    private static final Function<Quantity, Double> EXTRACT_VALUES_FROM_SAMPLES =
+            input -> input != null ? input.getValue() : null;
 
     private static final Statistic EXPRESSION_STATISTIC = new ExpressionStatistic();
     private static final Logger LOGGER = LoggerFactory.getLogger(AggregationServerSink.class);

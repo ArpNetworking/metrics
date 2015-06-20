@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdcore.limiter;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 
 import org.joda.time.DateTime;
@@ -56,6 +58,27 @@ public final class NoLimitMetricsLimiter implements MetricsLimiter {
     public synchronized void shutdown() {
         _isRunning = false;
         // Nothing to do
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.of(
+                "id", Integer.toHexString(System.identityHashCode(this)),
+                "class", this.getClass(),
+                "IsRunning", _isRunning);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private volatile boolean _isRunning = false;

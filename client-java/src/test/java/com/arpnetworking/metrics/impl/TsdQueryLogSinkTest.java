@@ -34,7 +34,6 @@ import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.github.fge.jsonschema.main.JsonValidator;
-import com.google.common.base.Throwables;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -563,7 +562,7 @@ public class TsdQueryLogSinkTest {
                 // Under some IDE setups this may be executed from the workspace root (e.g. root)
                 jsonNode = JsonLoader.fromPath("doc/query-log-schema-2e.json");
             } catch (final IOException e2) {
-                throw Throwables.propagate(e2);
+                throw new RuntimeException(e2);
             }
         }
         STENO_SCHEMA = jsonNode;
