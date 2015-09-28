@@ -22,12 +22,15 @@ import com.arpnetworking.configuration.triggers.FileTrigger;
 import com.arpnetworking.configuration.triggers.UriTrigger;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.alerts.Alert;
 import com.arpnetworking.remet.gui.alerts.AlertQuery;
 import com.arpnetworking.remet.gui.alerts.AlertRepository;
 import com.arpnetworking.remet.gui.alerts.Context;
 import com.arpnetworking.remet.gui.impl.DefaultQueryResult;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.OvalBuilder;
@@ -58,7 +61,7 @@ import java.util.stream.Collectors;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class DynamicConfigurationAlertRepository
+public final class DynamicConfigurationAlertRepository
         implements AlertRepository, Relaunchable<DynamicConfigurationAlertRepository.AlertConfiguration> {
 
     /**
@@ -165,7 +168,10 @@ public class DynamicConfigurationAlertRepository
                 .collect(Collectors.toList());
         final int start = query.getOffset().orElse(0);
         final int end = start + Math.max(Math.min(alerts.size() - start, query.getLimit()), 0);
-        return new DefaultQueryResult<>(alerts.subList(start, end), alerts.size(), Integer.toHexString(_alerts.hashCode()));
+        return new DefaultQueryResult<>(
+                alerts.subList(start, end),
+                alerts.size(),
+                Integer.toHexString(_alerts.toString().hashCode()));
     }
 
     /**
@@ -200,6 +206,28 @@ public class DynamicConfigurationAlertRepository
         _isOpen.set(true);
     }
 
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("isOpen", _isOpen)
+                .put("configurationUri", _configurationUri)
+                .put("alerts", _alerts)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
+
     private void assertIsOpen() {
         assertIsOpen(true);
     }
@@ -213,6 +241,7 @@ public class DynamicConfigurationAlertRepository
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final URI _configurationUri;
 
+    // Do not log the dynamic configuration since _this_ is a listener for changes.
     private DynamicConfiguration _dynamicConfiguration;
     private volatile List<Alert> _alerts = Collections.emptyList();
 
@@ -281,6 +310,7 @@ public class DynamicConfigurationAlertRepository
     /**
      * Alert configuration.
      */
+    @Loggable
     public static final class AlertConfiguration {
 
         public List<Alert> getAlerts() {

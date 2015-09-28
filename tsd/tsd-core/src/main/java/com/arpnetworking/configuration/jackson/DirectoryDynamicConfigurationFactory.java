@@ -79,10 +79,9 @@ public final class DirectoryDynamicConfigurationFactory implements DynamicConfig
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Directories", _directories);
+        return LogValueMapFactory.builder(this)
+                .put("directories", _directories)
+                .build();
     }
 
     /**

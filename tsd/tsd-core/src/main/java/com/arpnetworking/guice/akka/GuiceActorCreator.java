@@ -19,7 +19,6 @@ import akka.actor.Actor;
 import akka.actor.IndirectActorProducer;
 import akka.actor.Props;
 import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.google.inject.Injector;
 
@@ -73,11 +72,10 @@ public class GuiceActorCreator implements IndirectActorProducer {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Injector", LogReferenceOnly.of(_injector),
-                "Class", _clazz);
+        return LogValueMapFactory.builder(this)
+                .put("injector", _injector)
+                .put("class", _clazz)
+                .build();
     }
 
     /**

@@ -27,7 +27,6 @@ import org.joda.time.DateTime;
 import org.joda.time.Period;
 
 import java.io.File;
-import java.util.Map;
 
 /**
  * Limits the number of unique aggregations that will be emitted by tracking
@@ -80,12 +79,11 @@ public final class DefaultMetricsLimiter implements MetricsLimiter {
      * @return Steno log compatible representation.
      */
     @LogValue
-    public synchronized Map<String, Object> toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "AgeOutThreshold", _ageOutThreshold,
-                "LegacyLimiter", _legacyLimiter);
+    public synchronized Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("ageOutThreshold", _ageOutThreshold)
+                .put("legacyLimiter", _legacyLimiter)
+                .build();
     }
 
     /**

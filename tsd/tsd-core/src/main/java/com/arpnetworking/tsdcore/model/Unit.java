@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
@@ -187,6 +188,9 @@ public enum Unit {
      * @return the value after conversion
      */
     public double convert(final double sourceValue, final Unit sourceUnit) {
+        if (this.equals(sourceUnit)) {
+            return sourceValue;
+        }
         assertSameType(this, sourceUnit);
         return sourceUnit._scale / _scale * sourceValue;
     }
@@ -219,6 +223,32 @@ public enum Unit {
     public boolean isSmallerThan(final Unit otherUnit) {
         assertSameType(this, otherUnit);
         return _scale < otherUnit._scale;
+    }
+
+    /**
+     * Return the smaller of two <code>Optional</code> units or absent if neither is present. If
+     * only one is present this throws an <code>IllegalArgumentException</code>.
+     *
+     * @param unitA <code>Optional</code> unit.
+     * @param unitB <code>Optional</code> unit.
+     * @return <code>Optional</code> unit.
+     */
+    public static Optional<Unit> getSmallerUnit(final Optional<Unit> unitA, final Optional<Unit> unitB) {
+        assertSameType(unitA, unitB);
+        if (!unitA.isPresent()) {
+            return Optional.absent();
+        }
+        return Optional.of(unitA.get().getSmallerUnit(unitB.get()));
+    }
+
+    private static void assertSameType(final Optional<Unit> unitA, final Optional<Unit> unitB) {
+        if (unitA.isPresent() != unitB.isPresent()) {
+            throw new IllegalArgumentException(String.format(
+                    "Units must both be present or absent; unitA=%s, unitB=%s",
+                    unitA,
+                    unitB));
+        }
+        assertSameType(unitA.get(), unitB.get());
     }
 
     private static void assertSameType(final Unit unitA, final Unit unitB) {

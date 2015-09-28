@@ -19,8 +19,7 @@ import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.google.common.collect.EvictingQueue;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -39,9 +38,6 @@ import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 
-import java.util.Collection;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -80,49 +76,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public abstract class VertxSink extends BaseSink {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        LOGGER.debug()
-                .setMessage("Writing aggregated data")
-                .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
-                .log();
-
-        for (final AggregatedData datum : data) {
-            try {
-                LOGGER.debug()
-                        .setMessage("Appending data to pending queue")
-                        .addData("sink", getName())
-                        .addData("size", data.size())
-                        .log();
-                // TODO(vkoskela): This should support sending conditions [MAI-452]
-                // NOTE: This will block in the case where the queue is full, putting back-pressure on the producer of the data.
-                // This the same behavior we get with the other sinks that write synchronously.
-                _pendingData.put(datum);
-            } catch (final InterruptedException e) {
-                LOGGER.error()
-                        .setMessage("Interrupted while inserting data into pending queue")
-                        .addData("sink", getName())
-                        .setThrowable(e)
-                        .log();
-                // CHECKSTYLE.OFF: IllegalCatch - Vertx might not log
-            } catch (final Exception e) {
-                // CHECKSTYLE.ON: IllegalCatch
-                LOGGER.error()
-                        .setMessage("Error recording aggregated data")
-                        .addData("sink", getName())
-                        .setThrowable(e)
-                        .log();
-                throw e;
-            }
-        }
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -145,12 +98,13 @@ public abstract class VertxSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "ServerAddress", _serverAddress,
-                "ServerPort", _serverPort,
-                "Connecting", _connecting,
-                "PendingDataSize", _pendingData.size());
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("serverAddress", _serverAddress)
+                .put("serverPort", _serverPort)
+                .put("connecting", _connecting)
+                .put("pendingDataSize", _pendingData.size())
+                .build();
     }
 
     /**
@@ -162,13 +116,22 @@ public abstract class VertxSink extends BaseSink {
     protected abstract void onConnect(final NetSocket socket);
 
     /**
-     * Serialize the <code>AggregatedData</code> instance for transmission to
-     * the server.
+     * Adds a {@link Buffer} of data to the pending data queue.
      *
-     * @param datum The <code>AggregateData</code> instance to serialized.
-     * @return The <code>Buffer</code> containing the serialized representation.
+     * @param data The data to add to the queue.
      */
-    protected abstract Buffer serialize(final AggregatedData datum);
+    protected void enqueueData(final Buffer data) {
+        dispatch(
+                event -> {
+                    if (_pendingData.remainingCapacity() == 0) {
+                        LOGGER.warn()
+                                .setMessage("Dropping data due to queue full")
+                                .addData("sink", getName())
+                                .log();
+                    }
+                    _pendingData.add(data);
+                });
+    }
 
     /**
      * Sends a <code>Buffer</code> of bytes to the socket if the client is connected.
@@ -302,8 +265,8 @@ public abstract class VertxSink extends BaseSink {
             }
             while (socket != null && !done) {
                 if (_pendingData.size() > 0 && flushedBytes < MAX_FLUSH_BYTES) {
-                    final AggregatedData datum = _pendingData.poll();
-                    flushedBytes += flushDatum(datum, socket);
+                    final Buffer buffer = _pendingData.poll();
+                    flushedBytes += flushBuffer(buffer, socket);
                 } else {
                     done = true;
                 }
@@ -338,10 +301,9 @@ public abstract class VertxSink extends BaseSink {
         }
     }
 
-    private int flushDatum(final AggregatedData datum, final NetSocket socket) {
+    private int flushBuffer(final Buffer buffer, final NetSocket socket) {
         // Write the serialized data
         try {
-            final Buffer buffer = serialize(datum);
             final int bufferLength = buffer.length();
             // TODO(vkoskela): Add conditional logging [AINT-552]
             //LOGGER.trace(String.format("Writing buffer to socket; length=%s buffer=%s", bufferLength, buffer.toString("utf-8")));
@@ -358,7 +320,7 @@ public abstract class VertxSink extends BaseSink {
             LOGGER.error()
                     .setMessage("Error writing AggregatedData data to socket")
                     .addData("sink", getName())
-                    .addData("datum", datum)
+                    .addData("buffer", buffer)
                     .setThrowable(e)
                     .log();
             throw e;
@@ -395,7 +357,7 @@ public abstract class VertxSink extends BaseSink {
                 .setTCPNoDelay(true)
                 .setTCPKeepAlive(true);
         _socket = new AtomicReference<>();
-        _pendingData = new ArrayBlockingQueue<AggregatedData>(builder._maxQueueSize);
+        _pendingData = EvictingQueue.create(builder._maxQueueSize);
         _exponentialBackoffBase = builder._exponentialBackoffBase;
 
         connectToServer();
@@ -408,7 +370,7 @@ public abstract class VertxSink extends BaseSink {
     private final NetClient _client;
     private final Context _context;
     private final AtomicReference<NetSocket> _socket;
-    private final BlockingQueue<AggregatedData> _pendingData;
+    private final EvictingQueue<Buffer> _pendingData;
     private final AtomicBoolean _connecting = new AtomicBoolean(false);
     private DateTime _lastNotConnectedNotify = null;
     private volatile long _lastConnectionAttempt = 0;
@@ -498,7 +460,7 @@ public abstract class VertxSink extends BaseSink {
         }
 
         /**
-         * The maximum queue size. Cannot be null. Default is 512.
+         * The maximum queue size. Cannot be null. Default is 10000.
          *
          * @param value The maximum queue size.
          * @return This instance of <code>Builder</code>.

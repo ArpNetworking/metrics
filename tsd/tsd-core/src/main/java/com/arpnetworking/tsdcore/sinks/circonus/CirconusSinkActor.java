@@ -15,11 +15,9 @@
  */
 package com.arpnetworking.tsdcore.sinks.circonus;
 
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import akka.dispatch.Mapper;
-import akka.dispatch.OnComplete;
-import akka.dispatch.Recover;
 import akka.pattern.Patterns;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogBuilder;
@@ -29,27 +27,34 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.steno.RateLimitLogBuilder;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.sinks.circonus.api.BrokerListResponse;
-import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundleRequest;
-import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundleResponse;
-import com.google.common.base.Function;
+import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundle;
+import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.http.HttpStatus;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
+import play.libs.F;
+import play.libs.ws.WSResponse;
 import scala.concurrent.ExecutionContextExecutor;
-import scala.concurrent.Future;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -73,34 +78,56 @@ import java.util.concurrent.TimeUnit;
  */
 public final class CirconusSinkActor extends UntypedActor {
     /**
-     * Public constructor.
-     *
-     * @param client Circonus client
-     * @param brokerName Circonus broker to push to
-     */
-    public CirconusSinkActor(final CirconusClient client, final String brokerName) {
-        _client = client;
-        _brokerName = brokerName;
-        _dispatcher = getContext().system().dispatcher();
-    }
-
-    /**
      * Creates a {@link akka.actor.Props} for use in Akka.
      *
      * @param client Circonus client
      * @param broker Circonus broker to push to
+     * @param maximumConcurrency the maximum number of parallel metric submissions
+     * @param maximumQueueSize the maximum size of the pending metrics queue
+     * @param spreadPeriod the maximum wait time before starting to send metrics
+     * @param enableHistograms true to turn on histogram publication
      * @return A new {@link akka.actor.Props}
      */
-    public static Props props(final CirconusClient client, final String broker) {
-        return Props.create(CirconusSinkActor.class, client, broker);
+    public static Props props(
+            final CirconusClient client,
+            final String broker,
+            final int maximumConcurrency,
+            final int maximumQueueSize,
+            final Period spreadPeriod,
+            final boolean enableHistograms) {
+        return Props.create(CirconusSinkActor.class, client, broker, maximumConcurrency, maximumQueueSize, spreadPeriod, enableHistograms);
     }
 
     /**
-     * {@inheritDoc}
+     * Public constructor.
+     *
+     * @param client Circonus client
+     * @param broker Circonus broker to push to
+     * @param maximumConcurrency the maximum number of parallel metric submissions
+     * @param maximumQueueSize the maximum size of the pending metrics queue
+     * @param spreadPeriod the maximum wait time before starting to send metrics
+     * @param enableHistograms true to turn on histogram publication
      */
-    @Override
-    public void preStart() throws Exception {
-        lookupBrokers();
+    public CirconusSinkActor(
+            final CirconusClient client,
+            final String broker,
+            final int maximumConcurrency,
+            final int maximumQueueSize,
+            final Period spreadPeriod,
+            final boolean enableHistograms) {
+        _client = client;
+        _brokerName = broker;
+        _maximumConcurrency = maximumConcurrency;
+        _enableHistograms = enableHistograms;
+        _pendingRequests = EvictingQueue.create(maximumQueueSize);
+        if (Period.ZERO.equals(spreadPeriod)) {
+            _spreadingDelayMillis = 0;
+        } else {
+            _spreadingDelayMillis = new Random().nextInt((int) spreadPeriod.toStandardDuration().getMillis());
+        }
+        _dispatcher = getContext().system().dispatcher();
+        context().actorOf(BrokerRefresher.props(_client), "broker-refresher");
+        _checkBundleRefresher = context().actorOf(CheckBundleActivator.props(_client), "check-bundle-refresher");
     }
 
     /**
@@ -110,11 +137,10 @@ public final class CirconusSinkActor extends UntypedActor {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Actor", this.self(),
-                "BrokerName", _brokerName);
+        return LogValueMapFactory.builder(this)
+                .put("actor", this.self())
+                .put("brokerName", _brokerName)
+                .build();
     }
 
     /**
@@ -125,61 +151,12 @@ public final class CirconusSinkActor extends UntypedActor {
         return toLogValue().toString();
     }
 
-    private void lookupBrokers() {
-        final Future<BrokerListResponse> responseFuture = _client.getBrokers();
-        Patterns.pipe(responseFuture, _dispatcher)
-                .pipeTo(getSelf(), getSelf());
-        responseFuture.onComplete(
-                new OnComplete<BrokerListResponse>() {
-                    @Override
-                   public void onComplete(final Throwable failure, final BrokerListResponse success) {
-                       final FiniteDuration next;
-                       if (failure != null) {
-                           // On failure, retry again in 5 seconds
-                           next = FiniteDuration.apply(5, TimeUnit.SECONDS);
-                           LOGGER.error()
-                                    .setMessage("Failed to lookup broker, trying again in 5 seconds")
-                                    .setThrowable(failure)
-                                    .log();
-                       } else {
-                           // On success, refresh in 1 hour
-                           next = FiniteDuration.apply(1, TimeUnit.HOURS);
-                       }
-                       getContext().system().scheduler().scheduleOnce(
-                               next,
-                               () -> { lookupBrokers(); },
-                               _dispatcher);
-                   }
-               },
-               _dispatcher);
-
-    }
-
     /**
      * {@inheritDoc}
      */
     @Override
     public void onReceive(final Object message) throws Exception {
-        if (message instanceof BrokerListResponse) {
-            final BrokerListResponse response = (BrokerListResponse) message;
-            final Optional<BrokerListResponse.Broker> selectedBroker = getBroker(response);
-            if (!selectedBroker.isPresent()) {
-                LOGGER.warn()
-                        .setMessage("Broker list does not contain desired broker")
-                        .addData("brokers", response.getBrokers())
-                        .addData("desired", _brokerName)
-                        .addData("actor", self())
-                        .log();
-            } else {
-                LOGGER.info()
-                        .setMessage("Broker list contains desired broker")
-                        .addData("brokers", response.getBrokers())
-                        .addData("desired", _brokerName)
-                        .addData("actor", self())
-                        .log();
-                _selectedBrokerCid = Optional.of(selectedBroker.get().getCid());
-            }
-        } else if (message instanceof EmitAggregation) {
+        if (message instanceof EmitAggregation) {
             if (_selectedBrokerCid.isPresent()) {
                 final EmitAggregation aggregation = (EmitAggregation) message;
                 final Collection<AggregatedData> data = aggregation.getData();
@@ -194,147 +171,293 @@ public final class CirconusSinkActor extends UntypedActor {
             if (response.isSuccess()) {
                 final ServiceCheckBinding binding = response.getBinding().get();
                 _bundleMap.put(response.getKey(), binding);
+                _checkBundleRefresher.tell(
+                        new CheckBundleActivator.NotifyCheckBundle(response.getBinding().get().getCheckBundle()),
+                        self());
+            } else {
+                LOGGER.error()
+                        .setMessage("Error creating check bundle")
+                        .addData("request", response.getRequest())
+                        .addData("actor", self())
+                        .setThrowable(response.getCause().get())
+                        .log();
+                _pendingLookups.remove(response.getKey());
             }
-            _pendingLookups.remove(response.getKey());
+        } else if (message instanceof BrokerRefresher.BrokerLookupComplete) {
+            handleBrokerLookupComplete((BrokerRefresher.BrokerLookupComplete) message);
+        } else if (message instanceof PostComplete) {
+            final PostComplete complete = (PostComplete) message;
+            processCompletedRequest(complete);
+            dispatchPending();
+        } else if (message instanceof PostFailure) {
+            final PostFailure failure = (PostFailure) message;
+            processFailedRequest(failure);
+            dispatchPending();
+        } else if (message instanceof WaitTimeExpired) {
+            LOGGER.debug()
+                    .setMessage("Received WaitTimeExpired message")
+                    .addContext("actor", self())
+                    .log();
+            _waiting = false;
+            dispatchPending();
         } else {
             unhandled(message);
         }
     }
 
-    private Optional<BrokerListResponse.Broker> getBroker(final BrokerListResponse response) {
+    private void handleBrokerLookupComplete(final BrokerRefresher.BrokerLookupComplete message) {
+        final BrokerListResponse response = message.getResponse();
+        final List<BrokerListResponse.Broker> brokers = response.getBrokers();
+
+        Optional<BrokerListResponse.Broker> selectedBroker = Optional.absent();
         for (final BrokerListResponse.Broker broker : response.getBrokers()) {
             if (broker.getName().equalsIgnoreCase(_brokerName)) {
-                return Optional.of(broker);
+                selectedBroker = Optional.of(broker);
             }
         }
-        return Optional.absent();
+
+        if (!selectedBroker.isPresent()) {
+            LOGGER.warn()
+                    .setMessage("Broker list does not contain desired broker")
+                    .addData("brokers", brokers)
+                    .addData("desired", _brokerName)
+                    .addData("actor", self())
+                    .log();
+        } else {
+            LOGGER.info()
+                    .setMessage("Broker list contains desired broker")
+                    .addData("brokers", brokers)
+                    .addData("desired", _brokerName)
+                    .addData("actor", self())
+                    .log();
+            _selectedBrokerCid = Optional.of(selectedBroker.get().getCid());
+        }
     }
 
-    private Collection<Map<String, Object>> serialize(final Collection<AggregatedData> data) {
+    private void processCompletedRequest(final PostComplete complete) {
+        _inflightRequestsCount--;
+        final int responseStatusCode = complete.getResponse().getStatus();
+        if (responseStatusCode == HttpStatus.SC_OK) {
+            LOGGER.debug()
+                    .setMessage("Data submission accepted")
+                    .addData("status", responseStatusCode)
+                    .addContext("actor", self())
+                    .log();
+        } else {
+            LOGGER.warn()
+                    .setMessage("Data submission rejected")
+                    .addData("status", responseStatusCode)
+                    .addContext("actor", self())
+                    .log();
+        }
+    }
+
+    private void processFailedRequest(final PostFailure failure) {
+        _inflightRequestsCount--;
+        LOGGER.error()
+                .setMessage("Data submission error")
+                .addContext("actor", self())
+                .setThrowable(failure.getCause())
+                .log();
+    }
+
+    private Map<String, Object> serialize(final Collection<AggregatedData> data) {
         final Map<String, Object> dataNode = Maps.newHashMap();
         for (final AggregatedData aggregatedData : data) {
             final String name = new StringBuilder()
                     .append(aggregatedData.getPeriod().toString(ISOPeriodFormat.standard()))
-                    .append("_")
+                    .append("/")
                     .append(aggregatedData.getFQDSN().getMetric())
-                    .append("_")
+                    .append("/")
                     .append(aggregatedData.getFQDSN().getStatistic().getName())
                     .toString();
-            dataNode.put(name, aggregatedData.getValue().getValue());
+            // For histograms, if they're enabled, we'll build the histogram data node
+            if (_enableHistograms && aggregatedData.getFQDSN().getStatistic() instanceof HistogramStatistic) {
+                final HistogramStatistic.HistogramSupportingData histogramSupportingData = (HistogramStatistic.HistogramSupportingData)
+                        aggregatedData.getSupportingData();
+                final HistogramStatistic.Histogram histogram = histogramSupportingData.getHistogram();
+
+                // Add the faked samples to the list
+                // TODO(barp): send the raw histogram [AINT-666]
+                final ArrayList<Double> valueList = new ArrayList<>(histogram.getEntriesCount());
+                for (final Map.Entry<Double, Integer> entry : histogram.getValues()) {
+                    for (int i = 0; i < entry.getValue(); i++) {
+                        valueList.add(entry.getKey());
+                    }
+                }
+
+                final Map<String, Object> histogramValueNode = Maps.newHashMap();
+                histogramValueNode.put("_type", "n"); // Histograms are type "n"
+                histogramValueNode.put("_value", valueList);
+                dataNode.put(name, histogramValueNode);
+            } else {
+                dataNode.put(name, aggregatedData.getValue().getValue());
+            }
         }
-        return Collections.singletonList(dataNode);
+        return dataNode;
     }
 
+    /**
+      * Queues the messages for transmission.
+      */
     private void publish(final Collection<AggregatedData> data) {
         // Collect the aggregated data by the "key".  In this case the key is unique part of a check_bundle:
         // service, cluster, and host
-        final ImmutableListMultimap<String, AggregatedData> index = FluentIterable.from(data).index(
-                new Function<AggregatedData, String>() {
-                    @Override
-                    public String apply(final AggregatedData input) {
-                        return String.format(
+        final ImmutableListMultimap<String, AggregatedData> index = FluentIterable.from(data)
+                .index(
+                        input -> String.format(
                                 "%s_%s_%s",
                                 input.getFQDSN().getService(),
                                 input.getFQDSN().getCluster(),
-                                input.getHost());
-                    }
-                }
-        );
+                                input.getHost()));
+
+        final boolean pendingWasEmpty = _pendingRequests.isEmpty();
+        final List<RequestQueueEntry> toQueue = Lists.newArrayList();
 
         for (final Map.Entry<String, Collection<AggregatedData>> entry : index.asMap().entrySet()) {
             final String targetKey = entry.getKey();
             final Collection<AggregatedData> serviceData = entry.getValue();
             final ServiceCheckBinding binding = _bundleMap.get(targetKey);
+
             if (binding != null) {
-                // Send the request(s)
-                for (final Map<String, Object> serialized : serialize(serviceData)) {
-                    _client.sendToHttpTrap(serialized, binding._url);
-                }
+                // Queue the request(s)
+                toQueue.add(new RequestQueueEntry(binding, serialize(serviceData)));
             } else {
                 if (!_pendingLookups.contains(targetKey)) {
                     // We don't have an outstanding request to lookup the URI, create one.
                     final AggregatedData aggregatedData = Iterables.get(serviceData, 0);
                     _pendingLookups.add(targetKey);
 
-                    final Future<CheckBundleLookupResponse> response = createCheckBundle(targetKey, aggregatedData);
+                    final F.Promise<CheckBundleLookupResponse> response = createCheckBundle(targetKey, aggregatedData);
 
                     // Send the completed, mapped response back to ourselves.
-                    Patterns.pipe(response, _dispatcher).to(self());
+                    Patterns.pipe(response.wrapped(), _dispatcher).to(self());
                 }
 
                 // We can't send the request to it right now, skip this service
                 NO_CHECK_BUNDLE_LOG_BUILDER
                         .addData("actor", self())
                         .log();
-                continue;
             }
+        }
+
+        final int evicted = Math.max(0, toQueue.size() - _pendingRequests.remainingCapacity());
+        _pendingRequests.addAll(toQueue);
+
+        if (evicted > 0) {
+            LOGGER.warn()
+                    .setMessage("Evicted data from Circonus sink queue")
+                    .addData("count", evicted)
+                    .addContext("actor", self())
+                    .log();
+        }
+
+        // If we don't currently have anything in-flight, we'll need to wait the spreading duration.
+        // If we're already waiting, these requests will be sent after the waiting is over, no need to do anything else.
+        if (pendingWasEmpty && !_waiting && _spreadingDelayMillis > 0) {
+            _waiting = true;
+            LOGGER.debug()
+                    .setMessage("Scheduling http requests for later transmission")
+                    .addData("delayMs", _spreadingDelayMillis)
+                    .addContext("actor", self())
+                    .log();
+            context().system().scheduler().scheduleOnce(
+                    FiniteDuration.apply(_spreadingDelayMillis, TimeUnit.MILLISECONDS),
+                    self(),
+                    new WaitTimeExpired(),
+                    context().dispatcher(),
+                    self());
+        } else {
+            dispatchPending();
         }
     }
 
-    private Future<CheckBundleLookupResponse> createCheckBundle(
+    /**
+     * Dispatches the number of pending requests needed to drain the pendingRequests queue or meet the maximum concurrency.
+     */
+    private void dispatchPending() {
+        LOGGER.debug()
+                .setMessage("Dispatching requests")
+                .addContext("actor", self())
+                .log();
+        while (_inflightRequestsCount < _maximumConcurrency && !_pendingRequests.isEmpty()) {
+            fireNextRequest();
+        }
+    }
+
+    private void fireNextRequest() {
+        final RequestQueueEntry request = _pendingRequests.poll();
+        _inflightRequestsCount++;
+
+        final F.Promise<Object> responsePromise = _client.sendToHttpTrap(request.getData(), request.getBinding()._url)
+                .<Object>map(PostComplete::new)
+                .recover(PostFailure::new);
+        Patterns.pipe(responsePromise.wrapped(), context().dispatcher()).to(self());
+    }
+
+    private F.Promise<CheckBundleLookupResponse> createCheckBundle(
             final String targetKey,
             final AggregatedData aggregatedData) {
-        final CheckBundleRequest request = new CheckBundleRequest.Builder()
+        final CheckBundle request = new CheckBundle.Builder()
                 .addBroker(_selectedBrokerCid.get())
-                .addTag("AINT")
-                .addTag(String.format("cluster:%s", aggregatedData.getFQDSN().getCluster()))
+                .addTag("monitoring_agent:aint")
+                .addTag(String.format("monitoring_cluster:%s", aggregatedData.getFQDSN().getCluster()))
                 .addTag(String.format("service:%s", aggregatedData.getFQDSN().getService()))
-                .addTag(String.format("host:%s", aggregatedData.getHost()))
+                .addTag(String.format("hostname:%s", aggregatedData.getHost()))
                 .setTarget(aggregatedData.getHost())
                 .setDisplayName(
                         String.format(
-                                "aint_%s_%s_%s",
+                                "%s/%s",
                                 aggregatedData.getFQDSN().getCluster(),
-                                aggregatedData.getHost(),
                                 aggregatedData.getFQDSN().getService()))
+                .setStatus("active")
                 .build();
 
         // Map the response to a ServiceCheckBinding
         return _client.getOrCreateCheckBundle(request)
                 .map(
-                        new Mapper<CheckBundleResponse, CheckBundleLookupResponse>() {
-                            @Override
-                            public CheckBundleLookupResponse apply(final CheckBundleResponse response) {
-                                return CheckBundleLookupResponse.success(
-                                        new ServiceCheckBinding(targetKey, response.getUrl()));
+                        response -> {
+                            final URI result;
+                            try {
+                                result = new URI(response.getConfig().get("submission_url"));
+                            } catch (final URISyntaxException e) {
+                                throw Throwables.propagate(e);
                             }
+                            return CheckBundleLookupResponse.success(
+                                    new ServiceCheckBinding(targetKey, result, response), request);
                         },
                         _dispatcher)
                 .recover(
-                        new Recover<CheckBundleLookupResponse>() {
-                            @Override
-                            public CheckBundleLookupResponse recover(final Throwable failure) {
-                                LOGGER.error()
-                                        .setMessage("Error creating check bundle")
-                                        .addData("request", request)
-                                        .addData("actor", self())
-                                        .setThrowable(failure)
-                                        .log();
-                                return CheckBundleLookupResponse.failure(targetKey, failure);
-                            }
-                        },
+                        failure -> CheckBundleLookupResponse.failure(targetKey, failure, request),
                         _dispatcher);
     }
 
     private Optional<String> _selectedBrokerCid = Optional.absent();
+    private ActorRef _checkBundleRefresher;
+    private int _inflightRequestsCount = 0;
+    private boolean _waiting = false;
 
     private final ExecutionContextExecutor _dispatcher;
     private final Set<String> _pendingLookups = Sets.newHashSet();
     private final Map<String, ServiceCheckBinding> _bundleMap = Maps.newHashMap();
     private final CirconusClient _client;
     private final String _brokerName;
+    private final int _maximumConcurrency;
+    private final boolean _enableHistograms;
+    private final int _spreadingDelayMillis;
+    private final EvictingQueue<RequestQueueEntry> _pendingRequests;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CirconusSinkActor.class);
     private static final LogBuilder NO_BROKER_LOG_BUILDER = new RateLimitLogBuilder(
             LOGGER.warn()
                     .setMessage("Unable to push data to Circonus")
                     .addData("reason", "desired broker not yet discovered"),
-            Period.minutes(1));
+            Duration.ofMinutes(1));
     private static final LogBuilder NO_CHECK_BUNDLE_LOG_BUILDER = new RateLimitLogBuilder(
             LOGGER.warn()
                     .setMessage("Unable to push data to Circonus")
                     .addData("reason", "check bundle not yet found or created"),
-            Period.minutes(1));
+            Duration.ofMinutes(1));
 
     /**
      * Message class to wrap a list of {@link com.arpnetworking.tsdcore.model.AggregatedData}.
@@ -357,21 +480,23 @@ public final class CirconusSinkActor extends UntypedActor {
     }
 
     private static final class CheckBundleLookupResponse {
-        public static CheckBundleLookupResponse success(final ServiceCheckBinding binding) {
-            return new CheckBundleLookupResponse(binding.getKey(), Optional.of(binding), Optional.<Throwable>absent());
+        public static CheckBundleLookupResponse success(final ServiceCheckBinding binding, final CheckBundle request) {
+            return new CheckBundleLookupResponse(binding.getKey(), Optional.of(binding), Optional.<Throwable>absent(), request);
         }
 
-        public static CheckBundleLookupResponse failure(final String key, final Throwable throwable) {
-            return new CheckBundleLookupResponse(key, Optional.<ServiceCheckBinding>absent(), Optional.of(throwable));
+        public static CheckBundleLookupResponse failure(final String key, final Throwable throwable, final CheckBundle request) {
+            return new CheckBundleLookupResponse(key, Optional.<ServiceCheckBinding>absent(), Optional.of(throwable), request);
         }
 
         private CheckBundleLookupResponse(
                 final String key,
                 final Optional<ServiceCheckBinding> binding,
-                final Optional<Throwable> cause) {
+                final Optional<Throwable> cause,
+                final CheckBundle request) {
             _key = key;
             _binding = binding;
             _cause = cause;
+            _request = request;
         }
 
         public boolean isSuccess() {
@@ -394,15 +519,21 @@ public final class CirconusSinkActor extends UntypedActor {
             return _key;
         }
 
+        public CheckBundle getRequest() {
+            return _request;
+        }
+
         private final String _key;
         private final Optional<ServiceCheckBinding> _binding;
         private final Optional<Throwable> _cause;
+        private final CheckBundle _request;
     }
 
     private static final class ServiceCheckBinding {
-        public ServiceCheckBinding(final String key, final URI url) {
+        public ServiceCheckBinding(final String key, final URI url, final CheckBundle checkBundle) {
             _key = key;
             _url = url;
+            _checkBundle = checkBundle;
         }
 
         public String getKey() {
@@ -413,7 +544,63 @@ public final class CirconusSinkActor extends UntypedActor {
             return _url;
         }
 
+        public CheckBundle getCheckBundle() {
+            return _checkBundle;
+        }
+
         private final String _key;
         private final URI _url;
+        private final com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundle _checkBundle;
     }
+
+    private static final class RequestQueueEntry {
+        public RequestQueueEntry(final ServiceCheckBinding binding, final Map<String, Object> data) {
+            _binding = binding;
+            _data = data;
+        }
+
+        public ServiceCheckBinding getBinding() {
+            return _binding;
+        }
+
+        public Map<String, Object> getData() {
+            return _data;
+        }
+
+        private final ServiceCheckBinding _binding;
+        private final Map<String, Object> _data;
+    }
+
+    /**
+     * Message class to wrap a completed HTTP request.
+     */
+    private static final class PostFailure {
+        public PostFailure(final Throwable throwable) {
+            _throwable = throwable;
+        }
+
+        public Throwable getCause() {
+            return _throwable;
+        }
+
+        private final Throwable _throwable;
+    }
+
+    /**
+     * Message class to wrap an errored HTTP request.
+     */
+    private static final class PostComplete {
+        public PostComplete(final WSResponse response) {
+            _response = response;
+        }
+
+        public WSResponse getResponse() {
+            return _response;
+        }
+
+        private final WSResponse _response;
+    }
+
+    private static final class WaitTimeExpired {}
 }
+

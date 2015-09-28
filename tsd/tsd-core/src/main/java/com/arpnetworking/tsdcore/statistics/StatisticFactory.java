@@ -18,10 +18,14 @@ package com.arpnetworking.tsdcore.statistics;
 import com.arpnetworking.utility.InterfaceDatabase;
 import com.arpnetworking.utility.ReflectionsDatabase;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.Set;
@@ -30,17 +34,53 @@ import java.util.Set;
  * Creates statistics.
  *
  * @author Brandon Arp (barp at groupon dot com)
+ * @author Ville Koskela (vkoskela at groupon dot com)
  */
 public class StatisticFactory {
+
+    /**
+     * Get a statistic by name.
+     *
+     * @param name The name of the desired statistic.
+     * @return A new <code>Statistic</code>.
+     */
+    public Statistic getStatistic(final String name) {
+        final Optional<Statistic> statistic = tryGetStatistic(name);
+        if (!statistic.isPresent()) {
+            throw new IllegalArgumentException(String.format("Invalid statistic name; name=%s", name));
+        }
+        return statistic.get();
+    }
+
+    /**
+     * Get a statistic by name.
+     *
+     * @param name The name of the desired statistic.
+     * @return A new <code>Statistic</code>.
+     */
+    public Optional<Statistic> tryGetStatistic(final String name) {
+        return Optional.fromNullable(STATISTICS_BY_NAME_AND_ALIAS.get(name));
+    }
+
+    /**
+     * Get all registered <code>Statistic</code> instances.
+     *
+     * @return A new <code>Statistic</code>.
+     */
+    public ImmutableSet<Statistic> getAllStatistics() {
+        return ALL_STATISTICS;
+    }
 
     /**
      * Creates a statistic from a name.
      *
      * @param statistic The name of the desired statistic.
      * @return A new <code>Statistic</code>.
+     * @deprecated Use <code>getStatistic</code> instead.
      */
+    @Deprecated
     public Optional<Statistic> createStatistic(final String statistic) {
-        return Optional.fromNullable(STATISTICS.get(statistic));
+        return Optional.fromNullable(STATISTICS_BY_NAME_AND_ALIAS.get(statistic));
     }
 
     private static void checkedPut(final Map<String, Statistic> map, final Statistic statistic, final String key) {
@@ -58,20 +98,28 @@ public class StatisticFactory {
         map.put(key, statistic);
     }
 
-    private static final Map<String, Statistic> STATISTICS = Maps.newHashMap();
+    private static final ImmutableMap<String, Statistic> STATISTICS_BY_NAME_AND_ALIAS;
+    private static final ImmutableSet<Statistic> ALL_STATISTICS;
     private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
     private static final Logger LOGGER = LoggerFactory.getLogger(StatisticFactory.class);
 
     static {
+        final Map<String, Statistic> statisticByNameAndAlias = Maps.newHashMap();
+        final Set<Statistic> allStatistics = Sets.newHashSet();
         final Set<Class<? extends Statistic>> statisticClasses = INTERFACE_DATABASE.findClassesWithInterface(Statistic.class);
         for (final Class<? extends Statistic> statisticClass : statisticClasses) {
             LOGGER.debug(String.format("Considering statistic; class=%s", statisticClass));
             if (!statisticClass.isInterface() && !Modifier.isAbstract(statisticClass.getModifiers())) {
                 try {
-                    final Statistic statistic = statisticClass.newInstance();
-                    checkedPut(STATISTICS, statistic, statistic.getName());
+                    final Constructor<? extends Statistic> constructor = statisticClass.getDeclaredConstructor();
+                    if (!constructor.isAccessible()) {
+                        constructor.setAccessible(true);
+                    }
+                    final Statistic statistic = constructor.newInstance();
+                    allStatistics.add(statistic);
+                    checkedPut(statisticByNameAndAlias, statistic, statistic.getName());
                     for (final String alias : statistic.getAliases()) {
-                        checkedPut(STATISTICS, statistic, alias);
+                        checkedPut(statisticByNameAndAlias, statistic, alias);
                     }
                     LOGGER.info(String.format(
                             "Registered statistic; name=%s, aliases=%s, class=%s",
@@ -85,5 +133,7 @@ public class StatisticFactory {
                 }
             }
         }
+        STATISTICS_BY_NAME_AND_ALIAS = ImmutableMap.copyOf(statisticByNameAndAlias);
+        ALL_STATISTICS = ImmutableSet.copyOf(allStatistics);
     }
 }

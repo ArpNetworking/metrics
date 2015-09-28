@@ -30,6 +30,7 @@ import java.util.List;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class ProcessorsV2Factory implements MessageProcessorsFactory {
+
     /**
      * {@inheritDoc}
      */

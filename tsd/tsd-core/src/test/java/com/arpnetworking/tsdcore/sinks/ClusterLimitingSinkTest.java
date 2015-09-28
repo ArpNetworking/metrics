@@ -19,7 +19,8 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.collect.Lists;
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 
 import org.junit.Test;
@@ -28,7 +29,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -85,19 +85,27 @@ public class ClusterLimitingSinkTest {
                         .build())
                 .build();
 
+        final PeriodicData.Builder periodicDataBuilder = TestBeanFactory.createPeriodicDataBuilder();
+
         sink.recordAggregateData(
-                Lists.newArrayList(clusterAData1, clusterBData1, clusterBData2),
-                Lists.newArrayList(clusterACondition1, clusterBCondition1, clusterBCondition2));
+                periodicDataBuilder
+                        .setData(ImmutableList.of(clusterAData1, clusterBData1, clusterBData2))
+                        .setConditions(ImmutableList.of(clusterACondition1, clusterBCondition1, clusterBCondition2))
+                        .build());
 
         final Map<String, Sink> mockLimitingSinks = limitingSinkFactory.getSinks();
 
         Mockito.verify(mockLimitingSinks.get("./testClusterLimitingSink_ClusterA.state")).recordAggregateData(
-                Lists.newArrayList(clusterAData1),
-                Lists.newArrayList(clusterACondition1));
+                periodicDataBuilder
+                        .setData(ImmutableList.of(clusterAData1))
+                        .setConditions(ImmutableList.of(clusterACondition1))
+                        .build());
 
         Mockito.verify(mockLimitingSinks.get("./testClusterLimitingSink_ClusterB.state")).recordAggregateData(
-                Lists.newArrayList(clusterBData1, clusterBData2),
-                Lists.newArrayList(clusterBCondition1, clusterBCondition2));
+                periodicDataBuilder
+                        .setData(ImmutableList.of(clusterBData1, clusterBData2))
+                        .setConditions(ImmutableList.of(clusterBCondition1, clusterBCondition2))
+                        .build());
 
         final AggregatedData clusterAData2 = TestBeanFactory.createAggregatedDataBuilder()
                 .setFQDSN(TestBeanFactory.createFQDSNBuilder()
@@ -111,13 +119,14 @@ public class ClusterLimitingSinkTest {
                         .build())
                 .build();
 
-        sink.recordAggregateData(
-                Lists.newArrayList(clusterAData2),
-                Lists.newArrayList(clusterACondition2));
+        final PeriodicData periodicData = periodicDataBuilder
+                .setData(ImmutableList.of(clusterAData2))
+                .setConditions(ImmutableList.of(clusterACondition2))
+                .build();
 
-        Mockito.verify(mockLimitingSinks.get("./testClusterLimitingSink_ClusterA.state")).recordAggregateData(
-                Lists.newArrayList(clusterAData2),
-                Lists.newArrayList(clusterACondition2));
+        sink.recordAggregateData(periodicData);
+
+        Mockito.verify(mockLimitingSinks.get("./testClusterLimitingSink_ClusterA.state")).recordAggregateData(periodicData);
     }
 
     private static class MockingSinkFactory implements ClusterLimitingSink.LimitingSinkFactory {
@@ -136,12 +145,10 @@ public class ClusterLimitingSinkTest {
                 // CHECKSTYLE.OFF: IllegalThrows - Defined by interface
                 public Void answer(final InvocationOnMock invocation) throws Throwable {
                     // CHECKSTYLE.ON: IllegalThrows
-                    _targetSink.recordAggregateData(
-                            (Collection<AggregatedData>) invocation.getArguments()[0],
-                            (Collection<Condition>) invocation.getArguments()[1]);
+                    _targetSink.recordAggregateData((PeriodicData) invocation.getArguments()[0]);
                     return null;
                 }
-            }).when(mockSink).recordAggregateData(Mockito.<AggregatedData>anyCollection(), Mockito.<Condition>anyCollection());
+            }).when(mockSink).recordAggregateData(Mockito.<PeriodicData>any());
             _sinks.put(stateFile.toString(), mockSink);
             return mockSink;
         }

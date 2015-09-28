@@ -15,19 +15,23 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Quantity;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * The aggregation is performed with a user-defined expression. At this time
  * this class is only a place holder, but evaluation of the expression will
- * in theory be moved into each unique instance in the future.
+ * in theory be moved into each unique instance in the future. Use
+ * <code>StatisticFactory</code> for construction.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class ExpressionStatistic extends BaseStatistic {
+@Loggable
+public final class ExpressionStatistic extends BaseStatistic {
 
     /**
      * {@inheritDoc}
@@ -35,6 +39,22 @@ public class ExpressionStatistic extends BaseStatistic {
     @Override
     public String getName() {
         return "expression";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Accumulator createCalculator() {
+        throw new UnsupportedOperationException("Calculation of ExpressionStatistic instances is not supported");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<Statistic> getDependencies() {
+        throw new UnsupportedOperationException("Calculation of ExpressionStatistic instances is not supported");
     }
 
     /**
@@ -52,6 +72,8 @@ public class ExpressionStatistic extends BaseStatistic {
     public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
         throw new UnsupportedOperationException("Calculation of ExpressionStatistic instances is not supported");
     }
+
+    private ExpressionStatistic() { }
 
     private static final long serialVersionUID = -9159667444288515901L;
 }

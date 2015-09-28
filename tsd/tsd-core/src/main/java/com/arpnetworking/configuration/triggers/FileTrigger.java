@@ -89,12 +89,11 @@ public final class FileTrigger implements Trigger {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "File", _file,
-                "Exists", _exists,
-                "LastModified", _lastModified);
+        return LogValueMapFactory.builder(this)
+                .put("file", _file)
+                .put("exists", _exists)
+                .put("lastModified", _lastModified)
+                .build();
     }
 
     /**

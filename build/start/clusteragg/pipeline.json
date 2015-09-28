@@ -21,8 +21,15 @@
             },
             "sink":
             {
-                "type": "com.arpnetworking.tsdcore.sinks.PeriodicStatisticsSink",
-                "name": "emitter_periodic_statistics_sink"
+                "type": "com.arpnetworking.tsdcore.sinks.MultiSink",
+                "name": "emitter_multi_sink",
+                "sinks":
+                [
+                    {
+                        "type": "com.arpnetworking.tsdcore.sinks.PeriodicStatisticsSink",
+                        "name": "emitter_periodic_statistics_sink"
+                    }
+                ]
             }
         }
     ]

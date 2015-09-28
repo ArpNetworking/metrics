@@ -77,6 +77,14 @@ public final class AggregationMessage {
         final byte type = reader.getByte();
         position += BYTE_SIZE_IN_BYTES;
 
+        final byte subType;
+        if (typeHasSubtype(type)) {
+            subType = reader.getByte();
+            position += BYTE_SIZE_IN_BYTES;
+        } else {
+            subType = 0x00;
+        }
+
         // Obtain the serialized payload
         final byte[] payloadBytes = new byte [length - position];
         reader.getBytes(payloadBytes);
@@ -94,6 +102,25 @@ public final class AggregationMessage {
                     }
                 case 0x03:
                     return Optional.of(new AggregationMessage(Messages.HeartbeatRecord.parseFrom(payloadBytes)));
+                case 0x04:
+                    return Optional.of(new AggregationMessage(Messages.StatisticSetRecord.parseFrom(payloadBytes)));
+                case 0x05:
+                    // 0x05 is the message type for all supporting data
+                    switch (subType) {
+                        case 0x01:
+                            return Optional.of(new AggregationMessage(Messages.SamplesSupportingData.parseFrom(payloadBytes)));
+                        case 0x02:
+                            return Optional.of(new AggregationMessage(Messages.SparseHistogramSupportingData.parseFrom(payloadBytes)));
+                        case 0x03:
+                            return Optional.of(new AggregationMessage(Messages.HdrHistogramSupportingData.parseFrom(payloadBytes)));
+                        default:
+                            LOGGER.warn(
+                                    String.format("Invalid protocol buffer, unknown subtype; type=%s, subtype=%s, bytes=%s",
+                                            type,
+                                            subType,
+                                            Hex.encodeHexString(payloadBytes)));
+                            return Optional.absent();
+                    }
                 default:
                     LOGGER.warn(String.format("Unsupported message type; type=%s", type));
                     return Optional.absent();
@@ -103,6 +130,10 @@ public final class AggregationMessage {
                 String.format("Invalid protocol buffer; type=%s bytes=%s", type, Hex.encodeHexString(payloadBytes)), e);
             return Optional.absent();
         }
+    }
+
+    private static boolean typeHasSubtype(final byte type) {
+        return type == 0x05;
     }
 
     /**
@@ -118,6 +149,17 @@ public final class AggregationMessage {
         } else if (_message instanceof Messages.AggregationRecord) {
             b.appendByte((byte) 0x02);
         } else if (_message instanceof Messages.HeartbeatRecord) {
+            b.appendByte((byte) 0x03);
+        } else if (_message instanceof Messages.StatisticSetRecord) {
+            b.appendByte((byte) 0x04);
+        } else if (_message instanceof Messages.SamplesSupportingData) {
+            b.appendByte((byte) 0x05);
+            b.appendByte((byte) 0x01);
+        } else if (_message instanceof Messages.SparseHistogramSupportingData) {
+            b.appendByte((byte) 0x05);
+            b.appendByte((byte) 0x02);
+        } else if (_message instanceof Messages.HdrHistogramSupportingData) {
+            b.appendByte((byte) 0x05);
             b.appendByte((byte) 0x03);
         } else {
             throw new IllegalArgumentException(String.format("Unsupported message; message=%s", _message));

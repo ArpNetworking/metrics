@@ -15,19 +15,17 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.logback.annotations.Loggable;
+
 /**
- * Top median statistic (aka 50th percentile).
+ * Top median statistic (aka 50th percentile). Use <code>StatisticFactory</code> for construction. This is not a true
+ * median but the nearest value; more of a 50th percentile although it is advertised with the more commonly recognized
+ * name.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class MedianStatistic extends TPStatistic {
-
-    /**
-     * Public constructor.
-     */
-    public MedianStatistic() {
-        super(50d);
-    }
+@Loggable
+public final class MedianStatistic extends TPStatistic {
 
     /**
      * {@inheritDoc}
@@ -35,6 +33,10 @@ public class MedianStatistic extends TPStatistic {
     @Override
     public String getName() {
         return "median";
+    }
+
+    private MedianStatistic() {
+        super(50d);
     }
 
     private static final long serialVersionUID = 1L;

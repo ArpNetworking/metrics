@@ -15,17 +15,17 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.logback.annotations.Loggable;
+
 /**
- * Top percentile 95% statistic.
+ * Top percentile 95% statistic. Use <code>StatisticFactory</code> for construction.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Loggable
 public final class TP95Statistic extends TPStatistic {
 
-    /**
-     * Public constructor.
-     */
-    public TP95Statistic() {
+    private TP95Statistic() {
         super(95d);
     }
 

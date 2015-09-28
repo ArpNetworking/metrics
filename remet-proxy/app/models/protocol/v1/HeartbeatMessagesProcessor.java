@@ -71,5 +71,6 @@ public class HeartbeatMessagesProcessor implements MessagesProcessor {
 
     private static final String COMMAND_HEARTBEAT = "heartbeat";
     private static final ObjectNode OK_RESPONSE = JsonNodeFactory.instance.objectNode().put("response", "ok");
-    private static final String HEARTBEAT_COUNTER = "Actors/Connection/Command/Heartbeat";
+
+    private static final String HEARTBEAT_COUNTER = "actors/connection/command/heartbeat";
 }

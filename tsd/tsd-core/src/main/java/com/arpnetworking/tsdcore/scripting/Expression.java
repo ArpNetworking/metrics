@@ -47,7 +47,9 @@ public interface Expression {
      * @param data The data input for the expression.
      * @return The resulting <code>AggregatedData</code> or <code>Optional.absent</code>.
      * @throws ScriptingException if evaluation fails for any reason.
+     * @deprecated Use <code>evaluate(PeriodicData)</code> instead.
      */
+    @Deprecated
     Optional<AggregatedData> evaluate(
             final String host,
             final Period period,

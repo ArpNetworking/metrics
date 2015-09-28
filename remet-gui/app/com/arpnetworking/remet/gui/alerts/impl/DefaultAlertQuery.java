@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.remet.gui.alerts.impl;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.alerts.Alert;
 import com.arpnetworking.remet.gui.alerts.AlertQuery;
@@ -29,7 +30,8 @@ import java.util.Optional;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class DefaultAlertQuery implements AlertQuery {
+@Loggable
+public final class DefaultAlertQuery implements AlertQuery {
 
     /**
      * Public constructor.
@@ -157,6 +159,7 @@ public class DefaultAlertQuery implements AlertQuery {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Repository", _repository)
                 .add("Contains", _contains)
                 .add("Context", _context)

@@ -26,34 +26,30 @@ import PlayKeys._
 object ApplicationBuild extends Build {
 
     val appName = "remet-proxy"
-    val appVersion = "0.3.4"
-    val jacksonVersion = "2.5.3"
+    val appVersion = "0.3.5"
+    val jacksonVersion = "2.6.2"
 
     val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings
 
     val appDependencies = Seq(
-      // Play 2.4 uses version 1.1.1 and although some transitive dependencies
-      // may use a newer version we force the known working version.
-      "ch.qos.logback" % "logback-classic" % "1.1.1" force(),
-      "ch.qos.logback" % "logback-core" % "1.1.1" force(),
-      "com.arpnetworking.logback" % "logback-steno" % "1.8.0",
-      "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.3.3",
-      "com.arpnetworking.metrics" % "metrics-client" % "0.3.4",
-      "com.arpnetworking.metrics" % "tsd-core" % "0.3.4",
+      "com.arpnetworking.logback" % "logback-steno" % "1.9.3",
+      "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.3.5",
+      "com.arpnetworking.metrics" % "metrics-client" % "0.3.7",
+      "com.arpnetworking.metrics" % "tsd-core" % "0.3.4.GRPN.27",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk7" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonVersion,
       "com.google.code.findbugs" % "annotations" % "3.0.0",
       "com.google.guava" % "guava" % "18.0",
-      "com.google.inject" % "guice" % "3.0" classifier "no_aop" force()
+      "com.google.inject" % "guice" % "4.0"
     )
 
     val main = Project(appName, file("."), settings = s).enablePlugins(play.PlayJava).settings(
       version := appVersion,
-      libraryDependencies ++= appDependencies,
       scalaVersion := "2.11.1",
       resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
+      libraryDependencies ++= appDependencies,
 
       // Generated unmanaged assests
       unmanagedResourceDirectories in Compile <+= baseDirectory( _ / "app/assets/unmanaged" ),

@@ -23,11 +23,12 @@ import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
 import com.arpnetworking.clusteraggregator.configuration.EmitterConfiguration;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.sinks.Sink;
-import com.arpnetworking.tsdcore.statistics.MedianStatistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.arpnetworking.utility.BaseActorTest;
 import org.joda.time.Period;
 import org.junit.Assert;
@@ -63,13 +64,14 @@ public class EmitterTest extends BaseActorTest {
     public void callsSink() {
         final AggregatedData data = new AggregatedData.Builder()
                 .setFQDSN(new FQDSN.Builder()
-                    .setCluster("TestCluster")
-                    .setMetric("TestMetric")
-                    .setService("TestService")
-                    .setStatistic(new MedianStatistic())
-                    .build())
+                        .setCluster("TestCluster")
+                        .setMetric("TestMetric")
+                        .setService("TestService")
+                        .setStatistic(MEDIAN_STATISTIC)
+                        .build())
                 .setHost("TestHost")
                 .setPeriod(Period.minutes(1))
+                .setIsSpecified(true)
                 .setStart(org.joda.time.DateTime.now().hourOfDay().roundFloorCopy())
                 .setPopulationSize(0L)
                 .setSamples(Collections.<Quantity>emptyList())
@@ -80,8 +82,8 @@ public class EmitterTest extends BaseActorTest {
         final TestActorRef<Actor> ref = TestActorRef.create(getSystem(), Emitter.props(_config));
 
         ref.tell(data, ActorRef.noSender());
-        Mockito.verify(_sink).recordAggregateData(_aggregatedData.capture(), Mockito.anyCollectionOf(Condition.class));
-        final List<AggregatedData> dataList = _aggregatedData.getValue();
+        Mockito.verify(_sink).recordAggregateData(_periodicData.capture());
+        final List<AggregatedData> dataList = _periodicData.getValue().getData();
         Assert.assertNotNull(dataList);
         Assert.assertEquals(1, dataList.size());
         Assert.assertSame(data, dataList.get(0));
@@ -97,8 +99,11 @@ public class EmitterTest extends BaseActorTest {
     }
 
     @Captor
-    private ArgumentCaptor<List<AggregatedData>> _aggregatedData;
+    private ArgumentCaptor<PeriodicData> _periodicData;
     private EmitterConfiguration _config = null;
     @Mock
     private Sink _sink = null;
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MEDIAN_STATISTIC = STATISTIC_FACTORY.getStatistic("median");
 }

@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.remet.gui.expressions.impl;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.remet.gui.expressions.Expression;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
@@ -29,6 +30,7 @@ import java.util.UUID;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class DefaultExpression implements Expression {
 
     /**
@@ -78,6 +80,7 @@ public final class DefaultExpression implements Expression {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Id", _id)
                 .add("Cluster", _cluster)
                 .add("Service", _service)

@@ -16,6 +16,7 @@
 package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.test.TestBeanFactory;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -23,6 +24,7 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,27 +33,23 @@ import java.util.List;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class CountStatisticTest {
-    @Test
-    public void testConstruction() {
-        new CountStatistic();
-    }
 
     @Test
     public void testGetName() {
-        final CountStatistic stat = new CountStatistic();
+        final Statistic stat = COUNT_STATISTIC;
         Assert.assertThat(stat.getName(), Matchers.equalTo("count"));
     }
 
     @Test
     public void testAliases() {
-        final CountStatistic statistic = new CountStatistic();
+        final Statistic statistic = COUNT_STATISTIC;
         Assert.assertEquals(1, statistic.getAliases().size());
         Assert.assertEquals("n", Iterables.getFirst(statistic.getAliases(), null));
     }
 
     @Test
     public void testCalculate() {
-        final CountStatistic stat = new CountStatistic();
+        final Statistic stat = COUNT_STATISTIC;
         final List<Double> doubleVals = Lists.newArrayList(12d, 18d, 5d);
         final List<Quantity> vals = TestBeanFactory.createSamples(doubleVals);
         final Quantity calculated = stat.calculate(vals);
@@ -60,13 +58,26 @@ public class CountStatisticTest {
 
     @Test
     public void testEquality() {
-        Assert.assertFalse(new CountStatistic().equals(null));
-        Assert.assertFalse(new CountStatistic().equals("ABC"));
-        Assert.assertTrue(new CountStatistic().equals(new CountStatistic()));
+        Assert.assertFalse(COUNT_STATISTIC.equals(null));
+        Assert.assertFalse(COUNT_STATISTIC.equals("ABC"));
+        Assert.assertTrue(COUNT_STATISTIC.equals(COUNT_STATISTIC));
     }
 
     @Test
     public void testHashCode() {
-        Assert.assertEquals(new CountStatistic().hashCode(), new CountStatistic().hashCode());
+        Assert.assertEquals(COUNT_STATISTIC.hashCode(), COUNT_STATISTIC.hashCode());
     }
+
+    @Test
+    public void testAccumulator() {
+        final Accumulator<Void> accumulator = (Accumulator<Void>) COUNT_STATISTIC.createCalculator();
+        accumulator.accumulate(new Quantity.Builder().setValue(12d).build());
+        accumulator.accumulate(new Quantity.Builder().setValue(18d).build());
+        accumulator.accumulate(new Quantity.Builder().setValue(5d).build());
+        final CalculatedValue calculated = accumulator.calculate(Collections.emptyMap());
+        Assert.assertEquals(calculated.getValue(), new Quantity.Builder().setValue(3.0).build());
+    }
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final CountStatistic COUNT_STATISTIC = (CountStatistic) STATISTIC_FACTORY.getStatistic("count");
 }

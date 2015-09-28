@@ -43,7 +43,7 @@ public class StatisticDeserializer extends JsonDeserializer<Statistic> {
     @Override
     public Statistic deserialize(final JsonParser parser, final DeserializationContext context) throws IOException {
         final String statisticNameOrAlias = parser.getValueAsString();
-        return STATISTIC_FACTORY.createStatistic(statisticNameOrAlias).get();
+        return STATISTIC_FACTORY.getStatistic(statisticNameOrAlias);
     }
 
     private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();

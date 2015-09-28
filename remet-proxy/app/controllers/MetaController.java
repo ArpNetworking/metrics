@@ -32,7 +32,7 @@ import java.util.Map;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class MetaController extends Controller {
+public final class MetaController extends Controller {
 
     /**
      * Endpoint implementation to dump Play application configuration.

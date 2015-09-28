@@ -16,6 +16,7 @@
 
 package models.messages;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.MoreObjects;
 
@@ -24,6 +25,7 @@ import com.google.common.base.MoreObjects;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Loggable
 public final class Command {
 
     /**
@@ -46,6 +48,7 @@ public final class Command {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Command", _command)
                 .toString();
     }

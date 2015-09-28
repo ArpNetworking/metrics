@@ -16,13 +16,16 @@
 package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.test.TestBeanFactory;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,19 +38,14 @@ import java.util.List;
 public class MeanStatisticTest {
 
     @Test
-    public void testConstruction() {
-        new MeanStatistic();
-    }
-
-    @Test
     public void testGetName() {
-        final MeanStatistic stat = new MeanStatistic();
+        final Statistic stat = MEAN_STATISTIC;
         Assert.assertThat(stat.getName(), Matchers.equalTo("mean"));
     }
 
     @Test
     public void testCalculate() {
-        final MeanStatistic stat = new MeanStatistic();
+        final Statistic stat = MEAN_STATISTIC;
         final List<Double> doubleVals = Lists.newArrayList(12d, 20d, 7d);
         final List<Quantity> vals = TestBeanFactory.createSamples(doubleVals);
         final Quantity calculated = stat.calculate(vals);
@@ -62,7 +60,7 @@ public class MeanStatisticTest {
 
     @Test
     public void testCalculateWithNoEntries() {
-        final MeanStatistic stat = new MeanStatistic();
+        final Statistic stat = MEAN_STATISTIC;
         final List<Quantity> vals = Collections.emptyList();
         final Quantity calculated = stat.calculate(vals);
         Assert.assertThat(calculated, Matchers.equalTo(new Quantity.Builder().setValue(0.0).build()));
@@ -70,13 +68,40 @@ public class MeanStatisticTest {
 
     @Test
     public void testEquality() {
-        Assert.assertFalse(new MeanStatistic().equals(null));
-        Assert.assertFalse(new MeanStatistic().equals("ABC"));
-        Assert.assertTrue(new MeanStatistic().equals(new MeanStatistic()));
+        Assert.assertFalse(MEAN_STATISTIC.equals(null));
+        Assert.assertFalse(MEAN_STATISTIC.equals("ABC"));
+        Assert.assertTrue(MEAN_STATISTIC.equals(MEAN_STATISTIC));
     }
 
     @Test
     public void testHashCode() {
-        Assert.assertEquals(new MeanStatistic().hashCode(), new MeanStatistic().hashCode());
+        Assert.assertEquals(MEAN_STATISTIC.hashCode(), MEAN_STATISTIC.hashCode());
     }
+
+    @Test
+    public void testCalculator() {
+        final Calculator<Void> sumCalculator = Mockito.mock(Calculator.class, "SumCalculator");
+        Mockito.doReturn(
+                new CalculatedValue.Builder()
+                    .setValue(new Quantity.Builder().setValue(45.0).build())
+                    .build())
+                .when(sumCalculator).calculate(Mockito.any());
+        final Calculator countCalculator = Mockito.mock(Calculator.class, "CountCalculator");
+        Mockito.doReturn(
+                new CalculatedValue.Builder<Void>()
+                        .setValue(new Quantity.Builder().setValue(3.0).build())
+                        .build())
+                .when(countCalculator).calculate(Mockito.any());
+
+        final Calculator calculator = MEAN_STATISTIC.createCalculator();
+        final CalculatedValue calculated = calculator.calculate(ImmutableMap.of(
+                COUNT_STATISTIC, countCalculator,
+                SUM_STATISTIC, sumCalculator));
+        Assert.assertEquals(calculated.getValue(), new Quantity.Builder().setValue(15.0).build());
+    }
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final MeanStatistic MEAN_STATISTIC = (MeanStatistic) STATISTIC_FACTORY.getStatistic("mean");
+    private static final CountStatistic COUNT_STATISTIC = (CountStatistic) STATISTIC_FACTORY.getStatistic("count");
+    private static final SumStatistic SUM_STATISTIC = (SumStatistic) STATISTIC_FACTORY.getStatistic("sum");
 }

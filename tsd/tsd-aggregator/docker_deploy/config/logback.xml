@@ -36,6 +36,7 @@
             <jacksonModule class="com.fasterxml.jackson.datatype.jdk7.Jdk7Module" />
             <jacksonModule class="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" />
             <jacksonModule class="com.arpnetworking.configuration.jackson.akka.AkkaLoggingModule" />
+          <injectBeanIdentifier>true</injectBeanIdentifier>
         </encoder>
     </appender>
 

@@ -15,19 +15,23 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.base.Optional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * Takes the sum of the entries.
+ * Takes the sum of the entries. Use <code>StatisticFactory</code> for construction.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class SumStatistic extends BaseStatistic {
+@Loggable
+public final class SumStatistic extends BaseStatistic {
 
     /**
      * {@inheritDoc}
@@ -35,6 +39,14 @@ public class SumStatistic extends BaseStatistic {
     @Override
     public String getName() {
         return "sum";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Calculator<Void> createCalculator() {
+        return new SumAccumulator(this);
     }
 
     /**
@@ -65,5 +77,66 @@ public class SumStatistic extends BaseStatistic {
         return new Quantity.Builder().setValue(sum).setUnit(unit.orNull()).build();
     }
 
+    private SumStatistic() { }
+
     private static final long serialVersionUID = -1534109546290882210L;
+
+    /**
+     * Accumulator computing the sum of values.
+     *
+     * @author Ville Koskela (vkoskela at groupon dot com)
+     */
+    public static final class SumAccumulator implements Accumulator<Void> {
+
+        /**
+         * Public constructor.
+         *
+         * @param statistic The <code>Statistic</code>.
+         */
+        public SumAccumulator(final Statistic statistic) {
+            _statistic = statistic;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Statistic getStatistic() {
+            return _statistic;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Accumulator<Void> accumulate(final Quantity quantity) {
+            if (_sum.isPresent()) {
+                _sum = Optional.of(_sum.get().add(quantity));
+            } else {
+                _sum = Optional.of(quantity);
+            }
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Accumulator<Void> accumulate(final CalculatedValue<Void> calculatedValue) {
+            return accumulate(calculatedValue.getValue());
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public CalculatedValue<Void> calculate(final Map<Statistic, Calculator<?>> dependencies) {
+            return new CalculatedValue.Builder<Void>()
+                    .setValue(_sum.orNull())
+                    .build();
+        }
+
+        private final Statistic _statistic;
+        private Optional<Quantity> _sum = Optional.absent();
+    }
 }

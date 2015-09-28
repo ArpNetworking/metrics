@@ -15,10 +15,13 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import akka.http.javadsl.model.HttpMethods;
+import akka.http.javadsl.model.MediaTypes;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
@@ -28,12 +31,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import net.sf.oval.constraint.NotNull;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
+import play.libs.ws.WSRequest;
+import play.libs.ws.ning.NingWSClient;
 
 import java.util.Collection;
 import java.util.List;
@@ -54,19 +55,21 @@ public final class MonitordSink extends HttpPostSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "SeverityToStatus", _severityToStatus,
-                "UnknownSeverityStatus", _unknownSeverityStatus);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("severityToStatus", _severityToStatus)
+                .put("unknownSeverityStatus", _unknownSeverityStatus)
+                .build();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected Collection<String> serialize(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        final Multimap<String, AggregatedData> indexedData = prepareData(data);
-        final Multimap<String, Condition> indexedConditions = prepareConditions(conditions);
+    protected Collection<String> serialize(final PeriodicData periodicData) {
+        final Period period = periodicData.getPeriod();
+        final Multimap<String, AggregatedData> indexedData = prepareData(periodicData.getData());
+        final Multimap<String, Condition> indexedConditions = prepareConditions(periodicData.getConditions());
 
         // Serialize
         final List<String> serializedData = Lists.newArrayListWithCapacity(indexedData.size());
@@ -75,11 +78,10 @@ public final class MonitordSink extends HttpPostSink {
             final Collection<AggregatedData> namedData = indexedData.get(key);
             if (!namedData.isEmpty()) {
                 final AggregatedData first = Iterables.getFirst(namedData, null);
-                final Period period = first.getPeriod();
                 final String name = new StringBuilder()
                         .append(first.getFQDSN().getService())
                         .append("_")
-                        .append(first.getPeriod().toString(ISOPeriodFormat.standard()))
+                        .append(period.toString(ISOPeriodFormat.standard()))
                         .append("_")
                         .append(first.getFQDSN().getMetric())
                         .toString();
@@ -87,6 +89,10 @@ public final class MonitordSink extends HttpPostSink {
                 int maxStatus = 0;
                 final StringBuilder dataBuilder = new StringBuilder();
                 for (final AggregatedData datum : namedData) {
+                    if (!datum.isSpecified()) {
+                        continue;
+                    }
+
                     dataBuilder.append(datum.getFQDSN().getStatistic().getName())
                             .append("%3D").append(datum.getValue().getValue())
                             .append("%3B");
@@ -114,7 +120,7 @@ public final class MonitordSink extends HttpPostSink {
                 }
 
                 stringBuilder.append("run_every=").append(period.toStandardSeconds().getSeconds())
-                        .append("&path=").append(first.getFQDSN().getCluster()).append("/").append(first.getHost())
+                        .append("&path=").append(first.getFQDSN().getCluster()).append("%2f").append(first.getHost())
                         .append("&monitor=").append(name)
                         .append("&status=").append(maxStatus)
                         .append("&timestamp=").append((int) Unit.SECOND.convert(first.getPeriodStart().getMillis(), Unit.MILLISECOND))
@@ -135,11 +141,11 @@ public final class MonitordSink extends HttpPostSink {
      * {@inheritDoc}
      */
     @Override
-    protected HttpUriRequest createRequest(final String serializedData) {
-        final StringEntity requestEntity = new StringEntity(serializedData, ContentType.APPLICATION_FORM_URLENCODED);
-        final HttpPost request = new HttpPost(getUri());
-        request.setEntity(requestEntity);
-        return request;
+    protected WSRequest createRequest(final NingWSClient client, final String serializedData) {
+        return client.url(getUri().toString())
+                .setContentType(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED.toString())
+                .setBody(serializedData)
+                .setMethod(HttpMethods.POST.value());
     }
 
     private Multimap<String, Condition> prepareConditions(final Collection<Condition> conditions) {

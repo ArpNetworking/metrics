@@ -16,11 +16,13 @@
 package com.arpnetworking.tsdcore.limiter.legacy;
 
 import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.utility.OvalBuilder;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.Min;
@@ -147,12 +149,11 @@ public final class LegacyMetricsLimiter implements Closeable {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "MaxAggregations", _maxAggregations,
-                "NumberAggregations", _nAggregations,
-                "StateManager", _stateManager);
+        return LogValueMapFactory.builder(this)
+                .put("maxAggregations", _maxAggregations)
+                .put("numberAggregations", _nAggregations)
+                .put("stateManager", _stateManager)
+                .build();
     }
 
     /**
@@ -270,6 +271,7 @@ public final class LegacyMetricsLimiter implements Closeable {
      * Hold the number of aggregations and the last time a metric produced a
      * data point.
      */
+    @Loggable
     public static class Mark {
 
         /**
@@ -292,25 +294,16 @@ public final class LegacyMetricsLimiter implements Closeable {
         }
 
         /**
-         * Generate a Steno log compatible representation.
-         *
-         * @return Steno log compatible representation.
-         */
-        @LogValue
-        public Object toLogValue() {
-            return LogValueMapFactory.of(
-                    "id", Integer.toHexString(System.identityHashCode(this)),
-                    "class", this.getClass(),
-                    "Count", _count,
-                    "Time", _time);
-        }
-
-        /**
          * {@inheritDoc}
          */
         @Override
         public String toString() {
-            return toLogValue().toString();
+            return MoreObjects.toStringHelper(this)
+                    .add("id", Integer.toHexString(System.identityHashCode(this)))
+                    .add("class", this.getClass())
+                    .add("count", getCount())
+                    .add("time", getTime())
+                    .toString();
         }
 
         /**

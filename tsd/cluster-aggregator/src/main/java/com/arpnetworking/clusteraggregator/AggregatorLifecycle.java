@@ -26,7 +26,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Lifecycle monitoring for {@link com.arpnetworking.clusteraggregator.aggregation.Aggregator} actors.
+ * Lifecycle monitoring for {@link com.arpnetworking.clusteraggregator.aggregation.AggregationRouter} actors.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */

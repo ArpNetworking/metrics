@@ -170,10 +170,7 @@ public final class ShardAllocation {
                 final JsonGenerator gen,
                 final SerializerProvider serializers) throws IOException {
             gen.writeStartObject();
-
             gen.writeNumberField("count", value.size());
-            gen.writeObjectField("values", value);
-
             gen.writeEndObject();
         }
     }

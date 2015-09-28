@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdaggregator;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.configuration.PipelineConfiguration;
@@ -40,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class Pipeline implements Launchable {
+public final class Pipeline implements Launchable {
 
     /**
      * Public constructor.
@@ -90,6 +92,7 @@ public class Pipeline implements Launchable {
                 .setTimerStatistics(_pipelineConfiguration.getTimerStatistic())
                 .setCounterStatistics(_pipelineConfiguration.getCounterStatistic())
                 .setGaugeStatistics(_pipelineConfiguration.getGaugeStatistic())
+                .setStatistics(_pipelineConfiguration.getStatistics())
                 .setSink(rootSink)
                 .build();
         aggregator.launch();
@@ -125,6 +128,29 @@ public class Pipeline implements Launchable {
 
         _sources.clear();
         _sinks.clear();
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("pipelineConfiguration", _pipelineConfiguration)
+                .put("aggregator", _aggregator)
+                .put("sinks", _sinks)
+                .put("sources", _sources)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private final PipelineConfiguration _pipelineConfiguration;

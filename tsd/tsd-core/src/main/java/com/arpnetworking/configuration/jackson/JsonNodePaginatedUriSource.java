@@ -51,12 +51,13 @@ public final class JsonNodePaginatedUriSource extends BaseJsonNodeSource impleme
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Uri", _uri,
-                "DataKeys", _dataKeys,
-                "NextPageKeys", _nextPageKeys,
-                "MergingSource", _mergingSource);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("uri", _uri)
+                .put("dataKeys", _dataKeys)
+                .put("nextPageKeys", _nextPageKeys)
+                .put("mergingSource", _mergingSource)
+                .build();
     }
 
 

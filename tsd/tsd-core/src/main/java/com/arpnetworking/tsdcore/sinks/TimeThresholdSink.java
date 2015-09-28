@@ -20,17 +20,16 @@ import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * A sink to filter old data.
@@ -43,24 +42,32 @@ public final class TimeThresholdSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+    public void recordAggregateData(final PeriodicData periodicData) {
         LOGGER.debug()
                 .setMessage("Writing aggregated data")
                 .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
+                .addData("dataSize", periodicData.getData().size())
+                .addData("conditionsSize", periodicData.getConditions().size())
                 .log();
 
-        final Collection<AggregatedData> filtered;
         if (_logOnly) {
-            filtered = data;
-            data.forEach(_filterPredicate::test);
+            periodicData.getData().forEach(_filterPredicate::test);
+            _sink.recordAggregateData(periodicData);
         } else {
-            filtered = data.stream()
+            final ImmutableList.Builder<AggregatedData> filteredDataBuilder = ImmutableList.builder();
+            periodicData.getData()
+                    .stream()
                     .filter(_filterPredicate)
-                    .collect(Collectors.toList());
+                    .forEach(filteredDataBuilder::add);
+
+            final ImmutableList<AggregatedData> filteredData = filteredDataBuilder.build();
+            if (!filteredData.isEmpty() || !periodicData.getConditions().isEmpty()) {
+                _sink.recordAggregateData(
+                        PeriodicData.Builder.clone(periodicData, new PeriodicData.Builder())
+                                .setData(filteredData)
+                                .build());
+            }
         }
-        _sink.recordAggregateData(filtered, conditions);
     }
 
     /**
@@ -79,12 +86,13 @@ public final class TimeThresholdSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "ExcludedServices", _excludedServices,
-                "Sink", _sink,
-                "LogOnly", _logOnly,
-                "Threshold", _threshold);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("excludedServices", _excludedServices)
+                .put("sink", _sink)
+                .put("logOnly", _logOnly)
+                .put("threshold", _threshold)
+                .build();
     }
 
     private TimeThresholdSink(final Builder builder) {

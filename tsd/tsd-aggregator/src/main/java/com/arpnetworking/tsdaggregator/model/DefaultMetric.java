@@ -15,6 +15,9 @@
  */
 package com.arpnetworking.tsdaggregator.model;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
+import com.arpnetworking.tsdcore.model.MetricType;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
@@ -84,6 +87,24 @@ public final class DefaultMetric implements Metric {
                 .add("Type", _type)
                 .add("Values", _values)
                 .toString();
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * NOTE: This class is not marked @Loggable due to the potentially large
+     * number of samples in the value field.  Using @Loggable would cause them
+     * all to be serialized and in the past has caused significant performance
+     * problems.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("type", _type)
+                .put("valueSize", _values.size())
+                .build();
     }
 
     private DefaultMetric(final Builder builder) {

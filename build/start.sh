@@ -189,18 +189,21 @@ fi
 if [ $start_remet_proxy -gt 0 ]; then
   pushd remet-proxy &> /dev/null
   activator stage
+  if [ "$?" -ne 0 ]; then echo "Build failed: remet-proxy"; exit 1; fi
   popd &> /dev/null
 fi
 
 if [ $start_remet_gui -gt 0 ]; then
   pushd remet-gui &> /dev/null
   activator stage
+  if [ "$?" -ne 0 ]; then echo "Build failed: remet-gui"; exit 1; fi
   popd &> /dev/null
 fi
 
 if [ $start_tsd_agg -gt 0 -o $start_cluster_agg -gt 0 ]; then
   pushd tsd &> /dev/null
   ./gradlew installApp
+  if [ "$?" -ne 0 ]; then echo "Build failed: tsd-aggregator and/or cluster-aggregator"; exit 1; fi
   popd &> /dev/null
 fi
 
@@ -235,6 +238,16 @@ fi
 
 if [ $start_remet_proxy -gt 0 ]; then
   pushd remet-proxy &> /dev/null
+  if [ -e "./target/universal/stage/RUNNING_PID" ]; then
+    pid=`cat ./target/universal/stage/RUNNING_PID`
+    if kill -0 ${pid}; then
+      echo "Service still running: remet-proxy"
+      exit 1
+    else
+      echo "Removing pid file for remet-proxy"
+      rm "./target/universal/stage/RUNNING_PID"
+    fi
+  fi
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
   fi
@@ -249,6 +262,16 @@ fi
 
 if [ $start_remet_gui -gt 0 ]; then
   pushd remet-gui &> /dev/null
+  if [ -e "./target/universal/stage/RUNNING_PID" ]; then
+    pid=`cat ./target/universal/stage/RUNNING_PID`
+    if kill -0 ${pid}; then
+      echo "Service still running: remet-gui"
+      exit 1
+    else
+      echo "Removing pid file for remet-gui"
+      rm "./target/universal/stage/RUNNING_PID"
+    fi
+  fi
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
   fi

@@ -21,17 +21,17 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.Terminated;
 import akka.actor.UntypedActor;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.ConfiguredLaunchableFactory;
+import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Serves as a router for configuration-created actors.  Handles reconfiguration messages and swaps references on reconfiguration.
@@ -81,11 +81,11 @@ public class ConfigurableActorProxy<T> extends UntypedActor {
             } else {
                 if (_messageBuffer.size() >= MAX_BUFFERED_MESSAGES) {
                     final BufferedMessage dropped = _messageBuffer.remove();
-                    LOGGER.error(
-                            String.format(
-                                    "Message buffer full, dropping oldest message; self=%s, dropped=%s",
-                                    self(),
-                                    dropped.getMessage()));
+                    LOGGER.error()
+                            .setMessage("Message buffer full, dropping oldest message")
+                            .addData("dropped", dropped.getMessage())
+                            .addContext("actor", self())
+                            .log();
                 }
                 // TODO(barp): record the buffer size as a metric [MAI-472]
                 _messageBuffer.add(new BufferedMessage(sender(), message));
@@ -94,37 +94,44 @@ public class ConfigurableActorProxy<T> extends UntypedActor {
     }
 
     private void actorTerminated(final Terminated message) {
-        LOGGER.trace(String.format("Received a terminated message; self=%s, message=%s", self(), message));
+        LOGGER.trace()
+                .setMessage("Received a terminated message")
+                .addData("terminated", message)
+                .addContext("actor", self())
+                .log();
         final ActorRef terminatedActor = message.actor();
         // Make sure the currentChild is the one that died
-        if (!terminatedActor.equals(_currentChild.orElse(null))) {
-            LOGGER.error(
-                    String.format(
-                            "Terminated message received from unknown actor; self=%s, terminatedMessage=%s",
-                            self(),
-                            message));
+        if (!terminatedActor.equals(_currentChild.orNull())) {
+            LOGGER.error()
+                    .setMessage("Terminated message received from unknown actor")
+                    .addData("terminated", message)
+                    .addContext("actor", self())
+                    .log();
             return;
         }
-        _currentChild = Optional.empty();
+        _currentChild = Optional.absent();
         self().tell(new SwapActor(), self());
     }
 
     private void swapActor() {
-        LOGGER.trace(String.format("Received a swap actor message; self=%s", self()));
+        LOGGER.trace()
+                .setMessage("Received a swap actor message")
+                .addContext("actor", self())
+                .log();
         // The old actor should be stopped already, create the new ref and set it
         final Props props = _factory.create(_pendingConfiguration.get());
         final ActorRef newRef = context().actorOf(props);
         context().watch(newRef);
-        LOGGER.debug(
-                String.format(
-                        "Started new actor due to configuration change; self=%s, newRef=%s",
-                        self(),
-                        newRef));
+        LOGGER.debug()
+                .setMessage("Started new actor due to configuration change")
+                .addData("newActor", newRef)
+                .addContext("actor", self())
+                .log();
         final ConfigurableActorStarted actorStartedNotification = new ConfigurableActorStarted(newRef);
         _observers.forEach(o -> o.tell(actorStartedNotification, self()));
 
         _currentChild = Optional.of(newRef);
-        _pendingConfiguration = Optional.empty();
+        _pendingConfiguration = Optional.absent();
         _state = Service.State.RUNNING;
         while (!_messageBuffer.isEmpty()) {
             final BufferedMessage entry = _messageBuffer.remove();
@@ -133,26 +140,33 @@ public class ConfigurableActorProxy<T> extends UntypedActor {
     }
 
     private void applyConfiguration(final ApplyConfiguration<T> applyConfiguration) {
-        LOGGER.trace(
-                String.format(
-                        "Received an apply configuration message; self=%s, configuration=%s",
-                        self(),
-                        applyConfiguration.getConfiguration()));
+        LOGGER.trace()
+                .setMessage("Received an apply configuration message")
+                .addData("configuration", applyConfiguration.getConfiguration())
+                .addContext("actor", self())
+                .log();
         _pendingConfiguration = Optional.of(applyConfiguration.getConfiguration());
         // Tear down the old actor
         if (_currentChild.isPresent() && _state.equals(Service.State.RUNNING)) {
             _state = Service.State.STOPPING;
             final ActorRef toStop = _currentChild.get();
             toStop.tell(PoisonPill.getInstance(), self());
-            LOGGER.info(String.format("Requested current actor to shutdown for swap; self=%s, currentActor=%s", self(), toStop));
+            LOGGER.info()
+                    .setMessage("Requested current actor to shutdown for swap")
+                    .addData("currentActor", toStop)
+                    .addContext("actor", self())
+                    .log();
         } else if (_state.equals(Service.State.NEW)) {
-            LOGGER.info(String.format("Applying initial configuration, no current actor to shutdown; self=%s", self()));
+            LOGGER.info()
+                    .setMessage("Applying initial configuration, no current actor to shutdown")
+                    .addContext("actor", self())
+                    .log();
             self().tell(new SwapActor(), self());
         }
     }
 
-    private Optional<ActorRef> _currentChild = Optional.empty();
-    private Optional<T> _pendingConfiguration = Optional.empty();
+    private Optional<ActorRef> _currentChild = Optional.absent();
+    private Optional<T> _pendingConfiguration = Optional.absent();
     private Service.State _state = Service.State.NEW;
     private final ConfiguredLaunchableFactory<Props, T> _factory;
     private final Deque<BufferedMessage> _messageBuffer = new LinkedList<>();

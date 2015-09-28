@@ -15,19 +15,28 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.base.Optional;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Takes the mean of the entries.
+ * Takes the mean of the entries. Use <code>StatisticFactory</code> for construction.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class MeanStatistic extends BaseStatistic {
+@Loggable
+public final class MeanStatistic extends BaseStatistic {
 
     /**
      * {@inheritDoc}
@@ -35,6 +44,22 @@ public class MeanStatistic extends BaseStatistic {
     @Override
     public String getName() {
         return "mean";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Calculator<Void> createCalculator() {
+        return new MeanCalculator(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<Statistic> getDependencies() {
+        return DEPENDENCIES.get();
     }
 
     /**
@@ -61,19 +86,74 @@ public class MeanStatistic extends BaseStatistic {
     @Override
     public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
         double weighted = 0D;
-        long samples = 0L;
+        int count = 0;
         Optional<Unit> unit = Optional.absent();
         for (final AggregatedData aggregation : aggregations) {
-            weighted += aggregation.getValue().getValue() * aggregation.getPopulationSize();
-            samples += aggregation.getPopulationSize();
+            double populationSize = aggregation.getPopulationSize();
+            if (populationSize < 0.0) {
+                populationSize = Iterables.getFirst(aggregation.getSamples(), ZERO).getValue();
+            }
+            weighted += aggregation.getValue().getValue() * populationSize;
+            count += populationSize;
             unit = unit.or(aggregation.getValue().getUnit());
         }
         return new Quantity.Builder()
-                .setValue(weighted / samples)
+                .setValue(weighted / count)
                 .setUnit(unit.orNull())
                 .build();
     }
 
+    private MeanStatistic() { }
+
     private static final Quantity ZERO = new Quantity.Builder().setValue(0.0).build();
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Supplier<Statistic> SUM_STATISTIC =
+            Suppliers.memoize(() -> STATISTIC_FACTORY.getStatistic("sum"));
+    private static final Supplier<Statistic> COUNT_STATISTIC =
+            Suppliers.memoize(() -> STATISTIC_FACTORY.getStatistic("count"));
+    private static final Supplier<Set<Statistic>> DEPENDENCIES =
+            Suppliers.memoize(() -> ImmutableSet.of(SUM_STATISTIC.get(), COUNT_STATISTIC.get()));
     private static final long serialVersionUID = 2943082617025777130L;
+
+    /**
+     * Calculator computing the average.
+     *
+     * @author Ville Koskela (vkoskela at groupon dot com)
+     */
+    public static final class MeanCalculator implements Calculator<Void> {
+
+        /**
+         * Public constructor.
+         *
+         * @param statistic The <code>Statistic</code>.
+         */
+        public MeanCalculator(final Statistic statistic) {
+            _statistic = statistic;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Statistic getStatistic() {
+            return _statistic;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public CalculatedValue<Void> calculate(final Map<Statistic, Calculator<?>> dependencies) {
+            final CalculatedValue<?> sum = dependencies.get(SUM_STATISTIC.get()).calculate(dependencies);
+            final CalculatedValue<?> count = dependencies.get(COUNT_STATISTIC.get()).calculate(dependencies);
+
+            // TODO(vkoskela): Remove the supporting data. [NEXT]
+            // This requires Cluster Aggregator to support the new calculation model, specifically dependencies.
+            return new CalculatedValue.Builder<Void>()
+                    .setValue(sum.getValue().divide(count.getValue()))
+                    .build();
+        }
+
+        private final Statistic _statistic;
+    }
 }

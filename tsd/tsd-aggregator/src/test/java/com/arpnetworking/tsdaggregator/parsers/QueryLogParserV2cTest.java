@@ -17,8 +17,8 @@
 package com.arpnetworking.tsdaggregator.parsers;
 
 import com.arpnetworking.tsdaggregator.model.Metric;
-import com.arpnetworking.tsdaggregator.model.MetricType;
 import com.arpnetworking.tsdaggregator.model.Record;
+import com.arpnetworking.tsdcore.model.MetricType;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.parsers.exceptions.ParsingException;
 import com.google.common.io.Resources;

@@ -23,7 +23,9 @@ import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.scripting.Alert;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
-import com.arpnetworking.tsdcore.statistics.TP99Statistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -44,17 +46,20 @@ public class LuaAlertTest {
     public void setUp() {
         _periodicDataBuilder = new PeriodicData.Builder()
                 .setPeriod(Period.minutes(1))
-                .setStart(NOW);
+                .setStart(NOW)
+                .setDimensions(ImmutableMap.of("host", "MyHost"));
+
         _aggregatedDataBuilder = new AggregatedData.Builder()
                 .setFQDSN(new FQDSN.Builder()
                         .setCluster("MyCluster")
                         .setMetric("MyMetric")
                         .setService("MyService")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build())
                 .setHost("MyHost")
                 .setPeriod(Period.minutes(1))
                 .setStart(NOW)
+                .setIsSpecified(true)
                 .setPopulationSize(1L)
                 .setSamples(Collections.<Quantity>emptyList());
     }
@@ -66,7 +71,7 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
@@ -81,7 +86,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertFalse(result.isTriggered().isPresent());
@@ -94,14 +99,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
@@ -113,7 +118,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -127,14 +132,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(0d).build())
                         .build()))
                 .build());
@@ -146,7 +151,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -160,14 +165,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.NOT_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(0d).build())
                         .build()))
                 .build());
@@ -179,7 +184,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -193,14 +198,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.NOT_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
@@ -212,7 +217,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -226,14 +231,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.LESS_THAN)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(0d).build())
                         .build()))
                 .build());
@@ -245,7 +250,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -259,14 +264,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.LESS_THAN)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(2d).build())
                         .build()))
                 .build());
@@ -278,7 +283,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -292,14 +297,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.LESS_THAN_OR_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
@@ -311,7 +316,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -325,14 +330,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.LESS_THAN_OR_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(2d).build())
                         .build()))
                 .build());
@@ -344,7 +349,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -358,14 +363,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.GREATER_THAN)
                 .setValue(new Quantity.Builder().setValue(0d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
@@ -377,7 +382,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -391,14 +396,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.GREATER_THAN)
                 .setValue(new Quantity.Builder().setValue(2d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
@@ -410,7 +415,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -424,14 +429,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.GREATER_THAN_OR_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
@@ -443,7 +448,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -457,14 +462,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.GREATER_THAN_OR_EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(2d).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
@@ -476,7 +481,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -490,14 +495,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.SECOND).build())
                 .build();
         alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).build())
                         .build()))
                 .build());
@@ -510,14 +515,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).build())
                 .build();
         alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.SECOND).build())
                         .build()))
                 .build());
@@ -530,14 +535,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.MEGABIT).build())
                 .build();
         alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.SECOND).build())
                         .build()))
                 .build());
@@ -550,14 +555,14 @@ public class LuaAlertTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setPeriod(Period.minutes(1))
                 .setExtensions(ImmutableMap.of("severity", "critical"))
                 .setOperator(LuaRelationalOperator.EQUAL_TO)
                 .setValue(new Quantity.Builder().setValue(1d).setUnit(Unit.MINUTE).build())
                 .build();
         final Condition result = alert.evaluate(_periodicDataBuilder
-                .setData(Collections.singletonList(_aggregatedDataBuilder
+                .setData(ImmutableList.of(_aggregatedDataBuilder
                         .setValue(new Quantity.Builder().setValue(60d).setUnit(Unit.SECOND).build())
                         .build()))
                 .build());
@@ -574,7 +579,7 @@ public class LuaAlertTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyMetric")
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .build(),
                 result.getFQDSN());
         Assert.assertTrue(result.isTriggered().isPresent());
@@ -585,4 +590,6 @@ public class LuaAlertTest {
     private AggregatedData.Builder _aggregatedDataBuilder;
 
     private static final DateTime NOW = DateTime.now();
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic TP99_STATISTIC = STATISTIC_FACTORY.getStatistic("tp99");
 }

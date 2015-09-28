@@ -16,6 +16,8 @@
 
 package models.messages;
 
+import com.arpnetworking.logback.annotations.Loggable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 
 import java.util.Map;
@@ -24,8 +26,12 @@ import java.util.Set;
 /**
  * Message class to hold a tree of metrics.
  *
+ * NOTE: This is not marked as @Loggable since it only has one attribute which we
+ * do not wish to log with it since it contains a lot of data.
+ *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Loggable
 public final class MetricsList {
     /**
      * Public constructor.
@@ -36,6 +42,8 @@ public final class MetricsList {
         _metrics = metrics;
     }
 
+    // TODO(vkoskela): Switch to @LogIgnore once available in Logback-Steno [ISSUE-3]
+    @JsonIgnore
     public Map<String, Map<String, Set<String>>> getMetrics() {
         return _metrics;
     }
@@ -47,6 +55,7 @@ public final class MetricsList {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Metrics", _metrics)
                 .toString();
     }

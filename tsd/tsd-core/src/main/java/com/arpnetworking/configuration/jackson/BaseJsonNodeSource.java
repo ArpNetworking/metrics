@@ -17,7 +17,6 @@ package com.arpnetworking.configuration.jackson;
 
 import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -39,10 +38,9 @@ public abstract class BaseJsonNodeSource implements JsonNodeSource {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "ObjectMapper", LogReferenceOnly.of(_objectMapper));
+        return LogValueMapFactory.builder(this)
+                .put("objectMapper", _objectMapper)
+                .build();
     }
 
     /**

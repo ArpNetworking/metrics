@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdaggregator.model.querylog;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.google.common.base.Optional;
@@ -34,6 +35,7 @@ import java.util.regex.Pattern;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class Version2c {
 
     public Map<String, List<String>> getTimers() {
@@ -71,7 +73,7 @@ public final class Version2c {
     private final String _version;
 
     /**
-     * Builder for the Version2d class.
+     * Builder for the Version2c class.
      */
     public static final class Builder extends OvalBuilder<Version2c> {
         /**
@@ -83,7 +85,7 @@ public final class Version2c {
 
         /**
          * Sets the annotations field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -94,7 +96,7 @@ public final class Version2c {
 
         /**
          * Sets the version field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -105,7 +107,7 @@ public final class Version2c {
 
         /**
          * Sets the counters field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -116,7 +118,7 @@ public final class Version2c {
 
         /**
          * Sets the timers field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -127,7 +129,7 @@ public final class Version2c {
 
         /**
          * Sets the gauges field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -152,6 +154,7 @@ public final class Version2c {
     /**
      * Represents the set of annotations on a line.
      */
+    @Loggable
     public static final class Annotations {
         public Optional<String> getInitTimestamp() {
             return _initTimestamp;
@@ -188,7 +191,7 @@ public final class Version2c {
 
             /**
              * Sets the initTimestamp field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -199,7 +202,7 @@ public final class Version2c {
 
             /**
              * Sets the finalTimestamp field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -209,9 +212,9 @@ public final class Version2c {
             }
 
             /**
-             * Called by json deserialization to store non-member elements of 
+             * Called by json deserialization to store non-member elements of
              * the json object. Stores the value in the otherAnnotations field.
-             * 
+             *
              * @param key key
              * @param value value
              */

@@ -17,7 +17,6 @@ package com.arpnetworking.akka;
 
 import akka.actor.ExtendedActorSystem;
 import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -75,10 +74,9 @@ public class LoggingSerializer extends akka.serialization.JavaSerializer {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "ActorSystem", LogReferenceOnly.of(_system));
+        return LogValueMapFactory.builder(this)
+                .put("actorSystem", _system)
+                .build();
     }
 
     /**

@@ -96,10 +96,9 @@ public final class ObservableDelegate implements Observable {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Observers", _observers);
+        return LogValueMapFactory.builder(this)
+                .put("observers", _observers)
+                .build();
     }
 
     /**

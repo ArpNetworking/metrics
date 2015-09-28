@@ -20,30 +20,33 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Terminated;
 import akka.actor.UntypedActor;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
 import akka.util.ByteString;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.Messages;
-import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.AggregationMessage;
-import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
+import com.arpnetworking.tsdcore.statistics.CountStatistic;
+import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.common.base.Optional;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.GeneratedMessage;
-import org.joda.time.DateTime;
-import org.joda.time.Period;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Collections;
+import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * An actor that handles the data sent from an agg client.
@@ -95,11 +98,19 @@ public class AggClientConnection extends UntypedActor {
         if (message instanceof Tcp.Received) {
             final Tcp.Received received = (Tcp.Received) message;
             final ByteString data = received.data();
-            _log.debug(String.format("received a message of %d bytes", data.length()));
+            LOGGER.debug()
+                    .setMessage("Received a tcp message")
+                    .addData("length", data.length())
+                    .addContext("actor", self())
+                    .log();
             _buffer = _buffer.concat(data);
             processMessages();
         } else if (message instanceof Tcp.CloseCommand) {
-            _log.info(String.format("connection timeout hit, cycling connection to %s", _remoteAddress));
+            LOGGER.info()
+                    .setMessage("Connection timeout hit, cycling connection")
+                    .addData("remote", _remoteAddress)
+                    .addContext("actor", self())
+                    .log();
             if (_connection != null) {
                 _connection.tell(message, self());
             }
@@ -107,7 +118,11 @@ public class AggClientConnection extends UntypedActor {
             getContext().stop(getSelf());
         } else if (message instanceof Terminated) {
             final Terminated terminated = (Terminated) message;
-            _log.info(String.format("connection actor terminated; self=%s, terminated=%s", getSelf(), terminated.actor()));
+            LOGGER.info()
+                    .setMessage("Connection actor terminated")
+                    .addData("terminated", terminated.actor())
+                    .addContext("actor", self())
+                    .log();
             if (terminated.actor().equals(_connection)) {
                 getContext().stop(getSelf());
             } else {
@@ -134,162 +149,180 @@ public class AggClientConnection extends UntypedActor {
                 if (hostIdent.hasClusterName()) {
                     _clusterName = Optional.fromNullable(hostIdent.getClusterName());
                 }
-                _log.info(String.format("Handshake from host %s in cluster %s", _hostName.or(""), _clusterName.or("")));
-            } else if (gm instanceof Messages.AggregationRecord) {
+                LOGGER.info()
+                        .setMessage("Handshake received")
+                        .addData("host", _hostName.or(""))
+                        .addData("cluster", _clusterName.or(""))
+                        .addContext("actor", self())
+                        .log();
+            } else if (gm instanceof Messages.StatisticSetRecord) {
+                final Messages.StatisticSetRecord setRecord = (Messages.StatisticSetRecord) gm;
+                LOGGER.debug()
+                        .setMessage("StatisticSet record received")
+                        .addData("aggregation", setRecord)
+                        .addContext("actor", self())
+                        .log();
+                getContext().parent().tell(setRecord, getSelf());
+
+            } else if (gm instanceof Messages.AggregationRecord && IS_ENABLED) {
                 final Messages.AggregationRecord aggRecord = (Messages.AggregationRecord) gm;
-                if (_log.isDebugEnabled()) {
-                    _log.debug(
-                            String.format(
-                                    "Aggregation received; host=%s, cluster=%s, service=%s, metric=%s, statistic=%s, period=%s, ",
-                                    _hostName.or(""),
-                                    _clusterName.or(""),
-                                    aggRecord.getService(),
-                                    aggRecord.getMetric(),
-                                    aggRecord.getStatistic(),
-                                    aggRecord.getPeriod()));
-                }
-                final Optional<AggregatedData> aggData = getAggData(aggRecord);
-                if (aggData.isPresent()) {
-                    getContext().parent().tell(aggData.get(), getSelf());
-                }
-            } else if (gm instanceof Messages.LegacyAggRecord) {
-                final Messages.LegacyAggRecord aggRecord = (Messages.LegacyAggRecord) gm;
-                if (_log.isDebugEnabled()) {
-                    _log.debug(
-                            String.format(
-                                    "Legacy aggregation received; host=%s, cluster=%s, service=%s, metric=%s, statistic=%s, period=%s, ",
-                                    _hostName.or(""),
-                                    _clusterName.or(""),
-                                    aggRecord.getService(),
-                                    aggRecord.getMetric(),
-                                    aggRecord.getStatistic(),
-                                    aggRecord.getPeriod()));
-                }
-                final Optional<AggregatedData> aggData = getAggData(aggRecord);
-                if (aggData.isPresent()) {
-                    getContext().parent().tell(aggData.get(), getSelf());
+                LOGGER.debug()
+                        .setMessage("Aggregation received")
+                        .addData("aggregation", aggRecord)
+                        .addContext("actor", self())
+                        .log();
+                final Optional<Messages.StatisticSetRecord> record = createStatisticSetRecord(aggRecord);
+                if (record.isPresent()) {
+                    getContext().parent().tell(record.get(), getSelf());
                 }
             } else if (gm instanceof Messages.HeartbeatRecord) {
-                final Messages.HeartbeatRecord heartbeatRecord = (Messages.HeartbeatRecord) gm;
-                if (_log.isDebugEnabled()) {
-                    _log.debug(
-                            String.format(
-                                    "Heartbeat record; timestamp=%s from host %s in cluster %s",
-                                    heartbeatRecord.getTimestamp(),
-                                    _hostName.or(""),
-                                    _clusterName.or("")));
-                }
+                LOGGER.debug()
+                        .setMessage("Heartbeat received")
+                        .addData("host", _hostName.or(""))
+                        .addData("cluster", _clusterName.or(""))
+                        .addContext("actor", self())
+                        .log();
             } else {
-                _log.warning(String.format("Unknown message type! type=%s", gm.getClass()));
+                LOGGER.warn()
+                        .setMessage("Unknown message type")
+                        .addData("type", gm.getClass())
+                        .addContext("actor", self())
+                        .log();
             }
             messageOptional = AggregationMessage.deserialize(current);
             if (!messageOptional.isPresent() && current.length() > 4) {
-                _log.debug(String.format("buffer did not deserialize with %d bytes left", current.length()));
+                LOGGER.debug()
+                        .setMessage("buffer did not deserialize completely")
+                        .addData("remainingBytes", current.length())
+                        .addContext("actor", self())
+                        .log();
             }
         }
         //TODO(barp): Investigate using a ring buffer [MAI-196]
         _buffer = current;
     }
 
-
-    private Optional<AggregatedData> getAggData(final Messages.LegacyAggRecord aggRecord) {
-        try {
-            long sampleCount = 1;
-            if (aggRecord.hasRawSampleCount()) {
-                sampleCount = aggRecord.getRawSampleCount();
-            } else if (aggRecord.getStatisticSamplesCount() > 0) {
-                sampleCount = aggRecord.getStatisticSamplesCount();
-            }
-
-
-            final Period period = Period.parse(aggRecord.getPeriod());
-            DateTime periodStart;
-            if (aggRecord.hasPeriodStart()) {
-                periodStart = DateTime.parse(aggRecord.getPeriodStart());
-            } else {
-                periodStart = DateTime.now().withTime(DateTime.now().getHourOfDay(), 0, 0, 0);
-                while (periodStart.plus(period).isBeforeNow()) {
-                    periodStart = periodStart.plus(period);
-                }
-            }
-
-            final Optional<Statistic> statisticOptional = _statisticFactory.createStatistic(aggRecord.getStatistic());
-            if (!statisticOptional.isPresent()) {
-                _log.error(String.format("Unsupported statistic %s", aggRecord.getStatistic()));
-                return Optional.absent();
-            }
-
-            return Optional.of(new AggregatedData.Builder().setHost(_hostName.get())
-                .setFQDSN(new FQDSN.Builder()
-                        .setCluster(_clusterName.get())
-                        .setService(aggRecord.getService())
-                        .setMetric(aggRecord.getMetric())
-                        .setStatistic(statisticOptional.get())
-                        .build())
-                .setPeriod(Period.parse(aggRecord.getPeriod()))
-                .setStart(periodStart)
-                .setPopulationSize(sampleCount)
-                .setSamples(sampleizeDoubles(aggRecord.getStatisticSamplesList(), Optional.<Unit>absent()))
-                .setValue(new Quantity.Builder()
-                        .setValue(aggRecord.getStatisticValue())
-                        .build())
-                .build());
-        // CHECKSTYLE.OFF: IllegalCatch - The legacy parsing can throw a variety of runtime exceptions
-        } catch (final RuntimeException e) {
-        // CHECKSTYLE.ON: IllegalCatch
-            _log.error("Caught an error parsing legacy agg record", e);
-            return Optional.absent();
-        }
-    }
-
-    private Optional<AggregatedData> getAggData(final Messages.AggregationRecord aggRecord) {
-        final Optional<Statistic> statisticOptional = _statisticFactory.createStatistic(aggRecord.getStatistic());
+    private Optional<Messages.StatisticSetRecord> createStatisticSetRecord(final Messages.AggregationRecord aggRecord) {
+        final Optional<Statistic> statisticOptional = _statisticFactory.tryGetStatistic(aggRecord.getStatistic());
         if (!statisticOptional.isPresent()) {
-            _log.error(String.format("Unsupported statistic %s", aggRecord.getStatistic()));
+            LOGGER.error()
+                    .setMessage("Unsupported statistic")
+                    .addData("name", aggRecord.getStatistic())
+                    .addContext("actor", self())
+                    .log();
             return Optional.absent();
         }
-        final Optional<Unit> recordUnit;
-        if (Strings.isNullOrEmpty(aggRecord.getUnit())) {
-            recordUnit = Optional.absent();
+
+        final Messages.StatisticSetRecord.Builder setBuilder = Messages.StatisticSetRecord.newBuilder()
+                .setCluster(_clusterName.get())
+                .setMetric(aggRecord.getMetric())
+                .setPeriod(aggRecord.getPeriod())
+                .setPeriodStart(aggRecord.getPeriodStart())
+                .setService(aggRecord.getService());
+
+        // Counts dont have units, we dont want to mix a non-unit with a unit
+        if (aggRecord.getSamplesList().size() > 0 && !(statisticOptional.get() instanceof CountStatistic)) {
+            double sum = 0;
+            final HistogramStatistic.Histogram histogram = new HistogramStatistic.Histogram();
+            for (final Double val : aggRecord.getSamplesList()) {
+                histogram.recordValue(val);
+                sum += val;
+            }
+            final Messages.SparseHistogramSupportingData.Builder builder = Messages.SparseHistogramSupportingData.newBuilder();
+            builder.setUnit(aggRecord.getUnit());
+            for (final Map.Entry<Double, Integer> entry : histogram.getValues()) {
+                builder.addEntriesBuilder()
+                        .setBucket(entry.getKey())
+                        .setCount(entry.getValue())
+                        .build();
+            }
+            final com.google.protobuf.ByteString byteString = com.google.protobuf.ByteString.copyFrom(
+                    AggregationMessage.create(builder.build()).serialize().getBytes());
+            setBuilder.addStatisticsBuilder()
+                    .setStatistic(aggRecord.getStatistic())
+                    .setUnit(aggRecord.getUnit())
+                    .setValue(aggRecord.getStatisticValue())
+                    .setUserSpecified(true)
+                    .build();
+            setBuilder.addStatisticsBuilder()
+                    .setStatistic("histogram")
+                    .setUnit(aggRecord.getUnit())
+                    .setValue(aggRecord.getStatisticValue())
+                    .setSupportingData(byteString)
+                    .setUserSpecified(false)
+                    .build();
+            setBuilder.addStatisticsBuilder()
+                    .setStatistic("count")
+                    .setUnit("")
+                    .setValue(aggRecord.getPopulationSize())
+                    .setUserSpecified(false)
+                    .build();
+            setBuilder.addStatisticsBuilder()
+                    .setStatistic("sum")
+                    .setUnit(aggRecord.getUnit())
+                    .setValue(sum)
+                    .setUserSpecified(false)
+                    .build();
         } else {
-            recordUnit = Optional.fromNullable(Unit.valueOf(aggRecord.getUnit()));
+            setBuilder.addStatisticsBuilder()
+                    .setStatistic(aggRecord.getStatistic())
+                    .setUnit(aggRecord.getUnit())
+                    .setValue(aggRecord.getStatisticValue())
+                    .setUserSpecified(true)
+                    .build();
         }
-        final Quantity quantity = new Quantity.Builder()
-                .setValue(aggRecord.getStatisticValue())
-                .setUnit(recordUnit.orNull())
-                .build();
-        return Optional.of(
-                new AggregatedData.Builder()
-                        .setHost(_hostName.get())
-                        .setFQDSN(new FQDSN.Builder()
-                            .setService(aggRecord.getService())
-                            .setMetric(aggRecord.getMetric())
-                            .setCluster(_clusterName.get())
-                            .setStatistic(statisticOptional.get())
-                            .build())
-                        .setPeriod(Period.parse(aggRecord.getPeriod()))
-                        .setStart(DateTime.parse(aggRecord.getPeriodStart()))
-                        .setPopulationSize(aggRecord.getPopulationSize())
-                        .setSamples(sampleizeDoubles(aggRecord.getSamplesList(), recordUnit))
-                        .setValue(quantity)
-                        .build());
+
+        return Optional.of(setBuilder.build());
     }
 
     private List<Quantity> sampleizeDoubles(final List<Double> samplesList, final Optional<Unit> recordUnit) {
         final Quantity.Builder builder = new Quantity.Builder().setUnit(recordUnit.orNull());
-        final List<Quantity> samples = Lists.newArrayListWithCapacity(samplesList.size());
-        for (final Double sample : samplesList) {
-            samples.add(builder.setValue(sample).build());
+        final int skipFactor = Math.max(samplesList.size() / 1000, 1); // Determine number to increment the index by
+
+        // Target for 1k samples
+        final Quantity[] samples = new Quantity[(int) Math.ceil(samplesList.size() / (double) skipFactor)];
+        int index = 0;
+        for (int samplesIndex = 0; samplesIndex < samplesList.size(); samplesIndex += skipFactor) {
+            samples[index++] = builder.setValue(samplesList.get(samplesIndex)).build();
         }
-        return Collections.unmodifiableList(samples);
+        if (samplesList.size() != samples.length) {
+            LOGGER.debug()
+                    .setMessage("Downsampling AggregatedData")
+                    .addData("originalSize", samplesList.size())
+                    .addData("resampledSize", samples.length)
+                    .addContext("actor", self())
+                    .log();
+        }
+        return createImmutableListFromArray(samples);
     }
 
+    private static <T> ImmutableList<T> createImmutableListFromArray(final T[] array) {
+        try {
+            @SuppressWarnings("unchecked")
+            final ImmutableList<T> list = (ImmutableList<T>) IMMUTABLE_FROM_ARRAY.invoke(null, new Object[]{array});
+            return list;
+        } catch (final IllegalAccessException | InvocationTargetException e) {
+            throw Throwables.propagate(e);
+        }
+    }
 
     private Optional<String> _hostName = Optional.absent();
     private Optional<String> _clusterName = Optional.absent();
     private ByteString _buffer = ByteString.empty();
     private final ActorRef _connection;
     private final InetSocketAddress _remoteAddress;
-    private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
     private final StatisticFactory _statisticFactory = new StatisticFactory();
+    private static final Logger LOGGER = LoggerFactory.getLogger(AggClientConnection.class);
+    private static final Method IMMUTABLE_FROM_ARRAY;
+
+    private static final boolean IS_ENABLED = true;
+
+    static {
+        try {
+            IMMUTABLE_FROM_ARRAY = ImmutableList.class.getDeclaredMethod("asImmutableList", Object[].class);
+            IMMUTABLE_FROM_ARRAY.setAccessible(true);
+        } catch (final NoSuchMethodException e) {
+            throw Throwables.propagate(e);
+        }
+    }
 }

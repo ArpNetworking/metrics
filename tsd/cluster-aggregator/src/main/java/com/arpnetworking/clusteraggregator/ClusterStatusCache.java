@@ -23,21 +23,20 @@ import akka.actor.Scheduler;
 import akka.actor.UntypedActor;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import com.arpnetworking.clusteraggregator.models.ShardAllocation;
 import com.arpnetworking.utility.ParallelLeastShardAllocationStrategy;
+import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import scala.compat.java8.JFunction;
 import scala.concurrent.duration.Duration;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -125,7 +124,7 @@ public class ClusterStatusCache extends UntypedActor {
 
     private void sendResponse(final ActorRef sender) {
         final StatusResponse response = new StatusResponse(
-                _clusterState.orElse(_cluster.state()),
+                _clusterState.or(_cluster.state()),
                 _rebalanceState);
         sender.tell(response, self());
     }
@@ -138,25 +137,24 @@ public class ClusterStatusCache extends UntypedActor {
     }
 
     private final Cluster _cluster;
-    private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
-
-    private Optional<ClusterEvent.CurrentClusterState> _clusterState = Optional.empty();
+    private Optional<ClusterEvent.CurrentClusterState> _clusterState = Optional.absent();
     @Nullable
     private Cancellable _pollTimer;
-    private Optional<ParallelLeastShardAllocationStrategy.RebalanceNotification> _rebalanceState = Optional.empty();
+    private Optional<ParallelLeastShardAllocationStrategy.RebalanceNotification> _rebalanceState = Optional.absent();
 
     private static final String POLL = "poll";
 
     /**
      * Request to get a cluster status.
      */
-    public static final class GetRequest {
+    public static final class GetRequest implements Serializable {
+        private static final long serialVersionUID = 2804853560963013618L;
     }
 
     /**
      * Response to a cluster status request.
      */
-    public static final class StatusResponse {
+    public static final class StatusResponse implements Serializable {
 
         /**
          * Public constructor.
@@ -188,7 +186,7 @@ public class ClusterStatusCache extends UntypedActor {
                                 .map(shardRegion -> computeShardAllocation(pendingRebalances, currentAllocations, shardRegion))
                                 .collect(Collectors.toList()));
             } else {
-                _allocations = Optional.empty();
+                _allocations = Optional.absent();
             }
         }
 
@@ -231,5 +229,6 @@ public class ClusterStatusCache extends UntypedActor {
 
         private final ClusterEvent.CurrentClusterState _clusterState;
         private final Optional<List<ShardAllocation>> _allocations;
+        private static final long serialVersionUID = 603308359721162702L;
     }
 }

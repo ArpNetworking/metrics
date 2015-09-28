@@ -55,12 +55,13 @@ public final class JsonNodeDirectorySource extends BaseJsonNodeSource implements
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Directory", _directory,
-                "FileNames", _fileNames,
-                "FileNamePatterns", _fileNamePatterns,
-                "JsonNode", _jsonNode);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("directory", _directory)
+                .put("fileNames", _fileNames)
+                .put("fileNamePatterns", _fileNamePatterns)
+                .put("jsonNode", _jsonNode)
+                .build();
     }
 
     /* package private */ Optional<JsonNode> getJsonNode() {

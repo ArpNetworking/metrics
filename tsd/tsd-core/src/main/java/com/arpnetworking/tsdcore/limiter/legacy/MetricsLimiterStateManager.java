@@ -259,11 +259,10 @@ public final class MetricsLimiterStateManager implements Runnable {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "StateFile", _stateFile,
-                "FlushInterval", _stateFileFlushInterval);
+        return LogValueMapFactory.builder(this)
+                .put("stateFile", _stateFile)
+                .put("flushInterval", _stateFileFlushInterval)
+                .build();
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdaggregator.model;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
@@ -32,6 +33,7 @@ import java.util.Map;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Loggable
 public final class DefaultRecord implements Record {
 
     /**

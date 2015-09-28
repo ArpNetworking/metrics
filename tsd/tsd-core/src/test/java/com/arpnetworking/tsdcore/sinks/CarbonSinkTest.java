@@ -17,13 +17,19 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.google.common.collect.ImmutableList;
+import org.joda.time.DateTime;
+import org.joda.time.Period;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
+
+import java.util.function.Consumer;
 
 /**
  * Tests for the <code>CarbonSink</code> class.
@@ -50,9 +56,20 @@ public class CarbonSinkTest {
 
     @Test
     public void testSerialize() {
-        final CarbonSink carbonSink = _carbonSinkBuilder.build();
+        final ArgumentCaptor<Buffer> recorded = ArgumentCaptor.forClass(Buffer.class);
+        @SuppressWarnings("unchecked")
+        final Consumer<Buffer> recorder = (Consumer<Buffer>) Mockito.mock(Consumer.class);
+        final CarbonSink carbonSink = new CarbonTestSink(recorder, _carbonSinkBuilder);
         final AggregatedData datum = TestBeanFactory.createAggregatedData();
-        final Buffer buffer = carbonSink.serialize(datum);
+        final PeriodicData periodicData = new PeriodicData.Builder()
+                .setData(ImmutableList.of(datum))
+                .setPeriod(Period.minutes(1))
+                .setStart(DateTime.now())
+                .build();
+        carbonSink.recordAggregateData(periodicData);
+        Mockito.verify(recorder).accept(Mockito.any());
+        Mockito.verify(recorder).accept(recorded.capture());
+        final Buffer buffer = recorded.getValue();
         Assert.assertNotNull(buffer);
         String bufferString = buffer.toString();
         Assert.assertTrue("Buffer=" + bufferString, bufferString.endsWith("\n"));
@@ -72,4 +89,18 @@ public class CarbonSinkTest {
     }
 
     private CarbonSink.Builder _carbonSinkBuilder;
+
+    private static class CarbonTestSink extends CarbonSink {
+        public CarbonTestSink(final Consumer<Buffer> bufferConsumer, final Builder builder) {
+            super(builder);
+            _bufferConsumer = bufferConsumer;
+        }
+
+        @Override
+        protected void enqueueData(final Buffer data) {
+            _bufferConsumer.accept(data);
+        }
+
+        private final Consumer<Buffer> _bufferConsumer;
+    }
 }

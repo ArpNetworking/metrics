@@ -22,11 +22,11 @@ import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.tsdaggregator.model.DefaultMetric;
 import com.arpnetworking.tsdaggregator.model.DefaultRecord;
 import com.arpnetworking.tsdaggregator.model.Metric;
-import com.arpnetworking.tsdaggregator.model.MetricType;
 import com.arpnetworking.tsdaggregator.model.Record;
 import com.arpnetworking.tsdaggregator.model.querylog.Version2c;
 import com.arpnetworking.tsdaggregator.model.querylog.Version2d;
 import com.arpnetworking.tsdaggregator.model.querylog.Version2e;
+import com.arpnetworking.tsdcore.model.MetricType;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.parsers.Parser;
@@ -52,9 +52,9 @@ import java.util.Map;
 
 /**
  * Implementation of <code>RecordParser</code> for the TSD query log format. The
- * query log format represents each <code>Record</code> instance with one json 
+ * query log format represents each <code>Record</code> instance with one json
  * object per line.
- * 
+ *
  * Specification for version 2e:
  * {@code
  *{
@@ -65,7 +65,7 @@ import java.util.Map;
  *            "properties" : {
  *                "unit": {
  *                    "type": "string",
- *                    "enum": ["nanosecond","microsecond", "millisecond", "second", "minute", "hour", "day", "week", 
+ *                    "enum": ["nanosecond","microsecond", "millisecond", "second", "minute", "hour", "day", "week",
  *                    "bit", "byte", "kilobit", "kilobyte", "megabit", "megabyte", "gigabit", "gigabyte", "terabyte", "petabyte"]
  *                },
  *                "value": {
@@ -76,12 +76,12 @@ import java.util.Map;
  *        },
  *        "dataElement": {
  *            "type": "object",
- *            "properties": { 
+ *            "properties": {
  *                "values": {
  *                    "type": "array",
  *                    "items": {
  *                        "$ref": "#/definitions/sampleObject"
- *                    } 
+ *                    }
  *                }
  *            },
  *            "required": [ "values" ]
@@ -160,7 +160,7 @@ import java.util.Map;
  *    "required": ["time", "name", "level", "data"]
  *}
  * }
- * 
+ *
  * Specification for version 2d:
  * {@code
  *{
@@ -171,7 +171,7 @@ import java.util.Map;
  *            "properties" : {
  *                "unit": {
  *                    "type": "string",
- *                    "enum": ["nanosecond","microsecond", "millisecond", "second", "minute", "hour", "day", "week", 
+ *                    "enum": ["nanosecond","microsecond", "millisecond", "second", "minute", "hour", "day", "week",
  *                    "bit", "byte", "kilobit", "kilobyte", "megabit", "megabyte", "gigabit", "gigabyte", "terabyte", "petabyte"]
  *                },
  *                "value": {
@@ -181,13 +181,13 @@ import java.util.Map;
  *        },
  *        "dataElement": {
  *            "type": "object",
- *            "properties": { 
+ *            "properties": {
  *                "values": {
  *                    "type": "array",
  *                    "items": {
  *
  *                        "$ref": "#/definitions/sampleObject"
- *                    } 
+ *                    }
  *                }
  *            }
  *        },
@@ -302,7 +302,7 @@ public final class QueryLogParser implements Parser<Record> {
      */
     @Override
     public Record parse(final byte[] data) throws ParsingException {
-        // Attempt to parse the data as JSON to distinguish between the legacy 
+        // Attempt to parse the data as JSON to distinguish between the legacy
         // format and the current JSON format
         final JsonNode jsonNode;
         try {

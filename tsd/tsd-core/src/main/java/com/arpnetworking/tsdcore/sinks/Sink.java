@@ -17,6 +17,7 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.Collection;
@@ -33,12 +34,23 @@ import java.util.Collection;
 public interface Sink {
 
     /**
-     * Called when additional <code>AggregatedData</code> instances are 
+     * Called when additional <code>AggregatedData</code> instances are
      * available for publication.
-     * 
-     * @param data The <code>List</code> of <code>AggregatedData</code> to be 
-     * published. 
+     *
+     * @param data The <code>List</code> of <code>AggregatedData</code> to be
+     * published.
      */
+    void recordAggregateData(PeriodicData data);
+
+    /**
+     * Called when additional <code>AggregatedData</code> are available for publication.
+     *
+     * @param data The <code>List</code> of <code>AggregatedData</code> to be
+     * published.
+     *
+     * @deprecated Use <code>recordAggregatedData(PeriodicData)</code> instead.
+     */
+    @Deprecated
     void recordAggregateData(Collection<AggregatedData> data);
 
     /**
@@ -49,11 +61,14 @@ public interface Sink {
      * published.
      * @param conditions The <code>List</code> of <code>Condition</code>
      * instances to be published
+     *
+     * @deprecated Use <code>recordAggregatedData(PeriodicData)</code> instead.
      */
+    @Deprecated
     void recordAggregateData(Collection<AggregatedData> data, Collection<Condition> conditions);
 
     /**
-     * Called to allow the publisher to clean-up. No further calls to 
+     * Called to allow the publisher to clean-up. No further calls to
      * recordAggregation will be made after a call to close.
      */
     void close();

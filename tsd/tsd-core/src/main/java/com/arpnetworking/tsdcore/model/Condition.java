@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
@@ -27,6 +28,7 @@ import net.sf.oval.constraint.NotNull;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class Condition {
 
     public String getName() {

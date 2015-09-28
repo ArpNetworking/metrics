@@ -15,7 +15,10 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
 
@@ -24,7 +27,7 @@ import org.vertx.java.core.net.NetSocket;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public final class CarbonSink extends VertxSink {
+public class CarbonSink extends VertxSink {
 
     /**
      * {@inheritDoc}
@@ -34,27 +37,35 @@ public final class CarbonSink extends VertxSink {
         // Nothing to be done.
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected Buffer serialize(final AggregatedData datum) {
-        return new Buffer(
-                String.format(
-                        "%s.%s.%s.%s.%s.%s %f %d%n",
-                        datum.getFQDSN().getCluster(),
-                        datum.getHost(),
-                        datum.getFQDSN().getService(),
-                        datum.getFQDSN().getMetric(),
-                        datum.getPeriod().toString(),
-                        datum.getFQDSN().getStatistic().getName(),
-                        datum.getValue().getValue(),
-                        datum.getPeriodStart().toInstant().getMillis() / 1000));
+    public void recordAggregateData(final PeriodicData periodicData) {
+        LOGGER.debug()
+                .setMessage("Writing aggregated data")
+                .addData("sink", getName())
+                .addData("dataSize", periodicData.getData().size())
+                .addData("conditionsSize", periodicData.getConditions().size())
+                .log();
+        for (final AggregatedData datum : periodicData.getData()) {
+            final Buffer buffer = new Buffer(
+                    String.format(
+                            "%s.%s.%s.%s.%s.%s %f %d%n",
+                            datum.getFQDSN().getCluster(),
+                            datum.getHost(),
+                            datum.getFQDSN().getService(),
+                            datum.getFQDSN().getMetric(),
+                            datum.getPeriod().toString(),
+                            datum.getFQDSN().getStatistic().getName(),
+                            datum.getValue().getValue(),
+                            datum.getPeriodStart().toInstant().getMillis() / 1000));
+            enqueueData(buffer);
+        }
     }
 
-    private CarbonSink(final Builder builder) {
+    /* package private */ CarbonSink(final Builder builder) {
         super(builder);
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CarbonSink.class);
 
     /**
      * Implementation of builder pattern for <code>CarbonSink</code>.

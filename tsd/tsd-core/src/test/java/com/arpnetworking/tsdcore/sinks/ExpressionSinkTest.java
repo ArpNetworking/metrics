@@ -21,8 +21,8 @@ import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.scripting.Expression;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
-import com.arpnetworking.tsdcore.statistics.ExpressionStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -294,7 +294,8 @@ public class ExpressionSinkTest {
     private ExpressionSink.ConfigurationListener _listener;
     private AtomicReference<List<Expression>> _expressions;
 
-    private static final Statistic STATISTIC = new ExpressionStatistic();
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic STATISTIC = STATISTIC_FACTORY.getStatistic("expression");
 
     private static final class TestExpression implements Expression {
 

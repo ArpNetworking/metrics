@@ -30,7 +30,7 @@ import javax.inject.Inject;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class RequestHandler extends DefaultHttpRequestHandler {
+public final class RequestHandler extends DefaultHttpRequestHandler {
     /**
      * Public constructor.
      *

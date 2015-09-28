@@ -16,6 +16,7 @@
 package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.test.TestBeanFactory;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.collect.Lists;
@@ -25,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,46 +38,15 @@ public class TPStatisticTest {
 
     @Test
     public void testName() {
-        Assert.assertEquals("tp90", new TP90Statistic().getName());
-        Assert.assertEquals("tp95", new TP95Statistic().getName());
-        Assert.assertEquals("tp99", new TP99Statistic().getName());
-        Assert.assertEquals("tp99.9", new TP99p9Statistic().getName());
-        Assert.assertEquals("min", new TP0Statistic().getName());
-        Assert.assertEquals("max", new TP100Statistic().getName());
-    }
-
-    @Test
-    public void testTP0Stat() {
-        final TPStatistic tp0 = new TP0Statistic();
-        final List<Quantity> vals = TestBeanFactory.createSamples(ONE_TO_FIVE);
-        final Quantity calculated = tp0.calculate(vals);
-        Assert.assertThat(
-                calculated,
-                Matchers.equalTo(
-                        new Quantity.Builder()
-                                .setValue(1.0)
-                                .setUnit(Unit.MILLISECOND)
-                                .build()));
-    }
-
-    @Test
-    public void testTP100Stat() {
-        final TPStatistic tp100 = new TP100Statistic();
-        final List<Double> doubleVals = Lists.newArrayList(ONE_TO_FIVE);
-        final List<Quantity> vals = TestBeanFactory.createSamples(doubleVals);
-        final Quantity calculated = tp100.calculate(vals);
-        Assert.assertThat(
-                calculated,
-                Matchers.equalTo(
-                        new Quantity.Builder()
-                                .setValue(5.0)
-                                .setUnit(Unit.MILLISECOND)
-                                .build()));
+        Assert.assertEquals("tp90", TP90_STATISTIC.getName());
+        Assert.assertEquals("tp95", TP95_STATISTIC.getName());
+        Assert.assertEquals("tp99", TP99_STATISTIC.getName());
+        Assert.assertEquals("tp99.9", TP99P9_STATISTIC.getName());
     }
 
     @Test
     public void testTP99StatSmallSet() {
-        final TPStatistic tp = new TP99Statistic();
+        final Statistic tp = TP99_STATISTIC;
         final List<Double> doubleVals = Lists.newArrayList(ONE_TO_FIVE);
         final List<Quantity> vals = TestBeanFactory.createSamples(doubleVals);
         final Quantity calculated = tp.calculate(vals);
@@ -90,7 +61,7 @@ public class TPStatisticTest {
 
     @Test
     public void testTP99Stat() {
-        final TPStatistic tp = new TP99Statistic();
+        final Statistic tp = TP99_STATISTIC;
         final ArrayList<Double> vList = Lists.newArrayList();
         for (int x = 0; x < 100; ++x) {
             vList.add((double) x);
@@ -108,7 +79,7 @@ public class TPStatisticTest {
 
     @Test
     public void testTP999Stat() {
-        final TPStatistic tp = new TP99p9Statistic();
+        final Statistic tp = TP99P9_STATISTIC;
         final ArrayList<Double> vList = Lists.newArrayList();
         for (int x = 0; x < 10000; ++x) {
             vList.add((double) x);
@@ -126,40 +97,98 @@ public class TPStatisticTest {
 
     @Test
     public void testEquality() {
-        Assert.assertFalse(new TP0Statistic().equals(null));
-        Assert.assertFalse(new TP0Statistic().equals("ABC"));
-        Assert.assertTrue(new TP0Statistic().equals(new TP0Statistic()));
+        Assert.assertFalse(TP90_STATISTIC.equals(null));
+        Assert.assertFalse(TP90_STATISTIC.equals("ABC"));
+        Assert.assertTrue(TP90_STATISTIC.equals(TP90_STATISTIC));
 
-        Assert.assertFalse(new TP90Statistic().equals(null));
-        Assert.assertFalse(new TP90Statistic().equals("ABC"));
-        Assert.assertTrue(new TP90Statistic().equals(new TP90Statistic()));
+        Assert.assertFalse(TP95_STATISTIC.equals(null));
+        Assert.assertFalse(TP95_STATISTIC.equals("ABC"));
+        Assert.assertTrue(TP95_STATISTIC.equals(TP95_STATISTIC));
 
-        Assert.assertFalse(new TP95Statistic().equals(null));
-        Assert.assertFalse(new TP95Statistic().equals("ABC"));
-        Assert.assertTrue(new TP95Statistic().equals(new TP95Statistic()));
+        Assert.assertFalse(TP99_STATISTIC.equals(null));
+        Assert.assertFalse(TP99_STATISTIC.equals("ABC"));
+        Assert.assertTrue(TP99_STATISTIC.equals(TP99_STATISTIC));
 
-        Assert.assertFalse(new TP99Statistic().equals(null));
-        Assert.assertFalse(new TP99Statistic().equals("ABC"));
-        Assert.assertTrue(new TP99Statistic().equals(new TP99Statistic()));
-
-        Assert.assertFalse(new TP99p9Statistic().equals(null));
-        Assert.assertFalse(new TP99p9Statistic().equals("ABC"));
-        Assert.assertTrue(new TP99p9Statistic().equals(new TP99p9Statistic()));
-
-        Assert.assertFalse(new TP100Statistic().equals(null));
-        Assert.assertFalse(new TP100Statistic().equals("ABC"));
-        Assert.assertTrue(new TP100Statistic().equals(new TP100Statistic()));
+        Assert.assertFalse(TP99P9_STATISTIC.equals(null));
+        Assert.assertFalse(TP99P9_STATISTIC.equals("ABC"));
+        Assert.assertTrue(TP99P9_STATISTIC.equals(TP99P9_STATISTIC));
     }
 
     @Test
     public void testHashCode() {
-        Assert.assertEquals(new TP0Statistic().hashCode(), new TP0Statistic().hashCode());
-        Assert.assertEquals(new TP90Statistic().hashCode(), new TP90Statistic().hashCode());
-        Assert.assertEquals(new TP95Statistic().hashCode(), new TP95Statistic().hashCode());
-        Assert.assertEquals(new TP99Statistic().hashCode(), new TP99Statistic().hashCode());
-        Assert.assertEquals(new TP99p9Statistic().hashCode(), new TP99p9Statistic().hashCode());
-        Assert.assertEquals(new TP100Statistic().hashCode(), new TP100Statistic().hashCode());
+        Assert.assertEquals(TP90_STATISTIC.hashCode(), TP90_STATISTIC.hashCode());
+        Assert.assertEquals(TP95_STATISTIC.hashCode(), TP95_STATISTIC.hashCode());
+        Assert.assertEquals(TP99_STATISTIC.hashCode(), TP99_STATISTIC.hashCode());
+        Assert.assertEquals(TP99P9_STATISTIC.hashCode(), TP99P9_STATISTIC.hashCode());
+    }
+
+    @Test
+    public void testTP90Accumulator() {
+        final Accumulator accumulator = (Accumulator) HISTOGRAM_STATISTIC.createCalculator();
+        for (int x = 1; x <= 10000; ++x) {
+            accumulator.accumulate(new Quantity.Builder().setValue((double) x).build());
+        }
+        final CalculatedValue<Void> calculated = TP90_STATISTIC.createCalculator().calculate(
+                Collections.singletonMap(HISTOGRAM_STATISTIC, accumulator));
+        Assert.assertTrue(areClose(new Quantity.Builder().setValue(9000.0).build(), calculated.getValue()));
+    }
+
+    @Test
+    public void testTP95Accumulator() {
+        final Accumulator accumulator = (Accumulator) HISTOGRAM_STATISTIC.createCalculator();
+        for (int x = 1; x <= 10000; ++x) {
+            accumulator.accumulate(new Quantity.Builder().setValue((double) x).build());
+        }
+        final CalculatedValue calculated = TP95_STATISTIC.createCalculator().calculate(
+                Collections.singletonMap(HISTOGRAM_STATISTIC, accumulator));
+        Assert.assertTrue(areClose(new Quantity.Builder().setValue(9500.0).build(), calculated.getValue()));
+    }
+
+    @Test
+    public void testTP99Accumulator() {
+        final Accumulator accumulator = (Accumulator) HISTOGRAM_STATISTIC.createCalculator();
+        for (int x = 1; x <= 10000; ++x) {
+            accumulator.accumulate(new Quantity.Builder().setValue((double) x).build());
+        }
+        final CalculatedValue calculated = TP99_STATISTIC.createCalculator().calculate(
+                Collections.singletonMap(HISTOGRAM_STATISTIC, accumulator));
+        Assert.assertTrue(areClose(new Quantity.Builder().setValue(9900.0).build(), calculated.getValue()));
+    }
+
+    @Test
+    public void testTP99p9Accumulator() {
+        final Accumulator accumulator = (Accumulator) HISTOGRAM_STATISTIC.createCalculator();
+        for (int x = 1; x <= 10000; ++x) {
+            accumulator.accumulate(new Quantity.Builder().setValue((double) x).build());
+        }
+        final CalculatedValue calculated = TP99P9_STATISTIC.createCalculator().calculate(
+                Collections.singletonMap(HISTOGRAM_STATISTIC, accumulator));
+        Assert.assertTrue(areClose(new Quantity.Builder().setValue(9990.0).build(), calculated.getValue()));
+    }
+    @Test
+    public void testTP99p9AccumulatorBiModal() {
+        final Accumulator accumulator = (Accumulator) HISTOGRAM_STATISTIC.createCalculator();
+        for (int x = 1; x <= 9900; ++x) {
+            accumulator.accumulate(new Quantity.Builder().setValue((double) 10).build());
+        }
+        for (int x = 1; x <= 100; ++x) {
+            accumulator.accumulate(new Quantity.Builder().setValue((double) 100).build());
+        }
+        final CalculatedValue calculated = TP99P9_STATISTIC.createCalculator().calculate(
+                Collections.singletonMap(HISTOGRAM_STATISTIC, accumulator));
+        Assert.assertTrue(areClose(new Quantity.Builder().setValue(100.0).build(), calculated.getValue()));
+    }
+
+    private boolean areClose(final Quantity expected, final Quantity actual) {
+        final double diff = Math.abs(expected.getValue() - actual.getValue());
+        return Math.abs(diff / expected.getValue()) <= 0.01;
     }
 
     private static final List<Double> ONE_TO_FIVE = Lists.newArrayList(1d, 2d, 3d, 4d, 5d);
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic HISTOGRAM_STATISTIC = STATISTIC_FACTORY.getStatistic("histogram");
+    private static final TP90Statistic TP90_STATISTIC = (TP90Statistic) STATISTIC_FACTORY.getStatistic("tp90");
+    private static final TP95Statistic TP95_STATISTIC = (TP95Statistic) STATISTIC_FACTORY.getStatistic("tp95");
+    private static final TP99Statistic TP99_STATISTIC = (TP99Statistic) STATISTIC_FACTORY.getStatistic("tp99");
+    private static final TP99p9Statistic TP99P9_STATISTIC = (TP99p9Statistic) STATISTIC_FACTORY.getStatistic("tp99p9");
 }

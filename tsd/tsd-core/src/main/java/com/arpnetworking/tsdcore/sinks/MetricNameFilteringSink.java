@@ -19,13 +19,14 @@ import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -43,28 +44,32 @@ public final class MetricNameFilteringSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        // This is optimistic that most/all of the data will pass the filters.
-        final List<AggregatedData> filteredData = Lists.newArrayListWithCapacity(data.size());
-        for (final AggregatedData datum : data) {
+    public void recordAggregateData(final PeriodicData periodicData) {
+        final ImmutableList.Builder<AggregatedData> filteredDataBuilder = ImmutableList.builder();
+        for (final AggregatedData datum : periodicData.getData()) {
             final String metric = datum.getFQDSN().getMetric();
             final Boolean cachedResult = _cachedFilterResult.getUnchecked(metric);
             if (cachedResult) {
-                filteredData.add(datum);
+                filteredDataBuilder.add(datum);
             }
         }
 
-        final List<Condition> filteredConditions = Lists.newArrayListWithCapacity(conditions.size());
-        for (final Condition condition : conditions) {
+        final ImmutableList.Builder<Condition> filteredConditionsBuilder = ImmutableList.builder();
+        for (final Condition condition : periodicData.getConditions()) {
             final String metric = condition.getFQDSN().getMetric();
             final Boolean cachedResult = _cachedFilterResult.getUnchecked(metric);
             if (cachedResult) {
-                filteredConditions.add(condition);
+                filteredConditionsBuilder.add(condition);
             }
         }
-
+        final ImmutableList<AggregatedData> filteredData = filteredDataBuilder.build();
+        final ImmutableList<Condition> filteredConditions = filteredConditionsBuilder.build();
         if (!filteredData.isEmpty() || !filteredConditions.isEmpty()) {
-            _sink.recordAggregateData(filteredData, filteredConditions);
+            _sink.recordAggregateData(
+                    PeriodicData.Builder.clone(periodicData, new PeriodicData.Builder())
+                            .setData(filteredData)
+                            .setConditions(filteredConditions)
+                            .build());
         }
     }
 
@@ -84,11 +89,12 @@ public final class MetricNameFilteringSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "ExcludeFilters", _excludeFilters,
-                "IncludeFilters", _includeFilters,
-                "Sink", _sink);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("excludeFilters", _excludeFilters)
+                .put("includeFilters", _includeFilters)
+                .put("sink", _sink)
+                .build();
     }
 
     private boolean includeMetric(final String metric) {

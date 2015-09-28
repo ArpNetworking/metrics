@@ -15,21 +15,20 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-
-import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -80,6 +79,10 @@ public final class AggregatedData implements Serializable {
         return _start;
     }
 
+    public boolean isSpecified() {
+        return _isSpecified;
+    }
+
     public Quantity getValue() {
         return _value;
     }
@@ -90,6 +93,10 @@ public final class AggregatedData implements Serializable {
 
     public long getPopulationSize() {
         return _populationSize;
+    }
+
+    public Object getSupportingData() {
+        return _supportingData;
     }
 
     /**
@@ -106,7 +113,7 @@ public final class AggregatedData implements Serializable {
                 .fromFQDSN(data._fqdsn)
                 .setPeriod(data._period)
                 .setStart(data._start)
-                //.addDimension("Host", data._host)
+                //.addDimension("host", data._host)
                 .build();
     }
 
@@ -143,7 +150,9 @@ public final class AggregatedData implements Serializable {
                 && Objects.equal(_period, other._period)
                 && Objects.equal(_fqdsn, other._fqdsn)
                 && Objects.equal(_host, other._host)
-                && Objects.equal(_samples, other._samples);
+                && Objects.equal(_isSpecified, other._isSpecified)
+                && Objects.equal(_samples, other._samples)
+                && Objects.equal(_supportingData, other._supportingData);
     }
 
     /**
@@ -159,7 +168,9 @@ public final class AggregatedData implements Serializable {
                 getPeriod(),
                 getHost(),
                 getSamples(),
-                getPopulationSize());
+                getPopulationSize(),
+                isSpecified(),
+                getSupportingData());
     }
 
     /**
@@ -167,26 +178,47 @@ public final class AggregatedData implements Serializable {
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("FQDSN", _fqdsn)
-                .add("Value", _value)
-                .add("SamplesSize", _samples.size())
-                .add("PopulationSize", _populationSize)
-                .add("Period", _period)
-                .add("Start", _start)
-                .add("Host", _host)
-                .toString();
+        return toLogValue().toString();
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * NOTE: This class is not marked @Loggable due to the potentially large
+     * number of samples in the _samples field.  Using @Loggable would cause them
+     * all to be serialized and in the past has caused significant performance
+     * problems.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("fqdsn", _fqdsn)
+                .put("value", _value)
+                .put("samplesSize", _samples.size())
+                .put("populationSize", _populationSize)
+                .put("period", _period)
+                .put("start", _start)
+                .put("host", _host)
+                .put("isSpecified", _isSpecified)
+                .build();
     }
 
     private AggregatedData(final Builder builder) {
         _fqdsn = builder._fqdsn;
         _value = builder._value;
-        _samples = ImmutableList.copyOf(builder._samples);
+        if (builder._samples instanceof ImmutableList) {
+            _samples = (ImmutableList<Quantity>) builder._samples;
+        } else {
+            _samples = ImmutableList.copyOf(builder._samples);
+        }
         _populationSize = builder._populationSize;
         _period = builder._period;
         _start = builder._start;
         _host = builder._host;
+        _isSpecified = builder._isSpecified;
+        _supportingData = builder._supportingData;
     }
 
     private final FQDSN _fqdsn;
@@ -196,6 +228,8 @@ public final class AggregatedData implements Serializable {
     private final DateTime _start;
     private final Period _period;
     private final String _host;
+    private final boolean _isSpecified;
+    private final Object _supportingData;
 
     private static final long serialVersionUID = 9124136139360447095L;
 
@@ -291,6 +325,28 @@ public final class AggregatedData implements Serializable {
         }
 
         /**
+         * The aggregated data was specified. Required. Cannot be null.
+         *
+         * @param value The metric type.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setIsSpecified(final Boolean value) {
+            _isSpecified = value;
+            return this;
+        }
+
+        /**
+         * The supporting data.
+         *
+         * @param value The supporting data.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setSupportingData(final Object value) {
+            _supportingData = value;
+            return this;
+        }
+
+        /**
          * {@inheritDoc}
          */
         @Override
@@ -307,9 +363,6 @@ public final class AggregatedData implements Serializable {
             if (_populationSize == null) {
                 throw new IllegalStateException("populationSize must not be null");
             }
-            if (_populationSize < 0) {
-                throw new IllegalStateException("populationSize must be >= 0");
-            }
             if (_start == null) {
                 throw new IllegalStateException("start must not be null");
             }
@@ -319,6 +372,9 @@ public final class AggregatedData implements Serializable {
             if (Strings.isNullOrEmpty(_host)) {
                 throw new IllegalStateException("host must not be null or empty");
             }
+            if (_isSpecified == null) {
+                throw new IllegalStateException("isSpecified must not be null");
+            }
             return new AggregatedData(this);
         }
 
@@ -327,9 +383,8 @@ public final class AggregatedData implements Serializable {
         @NotNull
         private Quantity _value;
         @NotNull
-        private Collection<Quantity> _samples;
+        private Collection<Quantity> _samples = Collections.emptyList();
         @NotNull
-        @Min(value = 0)
         private Long _populationSize;
         @NotNull
         private DateTime _start;
@@ -338,5 +393,8 @@ public final class AggregatedData implements Serializable {
         @NotNull
         @NotEmpty
         private String _host;
+        @NotNull
+        private Boolean _isSpecified;
+        private Object _supportingData;
     }
 }

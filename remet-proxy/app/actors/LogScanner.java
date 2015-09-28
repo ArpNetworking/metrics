@@ -18,7 +18,9 @@ package actors;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.FluentIterable;
@@ -41,7 +43,7 @@ import java.util.Set;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class LogScanner extends UntypedActor {
+public final class LogScanner extends UntypedActor {
 
     /**
      * Public constructor.
@@ -117,6 +119,29 @@ public class LogScanner extends UntypedActor {
         } else {
             unhandled(message);
         }
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("fileSourceManagerActor", _fileSourceManagerActor)
+                .put("logs", _logs)
+                .put("existingLogs", _existingLogs)
+                .put("nonExistingLogs", _nonExistingLogs)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private final ActorRef _fileSourceManagerActor;

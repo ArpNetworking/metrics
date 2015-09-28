@@ -18,14 +18,15 @@ package com.arpnetworking.utility;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.contrib.pattern.ShardCoordinator;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.IndexedSeq;
 
@@ -33,7 +34,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -118,19 +118,20 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
 
             // Make sure that we have more than 1 region
             if (mostShards == null) {
-                LOGGER.debug("Cannot rebalance shards, less than 2 shard regions found.");
+                LOGGER.debug()
+                        .setMessage("Cannot rebalance shards, less than 2 shard regions found.")
+                        .log();
                 break;
             }
 
             // Make sure that the difference is enough to warrant a rebalance
             if (mostShards.getEffectiveShardCount() - leastShards.getEffectiveShardCount() < _rebalanceThreshold) {
-                LOGGER.debug(
-                        String.format(
-                                "Not rebalancing any (more) shards, shard region with most shards already balanced with least; "
-                                        + "most=%d, least=%d, rebalanceThreshold=%d",
-                                mostShards.getEffectiveShardCount(),
-                                leastShards.getEffectiveShardCount(),
-                                _rebalanceThreshold));
+                LOGGER.debug()
+                        .setMessage("Not rebalancing any (more) shards, shard region with most shards already balanced with least")
+                        .addData("most", mostShards.getEffectiveShardCount())
+                        .addData("least", leastShards.getEffectiveShardCount())
+                        .addData("rebalanceThreshold", _rebalanceThreshold)
+                        .log();
                 break;
             }
 
@@ -157,8 +158,14 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
                 currentAllocations,
                 rebalanceInProgress,
                 _pendingRebalances);
-        LOGGER.debug(String.format("notifying %s about rebalance info: %s", _notify, notification));
-        _notify.ifPresent(a -> a.tell(notification, ActorRef.noSender()));
+        LOGGER.debug()
+                .setMessage("Broadcasting rebalance info")
+                .addData("target", _notify)
+                .addData("shardAllocations", notification)
+                .log();
+        if (_notify.isPresent()) {
+            _notify.get().tell(notification, ActorRef.noSender());
+        }
         return toRebalance;
     }
 

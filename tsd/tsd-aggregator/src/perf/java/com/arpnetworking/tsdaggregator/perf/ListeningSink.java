@@ -18,6 +18,7 @@ package com.arpnetworking.tsdaggregator.perf;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.sinks.Sink;
 import com.google.common.base.Function;
 
@@ -36,6 +37,14 @@ public class ListeningSink implements Sink {
      */
     public ListeningSink(final Function<Collection<AggregatedData>, Void> callback) {
         _callback = callback;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void recordAggregateData(final PeriodicData periodicData) {
+        recordAggregateData(periodicData.getData());
     }
 
     /**

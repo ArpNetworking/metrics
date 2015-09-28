@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>client-ruby</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<name>org.eclipse.dltk.core.scriptbuilder</name>
+		<arguments>
+		</arguments>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.dltk.ruby.core.nature</nature>
+	</natures>
+</projectDescription>

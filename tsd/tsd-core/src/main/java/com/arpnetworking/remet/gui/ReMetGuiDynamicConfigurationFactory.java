@@ -97,12 +97,11 @@ public final class ReMetGuiDynamicConfigurationFactory implements DynamicConfigu
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Uri", _uri,
-                "ClusterKey", _clusterKey,
-                "ServiceKey", _serviceKey);
+        return LogValueMapFactory.builder(this)
+                .put("uri", _uri)
+                .put("clusterKey", _clusterKey)
+                .put("serviceKey", _serviceKey)
+                .build();
     }
 
     /**

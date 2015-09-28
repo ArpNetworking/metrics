@@ -19,11 +19,11 @@ import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.sinks.Sink;
-import com.arpnetworking.tsdcore.statistics.CountStatistic;
-import com.arpnetworking.tsdcore.statistics.MeanStatistic;
-import com.arpnetworking.tsdcore.statistics.TP99Statistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Period;
@@ -124,6 +124,9 @@ public class MetricsLimiterTestBase {
 
     protected static final Sink NULL_PUBLISHER = new Sink() {
         @Override
+        public void recordAggregateData(final PeriodicData data) {}
+
+        @Override
         public void recordAggregateData(final Collection<AggregatedData> data) {}
 
         @Override
@@ -133,18 +136,24 @@ public class MetricsLimiterTestBase {
         public void close() {}
     };
 
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MEAN_STATISTIC = STATISTIC_FACTORY.getStatistic("mean");
+    private static final Statistic COUNT_STATISTIC = STATISTIC_FACTORY.getStatistic("count");
+    private static final Statistic TP99_STATISTIC = STATISTIC_FACTORY.getStatistic("tp99");
+
     protected static final String METRIC_A = "metric.A";
     // 3 aggregations x 2 stats = 6 "aggregations"
     protected static final AggregatedData TSD_1A = new AggregatedData.Builder()
             .setFQDSN(new FQDSN.Builder()
                     .setService("navy")
                     .setCluster("cluster")
-                    .setStatistic(new MeanStatistic())
+                    .setStatistic(MEAN_STATISTIC)
                     .setMetric(METRIC_A)
                     .build())
             .setHost("example.com")
             .setPeriod(Period.minutes(5))
             .setStart(new DateTime())
+            .setIsSpecified(true)
             .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
@@ -153,12 +162,13 @@ public class MetricsLimiterTestBase {
             .setFQDSN(new FQDSN.Builder()
                     .setService("navy")
                     .setCluster("cluster")
-                    .setStatistic(new MeanStatistic())
+                    .setStatistic(MEAN_STATISTIC)
                     .setMetric(METRIC_A)
                     .build())
             .setHost("example.com")
             .setPeriod(Period.minutes(15))
             .setStart(new DateTime())
+            .setIsSpecified(true)
             .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
@@ -167,12 +177,13 @@ public class MetricsLimiterTestBase {
             .setFQDSN(new FQDSN.Builder()
                     .setService("navy")
                     .setCluster("cluster")
-                    .setStatistic(new MeanStatistic())
+                    .setStatistic(MEAN_STATISTIC)
                     .setMetric(METRIC_A)
                     .build())
             .setHost("example.com")
             .setPeriod(Period.minutes(60))
             .setStart(new DateTime())
+            .setIsSpecified(true)
             .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
@@ -181,12 +192,13 @@ public class MetricsLimiterTestBase {
             .setFQDSN(new FQDSN.Builder()
                     .setService("navy")
                     .setCluster("cluster")
-                    .setStatistic(new CountStatistic())
+                    .setStatistic(COUNT_STATISTIC)
                     .setMetric(METRIC_A)
                     .build())
             .setHost("example.com")
             .setPeriod(Period.minutes(5))
             .setStart(new DateTime())
+            .setIsSpecified(true)
             .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
@@ -195,12 +207,13 @@ public class MetricsLimiterTestBase {
             .setFQDSN(new FQDSN.Builder()
                     .setService("navy")
                     .setCluster("cluster")
-                    .setStatistic(new CountStatistic())
+                    .setStatistic(COUNT_STATISTIC)
                     .setMetric(METRIC_A)
                     .build())
             .setHost("example.com")
             .setPeriod(Period.minutes(15))
             .setStart(new DateTime())
+            .setIsSpecified(true)
             .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
@@ -209,12 +222,13 @@ public class MetricsLimiterTestBase {
             .setFQDSN(new FQDSN.Builder()
                     .setService("navy")
                     .setCluster("cluster")
-                    .setStatistic(new CountStatistic())
+                    .setStatistic(COUNT_STATISTIC)
                     .setMetric(METRIC_A)
                     .build())
             .setHost("example.com")
             .setPeriod(Period.minutes(60))
             .setStart(new DateTime())
+            .setIsSpecified(true)
             .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())
@@ -226,12 +240,13 @@ public class MetricsLimiterTestBase {
             .setFQDSN(new FQDSN.Builder()
                     .setService("army")
                     .setCluster("cluster")
-                    .setStatistic(new TP99Statistic())
+                    .setStatistic(TP99_STATISTIC)
                     .setMetric(METRIC_B)
                     .build())
             .setHost("example.com")
             .setPeriod(Period.hours(1))
             .setStart(new DateTime())
+            .setIsSpecified(true)
             .setPopulationSize(1L)
             .setSamples(Collections.<Quantity>emptyList())
             .setValue(TestBeanFactory.createSample())

@@ -18,7 +18,8 @@ package com.arpnetworking.tsdcore.model;
 import akka.util.ByteString;
 import akka.util.ByteStringBuilder;
 import com.arpnetworking.tsdcore.Messages;
-import com.arpnetworking.tsdcore.statistics.TP99Statistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.common.base.Optional;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.UnknownFieldSet;
@@ -80,7 +81,7 @@ public class AggregationMessageTest {
                 .setPopulationSize(1)
                 .addSamples(3.14f)
                 .setService("MyService")
-                .setStatistic(new TP99Statistic().getName())
+                .setStatistic(TP99_STATISTIC.getName())
                 .setStatisticValue(6.28f)
                 .setUnit("")
                 .build();
@@ -182,4 +183,7 @@ public class AggregationMessageTest {
         message = AggregationMessage.deserialize(buffer);
         Assert.assertEquals(Optional.absent(), message);
     }
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic TP99_STATISTIC = STATISTIC_FACTORY.getStatistic("tp99");
 }

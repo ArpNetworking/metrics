@@ -95,10 +95,28 @@
         <property name="message" value="Use JUnit v4 instead."/>
     </module>
 
-    <!-- Forbid shaded packages -->
+    <!-- Always throw propagate result -->
     <module name="RegexpSingleline">
         <property name="format" value="^[ ]*Throwables.propagate\(.*"/>
         <property name="message" value="Always throw the result of Throwables.propagate."/>
+    </module>
+
+    <!-- Checks that LogValueBuilder without reference is not used -->
+    <module name="RegexpSingleline">
+        <property name="format" value=" LogValueMapFactory\.builder\(\)"/>
+        <property name="message" value="Specify the instance being logged to the builder static factory."/>
+    </module>
+    <module name="RegexpSingleline">
+        <property name="format" value=" LogValueMapFactory\.of\("/>
+        <property name="message" value="Use builder static factory and specify the instance being logged."/>
+    </module>
+    <module name="RegexpSingleline">
+        <property name="format" value='\.put\("[_]?id", Integer\.toHexString\(System.identityHashCode\(this\)\)\)'/>
+        <property name="message" value="Do not specify the id field explicitly."/>
+    </module>
+    <module name="RegexpSingleline">
+        <property name="format" value='\.put\("[_]?class", this\.getClass\(\)'/>
+        <property name="message" value="Do not specify the class field explicitly."/>
     </module>
 
     <!-- Checks that property files contain the same keys.         -->

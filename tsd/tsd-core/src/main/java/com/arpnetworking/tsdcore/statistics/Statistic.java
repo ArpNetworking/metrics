@@ -44,6 +44,20 @@ public interface Statistic extends Serializable {
     Set<String> getAliases();
 
     /**
+     * Create a <code>Calculator</code> for this statistic.
+     *
+     * @return The new <code>Calculator</code> instance.
+     */
+    Calculator<?> createCalculator();
+
+    /**
+     * Accessor for any dependencies.
+     *
+     * @return The <code>Set</code> of <code>Statistic</code> dependencies.
+     */
+    Set<Statistic> getDependencies();
+
+    /**
      * Compute the statistic from the <code>list</code> of <code>Quantity</code>
      * instances. By default the <code>List</code> of samples is not assumed to
      * be in any particular order. However, any <code>Statistic</code> subclass

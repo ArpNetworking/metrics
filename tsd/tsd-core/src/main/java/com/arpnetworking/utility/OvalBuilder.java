@@ -120,10 +120,9 @@ public abstract class OvalBuilder<T> implements Builder<T> {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "TargetClass", _targetClass);
+        return LogValueMapFactory.builder(this)
+                .put("targetClass", _targetClass)
+                .build();
     }
 
     /**
@@ -180,16 +179,23 @@ public abstract class OvalBuilder<T> implements Builder<T> {
     private static Optional<Method> getGetterForSetter(final Method setter, final Class<?> clazz) {
         // Attempt to find "getFoo" and then "isFoo"; the parameter type is not
         // definitively indicative of get vs is because an Optional wrapped
-        // boolean can be exposed as get instead of is.
+        // boolean can be exposed as get instead of is. Finally, attempt no prefix
+        // in cases where the setter is setIsFoo and getter is isFoo.
+        final String baseName = setter.getName().substring(SETTER_METHOD_PREFIX.length());
         try {
-            final String getterName = GETTER_GET_METHOD_PREFIX + setter.getName().substring(SETTER_METHOD_PREFIX.length());
+            final String getterName = GETTER_GET_METHOD_PREFIX + baseName;
             return Optional.of(clazz.getDeclaredMethod(getterName));
         } catch (final NoSuchMethodException e1) {
             try {
-                final String getterName = GETTER_IS_METHOD_PREFIX + setter.getName().substring(SETTER_METHOD_PREFIX.length());
+                final String getterName = GETTER_IS_METHOD_PREFIX + baseName;
                 return Optional.of(clazz.getDeclaredMethod(getterName));
             } catch (final NoSuchMethodException e2) {
-                return Optional.absent();
+                try {
+                    final String getterName = baseName.substring(0, 1).toLowerCase() + baseName.substring(1);
+                    return Optional.of(clazz.getDeclaredMethod(getterName));
+                } catch (final NoSuchMethodException e3) {
+                    return Optional.absent();
+                }
             }
         }
     }

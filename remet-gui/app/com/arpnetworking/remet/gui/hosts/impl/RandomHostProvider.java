@@ -16,10 +16,12 @@
 package com.arpnetworking.remet.gui.hosts.impl;
 
 import akka.actor.UntypedActor;
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
@@ -33,7 +35,7 @@ import play.Configuration;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class RandomHostProvider extends UntypedActor {
+public final class RandomHostProvider extends UntypedActor {
 
     /**
      * Public constructor.
@@ -118,6 +120,31 @@ public class RandomHostProvider extends UntypedActor {
                 _lastTime = System.currentTimeMillis();
             }
         }
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("hostRepository", _hostRepository)
+                .put("lastTime", _lastTime)
+                .put("hostAdd", _hostAdd)
+                .put("hostUpdateOne", _hostUpdateOne)
+                .put("hostUpdateTwo", _hostUpdateTwo)
+                .put("hostRemove", _hostRemove)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private final HostRepository _hostRepository;

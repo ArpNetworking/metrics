@@ -20,7 +20,7 @@ import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
@@ -32,7 +32,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Collection;
 import java.util.HashMap;
 
 /**
@@ -49,15 +48,18 @@ public final class RrdSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+    public void recordAggregateData(final PeriodicData periodicData) {
         LOGGER.debug()
                 .setMessage("Writing aggregated data")
                 .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
+                .addData("dataSize", periodicData.getData().size())
+                .addData("conditionsSize", periodicData.getConditions().size())
                 .log();
 
-        for (final AggregatedData datum : data) {
+        for (final AggregatedData datum : periodicData.getData()) {
+            if (!datum.isSpecified()) {
+                continue;
+            }
             final String name = (datum.getHost() + "."
                     + datum.getFQDSN().getMetric() + "."
                     + datum.getPeriod().toString()
@@ -87,10 +89,11 @@ public final class RrdSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Path", _path,
-                "RrdTool", _rrdTool);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("path", _path)
+                .put("rrdTool", _rrdTool)
+                .build();
     }
 
     private final HashMap<String, RrdNode> _listeners = Maps.newHashMap();

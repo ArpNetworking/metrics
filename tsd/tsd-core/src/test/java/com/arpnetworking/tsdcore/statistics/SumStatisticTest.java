@@ -16,6 +16,7 @@
 package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.test.TestBeanFactory;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.collect.Lists;
@@ -24,6 +25,7 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -32,20 +34,16 @@ import java.util.List;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public class SumStatisticTest {
-    @Test
-    public void testConstruction() {
-        new SumStatistic();
-    }
 
     @Test
     public void testGetName() {
-        final SumStatistic stat = new SumStatistic();
+        final Statistic stat = SUM_STATISTIC;
         Assert.assertThat(stat.getName(), Matchers.equalTo("sum"));
     }
 
     @Test
     public void testCalculate() {
-        final SumStatistic stat = new SumStatistic();
+        final Statistic stat = SUM_STATISTIC;
         final List<Double> doubleVals = Lists.newArrayList(12d, 18d, 5d);
         final List<Quantity> vals = TestBeanFactory.createSamples(doubleVals);
         final Quantity calculated = stat.calculate(vals);
@@ -60,13 +58,26 @@ public class SumStatisticTest {
 
     @Test
     public void testEquality() {
-        Assert.assertFalse(new SumStatistic().equals(null));
-        Assert.assertFalse(new SumStatistic().equals("ABC"));
-        Assert.assertTrue(new SumStatistic().equals(new SumStatistic()));
+        Assert.assertFalse(SUM_STATISTIC.equals(null));
+        Assert.assertFalse(SUM_STATISTIC.equals("ABC"));
+        Assert.assertTrue(SUM_STATISTIC.equals(SUM_STATISTIC));
     }
 
     @Test
     public void testHashCode() {
-        Assert.assertEquals(new SumStatistic().hashCode(), new SumStatistic().hashCode());
+        Assert.assertEquals(SUM_STATISTIC.hashCode(), SUM_STATISTIC.hashCode());
     }
+
+    @Test
+    public void testAccumulator() {
+        final Accumulator<Void> accumulator = (Accumulator<Void>) SUM_STATISTIC.createCalculator();
+        accumulator.accumulate(new Quantity.Builder().setValue(12d).build());
+        accumulator.accumulate(new Quantity.Builder().setValue(18d).build());
+        accumulator.accumulate(new Quantity.Builder().setValue(5d).build());
+        final CalculatedValue calculated = accumulator.calculate(Collections.emptyMap());
+        Assert.assertEquals(calculated.getValue(), new Quantity.Builder().setValue(35.0).build());
+    }
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final SumStatistic SUM_STATISTIC = (SumStatistic) STATISTIC_FACTORY.getStatistic("sum");
 }

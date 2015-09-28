@@ -47,7 +47,5 @@ public class LogMessagesDroppingProcessor implements MessagesProcessor {
      * @param metrics Metrics to reset counts in.
      */
     @Override
-    public void initializeMetrics(final Metrics metrics) {
-
-    }
+    public void initializeMetrics(final Metrics metrics) { }
 }

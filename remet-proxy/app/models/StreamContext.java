@@ -20,8 +20,10 @@ import akka.actor.Cancellable;
 import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
 import akka.dispatch.ExecutionContexts;
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -124,6 +126,28 @@ public class StreamContext extends UntypedActor {
     public void postStop() throws Exception {
         _instrument.cancel();
         super.postStop();
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("members", _members)
+                .put("serviceMetrics", _serviceMetrics)
+                .put("logs", _logs)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private void executeLogRemoved(final LogFileDisappeared message) {
@@ -261,15 +285,15 @@ public class StreamContext extends UntypedActor {
 
     private Metrics _metrics;
 
-    private static final String METRIC_PREFIX = "Actors/StreamContext/";
-    private static final String METRICS_LIST_REQUEST = METRIC_PREFIX + "MetricsListRequest";
-    private static final String QUIT_COUNTER = METRIC_PREFIX + "Quit";
-    private static final String METRIC_REPORT_COUNTER = METRIC_PREFIX + "MetricReport";
-    private static final String CONNECT_COUNTER = METRIC_PREFIX + "Connect";
-    private static final String LOG_LINE_COUNTER = METRIC_PREFIX + "LogLine";
-    private static final String METRICS_LIST_COUNTER = METRIC_PREFIX + "MetricsList";
-    private static final String LOG_ADDED_COUNTER = METRIC_PREFIX + "LogAdded";
-    private static final String LOG_REMOVED_COUNTER = METRIC_PREFIX + "LogRemoved";
+    private static final String METRIC_PREFIX = "actors/stream/";
+    private static final String METRICS_LIST_REQUEST = METRIC_PREFIX + "metrics_list_request";
+    private static final String QUIT_COUNTER = METRIC_PREFIX + "quit";
+    private static final String METRIC_REPORT_COUNTER = METRIC_PREFIX + "metric_report";
+    private static final String CONNECT_COUNTER = METRIC_PREFIX + "connect";
+    private static final String LOG_LINE_COUNTER = METRIC_PREFIX + "log_line";
+    private static final String METRICS_LIST_COUNTER = METRIC_PREFIX + "metrics_list";
+    private static final String LOG_ADDED_COUNTER = METRIC_PREFIX + "log_added";
+    private static final String LOG_REMOVED_COUNTER = METRIC_PREFIX + "log_removed";
     private static final String UNKNOWN_COUNTER = METRIC_PREFIX + "UNKNOWN";
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamContext.class);
 }

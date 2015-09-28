@@ -15,8 +15,7 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
-import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogValueMapFactory;
+import com.google.common.base.MoreObjects;
 
 import java.util.Collections;
 import java.util.Set;
@@ -37,25 +36,11 @@ public abstract class BaseStatistic implements Statistic {
     }
 
     /**
-     * Generate a Steno log compatible representation.
-     *
-     * @return Steno log compatible representation.
-     */
-    @LogValue
-    public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Name", getName(),
-                "Aliases", getAliases());
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
-        return toLogValue().toString();
+    public Set<Statistic> getDependencies() {
+        return Collections.emptySet();
     }
 
     /**
@@ -72,6 +57,19 @@ public abstract class BaseStatistic implements Statistic {
     @Override
     public boolean equals(final Object o) {
         return this == o || (o != null && getClass().equals(o.getClass()));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
+                .add("name", getName())
+                .add("aliases", getAliases())
+                .toString();
     }
 
     private static final long serialVersionUID = -1334453626232464982L;

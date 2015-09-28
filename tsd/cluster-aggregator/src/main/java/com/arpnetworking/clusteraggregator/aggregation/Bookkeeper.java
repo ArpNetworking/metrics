@@ -20,12 +20,12 @@ import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.dispatch.OnComplete;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import com.arpnetworking.clusteraggregator.AggregatorLifecycle;
 import com.arpnetworking.clusteraggregator.bookkeeper.persistence.BookkeeperPersistence;
 import com.arpnetworking.clusteraggregator.models.BookkeeperData;
 import com.arpnetworking.clusteraggregator.models.MetricsRequest;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -60,7 +60,10 @@ public class Bookkeeper extends UntypedActor {
      * @param persistence The persistence provider.
      */
     public Bookkeeper(final BookkeeperPersistence persistence) {
-        _log.info("Bookkeeper starting up.");
+        LOGGER.info()
+                .setMessage("Bookkeeper starting up")
+                .addContext("actor", self())
+                .log();
         _persistence = persistence;
         _updateTimer = getContext().system().scheduler().schedule(
                 Duration.Zero(),
@@ -93,7 +96,11 @@ public class Bookkeeper extends UntypedActor {
                 @Override
                 public void onComplete(final Throwable failure, final BookkeeperData success) {
                     if (failure != null) {
-                        _log.error("error getting bookkeeper data", failure);
+                        LOGGER.error()
+                                .setMessage("Error getting bookkeeper data")
+                                .setThrowable(failure)
+                                .addContext("actor", self())
+                                .log();
                     } else {
                         _data = success;
                     }
@@ -109,8 +116,8 @@ public class Bookkeeper extends UntypedActor {
 
     private BookkeeperData _data = null;
     private final Cancellable _updateTimer;
-    private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
     private final BookkeeperPersistence _persistence;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AggregationRouter.class);
 
     private static final class Update {}
 }

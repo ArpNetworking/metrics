@@ -15,9 +15,8 @@
  */
 package com.arpnetworking.tsdcore.model;
 
-import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.tsdcore.statistics.TP99Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.arpnetworking.utility.test.BuildableEqualsAndHashCodeTester;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,7 +33,7 @@ public class FQDSNTest {
         final String expectedCluster = "MyCluster";
         final String expectedService = "MyService";
         final String expectedMetric = "MyMetric";
-        final Statistic expectedStatistic = new TP99Statistic();
+        final Statistic expectedStatistic = TP99_STATISTIC;
 
         final FQDSN fqdsn = new FQDSN.Builder()
                 .setCluster(expectedCluster)
@@ -57,12 +56,12 @@ public class FQDSNTest {
                         .setCluster("MyClusterA")
                         .setService("MyServiceA")
                         .setMetric("MyMetricA")
-                        .setStatistic(new TP99Statistic()),
+                        .setStatistic(TP99_STATISTIC),
                 new FQDSN.Builder()
                         .setCluster("MyClusterB")
                         .setService("MyServiceB")
                         .setMetric("MyMetricB")
-                        .setStatistic(new MedianStatistic()));
+                        .setStatistic(MEDIAN_STATISTIC));
     }
 
     @Test
@@ -71,10 +70,14 @@ public class FQDSNTest {
                 .setCluster("MyClusterA")
                 .setService("MyServiceA")
                 .setMetric("MyMetricA")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .build()
                 .toString();
         Assert.assertNotNull(asString);
         Assert.assertFalse(asString.isEmpty());
     }
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MEDIAN_STATISTIC = STATISTIC_FACTORY.getStatistic("median");
+    private static final Statistic TP99_STATISTIC = STATISTIC_FACTORY.getStatistic("tp99");
 }

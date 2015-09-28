@@ -15,18 +15,19 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import akka.actor.ActorSystem;
 import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,8 +35,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Tests for the <code>ReMetSink</code> class.
@@ -44,19 +43,28 @@ import java.util.List;
  */
 public class ReMetSinkTest {
 
+    @AfterClass
+    public static void afterClass() {
+        ACTOR_SYSTEM.shutdown();
+    }
+
     @Before
     public void before() {
         _remetSinkBuilder = new ReMetSink.Builder()
                 .setName("file_sink_test")
+                .setActorSystem(ACTOR_SYSTEM)
                 .setUri(URI.create("localhost:8888"));
     }
 
     @Test
     public void testSerialize() throws IOException {
         final AggregatedData datum = TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build();
-        final List<AggregatedData> data = Collections.singletonList(datum);
+        final ImmutableList<AggregatedData> data = ImmutableList.of(datum);
         final ReMetSink remetSink = _remetSinkBuilder.build();
-        final Collection<String> serializedData = remetSink.serialize(data, Collections.<Condition>emptyList());
+        final Collection<String> serializedData = remetSink.serialize(
+                TestBeanFactory.createPeriodicDataBuilder()
+                        .setData(data)
+                        .build());
         remetSink.close();
 
         Assert.assertEquals(1, serializedData.size());
@@ -71,9 +79,12 @@ public class ReMetSinkTest {
     public void testSerializeMultiple() throws IOException {
         final AggregatedData datumA = TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build();
         final AggregatedData datumB = TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build();
-        final List<AggregatedData> data = Lists.newArrayList(datumA, datumB);
+        final ImmutableList<AggregatedData> data = ImmutableList.of(datumA, datumB);
         final ReMetSink remetSink = _remetSinkBuilder.build();
-        final Collection<String> serializedData = remetSink.serialize(data, Collections.<Condition>emptyList());
+        final Collection<String> serializedData = remetSink.serialize(
+                TestBeanFactory.createPeriodicDataBuilder()
+                        .setData(data)
+                        .build());
         remetSink.close();
 
         Assert.assertEquals(1, serializedData.size());
@@ -88,13 +99,17 @@ public class ReMetSinkTest {
 
     @Test
     public void testSerializeChunk() throws IOException {
-        final List<AggregatedData> data = Lists.newArrayList();
+        final ImmutableList.Builder<AggregatedData> dataBuilder = ImmutableList.builder();
         for (int x = 0; x < 10000; x++) {
-            data.add(TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build());
+            dataBuilder.add(TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build());
         }
+        final ImmutableList<AggregatedData> data = dataBuilder.build();
         final int maxChunkSize = 83 * 1024;
         final ReMetSink remetSink = _remetSinkBuilder.setMaxRequestSize((long) maxChunkSize).build();
-        final Collection<String> serializedData = remetSink.serialize(data, Collections.<Condition>emptyList());
+        final Collection<String> serializedData = remetSink.serialize(
+                TestBeanFactory.createPeriodicDataBuilder()
+                        .setData(data)
+                        .build());
         remetSink.close();
 
         Assert.assertThat(serializedData.size(), Matchers.greaterThan(1));
@@ -124,4 +139,5 @@ public class ReMetSinkTest {
     private ReMetSink.Builder _remetSinkBuilder;
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
+    private static final ActorSystem ACTOR_SYSTEM = ActorSystem.apply();
 }

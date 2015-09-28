@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.tsdcore.sinks.circonus;
 
-import akka.dispatch.Mapper;
 import akka.http.javadsl.model.HttpMethods;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
@@ -24,8 +23,7 @@ import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.sinks.circonus.api.BrokerListResponse;
-import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundleRequest;
-import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundleResponse;
+import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundle;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -33,16 +31,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.base.Throwables;
 import com.ning.http.client.AsyncHttpClientConfig;
+import play.libs.F;
 import play.libs.ws.WSRequest;
 import play.libs.ws.WSResponse;
 import play.libs.ws.ning.NingWSClient;
 import scala.concurrent.ExecutionContext;
-import scala.concurrent.Future;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 import javax.xml.ws.WebServiceException;
 
 /**
@@ -57,15 +55,16 @@ public final class CirconusClient {
      *
      * @return Future with the results.
      */
-    public Future<BrokerListResponse> getBrokers() {
+    public F.Promise<BrokerListResponse> getBrokers() {
         final WSRequest request = _client
                 .url(_uri + BROKERS_URL)
                 .setMethod(HttpMethods.GET.value());
+        LOGGER.trace()
+                .setMessage("Sending get broker request")
+                .log();
         return fireRequest(request)
                 .map(
-                        new Mapper<WSResponse, BrokerListResponse>() {
-                            @Override
-                            public BrokerListResponse checkedApply(final WSResponse response) throws IOException {
+                        response -> {
                                 final String body = response.getBody();
                                 LOGGER.trace()
                                         .setMessage("Response from get brokers")
@@ -81,10 +80,10 @@ public final class CirconusClient {
                                 }
                                 throw new WebServiceException(
                                         String.format(
-                                                "Received non 200 response looking up broker list; request=%s, response=%s",
+                                                "Received non 200 response updating checkbundle; request=%s, response=%s, responseBody=%s",
                                                 request,
-                                                response));
-                            }
+                                                response,
+                                                response.getBody()));
                         },
                         _executionContext);
     }
@@ -99,13 +98,38 @@ public final class CirconusClient {
      * @param httptrapURI Url of the httptrap.
      * @return Future response.
      */
-    public Future<WSResponse> sendToHttpTrap(final Map<String, Object> data, final URI httptrapURI) {
+    public F.Promise<WSResponse> sendToHttpTrap(final Map<String, Object> data, final URI httptrapURI) {
         try {
+            LOGGER.trace()
+                    .setMessage("Sending data to httptrap")
+                    .log();
+            final WSRequest request = _client
+                    .url(httptrapURI.toString())
+                    .setMethod("POST")
+                    .setBody(OBJECT_MAPPER.writeValueAsString(data));
             return fireRequest(
-                    _client
-                            .url(httptrapURI.toString())
-                            .setMethod("POST")
-                            .setBody(OBJECT_MAPPER.writeValueAsString(data)));
+                    request)
+                    .map(
+                            response -> {
+                                final String body = response.getBody();
+                                LOGGER.trace()
+                                        .setMessage("Response from posting metric data")
+                                        .addData("response", response)
+                                        .addData("body", body)
+                                        .log();
+                                if (response.getStatus() / 100 == 2) {
+                                    return response;
+                                }
+                                throw new WebServiceException(
+                                        String.format(
+                                                "Received non 200 response posting metric data; request=%s, response=%s, responseBody=%s",
+                                                request,
+                                                response,
+                                                response.getBody()));
+
+                            },
+                            _executionContext
+                    );
         } catch (final JsonProcessingException e) {
             throw Throwables.propagate(e);
         }
@@ -117,7 +141,7 @@ public final class CirconusClient {
      * @param request Request details.
      * @return Future with the results.
      */
-    public Future<CheckBundleResponse> getOrCreateCheckBundle(final CheckBundleRequest request) {
+    public F.Promise<CheckBundle> getOrCreateCheckBundle(final CheckBundle request) {
         final String responseBody;
         try {
             responseBody = OBJECT_MAPPER.writeValueAsString(request);
@@ -127,13 +151,16 @@ public final class CirconusClient {
 
         final WSRequest requestHolder = _client
                 .url(_uri + CHECK_BUNDLE_URL)
+                .setQueryParameter("dedupe_params", "display_name,target")
                 .setMethod("POST")
                 .setBody(responseBody);
+        LOGGER.trace()
+                .setMessage("Looking up check bundle")
+                .addData("cid", request.getCid())
+                .log();
         return fireRequest(requestHolder)
                 .map(
-                        new Mapper<WSResponse, CheckBundleResponse>() {
-                            @Override
-                            public CheckBundleResponse checkedApply(final WSResponse response) throws IOException {
+                        response -> {
                                 final String body = response.getBody();
                                 LOGGER.trace()
                                         .setMessage("Response from create checkBundle")
@@ -141,15 +168,97 @@ public final class CirconusClient {
                                         .addData("body", body)
                                         .log();
                                 if (response.getStatus() / 100 == 2) {
-                                    return OBJECT_MAPPER.readValue(body, CheckBundleResponse.class);
+                                    return OBJECT_MAPPER.readValue(body, CheckBundle.class);
                                 }
                                 throw new WebServiceException(
                                         String.format(
-                                                "Received non 200 response looking up checkbundle; request=%s, response=%s",
+                                                "Received non 200 response updating checkbundle; request=%s, response=%s, responseBody=%s",
                                                 requestHolder,
-                                                response));
+                                                response,
+                                                response.getBody()));
+                        },
+                        _executionContext);
+    }
 
+    /**
+     * Gets a check bundle in Circonus.
+     *
+     * @param cid The check bundle's cid.
+     * @return Future with the results.
+     */
+    public F.Promise<CheckBundle> getCheckBundle(final String cid) {
+        final WSRequest requestHolder = _client
+                .url(_uri + cid)
+                .setMethod("GET")
+                .setQueryParameter("query_broker", "1");
+        LOGGER.trace()
+                .setMessage("Getting check bundle")
+                .addData("cid", cid)
+                .log();
+        return fireRequest(requestHolder)
+                .map(
+                        response -> {
+                                final String body = response.getBody();
+                                LOGGER.trace()
+                                        .setMessage("Response from get checkBundle")
+                                        .addData("response", response)
+                                        .addData("body", body)
+                                        .log();
+                                if (response.getStatus() / 100 == 2) {
+                                    return OBJECT_MAPPER.readValue(body, CheckBundle.class);
+                                }
+                                throw new WebServiceException(
+                                        String.format(
+                                                "Received non 200 response updating checkbundle; request=%s, response=%s, responseBody=%s",
+                                                requestHolder,
+                                                response,
+                                                response.getBody()));
+                        },
+                        _executionContext);
+    }
+
+
+    /**
+     * Updates a check bundle in Circonus.
+     *
+     * @param request Request details.
+     * @return Future with the results.
+     */
+    public F.Promise<CheckBundle> updateCheckBundle(final CheckBundle request) {
+        final String responseBody;
+        try {
+            responseBody = OBJECT_MAPPER.writeValueAsString(request);
+        } catch (final JsonProcessingException e) {
+            throw Throwables.propagate(e);
+        }
+
+        final WSRequest requestHolder = _client
+                .url(_uri + request.getCid())
+                .setMethod("PUT")
+                .setBody(responseBody);
+        LOGGER.trace()
+                .setMessage("Updating check bundle")
+                .addData("cid", request.getCid())
+                .log();
+        return fireRequest(requestHolder)
+                .map(
+                        response -> {
+                            final String body = response.getBody();
+                            LOGGER.trace()
+                                    .setMessage("Response from update checkbundle")
+                                    .addData("response", response)
+                                    .addData("body", body)
+                                    .log();
+                            if (response.getStatus() / 100 == 2) {
+                                return OBJECT_MAPPER.readValue(body, CheckBundle.class);
                             }
+                            throw new WebServiceException(
+                                    String.format(
+                                            "Received non 200 response updating checkbundle; request=%s, response=%s, responseBody=%s",
+                                            requestHolder,
+                                            response,
+                                            response.getBody()));
+
                         },
                         _executionContext);
     }
@@ -161,12 +270,11 @@ public final class CirconusClient {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Uri", _uri,
-                "AppName", _appName,
-                "AuthToken", _authToken);
+        return LogValueMapFactory.builder(this)
+                .put("uri", _uri)
+                .put("appName", _appName)
+                .put("authToken", _authToken)
+                .build();
     }
 
     /**
@@ -177,13 +285,12 @@ public final class CirconusClient {
         return toLogValue().toString();
     }
 
-    private Future<WSResponse> fireRequest(final WSRequest request) {
+    private F.Promise<WSResponse> fireRequest(final WSRequest request) {
         return request
                 .setHeader("X-Circonus-Auth-Token", _authToken)
                 .setHeader("X-Circonus-App-Name", _appName)
                 .setHeader("Accept", "application/json")
-                .execute()
-                .wrapped();
+                .execute();
     }
 
     private CirconusClient(final Builder builder) {
@@ -191,7 +298,13 @@ public final class CirconusClient {
         _appName = builder._appName;
         _authToken = builder._authToken;
         _executionContext = builder._executionContext;
-        _client = new NingWSClient(new AsyncHttpClientConfig.Builder().build());
+
+        final AsyncHttpClientConfig.Builder clientBuilder = new AsyncHttpClientConfig.Builder();
+        if (!builder._safeHttps.booleanValue()) {
+            clientBuilder.setAcceptAnyCertificate(true);
+            clientBuilder.setHostnameVerifier((hostname, session) -> true);
+        }
+        _client = new NingWSClient(clientBuilder.build());
     }
 
     private final NingWSClient _client;
@@ -208,7 +321,7 @@ public final class CirconusClient {
     static {
         final SimpleModule module = new SimpleModule("CirconusTypes");
         BuilderDeserializer.addTo(module, BrokerListResponse.Broker.class);
-        BuilderDeserializer.addTo(module, CheckBundleResponse.class);
+        BuilderDeserializer.addTo(module, CheckBundle.class);
         OBJECT_MAPPER.registerModule(module);
     }
 
@@ -267,9 +380,29 @@ public final class CirconusClient {
             return this;
         }
 
+        /**
+         * Sets the safety of HTTPS. Optional. Default is true. Setting this to false
+         * will accept any certificate and disables the hostname verifier. You may also
+         * need to supply the "-Djsse.enableSNIExtension=false" JVM argument to disable
+         * SNI.
+         *
+         * @param value the authentication token
+         * @return this Builder
+         */
+        public Builder setSafeHttps(final Boolean value) {
+            _safeHttps = value;
+            return this;
+        }
+
+        @NotNull
         private URI _uri;
+        @NotNull
         private String _appName;
+        @NotNull
         private String _authToken;
+        @NotNull
         private ExecutionContext _executionContext;
+        @NotNull
+        private Boolean _safeHttps = true;
     }
 }

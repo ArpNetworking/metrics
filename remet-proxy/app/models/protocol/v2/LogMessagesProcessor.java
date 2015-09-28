@@ -16,7 +16,9 @@
 package models.protocol.v2;
 
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -120,6 +122,27 @@ public class LogMessagesProcessor implements MessagesProcessor {
         _metrics.resetCounter(LOGS_LIST_COUNTER);
     }
 
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        // NOTE: Do not log connection context as this creates a circular reference
+        return LogValueMapFactory.builder(this)
+                .put("logsSubscriptions", _logsSubscriptions)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
+
     private void processLogsList(final LogsList logsList) {
         _metrics.incrementCounter(LOGS_LIST_COUNTER);
         _connectionContext.sendCommand(COMMAND_LOGS_LIST, OBJECT_MAPPER.convertValue(logsList, ObjectNode.class));
@@ -148,9 +171,7 @@ public class LogMessagesProcessor implements MessagesProcessor {
             return;
         }
 
-        // CHECKSTYLE.OFF: IllegalInstantiation - we need to turn the bytes into a String
-        final String line = rawReport.getLineAsString();
-        // CHECKSTYLE.ON: IllegalInstantiation
+        final String line = rawReport.convertLineToString();
         final List<String> matchingRegexes = new ArrayList<>();
         for (final String regex : regexes) {
             final Pattern pattern = PATTERNS_MAP.get(regex);
@@ -215,13 +236,15 @@ public class LogMessagesProcessor implements MessagesProcessor {
     private static final String COMMAND_LOGS_LIST = "logsList";
     private static final String COMMAND_REPORT_LOG = "reportLog";
     private static final String COMMAND_NEW_LOG = "newLog";
-    private static final String METRICS_PREFIX = "MessageProcessor/Log/";
-    private static final String LOG_LINE_COUNTER = METRICS_PREFIX + "LogLine";
-    private static final String LOGS_LIST_COUNTER = METRICS_PREFIX + "ListLog";
-    private static final String NEW_LOG_COUNTER = METRICS_PREFIX + "NewLog";
-    private static final String LOG_REPORT_COUNTER = METRICS_PREFIX + "LogReport";
-    private static final String SUBSCRIBE_COUNTER = METRICS_PREFIX + "Subscribe";
-    private static final String UNSUBSCRIBE_COUNTER = METRICS_PREFIX + "Unsubscribe";
-    private static final String GET_LOGS_COUNTER = METRICS_PREFIX + "Command/GetLogs";
+
+    private static final String METRICS_PREFIX = "message_processor/log/";
+    private static final String LOG_LINE_COUNTER = METRICS_PREFIX + "log_line";
+    private static final String LOGS_LIST_COUNTER = METRICS_PREFIX + "list_log";
+    private static final String NEW_LOG_COUNTER = METRICS_PREFIX + "new_log";
+    private static final String LOG_REPORT_COUNTER = METRICS_PREFIX + "log_report";
+    private static final String SUBSCRIBE_COUNTER = METRICS_PREFIX + "subscribe";
+    private static final String UNSUBSCRIBE_COUNTER = METRICS_PREFIX + "unsubscribe";
+    private static final String GET_LOGS_COUNTER = METRICS_PREFIX + "command/get_logs";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LogMessagesProcessor.class);
 }

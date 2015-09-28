@@ -15,11 +15,12 @@
  */
 package com.arpnetworking.tsdaggregator;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.model.Record;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
@@ -105,7 +106,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
      */
     @Override
     public void run() {
-        Thread.setDefaultUncaughtExceptionHandler(
+        Thread.currentThread().setUncaughtExceptionHandler(
                 (thread, throwable) -> LOGGER.error()
                         .setMessage("Unhandled exception")
                         .addData("periodCloser", PeriodCloser.this)
@@ -142,16 +143,24 @@ import java.util.concurrent.ConcurrentSkipListMap;
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("period", _period)
+                .put("bucketBuilder", _bucketBuilder)
+                .build();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Period", _period)
-                .add("BucketBuilder", _bucketBuilder)
-                .toString();
-
+        return toLogValue().toString();
     }
 
     /* package private */ void rotate(final DateTime now) {
@@ -204,11 +213,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
     /* package private */ static Duration getPeriodTimeout(final Period period) {
         // TODO(vkoskela): Support separate configurable timeouts per period. [MAI-499]
-        final Duration halfPeriodDuration = period.toStandardDuration().dividedBy(2);
-        if (MAXIMUM_PERIOD_TIMEOUT.isShorterThan(halfPeriodDuration)) {
+        final Duration timeoutDuration = period.toStandardDuration().dividedBy(2);
+        if (MINIMUM_PERIOD_TIMEOUT.isLongerThan(timeoutDuration)) {
+            return MINIMUM_PERIOD_TIMEOUT;
+        }
+        if (MAXIMUM_PERIOD_TIMEOUT.isShorterThan(timeoutDuration)) {
             return MAXIMUM_PERIOD_TIMEOUT;
         }
-        return halfPeriodDuration;
+        return timeoutDuration;
     }
 
     /* package private */ static DateTime getStartTime(final DateTime dateTime, final Period period) {
@@ -241,6 +253,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
     private final ConcurrentSkipListMap<DateTime, List<Bucket>> _bucketsByExpiration = new ConcurrentSkipListMap<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PeriodCloser.class);
+    private static final Duration MINIMUM_PERIOD_TIMEOUT = Duration.standardSeconds(1);
     private static final Duration MAXIMUM_PERIOD_TIMEOUT = Duration.standardMinutes(10);
 
     /**

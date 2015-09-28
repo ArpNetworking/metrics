@@ -16,15 +16,14 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.test.TestBeanFactory;
-import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Tests for the <code>FilteringSink</code> class.
@@ -44,11 +43,9 @@ public class ServiceNameFilteringSinkTest {
     @Test
     public void testIncludeByDefault() {
         final Sink sink = _sinkBuilder.build();
-        final List<AggregatedData> data = Collections.singletonList(TestBeanFactory.createAggregatedData());
-        sink.recordAggregateData(data, Collections.<Condition>emptyList());
-        Mockito.verify(_mockSink).recordAggregateData(
-                Matchers.eq(data),
-                Matchers.eq(Collections.<Condition>emptyList()));
+        final PeriodicData data = TestBeanFactory.createPeriodicData();
+        sink.recordAggregateData(data);
+        Mockito.verify(_mockSink).recordAggregateData(Matchers.eq(data));
     }
 
     @Test
@@ -56,17 +53,18 @@ public class ServiceNameFilteringSinkTest {
         final Sink sink = _sinkBuilder
                 .setExcludeFilters(Collections.singletonList(".*SVCMATCH.*"))
                 .build();
-        final List<AggregatedData> data = Collections.singletonList(
-                TestBeanFactory.createAggregatedDataBuilder()
-                        .setFQDSN(TestBeanFactory.createFQDSNBuilder()
-                                .setMetric("Metric name does not match for exclusion")
-                                .setService("SVCMATCH_Prod")
-                                .build())
-                        .build());
-        sink.recordAggregateData(data, Collections.<Condition>emptyList());
-        Mockito.verify(_mockSink, Mockito.never()).recordAggregateData(
-                Matchers.anyListOf(AggregatedData.class),
-                Matchers.eq(Collections.<Condition>emptyList()));
+        final PeriodicData data = TestBeanFactory.createPeriodicDataBuilder()
+                .setData(
+                        ImmutableList.of(
+                                TestBeanFactory.createAggregatedDataBuilder()
+                                        .setFQDSN(TestBeanFactory.createFQDSNBuilder()
+                                                .setMetric("Metric name does not match for exclusion")
+                                                .setService("SVCMATCH_Prod")
+                                                .build())
+                                        .build()))
+                .build();
+        sink.recordAggregateData(data);
+        Mockito.verify(_mockSink, Mockito.never()).recordAggregateData(Matchers.any(PeriodicData.class));
     }
 
     @Test
@@ -75,17 +73,18 @@ public class ServiceNameFilteringSinkTest {
                 .setExcludeFilters(Collections.singletonList(".*MATCHES HERE.*"))
                 .setIncludeFilters(Collections.singletonList(".*for inclusion.*"))
                 .build();
-        final List<AggregatedData> data = Collections.singletonList(
-                TestBeanFactory.createAggregatedDataBuilder()
-                        .setFQDSN(TestBeanFactory.createFQDSNBuilder()
-                                .setMetric("Metric name")
-                                .setService("service MATCHES HERE for inclusion")
-                                .build())
-                        .build());
-        sink.recordAggregateData(data, Collections.<Condition>emptyList());
-        Mockito.verify(_mockSink).recordAggregateData(
-                Matchers.eq(data),
-                Matchers.eq(Collections.<Condition>emptyList()));
+        final PeriodicData data = TestBeanFactory.createPeriodicDataBuilder()
+                .setData(
+                        ImmutableList.of(
+                                TestBeanFactory.createAggregatedDataBuilder()
+                                        .setFQDSN(TestBeanFactory.createFQDSNBuilder()
+                                                .setMetric("Metric name")
+                                                .setService("service MATCHES HERE for inclusion")
+                                                .build())
+                                        .build()))
+                .build();
+        sink.recordAggregateData(data);
+        Mockito.verify(_mockSink).recordAggregateData(Matchers.eq(data));
     }
 
     private ServiceNameFilteringSink.Builder _sinkBuilder;

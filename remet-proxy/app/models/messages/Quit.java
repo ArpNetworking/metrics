@@ -16,6 +16,7 @@
 
 package models.messages;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.MoreObjects;
 import play.mvc.WebSocket;
@@ -25,6 +26,7 @@ import play.mvc.WebSocket;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Loggable
 public final class Quit {
 
     /**
@@ -47,7 +49,8 @@ public final class Quit {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Channel", _channel)
+                .add("class", this.getClass())
+                .add("channel", _channel)
                 .toString();
     }
 

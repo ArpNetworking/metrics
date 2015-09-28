@@ -46,10 +46,11 @@ public final class JsonNodeUriSource extends BaseJsonNodeSource implements JsonN
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Uri", _uri,
-                "JsonNode", _jsonNode);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("uri", _uri)
+                .put("jsonNode", _jsonNode)
+                .build();
     }
 
     /**

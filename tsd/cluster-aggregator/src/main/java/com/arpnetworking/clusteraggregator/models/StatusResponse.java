@@ -25,6 +25,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import org.joda.time.Period;
 import scala.collection.JavaConversions;
@@ -33,7 +34,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Response model for the status http endpoint.
@@ -68,7 +68,7 @@ public final class StatusResponse {
     }
 
     public Optional<List<ShardAllocation>> getAllocations() {
-        return _allocations.map(Collections::unmodifiableList);
+        return _allocations.transform(Collections::unmodifiableList);
     }
 
     private StatusResponse(final Builder builder) {
@@ -83,7 +83,16 @@ public final class StatusResponse {
         _localAddress = builder._localAddress;
         _metrics = builder._bookkeeperData;
         _localMetrics = builder._localMetrics;
-        _allocations = Optional.ofNullable(builder._clusterState).flatMap(ClusterStatusCache.StatusResponse::getAllocations);
+        _allocations = flatten(
+                Optional.fromNullable(builder._clusterState)
+                        .transform(status -> status.getAllocations()));
+    }
+
+    private <T> Optional<T> flatten(final Optional<Optional<T>> value) {
+        if (value.isPresent()) {
+            return value.get();
+        }
+        return Optional.absent();
     }
 
     private final Address _localAddress;

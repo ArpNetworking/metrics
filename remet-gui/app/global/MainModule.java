@@ -15,6 +15,7 @@
  */
 package global;
 
+import actors.JvmMetricsCollector;
 import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -58,6 +59,10 @@ public class MainModule extends AbstractModule {
      */
     @Override
     protected void configure() {
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("JvmMetricsCollector"))
+                .toProvider(JvmMetricsCollectorProvider.class)
+                .asEagerSingleton();
         bind(HostRepository.class)
                 .toProvider(HostRepositoryProvider.class)
                 .asEagerSingleton();
@@ -225,5 +230,21 @@ public class MainModule extends AbstractModule {
         private final Props _hostProviderProps;
 
         private static final String INDEXER_ROLE = "host_indexer";
+    }
+
+    private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {
+        @Inject
+        public JvmMetricsCollectorProvider(final Injector injector, final ActorSystem system) {
+            _injector = injector;
+            _system = system;
+        }
+
+        @Override
+        public ActorRef get() {
+            return _system.actorOf(GuiceActorCreator.props(_injector, JvmMetricsCollector.class));
+        }
+
+        private final Injector _injector;
+        private final ActorSystem _system;
     }
 }

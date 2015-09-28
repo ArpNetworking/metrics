@@ -16,8 +16,10 @@
 
 package models;
 
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.com.arpnetworking.steno.Logger;
 import com.arpnetworking.metrics.com.arpnetworking.steno.LoggerFactory;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.parsers.Parser;
 import models.messages.LogLine;
 
@@ -50,6 +52,26 @@ public class LogLineParser implements Parser<LogLine> {
         }
 
         return new LogLine(_logFile, data);
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("logFile", _logFile)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private final Path _logFile;

@@ -22,9 +22,8 @@ import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.scripting.Expression;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
-import com.arpnetworking.tsdcore.statistics.CountStatistic;
-import com.arpnetworking.tsdcore.statistics.SumStatistic;
-import com.arpnetworking.tsdcore.statistics.TP99Statistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.common.base.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -174,7 +173,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -183,6 +182,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -211,7 +211,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -220,6 +220,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -247,7 +248,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -256,6 +257,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -338,7 +340,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -347,6 +349,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -374,7 +377,7 @@ public class LuaExpressionTest {
                                                 .setCluster("MyCluster")
                                                 .setService("MyService")
                                                 .setMetric("MyMetric")
-                                                .setStatistic(new TP99Statistic())
+                                                .setStatistic(TP99_STATISTIC)
                                                 .build())
                                         .setPeriod(new Period("PT5M"))
                                         .setValue(new Quantity.Builder()
@@ -382,6 +385,7 @@ public class LuaExpressionTest {
                                                 .build())
                                         .setHost("MyHost")
                                         .setStart(DateTime.now())
+                                        .setIsSpecified(true)
                                         .setPopulationSize(1L)
                                         .setSamples(Collections.<Quantity>emptyList())
                                         .build()));
@@ -405,7 +409,7 @@ public class LuaExpressionTest {
                                                 .setCluster("MyCluster")
                                                 .setService("MyService")
                                                 .setMetric("MyMetric")
-                                                .setStatistic(new TP99Statistic())
+                                                .setStatistic(TP99_STATISTIC)
                                                 .build())
                                         .setPeriod(new Period("PT5M"))
                                         .setValue(new Quantity.Builder()
@@ -414,6 +418,7 @@ public class LuaExpressionTest {
                                                 .build())
                                         .setHost("MyHost")
                                         .setStart(DateTime.now())
+                                        .setIsSpecified(true)
                                         .setPopulationSize(1L)
                                         .setSamples(Collections.<Quantity>emptyList())
                                         .build()));
@@ -437,7 +442,7 @@ public class LuaExpressionTest {
                                                 .setCluster("MyCluster")
                                                 .setService("MyService")
                                                 .setMetric("MyMetric")
-                                                .setStatistic(new TP99Statistic())
+                                                .setStatistic(TP99_STATISTIC)
                                                 .build())
                                         .setPeriod(new Period("PT5M"))
                                         .setValue(new Quantity.Builder()
@@ -446,6 +451,7 @@ public class LuaExpressionTest {
                                                 .build())
                                         .setHost("MyHost")
                                         .setStart(DateTime.now())
+                                        .setIsSpecified(true)
                                         .setPopulationSize(1L)
                                         .setSamples(Collections.<Quantity>emptyList())
                                         .build()));
@@ -469,7 +475,7 @@ public class LuaExpressionTest {
                                                 .setCluster("MyCluster")
                                                 .setService("MyService")
                                                 .setMetric("MyMetric")
-                                                .setStatistic(new TP99Statistic())
+                                                .setStatistic(TP99_STATISTIC)
                                                 .build())
                                         .setPeriod(new Period("PT5M"))
                                         .setValue(new Quantity.Builder()
@@ -478,6 +484,7 @@ public class LuaExpressionTest {
                                                 .build())
                                         .setHost("MyHost")
                                         .setStart(DateTime.now())
+                                        .setIsSpecified(true)
                                         .setPopulationSize(1L)
                                         .setSamples(Collections.<Quantity>emptyList())
                                         .build()));
@@ -503,7 +510,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -512,6 +519,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -540,7 +548,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -549,6 +557,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -577,7 +586,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -586,6 +595,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -614,7 +624,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -623,6 +633,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -651,7 +662,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -660,6 +671,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -688,7 +700,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new TP99Statistic())
+                                        .setStatistic(TP99_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -697,6 +709,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -745,7 +758,7 @@ public class LuaExpressionTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .build()));
     }
 
@@ -764,7 +777,7 @@ public class LuaExpressionTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .build()));
     }
 
@@ -783,7 +796,7 @@ public class LuaExpressionTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .build()));
     }
 
@@ -802,7 +815,7 @@ public class LuaExpressionTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .build()));
     }
 
@@ -822,13 +835,13 @@ public class LuaExpressionTest {
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new SumStatistic())
+                .setStatistic(SUM_STATISTIC)
                 .build()));
         Assert.assertTrue(dependencies.contains(new FQDSN.Builder()
                 .setCluster("MyCluster")
                 .setService("MyService")
                 .setMetric("MyMetric")
-                .setStatistic(new CountStatistic())
+                .setStatistic(COUNT_STATISTIC)
                 .build()));
     }
 
@@ -851,7 +864,7 @@ public class LuaExpressionTest {
                                         .setCluster("MyCluster")
                                         .setService("MyService")
                                         .setMetric("MyMetric")
-                                        .setStatistic(new SumStatistic())
+                                        .setStatistic(SUM_STATISTIC)
                                         .build())
                                 .setPeriod(new Period("PT5M"))
                                 .setValue(new Quantity.Builder()
@@ -860,6 +873,7 @@ public class LuaExpressionTest {
                                         .build())
                                 .setHost("MyHost")
                                 .setStart(DateTime.now())
+                                .setIsSpecified(true)
                                 .setPopulationSize(1L)
                                 .setSamples(Collections.<Quantity>emptyList())
                                 .build()));
@@ -867,4 +881,8 @@ public class LuaExpressionTest {
     }
 
     private static final DateTime NOW = DateTime.now();
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic SUM_STATISTIC = STATISTIC_FACTORY.getStatistic("sum");
+    private static final Statistic COUNT_STATISTIC = STATISTIC_FACTORY.getStatistic("count");
+    private static final Statistic TP99_STATISTIC = STATISTIC_FACTORY.getStatistic("tp99");
 }

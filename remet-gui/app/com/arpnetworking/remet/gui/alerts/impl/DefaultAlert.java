@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.remet.gui.alerts.impl;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.remet.gui.alerts.Alert;
 import com.arpnetworking.remet.gui.alerts.Context;
 import com.arpnetworking.remet.gui.alerts.Operator;
@@ -36,6 +37,7 @@ import java.util.UUID;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class DefaultAlert implements Alert {
 
     /**
@@ -133,6 +135,7 @@ public final class DefaultAlert implements Alert {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Id", _id)
                 .add("Context", _context)
                 .add("Name", _name)

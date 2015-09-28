@@ -20,22 +20,19 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.Messages;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.AggregationMessage;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
-import com.arpnetworking.tsdcore.statistics.ExpressionStatistic;
+import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
+import com.google.protobuf.ByteString;
 import org.joda.time.DateTime;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Publisher to send data to an upstream aggregation server.
@@ -43,29 +40,26 @@ import java.util.List;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public final class AggregationServerSink extends VertxSink {
-
     /**
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+    public void recordAggregateData(final PeriodicData periodicData) {
         LOGGER.debug()
                 .setMessage("Writing aggregated data")
                 .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
+                .addData("dataSize", periodicData.getData().size())
+                .addData("conditionsSize", periodicData.getConditions().size())
                 .log();
-        final List<AggregatedData> filteredData = Lists.newArrayList(
-                Iterables.filter(data, new Predicate<AggregatedData>() {
-                    @Override
-                    public boolean apply(final AggregatedData input) {
-                        if (input != null) {
-                            return !input.getFQDSN().getStatistic().equals(EXPRESSION_STATISTIC);
-                        }
-                        return false;
-                    }
-                }));
-        super.recordAggregateData(filteredData, conditions);
+
+        // Filter out expression statistics; these will be recomputed by cluster aggregator at the cluster level
+        final Map<String, List<AggregatedData>> data = periodicData.getData()
+                .stream()
+                .filter(datum -> !EXPRESSION_STATISTIC.equals(datum.getFQDSN().getStatistic()))
+                .collect(Collectors.groupingBy(d -> d.getFQDSN().getMetric()));
+        for (final List<AggregatedData> dataList : data.values()) {
+            sendAggregatedData(dataList);
+        }
     }
 
     /**
@@ -76,22 +70,27 @@ public final class AggregationServerSink extends VertxSink {
         _sentHandshake = false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected Buffer serialize(final AggregatedData datum) {
-        final Buffer buffer = new Buffer();
+    private void sendAggregatedData(final List<AggregatedData> data) {
+        if (data.isEmpty()) {
+            return;
+        }
+        final Messages.StatisticSetRecord record = serializeMetricData(data);
+        enqueueData(AggregationMessage.create(record).serialize());
+    }
+
+    private Messages.StatisticSetRecord serializeMetricData(final List<AggregatedData> data) {
+        // Get the dimensions from the first data element
+        final AggregatedData firstElement = data.get(0);
         if (!_sentHandshake) {
             // TODO(barp): Revise aggregator sink protocol for host and cluster support [MAI-443]
-            final String host = datum.getHost();
-            final String cluster = datum.getFQDSN().getCluster();
+            final String host = firstElement.getHost();
+            final String cluster = firstElement.getFQDSN().getCluster();
             final Messages.HostIdentification identifyHostMessage =
                     Messages.HostIdentification.newBuilder()
                             .setHostName(host)
                             .setClusterName(cluster)
                             .build();
-            buffer.appendBuffer(AggregationMessage.create(identifyHostMessage).serialize());
+            enqueueData(AggregationMessage.create(identifyHostMessage).serialize());
             LOGGER.debug()
                     .setMessage("Writing host identification message")
                     .addData("sink", getName())
@@ -101,27 +100,64 @@ public final class AggregationServerSink extends VertxSink {
             _sentHandshake = true;
         }
 
-        final List<Double> sampleValues = FluentIterable.from(datum.getSamples()).transform(EXTRACT_VALUES_FROM_SAMPLES).toList();
-        final String unit;
-        if (datum.getValue().getUnit().isPresent()) {
-            unit = datum.getValue().getUnit().get().toString();
-        } else {
-            unit = "";
-        }
-        final Messages.AggregationRecord recordMessage = Messages.AggregationRecord.newBuilder()
-                .setMetric(datum.getFQDSN().getMetric())
-                .setPeriod(datum.getPeriod().toString())
-                .setPeriodStart(datum.getPeriodStart().toString())
-                .setService(datum.getFQDSN().getService())
-                .setStatistic(datum.getFQDSN().getStatistic().getName())
-                .setStatisticValue(datum.getValue().getValue())
-                .setPopulationSize(datum.getPopulationSize())
-                .addAllSamples(sampleValues)
-                .setUnit(unit)
-                .build();
+        final Messages.StatisticSetRecord.Builder builder = Messages.StatisticSetRecord.newBuilder()
+                .setMetric(firstElement.getFQDSN().getMetric())
+                .setPeriod(firstElement.getPeriod().toString())
+                .setPeriodStart(firstElement.getPeriodStart().toString())
+                .setCluster(firstElement.getFQDSN().getCluster())
+                .setService(firstElement.getFQDSN().getService());
 
-        buffer.appendBuffer(AggregationMessage.create(recordMessage).serialize());
-        return buffer;
+        for (final AggregatedData datum : data) {
+            final String unit;
+            if (datum.getValue().getUnit().isPresent()) {
+                unit = datum.getValue().getUnit().get().toString();
+            } else {
+                unit = "";
+            }
+
+            final Messages.StatisticRecord.Builder entryBuilder = builder.addStatisticsBuilder()
+                    .setUnit(unit)
+                    .setStatistic(datum.getFQDSN().getStatistic().getName())
+                    .setValue(datum.getValue().getValue())
+                    .setUnit(unit)
+                    .setUserSpecified(datum.isSpecified());
+
+            final ByteString supportingData = serializeSupportingData(datum);
+            if (supportingData != null) {
+                entryBuilder.setSupportingData(supportingData);
+            }
+            entryBuilder.build();
+        }
+
+        return builder.build();
+    }
+
+    private ByteString serializeSupportingData(final AggregatedData datum) {
+        final Object data = datum.getSupportingData();
+        final ByteString byteString;
+        if (data instanceof HistogramStatistic.HistogramSupportingData) {
+            final HistogramStatistic.HistogramSupportingData histogramSupportingData = (HistogramStatistic.HistogramSupportingData) data;
+            final Messages.SparseHistogramSupportingData.Builder builder = Messages.SparseHistogramSupportingData.newBuilder();
+            final HistogramStatistic.Histogram histogram = histogramSupportingData.getHistogram();
+            final String unit;
+            if (histogramSupportingData.getUnit().isPresent()) {
+                unit = histogramSupportingData.getUnit().get().toString();
+            } else {
+                unit = "";
+            }
+            builder.setUnit(unit);
+
+            for (final Map.Entry<Double, Integer> entry : histogram.getValues()) {
+                builder.addEntriesBuilder()
+                        .setBucket(entry.getKey())
+                        .setCount(entry.getValue())
+                        .build();
+            }
+            byteString = ByteString.copyFrom(AggregationMessage.create(builder.build()).serialize().getBytes());
+        } else {
+            return null;
+        }
+        return byteString;
     }
 
     private void heartbeat() {
@@ -152,10 +188,11 @@ public final class AggregationServerSink extends VertxSink {
 
     private boolean _sentHandshake = false;
 
-    private static final Function<Quantity, Double> EXTRACT_VALUES_FROM_SAMPLES =
+    private static final com.google.common.base.Function<Quantity, Double> EXTRACT_VALUES_FROM_SAMPLES =
             input -> input != null ? input.getValue() : null;
 
-    private static final Statistic EXPRESSION_STATISTIC = new ExpressionStatistic();
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic EXPRESSION_STATISTIC = STATISTIC_FACTORY.getStatistic("expression");
     private static final Logger LOGGER = LoggerFactory.getLogger(AggregationServerSink.class);
 
     /**

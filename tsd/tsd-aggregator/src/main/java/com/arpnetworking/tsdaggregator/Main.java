@@ -79,11 +79,19 @@ public final class Main implements Launchable {
 
         // Global initialization
         Thread.setDefaultUncaughtExceptionHandler(
-                (thread, throwable) ->
-                        LOGGER.error()
-                                .setMessage("Unhandled exception")
-                                .setThrowable(throwable)
-                                .log());
+                (thread, throwable) -> {
+                    System.err.println("Unhandled exception! exception: " + throwable.toString());
+                    throwable.printStackTrace(System.err);
+                });
+
+        Thread.currentThread().setUncaughtExceptionHandler(
+                (thread, throwable) -> {
+                    LOGGER.error()
+                            .setMessage("Unhandled exception!")
+                            .setThrowable(throwable)
+                            .log();
+                }
+        );
 
         System.setProperty("org.vertx.logger-delegate-factory-class-name", "org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory");
 
@@ -102,26 +110,30 @@ public final class Main implements Launchable {
         final ObjectMapper objectMapper = TsdAggregatorConfiguration.createObjectMapper();
         final DynamicConfiguration configuration = new DynamicConfiguration.Builder()
                 .setObjectMapper(objectMapper)
-                .addSourceBuilder(new JsonNodeFileSource.Builder()
-                        .setObjectMapper(objectMapper)
-                        .setFile(configurationFile))
-                .addTrigger(new FileTrigger.Builder()
-                        .setFile(configurationFile)
-                        .build())
+                .addSourceBuilder(
+                        new JsonNodeFileSource.Builder()
+                                .setObjectMapper(objectMapper)
+                                .setFile(configurationFile))
+                .addTrigger(
+                        new FileTrigger.Builder()
+                                .setFile(configurationFile)
+                                .build())
                 .addListener(configurator)
                 .build();
 
         configuration.launch();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LOGGER.info().setMessage("Stopping tsd-aggregator").log();
-            configuration.shutdown();
-            configurator.shutdown();
+        Runtime.getRuntime().addShutdownHook(
+                new Thread(
+                        () -> {
+                            LOGGER.info().setMessage("Stopping tsd-aggregator").log();
+                            configuration.shutdown();
+                            configurator.shutdown();
 
-            LOGGER.info().setMessage("Exiting tsd-aggregator").log();
-            final LoggerContext context = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
-            context.stop();
-        }));
+                            LOGGER.info().setMessage("Exiting tsd-aggregator").log();
+                            final LoggerContext context = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
+                            context.stop();
+                        }));
     }
 
     /**
@@ -138,8 +150,9 @@ public final class Main implements Launchable {
      */
     @Override
     public synchronized void launch() {
-        final Injector injector = launchGuice();
-        launchAkka(injector);
+        _actorSystem = launchAkka();
+        final Injector injector = launchGuice(_actorSystem);
+        launchActors(injector);
         launchLimiters();
         launchPipelines(injector);
         launchJvmMetricsCollector(injector);
@@ -153,8 +166,9 @@ public final class Main implements Launchable {
         shutdownJvmMetricsCollector();
         shutdownPipelines();
         shutdownLimiters();
-        shutdownAkka();
+        shutdownActors();
         shutdownGuice();
+        shutdownAkka();
     }
 
     private void launchJvmMetricsCollector(final Injector injector) {
@@ -191,22 +205,21 @@ public final class Main implements Launchable {
         }
     }
 
-    private void launchAkka(final Injector injector) {
-        LOGGER.info().setMessage("Launching akka").log();
+    private void launchActors(final Injector injector) {
+        LOGGER.info().setMessage("Launching actors").log();
 
-        // Initialize Akka
-        final Config akkaConfiguration = ConfigFactory.parseMap(_configuration.getAkkaConfiguration());
-        _actorSystem = ActorSystem.create("TsdAggregator", ConfigFactory.load(akkaConfiguration));
-        final Routes routes = new Routes(_actorSystem, injector.getInstance(MetricsFactory.class));
+        // Retrieve the actor system
+        final ActorSystem actorSystem = injector.getInstance(ActorSystem.class);
 
         // Create the status actor
-        _actorSystem.actorOf(Props.create(Status.class), "status");
+        actorSystem.actorOf(Props.create(Status.class), "status");
 
-        final ActorFlowMaterializerSettings materializerSettings = ActorFlowMaterializerSettings.create(_actorSystem);
-        final ActorFlowMaterializer materializer = ActorFlowMaterializer.create(materializerSettings, _actorSystem);
+        final ActorFlowMaterializerSettings materializerSettings = ActorFlowMaterializerSettings.create(actorSystem);
+        final ActorFlowMaterializer materializer = ActorFlowMaterializer.create(materializerSettings, actorSystem);
 
         // Create and bind Http server
-        final Http http = Http.get(_actorSystem);
+        final Routes routes = new Routes(actorSystem, injector.getInstance(MetricsFactory.class));
+        final Http http = Http.get(actorSystem);
         final akka.stream.javadsl.Source<IncomingConnection, Future<ServerBinding>> binding = http.bind(
                 _configuration.getHttpHost(),
                 _configuration.getHttpPort(),
@@ -216,7 +229,7 @@ public final class Main implements Launchable {
                 materializer);
     }
 
-    private Injector launchGuice() {
+    private Injector launchGuice(final ActorSystem actorSystem) {
         LOGGER.info().setMessage("Launching guice").log();
 
         // Create directories
@@ -235,11 +248,12 @@ public final class Main implements Launchable {
 
         // Instantiate the metrics factory
         final MetricsFactory metricsFactory = new TsdMetricsFactory.Builder()
-                .setSinks(Collections.singletonList(
-                        new TsdQueryLogSink.Builder()
-                                .setPath(_configuration.getLogDirectory().getAbsolutePath())
-                                .setName("tsd-aggregator-query")
-                                .build()))
+                .setSinks(
+                        Collections.singletonList(
+                                new TsdQueryLogSink.Builder()
+                                        .setPath(_configuration.getLogDirectory().getAbsolutePath())
+                                        .setName("tsd-aggregator-query")
+                                        .build()))
                 .build();
 
         // Instantiate Guice
@@ -248,12 +262,18 @@ public final class Main implements Launchable {
                 new AbstractModule() {
                     @Override
                     public void configure() {
+                        bind(ActorSystem.class).toInstance(actorSystem);
                         bind(MetricsFactory.class).toInstance(metricsFactory);
                         for (final Map.Entry<String, MetricsLimiter> entry : _configuration.getLimiters().entrySet()) {
                             bind(MetricsLimiter.class).annotatedWith(Names.named(entry.getKey())).toInstance(entry.getValue());
                         }
                     }
                 });
+    }
+
+    private ActorSystem launchAkka() {
+        final Config akkaConfiguration = ConfigFactory.parseMap(_configuration.getAkkaConfiguration());
+        return ActorSystem.create("TsdAggregator", ConfigFactory.load(akkaConfiguration));
     }
 
     private void shutdownJvmMetricsCollector() {
@@ -281,6 +301,10 @@ public final class Main implements Launchable {
         _limiters.clear();
     }
 
+    private void shutdownActors() {
+        LOGGER.info().setMessage("Stopping actors").log();
+    }
+
     private void shutdownAkka() {
         LOGGER.info().setMessage("Stopping akka").log();
 
@@ -297,10 +321,9 @@ public final class Main implements Launchable {
 
     private final TsdAggregatorConfiguration _configuration;
     private final List<Launchable> _limiters = Collections.synchronizedList(Lists.newArrayList());
-    private final List<Launchable> _pipelineLaunchables = Collections.synchronizedList(Lists.newArrayList());
 
-    private PipelinesLaunchable _pipelinesLaunchable;
-    private ScheduledExecutorService _jvmMetricsCollector;
+    private volatile PipelinesLaunchable _pipelinesLaunchable;
+    private volatile ScheduledExecutorService _jvmMetricsCollector;
 
     private volatile ActorSystem _actorSystem;
 
@@ -373,12 +396,14 @@ public final class Main implements Launchable {
                     new Configurator<>(Pipeline::new, PipelineConfiguration.class);
             final DynamicConfiguration pipelineConfiguration = new DynamicConfiguration.Builder()
                     .setObjectMapper(_objectMapper)
-                    .addSourceBuilder(new JsonNodeFileSource.Builder()
-                            .setObjectMapper(_objectMapper)
-                            .setFile(file))
-                    .addTrigger(new FileTrigger.Builder()
-                            .setFile(file)
-                            .build())
+                    .addSourceBuilder(
+                            new JsonNodeFileSource.Builder()
+                                    .setObjectMapper(_objectMapper)
+                                    .setFile(file))
+                    .addTrigger(
+                            new FileTrigger.Builder()
+                                    .setFile(file)
+                                    .build())
                     .addListener(pipelineConfigurator)
                     .build();
 

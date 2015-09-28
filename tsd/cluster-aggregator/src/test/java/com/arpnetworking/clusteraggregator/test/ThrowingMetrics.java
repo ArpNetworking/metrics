@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.Timer;
 import com.arpnetworking.metrics.Unit;
 import org.mockito.Mockito;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
@@ -211,6 +212,22 @@ public class ThrowingMetrics implements Metrics {
     public boolean isOpen() {
         return true;
     }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Instant getOpenTime() {
+        return Clock.systemUTC().instant();
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Instant getCloseTime() {
+        return Clock.systemUTC().instant();
+    }
 
     /**
      * {@inheritDoc}
@@ -220,22 +237,6 @@ public class ThrowingMetrics implements Metrics {
         if (_throwOnClose) {
             throw new RuntimeException("boom");
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Instant getOpenTime() {
-        return Instant.now();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Instant getCloseTime() {
-        return Instant.now();
     }
     //CHECKSTYLE.ON: IllegalThrows
 

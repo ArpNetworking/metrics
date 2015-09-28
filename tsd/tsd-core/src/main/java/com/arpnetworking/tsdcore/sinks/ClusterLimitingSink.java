@@ -24,8 +24,10 @@ import com.arpnetworking.tsdcore.limiter.DefaultMetricsLimiter;
 import com.arpnetworking.tsdcore.limiter.MetricsLimiter;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -56,21 +58,21 @@ public final class ClusterLimitingSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+    public void recordAggregateData(final PeriodicData periodicData) {
         LOGGER.debug()
                 .setMessage("Writing aggregated data")
                 .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
+                .addData("dataSize", periodicData.getData().size())
+                .addData("conditionsSize", periodicData.getConditions().size())
                 .log();
 
         final Multimap<String, AggregatedData> dataByCluster = Multimaps.index(
-                data,
+                periodicData.getData(),
                 input -> {
                         return input.getFQDSN().getCluster();
                 });
         final Multimap<String, Condition> conditionsByCluster = Multimaps.index(
-                conditions,
+                periodicData.getConditions(),
                 condition -> {
                         return condition.getFQDSN().getCluster();
                 });
@@ -97,8 +99,10 @@ public final class ClusterLimitingSink extends BaseSink {
 
             // Limit cluster's metrics and conditions
             clusterLimitingSink.recordAggregateData(
-                    dataByCluster.get(cluster),
-                    conditionsByCluster.get(cluster));
+                    PeriodicData.Builder.clone(periodicData, new PeriodicData.Builder())
+                            .setData(ImmutableList.copyOf(dataByCluster.get(cluster)))
+                            .setConditions(ImmutableList.copyOf(conditionsByCluster.get(cluster)))
+                            .build());
         }
     }
 
@@ -124,9 +128,10 @@ public final class ClusterLimitingSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "ClusterMetricsLimitingSinks", _clusterMetricsLimitingSinks);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("clusterMetricsLimitingSinks", _clusterMetricsLimitingSinks)
+                .build();
     }
 
     private ClusterLimitingSink(final Builder builder) {

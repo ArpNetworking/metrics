@@ -45,18 +45,18 @@ import javax.inject.Singleton;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class MainModule extends AbstractModule {
+public final class MainModule extends AbstractModule {
 
     /**
      * {@inheritDoc}
      */
     @Override
     protected void configure() {
-        bind(ActorRef.class).annotatedWith(Names.named("LogScanner")).toProvider(LogScannerProvider.class).asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
                 .toProvider(JvmMetricsCollectorProvider.class)
                 .asEagerSingleton();
+        bind(ActorRef.class).annotatedWith(Names.named("LogScanner")).toProvider(LogScannerProvider.class).asEagerSingleton();
     }
 
     @Provides

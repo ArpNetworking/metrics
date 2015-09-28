@@ -28,7 +28,7 @@ import java.io.Serializable;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public final class BookkeeperData implements Serializable{
+public final class BookkeeperData implements Serializable {
     public long getClusters() {
         return _clusters;
     }

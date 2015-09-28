@@ -32,16 +32,17 @@ import Keys._
 object ApplicationBuild extends Build {
 
     val appName = "remet-gui"
-    val appVersion = "0.3.4"
+    val appVersion = "0.3.5"
     val akkaVersion = "2.3.9"
-    val jacksonVersion = "2.5.3"
+    val jacksonVersion = "2.6.2"
 
     val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings
 
     val appDependencies = Seq(
-      "com.arpnetworking.metrics" % "tsd-core" % "0.3.4",
-      "com.arpnetworking.metrics" % "metrics-client" % "0.3.4",
-      "com.arpnetworking.logback" % "logback-steno" % "1.8.0",
+      "com.arpnetworking.logback" % "logback-steno" % "1.9.3",
+      "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.3.5",
+      "com.arpnetworking.metrics" % "metrics-client" % "0.3.7",
+      "com.arpnetworking.metrics" % "tsd-core" % "0.3.4.GRPN.27",
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk7" % jacksonVersion,
@@ -54,7 +55,10 @@ object ApplicationBuild extends Build {
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-contrib" % akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-      "org.elasticsearch" % "elasticsearch" % "1.3.2",
+      "com.typesafe.play" % "play-ebean_2.11" % "1.0.0",
+      "org.elasticsearch" % "elasticsearch" % "1.7.2",
+      "org.flywaydb" % "flyway-play_2.10" % "2.2.0",
+      "org.postgresql" % "postgresql" % "9.4-1202-jdbc42",
       "org.webjars" % "bean" % "1.0.14",
       "org.webjars" % "bootstrap" % "3.2.0",
       "org.webjars" % "d3js" % "3.4.8",
@@ -69,7 +73,7 @@ object ApplicationBuild extends Build {
       "org.webjars" % "requirejs-text" % "2.0.10-1",
       "org.webjars" % "typeaheadjs" % "0.10.4-1",
       "org.webjars" % "underscorejs" % "1.6.0-3",
-      "com.github.tomakehurst" % "wiremock" % "1.54" % "test"
+      "com.github.tomakehurst" % "wiremock" % "1.57" % "test"
     )
 
     val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava).settings(
@@ -85,8 +89,6 @@ object ApplicationBuild extends Build {
         "-Xlint:-try"
       ),
 
-      libraryDependencies ++= appDependencies,
-
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
 
       TypescriptKeys.moduleKind := "amd",
@@ -101,6 +103,8 @@ object ApplicationBuild extends Build {
 
       scalaVersion := "2.11.6",
       resolvers += Resolver.mavenLocal,
+      
+      libraryDependencies ++= appDependencies,
 
       // AspectJ
       binaries in Aspectj <++= update map { report =>

@@ -17,6 +17,7 @@ package com.arpnetworking.tsdaggregator.configuration;
 
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.limiter.MetricsLimiter;
 import com.arpnetworking.utility.InterfaceDatabase;
 import com.arpnetworking.utility.OvalBuilder;
@@ -39,6 +40,7 @@ import java.util.Set;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class TsdAggregatorConfiguration {
 
     /**

@@ -45,7 +45,7 @@ import javax.inject.Named;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class TelemetryController extends Controller {
+public final class TelemetryController extends Controller {
 
     /**
      * Public constructor.

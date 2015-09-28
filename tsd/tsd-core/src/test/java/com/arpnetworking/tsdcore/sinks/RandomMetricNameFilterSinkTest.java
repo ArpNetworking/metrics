@@ -17,11 +17,11 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
-import com.arpnetworking.tsdcore.statistics.MeanStatistic;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.google.common.collect.Lists;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
+import com.google.common.collect.ImmutableList;
 import org.hamcrest.Matchers;
 import org.joda.time.Period;
 import org.junit.Assert;
@@ -32,7 +32,6 @@ import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -60,12 +59,12 @@ public class RandomMetricNameFilterSinkTest {
         final double upperThreshold = target + spread;
         final double lowerThreshold = target - spread;
         final int count = 10000;
-        final List<AggregatedData> data = Lists.newArrayListWithCapacity(count);
+        final ImmutableList.Builder<AggregatedData> dataBuilder = ImmutableList.builder();
         for (int x = 0; x < count; x++) {
             final String cluster = "cluster" + x;
             final String metric = "metric" + x;
             final String service = "service" + x;
-            final Statistic statistic = new MeanStatistic();
+            final Statistic statistic = MEAN_STATISTIC;
             final Period period = Period.minutes(1);
             final FQDSN fqdsn = TestBeanFactory.createFQDSNBuilder()
                     .setCluster(cluster)
@@ -73,42 +72,34 @@ public class RandomMetricNameFilterSinkTest {
                     .setService(service)
                     .setStatistic(statistic)
                     .build();
-            data.add(
+            dataBuilder.add(
                     TestBeanFactory.createAggregatedDataBuilder()
                             .setFQDSN(fqdsn)
                             .setPeriod(period)
                             .build());
         }
-        sink.recordAggregateData(data);
-        Mockito.verify(_mockSink).recordAggregateData(_aggregatedData.capture(), Mockito.eq(Collections.<Condition>emptyList()));
-        final List<AggregatedData> captured = _aggregatedData.getValue();
+        sink.recordAggregateData(
+                TestBeanFactory.createPeriodicDataBuilder()
+                        .setData(dataBuilder.build())
+                        .build());
+        Mockito.verify(_mockSink).recordAggregateData(_actualPeriodicData.capture());
+        final List<AggregatedData> captured = _actualPeriodicData.getValue().getData();
         Assert.assertThat(captured.size(), Matchers.lessThanOrEqualTo((int) (upperThreshold * count)));
         Assert.assertThat(captured.size(), Matchers.greaterThanOrEqualTo((int) (lowerThreshold * count)));
     }
 
     @Test
-    public void testWorksWithSmallList() {
-        final Sink sink = _sinkBuilder.setPassPercent(1).build();
-        final List<AggregatedData> data = Collections.singletonList(TestBeanFactory.createAggregatedData());
-        sink.recordAggregateData(data);
-        Mockito.verify(_mockSink).recordAggregateData(Mockito.anyList(), Mockito.eq(Collections.<Condition>emptyList()));
-    }
-
-    @Test
     public void testClosesWrapped() {
         final Sink sink = _sinkBuilder.setPassPercent(15).build();
-        final List<AggregatedData> data = Lists.newArrayListWithCapacity(10);
-        for (int x = 0; x < 10; x++) {
-            data.add(TestBeanFactory.createAggregatedData());
-        }
-        sink.recordAggregateData(data);
-        Mockito.verify(_mockSink).recordAggregateData(Mockito.anyList(), Mockito.eq(Collections.<Condition>emptyList()));
         sink.close();
         Mockito.verify(_mockSink).close();
     }
 
     @Captor
-    private ArgumentCaptor<List<AggregatedData>> _aggregatedData;
+    private ArgumentCaptor<PeriodicData> _actualPeriodicData;
     private RandomMetricNameFilterSink.Builder _sinkBuilder;
     private Sink _mockSink;
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MEAN_STATISTIC = STATISTIC_FACTORY.getStatistic("mean");
 }

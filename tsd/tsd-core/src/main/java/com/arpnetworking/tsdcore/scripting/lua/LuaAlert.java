@@ -30,13 +30,11 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -60,23 +58,6 @@ public final class LuaAlert implements Alert {
      * {@inheritDoc}
      */
     @Override
-    public Condition evaluate(
-            final String host,
-            final Period period,
-            final DateTime start,
-            final Collection<AggregatedData> data) throws ScriptingException {
-        return evaluate(new PeriodicData.Builder()
-                .setPeriod(period)
-                .setStart(start)
-                .addDimension("Host", host)
-                .setData(data)
-                .build());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public Condition evaluate(final PeriodicData periodicData) throws ScriptingException {
         // The alert may not apply to this period
         if (!periodicData.getPeriod().equals(_period)) {
@@ -89,7 +70,7 @@ public final class LuaAlert implements Alert {
         }
 
         // Retrieve the current value by FQDSN
-        final Optional<AggregatedData> datum = periodicData.getDataByFQDSN(_fqdsn);
+        final Optional<AggregatedData> datum = periodicData.getDatumByFqdsn(_fqdsn);
         if (!datum.isPresent()) {
             return new Condition.Builder()
                     .setName(_name)
@@ -142,14 +123,12 @@ public final class LuaAlert implements Alert {
     @LogValue
     public Object toLogValue() {
         return LogValueMapFactory.<String, Object>builder()
-                .put("id", Integer.toHexString(System.identityHashCode(this)))
-                .put("class", this.getClass())
-                .put("Name", _name)
-                .put("FQDSN", _fqdsn)
-                .put("Period", _period)
-                .put("Operator", _operator)
-                .put("Value", _value)
-                .put("Extensions", _extensions)
+                .put("name", _name)
+                .put("fqdsn", _fqdsn)
+                .put("period", _period)
+                .put("operator", _operator)
+                .put("value", _value)
+                .put("extensions", _extensions)
                 .build();
     }
 
@@ -187,8 +166,8 @@ public final class LuaAlert implements Alert {
         final String script =
                 "value = ...\n"
                 + "return value " + _operator.getToken() + " " + _value.getValue();
-        _globals = JsePlatform.standardGlobals();
-        _expression = _globals.load(script, _name);
+        final Globals globals = JsePlatform.standardGlobals();
+        _expression = globals.load(script, _name);
     }
 
     private final String _name;
@@ -197,7 +176,6 @@ public final class LuaAlert implements Alert {
     private final Quantity _value;
     private final ImmutableMap<String, Object> _extensions;
     private final FQDSN _fqdsn;
-    private final Globals _globals;
     private final LuaValue _expression;
 
     /**

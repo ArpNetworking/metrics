@@ -36,9 +36,10 @@ public final class StaticConfiguration extends BaseJacksonConfiguration implemen
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Source", _source);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("source", _source)
+                .build();
     }
 
     /**

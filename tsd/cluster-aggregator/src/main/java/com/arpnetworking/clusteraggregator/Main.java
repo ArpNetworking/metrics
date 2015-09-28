@@ -26,6 +26,7 @@ import com.arpnetworking.clusteraggregator.configuration.ClusterAggregatorConfig
 import com.arpnetworking.configuration.jackson.DynamicConfiguration;
 import com.arpnetworking.configuration.jackson.JsonNodeFileSource;
 import com.arpnetworking.configuration.triggers.FileTrigger;
+import com.arpnetworking.steno.Logger;
 import com.arpnetworking.utility.Configurator;
 import com.arpnetworking.utility.Launchable;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +37,6 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 
@@ -55,18 +55,33 @@ public final class Main implements Launchable {
      * @param args command line arguments
      */
     public static void main(final String[] args) {
-        LOGGER.info("Launching cluster-aggregator");
+        LOGGER.info()
+                .setMessage("Launching cluster-aggregator")
+                .log();
 
         Thread.setDefaultUncaughtExceptionHandler(
-                (thread, throwable) -> LOGGER.error(
-                        "Unhandled exception!",
-                        throwable));
+                (thread, throwable) -> {
+                    System.err.println("Unhandled exception! exception: " + throwable.toString());
+                    throwable.printStackTrace(System.err);
+                });
+
+        Thread.currentThread().setUncaughtExceptionHandler(
+                (thread, throwable) -> {
+                    LOGGER.error()
+                            .setMessage("Unhandled exception!")
+                            .setThrowable(throwable)
+                            .log();
+                }
+        );
 
         if (args.length != 1) {
             throw new RuntimeException("No configuration file specified");
         }
 
-        LOGGER.debug(String.format("Loading configuration from file; file=%s", args[0]));
+        LOGGER.debug()
+                .setMessage("Loading configuration from file")
+                .addData("file", args[0])
+                .log();
 
         final File configurationFile = new File(args[0]);
         final Configurator<Main, ClusterAggregatorConfiguration> configurator =
@@ -88,7 +103,9 @@ public final class Main implements Launchable {
                         () -> {
                             configuration.shutdown();
                             configurator.shutdown();
-                            LOGGER.info("Stopping cluster-aggregator");
+                            LOGGER.info()
+                                    .setMessage("Stopping cluster-aggregator")
+                                    .log();
                             final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
                             context.stop();
                         }));
@@ -128,23 +145,33 @@ public final class Main implements Launchable {
     private void launchActors(final Injector injector) {
         injector.getInstance(Key.get(ActorRef.class, Names.named("emitter")));
 
-        LOGGER.info("Launching bookkeeper singleton and proxy");
+        LOGGER.info()
+                .setMessage("Launching bookkeeper singleton and proxy")
+                .log();
         injector.getInstance(Key.get(ActorRef.class, Names.named("bookkeeper-proxy")));
 
         injector.getInstance(Key.get(ActorRef.class, Names.named("aggregator-lifecycle")));
         injector.getInstance(Key.get(ActorRef.class, Names.named("periodic-statistics")));
 
-        LOGGER.info("Launching shard region");
+        LOGGER.info()
+                .setMessage("Launching shard region")
+                .log();
         injector.getInstance(Key.get(ActorRef.class, Names.named("aggregator-shard-region")));
 
-        LOGGER.info("Launching tcp server");
+        LOGGER.info()
+                .setMessage("Launching tcp server")
+                .log();
         injector.getInstance(Key.get(ActorRef.class, Names.named("tcp-server")));
         injector.getInstance(Key.get(ActorRef.class, Names.named("status-cache")));
 
-        LOGGER.info("Launching JVM metrics collector");
+        LOGGER.info()
+                .setMessage("Launching JVM metrics collector")
+                .log();
         injector.getInstance(Key.get(ActorRef.class, Names.named("jvm-metrics-collector")));
 
-        LOGGER.info("Launching http server");
+        LOGGER.info()
+                .setMessage("Launching http server")
+                .log();
         injector.getInstance(
                 Key.get(
                         new TypeLiteral<Source<IncomingConnection, Future<ServerBinding>>>() {},
@@ -152,12 +179,16 @@ public final class Main implements Launchable {
     }
 
     private void launchAkka(final Injector injector) {
-        LOGGER.info("Launching Akka");
+        LOGGER.info()
+                .setMessage("Launching Akka")
+                .log();
         _system = injector.getInstance(ActorSystem.class);
     }
 
     private void shutdownAkka() {
-        LOGGER.info("Stopping Akka");
+        LOGGER.info()
+                .setMessage("Stopping Akka")
+                .log();
         // TODO(barp): Implement a clean shutdown [MAI-420]
         final Cluster cluster = Cluster.get(_system);
         cluster.leave(cluster.selfAddress());
@@ -167,14 +198,19 @@ public final class Main implements Launchable {
             Thread.sleep(30000);
             while (!cluster.isTerminated()) {
                 if (DateTime.now().isAfter(shutdownDeadline)) {
-                    LOGGER.warn("Timed out while waiting to exit cluster, forcing shutdown");
+                    LOGGER.warn()
+                            .setMessage("Timed out while waiting to exit cluster, forcing shutdown")
+                            .log();
                     break;
                 }
                 Thread.sleep(100);
             }
         } catch (final InterruptedException e) {
             Thread.interrupted();
-            LOGGER.warn("Interrupted at shutdown", e);
+            LOGGER.warn()
+                    .setMessage("Interrupted at shutdown")
+                    .setThrowable(e)
+                    .log();
         }
         _system.shutdown();
     }
@@ -182,6 +218,6 @@ public final class Main implements Launchable {
     private final ClusterAggregatorConfiguration _configuration;
 
     private ActorSystem _system;
-    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+    private static final Logger LOGGER = com.arpnetworking.steno.LoggerFactory.getLogger(Main.class);
     private static final Duration SHUTDOWN_TIMEOUT = Duration.standardMinutes(3);
 }

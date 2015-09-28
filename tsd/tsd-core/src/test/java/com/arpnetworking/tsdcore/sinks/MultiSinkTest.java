@@ -17,16 +17,13 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Tests for the <code>MultiSink</code> class.
@@ -56,15 +53,18 @@ public class MultiSinkTest {
 
     @Test
     public void testRecordProcessedAggregateData() {
-        final List<AggregatedData> data = Collections.singletonList(TestBeanFactory.createAggregatedData());
+        final ImmutableList<AggregatedData> data = ImmutableList.of(TestBeanFactory.createAggregatedData());
         final Sink mockSinkA = Mockito.mock(Sink.class, "mockSinkA");
         final Sink mockSinkB = Mockito.mock(Sink.class, "mockSinkB");
         final Sink multiSink = _multiSinkBuilder
                 .setSinks(Lists.newArrayList(mockSinkA, mockSinkB))
                 .build();
-        multiSink.recordAggregateData(data, Collections.<Condition>emptyList());
-        Mockito.verify(mockSinkA).recordAggregateData(Matchers.eq(data), Matchers.eq(Collections.<Condition>emptyList()));
-        Mockito.verify(mockSinkB).recordAggregateData(Matchers.eq(data), Matchers.eq(Collections.<Condition>emptyList()));
+        final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
+                .setData(data)
+                .build();
+        multiSink.recordAggregateData(periodicData);
+        Mockito.verify(mockSinkA).recordAggregateData(periodicData);
+        Mockito.verify(mockSinkB).recordAggregateData(periodicData);
     }
 
     private MultiSink.Builder _multiSinkBuilder;

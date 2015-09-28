@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.remet.gui.hosts.impl;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostQuery;
@@ -29,7 +30,8 @@ import java.util.Optional;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class DefaultHostQuery implements HostQuery {
+@Loggable
+public final class DefaultHostQuery implements HostQuery {
 
     /**
      * Public constructor.
@@ -157,6 +159,7 @@ public class DefaultHostQuery implements HostQuery {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Repository", _repository)
                 .add("PartialHostname", _partialHostname)
                 .add("MetricsSoftwareState", _metricsSoftwareState)

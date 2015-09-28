@@ -65,7 +65,7 @@ public class InMemoryBookkeeper implements BookkeeperPersistence {
                 .append("/")
                 .append(data.getPeriod())
                 .append("/")
-                .append(data.getFQDSN().getStatistic())
+                .append(data.getFQDSN().getStatistic().getName())
                 .toString();
     }
 

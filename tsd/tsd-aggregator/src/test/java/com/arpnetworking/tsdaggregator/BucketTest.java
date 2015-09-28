@@ -18,20 +18,21 @@ package com.arpnetworking.tsdaggregator;
 
 import com.arpnetworking.tsdaggregator.model.DefaultMetric;
 import com.arpnetworking.tsdaggregator.model.DefaultRecord;
-import com.arpnetworking.tsdaggregator.model.MetricType;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.MetricType;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.sinks.Sink;
-import com.arpnetworking.tsdcore.statistics.MeanStatistic;
-import com.arpnetworking.tsdcore.statistics.MedianStatistic;
-import com.arpnetworking.tsdcore.statistics.TP0Statistic;
-import com.arpnetworking.tsdcore.statistics.TP100Statistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
+import com.google.common.base.Optional;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -63,9 +64,14 @@ public class BucketTest {
                 .setHost("MyHost")
                 .setStart(start)
                 .setPeriod(Period.minutes(1))
-                .setCounterStatistics(ImmutableSet.of(new TP0Statistic()))
-                .setGaugeStatistics(ImmutableSet.of(new MeanStatistic()))
-                .setTimerStatistics(ImmutableSet.of(new TP100Statistic()))
+                .setSpecifiedCounterStatistics(ImmutableSet.of(MIN_STATISTIC))
+                .setSpecifiedGaugeStatistics(ImmutableSet.of(MEAN_STATISTIC))
+                .setSpecifiedTimerStatistics(ImmutableSet.of(MAX_STATISTIC))
+                .setDependentCounterStatistics(ImmutableSet.of())
+                .setDependentGaugeStatistics(ImmutableSet.of(COUNT_STATISTIC, SUM_STATISTIC))
+                .setDependentTimerStatistics(ImmutableSet.of())
+                .setSpecifiedStatistics(_specifiedStatsCache)
+                .setDependentStatistics(_dependentStatsCache)
                 .build();
 
         bucket.add(
@@ -103,10 +109,10 @@ public class BucketTest {
 
         bucket.close();
 
-        final ArgumentCaptor<Collection> dataCaptor = ArgumentCaptor.forClass(Collection.class);
-        Mockito.verify(sink).recordAggregateData(dataCaptor.capture(), Mockito.eq(Collections.<Condition>emptyList()));
+        final ArgumentCaptor<PeriodicData> dataCaptor = ArgumentCaptor.forClass(PeriodicData.class);
+        Mockito.verify(sink).recordAggregateData(dataCaptor.capture());
 
-        final Collection<AggregatedData> data = dataCaptor.getValue();
+        final Collection<AggregatedData> data = dataCaptor.getValue().getData();
         Assert.assertEquals(1, data.size());
 
         Assert.assertThat(data, Matchers.contains(new AggregatedData.Builder()
@@ -114,17 +120,19 @@ public class BucketTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyCounter")
-                        .setStatistic(new TP0Statistic())
+                        .setStatistic(MIN_STATISTIC)
                         .build())
                 .setHost("MyHost")
                 .setStart(start)
+                .setIsSpecified(true)
                 .setPeriod(Period.minutes(1))
-                .setPopulationSize(3L)
-                .setSamples(Lists.newArrayList(ONE, TWO, THREE))
+                .setPopulationSize(-1L)
+                .setSamples(Collections.emptyList())
                 .setValue(ONE)
                 .build()));
     }
 
+    // CHECKSTYLE.OFF: MethodLength - Mostly data.
     @Test
     @SuppressWarnings("unchecked")
     public void testGauge() {
@@ -137,9 +145,14 @@ public class BucketTest {
                 .setHost("MyHost")
                 .setStart(start)
                 .setPeriod(Period.minutes(1))
-                .setCounterStatistics(ImmutableSet.of(new TP0Statistic()))
-                .setGaugeStatistics(ImmutableSet.of(new MeanStatistic()))
-                .setTimerStatistics(ImmutableSet.of(new TP100Statistic()))
+                .setSpecifiedCounterStatistics(ImmutableSet.of(MIN_STATISTIC))
+                .setSpecifiedGaugeStatistics(ImmutableSet.of(MEAN_STATISTIC))
+                .setSpecifiedTimerStatistics(ImmutableSet.of(MAX_STATISTIC))
+                .setDependentCounterStatistics(ImmutableSet.of())
+                .setDependentGaugeStatistics(ImmutableSet.of(COUNT_STATISTIC, SUM_STATISTIC))
+                .setDependentTimerStatistics(ImmutableSet.of())
+                .setSpecifiedStatistics(_specifiedStatsCache)
+                .setDependentStatistics(_dependentStatsCache)
                 .build();
 
         bucket.add(
@@ -177,27 +190,62 @@ public class BucketTest {
 
         bucket.close();
 
-        final ArgumentCaptor<Collection> dataCaptor = ArgumentCaptor.forClass(Collection.class);
-        Mockito.verify(sink).recordAggregateData(dataCaptor.capture(), Mockito.eq(Collections.<Condition>emptyList()));
+        final ArgumentCaptor<PeriodicData> dataCaptor = ArgumentCaptor.forClass(PeriodicData.class);
+        Mockito.verify(sink).recordAggregateData(dataCaptor.capture());
 
-        final Collection<AggregatedData> data = dataCaptor.getValue();
-        Assert.assertEquals(1, data.size());
+        final Collection<AggregatedData> data = dataCaptor.getValue().getData();
+        Assert.assertEquals(3, data.size());
 
-        Assert.assertThat(data, Matchers.contains(new AggregatedData.Builder()
-                .setFQDSN(new FQDSN.Builder()
-                        .setCluster("MyCluster")
-                        .setService("MyService")
-                        .setMetric("MyGauge")
-                        .setStatistic(new MeanStatistic())
-                        .build())
-                .setHost("MyHost")
-                .setStart(start)
-                .setPeriod(Period.minutes(1))
-                .setPopulationSize(3L)
-                .setSamples(Lists.newArrayList(TWO, ONE, THREE))
-                .setValue(TWO)
-                .build()));
+        Assert.assertThat(
+                data,
+                Matchers.containsInAnyOrder(
+                        new AggregatedData.Builder()
+                                .setFQDSN(new FQDSN.Builder()
+                                        .setCluster("MyCluster")
+                                        .setService("MyService")
+                                        .setMetric("MyGauge")
+                                        .setStatistic(MEAN_STATISTIC)
+                                        .build())
+                                .setHost("MyHost")
+                                .setStart(start)
+                                .setIsSpecified(true)
+                                .setPeriod(Period.minutes(1))
+                                .setPopulationSize(-1L)
+//                                .setSamples(Collections.singletonList(THREE))
+                                .setValue(TWO)
+                                .build(),
+                        new AggregatedData.Builder()
+                                .setFQDSN(new FQDSN.Builder()
+                                        .setCluster("MyCluster")
+                                        .setService("MyService")
+                                        .setMetric("MyGauge")
+                                        .setStatistic(SUM_STATISTIC)
+                                        .build())
+                                .setHost("MyHost")
+                                .setStart(start)
+                                .setIsSpecified(false)
+                                .setPeriod(Period.minutes(1))
+                                .setPopulationSize(-1L)
+                                .setSamples(Collections.emptyList())
+                                .setValue(SIX)
+                                .build(),
+                        new AggregatedData.Builder()
+                                .setFQDSN(new FQDSN.Builder()
+                                        .setCluster("MyCluster")
+                                        .setService("MyService")
+                                        .setMetric("MyGauge")
+                                        .setStatistic(COUNT_STATISTIC)
+                                        .build())
+                                .setHost("MyHost")
+                                .setStart(start)
+                                .setIsSpecified(false)
+                                .setPeriod(Period.minutes(1))
+                                .setPopulationSize(-1L)
+                                .setSamples(Collections.emptyList())
+                                .setValue(THREE)
+                                .build()));
     }
+    // CHECKSTYLE.ON: MethodLength
 
     @Test
     @SuppressWarnings("unchecked")
@@ -211,9 +259,14 @@ public class BucketTest {
                 .setHost("MyHost")
                 .setStart(start)
                 .setPeriod(Period.minutes(1))
-                .setCounterStatistics(ImmutableSet.of(new TP0Statistic()))
-                .setGaugeStatistics(ImmutableSet.of(new MeanStatistic()))
-                .setTimerStatistics(ImmutableSet.of(new TP100Statistic()))
+                .setSpecifiedCounterStatistics(ImmutableSet.of(MIN_STATISTIC))
+                .setSpecifiedGaugeStatistics(ImmutableSet.of(MEAN_STATISTIC))
+                .setSpecifiedTimerStatistics(ImmutableSet.of(MAX_STATISTIC))
+                .setDependentCounterStatistics(ImmutableSet.of())
+                .setDependentGaugeStatistics(ImmutableSet.of(COUNT_STATISTIC, SUM_STATISTIC))
+                .setDependentTimerStatistics(ImmutableSet.of())
+                .setSpecifiedStatistics(_specifiedStatsCache)
+                .setDependentStatistics(_dependentStatsCache)
                 .build();
 
         bucket.add(
@@ -251,10 +304,10 @@ public class BucketTest {
 
         bucket.close();
 
-        final ArgumentCaptor<Collection> dataCaptor = ArgumentCaptor.forClass(Collection.class);
-        Mockito.verify(sink).recordAggregateData(dataCaptor.capture(), Mockito.eq(Collections.<Condition>emptyList()));
+        final ArgumentCaptor<PeriodicData> dataCaptor = ArgumentCaptor.forClass(PeriodicData.class);
+        Mockito.verify(sink).recordAggregateData(dataCaptor.capture());
 
-        final Collection<AggregatedData> data = dataCaptor.getValue();
+        final Collection<AggregatedData> data = dataCaptor.getValue().getData();
         Assert.assertEquals(1, data.size());
 
         Assert.assertThat(data, Matchers.contains(new AggregatedData.Builder()
@@ -262,16 +315,17 @@ public class BucketTest {
                         .setCluster("MyCluster")
                         .setService("MyService")
                         .setMetric("MyTimer")
-                        .setStatistic(new TP100Statistic())
+                        .setStatistic(MAX_STATISTIC)
                         .build())
                 .setHost("MyHost")
                 .setStart(start)
+                .setIsSpecified(true)
                 .setPeriod(Period.minutes(1))
-                .setPopulationSize(3L)
-                .setSamples(Lists.newArrayList(ONE_SECOND, TWO_SECONDS, THREE_SECONDS))
+                .setPopulationSize(-1L)
+                .setSamples(Collections.emptyList())
                 .setValue(new Quantity.Builder()
-                        .setValue(3000.0)
-                        .setUnit(Unit.MILLISECOND)
+                        .setValue(3.0)
+                        .setUnit(Unit.SECOND)
                         .build())
                 .build()));
     }
@@ -285,20 +339,53 @@ public class BucketTest {
                 .setHost("MyHost")
                 .setStart(new DateTime())
                 .setPeriod(Period.minutes(1))
-                .setCounterStatistics(ImmutableSet.of(new TP0Statistic()))
-                .setGaugeStatistics(ImmutableSet.of(new MedianStatistic()))
-                .setTimerStatistics(ImmutableSet.of(new TP100Statistic()))
+                .setSpecifiedCounterStatistics(ImmutableSet.of(MIN_STATISTIC))
+                .setSpecifiedGaugeStatistics(ImmutableSet.of(MEDIAN_STATISTIC))
+                .setSpecifiedTimerStatistics(ImmutableSet.of(MAX_STATISTIC))
+                .setDependentCounterStatistics(ImmutableSet.of())
+                .setDependentGaugeStatistics(ImmutableSet.of(COUNT_STATISTIC, SUM_STATISTIC))
+                .setDependentTimerStatistics(ImmutableSet.of())
+                .setSpecifiedStatistics(_specifiedStatsCache)
+                .setDependentStatistics(_dependentStatsCache)
                 .build()
                 .toString();
         Assert.assertNotNull(asString);
         Assert.assertFalse(asString.isEmpty());
     }
 
+    private LoadingCache<String, Optional<ImmutableSet<Statistic>>> _specifiedStatsCache = CacheBuilder.newBuilder()
+            .build(
+                    new CacheLoader<String, Optional<ImmutableSet<Statistic>>>() {
+                        @Override
+                        public Optional<ImmutableSet<Statistic>> load(final String key) throws Exception {
+                            return Optional.absent();
+                        }
+                    });
+
+    private LoadingCache<String, Optional<ImmutableSet<Statistic>>> _dependentStatsCache = CacheBuilder.newBuilder()
+            .build(
+                    new CacheLoader<String, Optional<ImmutableSet<Statistic>>>() {
+                        @Override
+                        public Optional<ImmutableSet<Statistic>> load(final String key) throws Exception {
+                            return Optional.absent();
+                        }
+                    });
+
+
     private static final Quantity ONE = new Quantity.Builder().setValue(1.0).build();
     private static final Quantity TWO = new Quantity.Builder().setValue(2.0).build();
     private static final Quantity THREE = new Quantity.Builder().setValue(3.0).build();
+    private static final Quantity SIX = new Quantity.Builder().setValue(6.0).build();
 
     private static final Quantity ONE_SECOND = new Quantity.Builder().setValue(1.0).setUnit(Unit.SECOND).build();
     private static final Quantity TWO_SECONDS = new Quantity.Builder().setValue(2000.0).setUnit(Unit.MILLISECOND).build();
     private static final Quantity THREE_SECONDS = new Quantity.Builder().setValue(3.0).setUnit(Unit.SECOND).build();
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MIN_STATISTIC = STATISTIC_FACTORY.getStatistic("min");
+    private static final Statistic MEAN_STATISTIC = STATISTIC_FACTORY.getStatistic("mean");
+    private static final Statistic MAX_STATISTIC = STATISTIC_FACTORY.getStatistic("max");
+    private static final Statistic SUM_STATISTIC = STATISTIC_FACTORY.getStatistic("sum");
+    private static final Statistic COUNT_STATISTIC = STATISTIC_FACTORY.getStatistic("count");
+    private static final Statistic MEDIAN_STATISTIC = STATISTIC_FACTORY.getStatistic("median");
 }

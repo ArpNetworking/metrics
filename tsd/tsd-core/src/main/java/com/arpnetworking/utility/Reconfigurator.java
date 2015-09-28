@@ -70,11 +70,10 @@ public class Reconfigurator<T extends Relaunchable<? super S>, S> implements Lis
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "ConfigurationClass", _configurationClass,
-                "Relaunchable", _relaunchable);
+        return LogValueMapFactory.builder(this)
+                .put("configurationClass", _configurationClass)
+                .put("relaunchable", _relaunchable)
+                .build();
     }
 
     /**

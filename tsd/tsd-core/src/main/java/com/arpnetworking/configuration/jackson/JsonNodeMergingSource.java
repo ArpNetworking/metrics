@@ -52,10 +52,9 @@ public final class JsonNodeMergingSource implements JsonNodeSource {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "MergedNode", _mergedNode);
+        return LogValueMapFactory.builder(this)
+                .put("mergedNode", _mergedNode)
+                .build();
     }
 
     /**
