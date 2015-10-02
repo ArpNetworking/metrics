@@ -25,17 +25,17 @@ import java.lang.reflect.Method;
 
 /**
  * Test utility class asserts that the <code>equals</code> and <code>hashCode</code>
- * methods work as expected on a buildable class. 
+ * methods work as expected on a buildable class.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
 public final class BuildableEqualsAndHashCodeTester {
 
     /**
-     * Test the <code>equals</code> and <code>hashCode</code> methods on a 
+     * Test the <code>equals</code> and <code>hashCode</code> methods on a
      * buildable class <code>T</code> given two <code>Builder</code> instances
-     * with entirely separate values. 
-     * 
+     * with entirely separate values.
+     *
      * @param <T> The class being built.
      * @param builderA Prepopulated <code>Builder</code> instance for <code>T</code>
      * with all fields set to values different from <code>builderB</code>.
@@ -67,8 +67,7 @@ public final class BuildableEqualsAndHashCodeTester {
         for (final Method setterMethod : builderA.getClass().getMethods()) {
             if (TestHelper.isSetterMethod(setterMethod)) {
                 try {
-                    final String getterName = TestHelper.getterMethodNameForSetter(setterMethod);
-                    final Method getterMethod = instanceB1.getClass().getMethod(getterName);
+                    final Method getterMethod = TestHelper.getterMethodForSetter(setterMethod, instanceA1.getClass());
 
                     // Change the field on the builder
                     setterMethod.invoke(builderB, getterMethod.invoke(instanceA1));
@@ -83,7 +82,7 @@ public final class BuildableEqualsAndHashCodeTester {
                     // Change the field back
                     setterMethod.invoke(builderB, getterMethod.invoke(instanceB1));
 
-                } catch (final NoSuchMethodException | SecurityException | IllegalAccessException
+                } catch (final SecurityException | IllegalAccessException
                         | IllegalArgumentException | InvocationTargetException e) {
                     throw Throwables.propagate(e);
                 }

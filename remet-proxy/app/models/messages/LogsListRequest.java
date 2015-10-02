@@ -16,6 +16,7 @@
 
 package models.messages;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 
 /**
@@ -23,7 +24,8 @@ import com.google.common.base.MoreObjects;
  *
  * @author Mohammed Kamel (mkamel at groupon dot com))
  */
-public class LogsListRequest {
+@Loggable
+public final class LogsListRequest {
     /**
      * Public constructor.
      */
@@ -36,6 +38,7 @@ public class LogsListRequest {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .toString();
     }
 }

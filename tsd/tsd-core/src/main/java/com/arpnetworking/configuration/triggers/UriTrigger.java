@@ -160,12 +160,11 @@ public final class UriTrigger implements Trigger {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Uri", _uri,
-                "PreviousLastModified", _previousLastModified,
-                "PreviousETag", _previousETag);
+        return LogValueMapFactory.builder(this)
+                .put("uri", _uri)
+                .put("previousLastModified", _previousLastModified)
+                .put("previousETag", _previousETag)
+                .build();
     }
 
     /**

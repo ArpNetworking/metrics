@@ -50,12 +50,12 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.builder()
+        return LogValueMapFactory.builder(this)
                 .put("super", super.toLogValue())
-                .put("Snapshot", _snapshot)
-                .put("SourceBuilders", _sourceBuilders)
-                .put("Listeners", _listeners)
-                .put("TriggerEvaluator", _triggerEvaluator)
+                .put("snapshot", _snapshot)
+                .put("sourceBuilders", _sourceBuilders)
+                .put("listeners", _listeners)
+                .put("triggerEvaluator", _triggerEvaluator)
                 .build();
     }
 
@@ -209,15 +209,11 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
 
         @Override
         public void run() {
-            Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                @Override
-                public void uncaughtException(final Thread thread, final Throwable throwable) {
-                    LOGGER.error()
+            Thread.currentThread().setUncaughtExceptionHandler(
+                    (thread, throwable) -> LOGGER.error()
                             .setMessage("Unhandled exception")
                             .setThrowable(throwable)
-                            .log();
-                }
-            });
+                            .log());
 
             while (_isRunning) {
                 // Evaluate all the triggers to ensure all triggers are reset
@@ -269,11 +265,10 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
 
         @LogValue
         public Object toLogValue() {
-            return LogValueMapFactory.of(
-                    "id", Integer.toHexString(System.identityHashCode(this)),
-                    "class", this.getClass(),
-                    "IsRunning", _isRunning,
-                    "Triggers", _triggers);
+            return LogValueMapFactory.builder(this)
+                    .put("isRunning", _isRunning)
+                    .put("triggers", _triggers)
+                    .build();
         }
 
         @Override

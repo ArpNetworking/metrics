@@ -15,8 +15,9 @@
  */
 package com.arpnetworking.remet.gui.impl;
 
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.remet.gui.QueryResult;
-import com.google.common.base.MoreObjects;
+import com.arpnetworking.steno.LogValueMapFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,7 @@ import java.util.Optional;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class DefaultQueryResult<T> implements QueryResult<T> {
+public final class DefaultQueryResult<T> implements QueryResult<T> {
 
     /**
      * Public constructor.
@@ -80,16 +81,25 @@ public class DefaultQueryResult<T> implements QueryResult<T> {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("values", _values)
+                .put("total", _total)
+                .put("etag", _etag)
+                .build();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Values", _values)
-                .add("Total", _total)
-                .add("Etag", _etag)
-                .toString();
+        return toLogValue().toString();
     }
 
     private final List<? extends T> _values;

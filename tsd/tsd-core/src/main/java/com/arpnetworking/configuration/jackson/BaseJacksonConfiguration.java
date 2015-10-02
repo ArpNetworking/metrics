@@ -18,7 +18,6 @@ package com.arpnetworking.configuration.jackson;
 import com.arpnetworking.configuration.Configuration;
 import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -152,9 +151,10 @@ public abstract class BaseJacksonConfiguration extends com.arpnetworking.configu
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "ObjectMapper", LogReferenceOnly.of(_objectMapper));
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("ObjectMapper", _objectMapper)
+                .build();
     }
 
     /**

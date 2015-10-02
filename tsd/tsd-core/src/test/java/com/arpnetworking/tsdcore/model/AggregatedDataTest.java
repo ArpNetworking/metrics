@@ -16,9 +16,8 @@
 package com.arpnetworking.tsdcore.model;
 
 import com.arpnetworking.test.TestBeanFactory;
-import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.tsdcore.statistics.TP99Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.arpnetworking.utility.test.BuildableEqualsAndHashCodeTester;
 import com.google.common.collect.Lists;
 
@@ -38,12 +37,13 @@ public class AggregatedDataTest {
 
     @Test
     public void testBuilder() {
-        final Statistic expectedStatistic = new TP99Statistic();
+        final Statistic expectedStatistic = TP99_STATISTIC;
         final String expectedService = "MyService";
         final String expectedHost = "MyHost";
         final String expectedMetric = "MyMetric";
         final String expectedCluster = "MyCluster";
         final Quantity expectedValue = TestBeanFactory.createSample();
+        final boolean expectedIsSpecified = true;
         final DateTime expectedPeriodStart = new DateTime();
         final Period expectedPeriod = Period.minutes(5);
         final long expectedPopulationSize = 111;
@@ -59,6 +59,7 @@ public class AggregatedDataTest {
                 .setHost(expectedHost)
                 .setValue(expectedValue)
                 .setStart(expectedPeriodStart)
+                .setIsSpecified(expectedIsSpecified)
                 .setPeriod(expectedPeriod)
                 .setPopulationSize(expectedPopulationSize)
                 .setSamples(expectedSamples)
@@ -71,6 +72,7 @@ public class AggregatedDataTest {
         Assert.assertEquals(expectedValue.getValue(), aggregatedData.getValue().getValue(), 0.001);
         Assert.assertEquals(expectedPeriodStart, aggregatedData.getPeriodStart());
         Assert.assertEquals(expectedPeriod, aggregatedData.getPeriod());
+        Assert.assertEquals(expectedIsSpecified, aggregatedData.isSpecified());
         Assert.assertEquals(expectedPopulationSize, aggregatedData.getPopulationSize());
         Assert.assertEquals(expectedSamples, aggregatedData.getSamples());
         Assert.assertEquals(expectedCluster, aggregatedData.getFQDSN().getCluster());
@@ -82,7 +84,7 @@ public class AggregatedDataTest {
         BuildableEqualsAndHashCodeTester.assertEqualsAndHashCode(
                 new AggregatedData.Builder()
                         .setFQDSN(new FQDSN.Builder()
-                                .setStatistic(new TP99Statistic())
+                                .setStatistic(TP99_STATISTIC)
                                 .setMetric("MyMetricA")
                                 .setService("MyServiceA")
                                 .setCluster("MyServiceA")
@@ -90,12 +92,14 @@ public class AggregatedDataTest {
                         .setHost("MyHostA")
                         .setValue(TestBeanFactory.createSample())
                         .setStart(new DateTime())
+                        .setIsSpecified(true)
                         .setPeriod(Period.minutes(1))
                         .setPopulationSize(1L)
+                        .setSupportingData(new Object())
                         .setSamples(Lists.newArrayList(TestBeanFactory.createSample())),
                 new AggregatedData.Builder()
                         .setFQDSN(new FQDSN.Builder()
-                                .setStatistic(new MedianStatistic())
+                                .setStatistic(MEDIAN_STATISTIC)
                                 .setMetric("MyMetricB")
                                 .setService("MyServiceB")
                                 .setCluster("MyServiceB")
@@ -103,8 +107,10 @@ public class AggregatedDataTest {
                         .setHost("MyHostB")
                         .setValue(TestBeanFactory.createSample())
                         .setStart(new DateTime().plusDays(1))
+                        .setIsSpecified(false)
                         .setPeriod(Period.minutes(5))
                         .setPopulationSize(2L)
+                        .setSupportingData(new Object())
                         .setSamples(Lists.newArrayList(TestBeanFactory.createSample(), TestBeanFactory.createSample())));
     }
 
@@ -112,7 +118,7 @@ public class AggregatedDataTest {
     public void testToString() {
         final String asString = new AggregatedData.Builder()
                 .setFQDSN(new FQDSN.Builder()
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .setMetric("MyMetricA")
                         .setService("MyServiceA")
                         .setCluster("MyServiceA")
@@ -120,6 +126,7 @@ public class AggregatedDataTest {
                 .setHost("MyHostA")
                 .setValue(TestBeanFactory.createSample())
                 .setStart(new DateTime())
+                .setIsSpecified(true)
                 .setPeriod(Period.minutes(1))
                 .setPopulationSize(1L)
                 .setSamples(Lists.newArrayList(TestBeanFactory.createSample()))
@@ -128,4 +135,8 @@ public class AggregatedDataTest {
         Assert.assertNotNull(asString);
         Assert.assertFalse(asString.isEmpty());
     }
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MEDIAN_STATISTIC = STATISTIC_FACTORY.getStatistic("median");
+    private static final Statistic TP99_STATISTIC = STATISTIC_FACTORY.getStatistic("tp99");
 }

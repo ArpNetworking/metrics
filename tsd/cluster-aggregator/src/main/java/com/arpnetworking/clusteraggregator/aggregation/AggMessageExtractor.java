@@ -17,6 +17,7 @@
 package com.arpnetworking.clusteraggregator.aggregation;
 
 import akka.contrib.pattern.ShardRegion;
+import com.arpnetworking.tsdcore.Messages;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 
 /**
@@ -41,6 +42,17 @@ public class AggMessageExtractor implements ShardRegion.MessageExtractor {
                     .append(aggregationMessage.getPeriod())
                     .append(aggregationMessage.getFQDSN().getStatistic());
             return builder.toString();
+        } else if (message instanceof Messages.StatisticSetRecord) {
+            final Messages.StatisticSetRecord metricData = (Messages.StatisticSetRecord) message;
+            final StringBuilder builder = new StringBuilder();
+            builder.append(metricData.getCluster())
+                    .append("||")
+                    .append(metricData.getService())
+                    .append("||")
+                    .append(metricData.getMetric())
+                    .append("||")
+                    .append(metricData.getPeriod());
+            return builder.toString();
         }
         throw new IllegalArgumentException("Unknown message type " + message);
     }
@@ -62,16 +74,8 @@ public class AggMessageExtractor implements ShardRegion.MessageExtractor {
      */
     @Override
     public String shardId(final Object message) {
-        if (message instanceof AggregatedData) {
-            final AggregatedData aggregationMessage = (AggregatedData) message;
-            final StringBuilder builder = new StringBuilder()
-                    .append(aggregationMessage.getFQDSN().getCluster())
-                    .append(aggregationMessage.getFQDSN().getService())
-                    .append(aggregationMessage.getFQDSN().getMetric())
-                    .append(aggregationMessage.getPeriod())
-                    .append(aggregationMessage.getFQDSN().getStatistic());
-            return String.format("shard_%d", Math.abs(builder.toString().hashCode() % 10000));
-        }
-        throw new IllegalArgumentException("Unknown message type " + message);
+        return String.format("shard_%d", Math.abs(entryId(message).hashCode() % SHARD_COUNT));
     }
+
+    private static final int SHARD_COUNT = 10000;
 }

@@ -15,11 +15,11 @@
  */
 package com.arpnetworking.tsdaggregator.sources;
 
-import com.arpnetworking.tsdaggregator.model.MetricType;
 import com.arpnetworking.tsdaggregator.model.Record;
 import com.arpnetworking.tsdaggregator.sources.MappingSource.MergingMetric;
 import com.arpnetworking.tsdaggregator.test.TestBeanFactory;
 import com.arpnetworking.tsdaggregator.test.UnorderedRecordEquality;
+import com.arpnetworking.tsdcore.model.MetricType;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.sources.Source;

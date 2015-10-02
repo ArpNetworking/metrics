@@ -15,53 +15,87 @@
  */
 package com.arpnetworking.tsdaggregator;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.model.Metric;
 import com.arpnetworking.tsdaggregator.model.Record;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.sinks.Sink;
-import com.arpnetworking.tsdcore.statistics.OrderedStatistic;
+import com.arpnetworking.tsdcore.statistics.Accumulator;
+import com.arpnetworking.tsdcore.statistics.Calculator;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.MoreObjects;
+import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.TreeMultiset;
+import com.google.common.collect.Sets;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiFunction;
 
 /**
 * Contains samples for a particular aggregation period in time.
 *
 * @author Ville Koskela (vkoskela at groupon dot com)
 */
-/* package private */ class Bucket {
+/* package private */ final class Bucket {
 
     /**
      * Close the bucket. The aggregates for each metric are emitted to the sink.
      */
     public void close() {
+        // Set the close flag before acquiring the write lock to allow "readers" to fail fast
         if (_isOpen.getAndSet(false)) {
-            final Collection<AggregatedData> data = Lists.newArrayList();
-            computeStatistics(_counterMetricSamples, _counterStatistics, data);
-            computeStatistics(_gaugeMetricSamples, _gaugeStatistics, data);
-            computeStatistics(_timerMetricSamples, _timerStatistics, data);
-            _sink.recordAggregateData(data, Collections.<Condition>emptyList());
+            try {
+                // Acquire the write lock and flush the calculated statistics
+                _addCloseLock.writeLock().lock();
+                final ImmutableList.Builder<AggregatedData> data = ImmutableList.builder();
+                computeStatistics(_counterMetricCalculators, _specifiedCounterStatistics, data);
+                computeStatistics(_gaugeMetricCalculators, _specifiedGaugeStatistics, data);
+                computeStatistics(_timerMetricCalculators, _specifiedTimerStatistics, data);
+                computeStatistics(_explicitMetricCalculators, _specifiedStatisticsCache, data);
+                // TODO(vkoskela): Perform expression evaluation here. [NEXT]
+                // -> This still requires realizing and indexing the computed aggregated data
+                // in order to feed the expression evaluation. Once the filtering is consolidated
+                // we can probably just build a map here and then do one copy into immutable form
+                // in the PeriodicData. This becomes feasible with consolidated filtering because
+                // fewer copies (e.g. none) are made downstream.
+                // TODO(vkoskela): Perform alert evaluation here. [NEXT]
+                // -> This requires expressions. Otherwise, it's just a matter of changing the
+                // alerts abstraction from a Sink to something more appropriate and hooking it in
+                // here.
+                final PeriodicData periodicData = new PeriodicData.Builder()
+                        .setData(data.build())
+                        .setDimensions(ImmutableMap.of("host", _host))
+                        .setPeriod(_period)
+                        .setStart(_start)
+                        .build();
+                _sink.recordAggregateData(periodicData);
+            } finally {
+                _addCloseLock.writeLock().unlock();
+            }
         } else {
             LOGGER.warn()
                     .setMessage("Bucket closed multiple times")
@@ -90,30 +124,66 @@ import java.util.concurrent.atomic.AtomicBoolean;
                 continue;
             }
 
-            switch (metric.getType()) {
-                case COUNTER: {
-                    final boolean sorted = _counterStatistics.stream().anyMatch((s) -> s instanceof OrderedStatistic);
-                    addMetric(name, metric, record.getTime(), _counterMetricSamples, sorted);
-                    break;
-                }
-                case GAUGE: {
-                    final boolean sorted = _gaugeStatistics.stream().anyMatch((s) -> s instanceof OrderedStatistic);
-                    addMetric(name, metric, record.getTime(), _gaugeMetricSamples, sorted);
-                    break;
-                }
-                case TIMER: {
-                    final boolean sorted = _timerStatistics.stream().anyMatch((s) -> s instanceof OrderedStatistic);
-                    addMetric(name, metric, record.getTime(), _timerMetricSamples, sorted);
-                    break;
-                }
-                default:
-                    LOGGER.warn()
-                            .setMessage("Discarding metric")
-                            .addData("reason", "unsupported type")
-                            .addData("name", name)
-                            .addData("metric", metric)
-                            .log();
+            Collection<Calculator> calculators = Collections.emptyList();
+            // First check to see if the user has specified a set of statistics for this metric
+            final Optional<ImmutableSet<Statistic>> specifiedStatistics;
+            try {
+                specifiedStatistics = _specifiedStatisticsCache.get(name);
+            } catch (final ExecutionException e) {
+                throw Throwables.propagate(e);
             }
+            if (specifiedStatistics.isPresent()) {
+                final Optional<ImmutableSet<Statistic>> dependentStatistics;
+                try {
+                    dependentStatistics = _dependentStatisticsCache.get(name);
+                } catch (final ExecutionException e) {
+                    throw Throwables.propagate(e);
+                }
+                calculators = getOrCreateCalculators(
+                        name,
+                        specifiedStatistics.get(),
+                        dependentStatistics.get(),
+                        _explicitMetricCalculators);
+            } else {
+                switch (metric.getType()) {
+                    case COUNTER: {
+                        calculators = getOrCreateCalculators(
+                                name,
+                                _specifiedCounterStatistics,
+                                _dependentCounterStatistics,
+                                _counterMetricCalculators);
+                        break;
+                    }
+                    case GAUGE: {
+                        calculators = getOrCreateCalculators(
+                                name,
+                                _specifiedGaugeStatistics,
+                                _dependentGaugeStatistics,
+                                _gaugeMetricCalculators);
+                        break;
+                    }
+                    case TIMER: {
+                        calculators = getOrCreateCalculators(
+                                name,
+                                _specifiedTimerStatistics,
+                                _dependentTimerStatistics,
+                                _timerMetricCalculators);
+                        break;
+                    }
+                    default:
+                        LOGGER.warn()
+                                .setMessage("Discarding metric")
+                                .addData("reason", "unsupported type")
+                                .addData("name", name)
+                                .addData("metric", metric)
+                                .log();
+                }
+            }
+            addMetric(
+                    name,
+                    metric,
+                    record.getTime(),
+                    calculators);
         }
     }
 
@@ -126,29 +196,66 @@ import java.util.concurrent.atomic.AtomicBoolean;
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("isOpen", _isOpen)
+                .put("sink", _sink)
+                .put("service", _service)
+                .put("cluster", _cluster)
+                .put("host", _host)
+                .put("start", _start)
+                .put("period", _period)
+                .put("timerStatistics", _specifiedTimerStatistics)
+                .put("counterStatistics", _specifiedCounterStatistics)
+                .put("gaugeStatistics", _specifiedGaugeStatistics)
+                .put("timerStatistics", _specifiedTimerStatistics)
+                .put("counterStatistics", _specifiedCounterStatistics)
+                .put("gaugeStatistics", _specifiedGaugeStatistics)
+                .build();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("IsOpen", _isOpen)
-                .add("Sink", _sink)
-                .add("Cluster", _cluster)
-                .add("Start", _service)
-                .add("Host", _host)
-                .add("Start", _start)
-                .add("Period", _period)
-                .add("CounterStatistics", _counterStatistics)
-                .add("GaugeStatistics", _gaugeStatistics)
-                .add("TimerStatistics", _timerStatistics)
-                .toString();
+        return toLogValue().toString();
     }
 
     private void computeStatistics(
-            final Map<String, Collection<Quantity>> metricSamples,
-            final Set<Statistic> statistics,
-            final Collection<AggregatedData> data) {
+            final ConcurrentMap<String, Collection<Calculator>> calculatorsByMetric,
+            final LoadingCache<String, Optional<ImmutableSet<Statistic>>> specifiedStatistics,
+            final ImmutableList.Builder<AggregatedData> data) {
+        computeStatistics(calculatorsByMetric, (metric, statistic) -> {
+                    final Optional<ImmutableSet<Statistic>> stats;
+                    try {
+                        stats = specifiedStatistics.get(metric);
+                    } catch (final ExecutionException e) {
+                        throw Throwables.propagate(e);
+                    }
+                    if (stats.isPresent()) {
+                        return stats.get().contains(statistic);
+                    } else {
+                        return false;
+                    }
+                }, data);
+    }
+
+    private void computeStatistics(
+            final ConcurrentMap<String, Collection<Calculator>> calculatorsByMetric,
+            final ImmutableSet<Statistic> specifiedStatistics,
+            final ImmutableList.Builder<AggregatedData> data) {
+        computeStatistics(calculatorsByMetric, (metric, statistic) -> specifiedStatistics.contains(statistic), data);
+    }
+    private void computeStatistics(
+            final ConcurrentMap<String, Collection<Calculator>> calculatorsByMetric,
+            final BiFunction<String, Statistic, Boolean> specified,
+            final ImmutableList.Builder<AggregatedData> data) {
 
         final FQDSN.Builder fqdsnBuilder = new FQDSN.Builder()
                 .setCluster(_cluster)
@@ -158,25 +265,35 @@ import java.util.concurrent.atomic.AtomicBoolean;
                 .setPeriod(_period)
                 .setHost(_host);
 
-        for (final Map.Entry<String, Collection<Quantity>> entry : metricSamples.entrySet()) {
+        for (final Map.Entry<String, Collection<Calculator>> entry : calculatorsByMetric.entrySet()) {
             final String metric = entry.getKey();
-            final Collection<Quantity> samples = entry.getValue();
+            final Collection<Calculator> calculators = entry.getValue();
+
+            // Build calculator dependencies for metric
+            // TODO(vkoskela): This is a waste of time. [NEXT]
+            // - Single set of calculators per metric and per statistic (no distinction between non-aux and aux)
+            // - Check the set of statistics to see if the calculator should be published
+            // - Still need both sets of statistics in order to create new set of calculators
+            final Map<Statistic, Calculator<?>> dependencies = Maps.newHashMap();
+            for (final Calculator calculator : calculators) {
+                dependencies.put(calculator.getStatistic(), calculator);
+            }
+
+            // Compute each calculated value requested by the client
             fqdsnBuilder.setMetric(metric);
-
-            // Unify sample units
-            // TODO(vkoskela): Extend Quantity to support unit-aware arithmetic. [MAI-?]
-            final List<Quantity> computableSamples = Quantity.unify(samples);
-
-            // Compute statistics
-            for (final Statistic statistic : statistics) {
+            for (final Calculator<?> calculator : calculators) {
                 datumBuilder.setFQDSN(
-                        fqdsnBuilder.setStatistic(statistic)
+                        fqdsnBuilder.setStatistic(calculator.getStatistic())
                                 .build());
 
-                data.add(datumBuilder.setValue(statistic.calculate(computableSamples))
-                        .setPopulationSize((long) samples.size())
-                        .setSamples(samples)
-                        .build());
+                datumBuilder.setSupportingData(null);
+                final CalculatedValue calculatedValue = calculator.calculate(dependencies);
+                data.add(
+                        datumBuilder.setValue(calculatedValue.getValue())
+                                .setIsSpecified(specified.apply(metric, calculator.getStatistic()))
+                                .setPopulationSize(-1L)
+                                .setSupportingData(calculatedValue.getData())
+                                .build());
             }
         }
     }
@@ -185,23 +302,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
             final String name,
             final Metric metric,
             final DateTime time,
-            final Map<String, Collection<Quantity>> data,
-            final boolean sorted) {
+            final Collection<Calculator> calculators) {
 
-        Collection<Quantity> samples = data.get(name);
-        if (samples == null) {
-            final Collection<Quantity> newSamples;
-            if (sorted) {
-                newSamples = TreeMultiset.create();
-            } else {
-                newSamples = new ArrayList<>();
-            }
-            samples = data.putIfAbsent(name, newSamples);
-            if (samples == null) {
-                samples = newSamples;
-            }
-        }
-        synchronized (samples) {
+        try {
+            // Acquire a read lock and validate the bucket is still open
+            _addCloseLock.readLock().lock();
             if (!_isOpen.get()) {
                 LOGGER.warn()
                         .setMessage("Discarding metric")
@@ -213,8 +318,43 @@ import java.util.concurrent.atomic.AtomicBoolean;
                         .log();
                 return;
             }
-            samples.addAll(metric.getValues());
+
+            // Add the value to any accumulators
+            for (final Calculator calculator : calculators) {
+                if (calculator instanceof Accumulator) {
+                    final Accumulator accumulator = (Accumulator) calculator;
+                    synchronized (accumulator) {
+                        for (final Quantity quantity : metric.getValues()) {
+                            accumulator.accumulate(quantity);
+                        }
+                    }
+                }
+            }
+        } finally {
+            _addCloseLock.readLock().unlock();
         }
+    }
+
+    private Collection<Calculator> getOrCreateCalculators(
+            final String name,
+            final Collection<Statistic> specifiedStatistics,
+            final Collection<Statistic> dependentStatistics,
+            final ConcurrentMap<String, Collection<Calculator>> calculatorsByMetric) {
+        Collection<Calculator> calculators = calculatorsByMetric.get(name);
+        if (calculators == null) {
+            final Set<Calculator> newCalculators = Sets.newHashSet();
+            for (final Statistic statistic : specifiedStatistics) {
+                newCalculators.add(statistic.createCalculator());
+            }
+            for (final Statistic statistic : dependentStatistics) {
+                newCalculators.add(statistic.createCalculator());
+            }
+            calculators = calculatorsByMetric.putIfAbsent(name, newCalculators);
+            if (calculators == null) {
+                calculators = newCalculators;
+            }
+        }
+        return calculators;
     }
 
     Bucket(final Builder builder) {
@@ -224,25 +364,36 @@ import java.util.concurrent.atomic.AtomicBoolean;
         _host = builder._host;
         _start = builder._start;
         _period = builder._period;
-        _counterStatistics = builder._counterStatistics;
-        _gaugeStatistics = builder._gaugeStatistics;
-        _timerStatistics = builder._timerStatistics;
+        _specifiedCounterStatistics = builder._specifiedCounterStatistics;
+        _specifiedGaugeStatistics = builder._specifiedGaugeStatistics;
+        _specifiedTimerStatistics = builder._specifiedTimerStatistics;
+        _dependentCounterStatistics = builder._dependentCounterStatistics;
+        _dependentGaugeStatistics = builder._dependentGaugeStatistics;
+        _dependentTimerStatistics = builder._dependentTimerStatistics;
+        _specifiedStatisticsCache = builder._specifiedStatistics;
+        _dependentStatisticsCache = builder._dependentStatistics;
     }
 
-
     private final AtomicBoolean _isOpen = new AtomicBoolean(true);
+    private final ReadWriteLock _addCloseLock = new ReentrantReadWriteLock();
+    private final ConcurrentMap<String, Collection<Calculator>> _counterMetricCalculators = Maps.newConcurrentMap();
+    private final ConcurrentMap<String, Collection<Calculator>> _gaugeMetricCalculators = Maps.newConcurrentMap();
+    private final ConcurrentMap<String, Collection<Calculator>> _timerMetricCalculators = Maps.newConcurrentMap();
+    private final ConcurrentMap<String, Collection<Calculator>> _explicitMetricCalculators = Maps.newConcurrentMap();
     private final Sink _sink;
     private final String _cluster;
     private final String _service;
     private final String _host;
     private final DateTime _start;
     private final Period _period;
-    private final Set<Statistic> _counterStatistics;
-    private final Set<Statistic> _gaugeStatistics;
-    private final Set<Statistic> _timerStatistics;
-    private final Map<String, Collection<Quantity>> _counterMetricSamples = Maps.newConcurrentMap();
-    private final Map<String, Collection<Quantity>> _gaugeMetricSamples = Maps.newConcurrentMap();
-    private final Map<String, Collection<Quantity>> _timerMetricSamples = Maps.newConcurrentMap();
+    private final ImmutableSet<Statistic> _specifiedCounterStatistics;
+    private final ImmutableSet<Statistic> _specifiedGaugeStatistics;
+    private final ImmutableSet<Statistic> _specifiedTimerStatistics;
+    private final ImmutableSet<Statistic> _dependentCounterStatistics;
+    private final ImmutableSet<Statistic> _dependentGaugeStatistics;
+    private final ImmutableSet<Statistic> _dependentTimerStatistics;
+    private final LoadingCache<String, Optional<ImmutableSet<Statistic>>> _dependentStatisticsCache;
+    private final LoadingCache<String, Optional<ImmutableSet<Statistic>>> _specifiedStatisticsCache;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Bucket.class);
 
@@ -303,35 +454,68 @@ import java.util.concurrent.atomic.AtomicBoolean;
         }
 
         /**
-         * Set the timer statistics. Cannot be null or empty.
+         * Set the specified timer statistics. Cannot be null or empty.
          *
-         * @param value The timer statistics.
+         * @param value The specified timer statistics.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setTimerStatistics(final ImmutableSet<Statistic> value) {
-            _timerStatistics = value;
+        public Builder setSpecifiedTimerStatistics(final ImmutableSet<Statistic> value) {
+            _specifiedTimerStatistics = value;
             return this;
         }
 
         /**
-         * Set the counter statistics. Cannot be null or empty.
+         * Set the specified counter statistics. Cannot be null or empty.
          *
-         * @param value The counter statistics.
+         * @param value The specified counter statistics.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setCounterStatistics(final ImmutableSet<Statistic> value) {
-            _counterStatistics = value;
+        public Builder setSpecifiedCounterStatistics(final ImmutableSet<Statistic> value) {
+            _specifiedCounterStatistics = value;
             return this;
         }
 
         /**
-         * Set the gauge statistics. Cannot be null or empty.
+         * Set the specified gauge statistics. Cannot be null or empty.
          *
-         * @param value The gauge statistics.
+         * @param value The specified gauge statistics.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setGaugeStatistics(final ImmutableSet<Statistic> value) {
-            _gaugeStatistics = value;
+        public Builder setSpecifiedGaugeStatistics(final ImmutableSet<Statistic> value) {
+            _specifiedGaugeStatistics = value;
+            return this;
+        }
+
+        /**
+         * Set the dependent timer statistics. Cannot be null or empty.
+         *
+         * @param value The dependent timer statistics.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setDependentTimerStatistics(final ImmutableSet<Statistic> value) {
+            _dependentTimerStatistics = value;
+            return this;
+        }
+
+        /**
+         * Set the dependent counter statistics. Cannot be null or empty.
+         *
+         * @param value The dependent counter statistics.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setDependentCounterStatistics(final ImmutableSet<Statistic> value) {
+            _dependentCounterStatistics = value;
+            return this;
+        }
+
+        /**
+         * Set the dependent gauge statistics. Cannot be null or empty.
+         *
+         * @param value The dependent gauge statistics.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setDependentGaugeStatistics(final ImmutableSet<Statistic> value) {
+            _dependentGaugeStatistics = value;
             return this;
         }
 
@@ -357,6 +541,63 @@ import java.util.concurrent.atomic.AtomicBoolean;
             return this;
         }
 
+        /**
+         * Set the specified statistics for a given metric. Cannot be null or empty.
+         *
+         * @param value The dependent timer statistics.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setSpecifiedStatistics(final LoadingCache<String, Optional<ImmutableSet<Statistic>>> value) {
+            _specifiedStatistics = value;
+            return this;
+        }
+
+        /**
+         * Set the dependent statistics for a given metric. Cannot be null or empty.
+         *
+         * @param value The dependent timer statistics.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setDependentStatistics(final LoadingCache<String, Optional<ImmutableSet<Statistic>>> value) {
+            _dependentStatistics = value;
+            return this;
+        }
+
+
+        /**
+         * Generate a Steno log compatible representation.
+         *
+         * @return Steno log compatible representation.
+         */
+        @LogValue
+        @Override
+        public Object toLogValue() {
+            return LogValueMapFactory.builder(this)
+                    .put("_super", super.toLogValue())
+                    .put("sink", _sink)
+                    .put("service", _service)
+                    .put("cluster", _cluster)
+                    .put("host", _host)
+                    .put("start", _start)
+                    .put("period", _period)
+                    .put("specifiedTimerStatistics", _specifiedTimerStatistics)
+                    .put("specifiedCounterStatistics", _specifiedCounterStatistics)
+                    .put("specifiedGaugeStatistics", _specifiedGaugeStatistics)
+                    .put("dependentTimerStatistics", _dependentTimerStatistics)
+                    .put("dependentCounterStatistics", _dependentCounterStatistics)
+                    .put("dependentGaugeStatistics", _dependentGaugeStatistics)
+                    .build();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return toLogValue().toString();
+        }
+
+
         @NotNull
         @NotEmpty
         private String _service;
@@ -373,10 +614,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
         @NotNull
         private Period _period;
         @NotNull
-        private ImmutableSet<Statistic> _timerStatistics;
+        private ImmutableSet<Statistic> _specifiedTimerStatistics;
         @NotNull
-        private ImmutableSet<Statistic> _counterStatistics;
+        private ImmutableSet<Statistic> _specifiedCounterStatistics;
         @NotNull
-        private ImmutableSet<Statistic> _gaugeStatistics;
+        private ImmutableSet<Statistic> _specifiedGaugeStatistics;
+        @NotNull
+        private ImmutableSet<Statistic> _dependentTimerStatistics;
+        @NotNull
+        private ImmutableSet<Statistic> _dependentCounterStatistics;
+        @NotNull
+        private ImmutableSet<Statistic> _dependentGaugeStatistics;
+        @NotNull
+        private LoadingCache<String, Optional<ImmutableSet<Statistic>>> _specifiedStatistics;
+        @NotNull
+        private LoadingCache<String, Optional<ImmutableSet<Statistic>>> _dependentStatistics;
     }
 }

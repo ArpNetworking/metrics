@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdaggregator.model;
 
+import com.arpnetworking.tsdcore.model.MetricType;
 import com.arpnetworking.tsdcore.model.Quantity;
 
 import java.util.List;
@@ -28,14 +29,14 @@ public interface Metric {
 
     /**
      * Accessor for the type of metric.
-     * 
+     *
      * @return The type of metric.
      */
     MetricType getType();
 
     /**
      * Accessor for the collected data.
-     * 
+     *
      * @return The collected data.
      */
     List<Quantity> getValues();

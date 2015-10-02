@@ -15,13 +15,15 @@
  */
 package com.arpnetworking.tsdaggregator.sources;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.model.DefaultMetric;
 import com.arpnetworking.tsdaggregator.model.DefaultRecord;
 import com.arpnetworking.tsdaggregator.model.Metric;
-import com.arpnetworking.tsdaggregator.model.MetricType;
 import com.arpnetworking.tsdaggregator.model.Record;
+import com.arpnetworking.tsdcore.model.MetricType;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.sources.BaseSource;
 import com.arpnetworking.tsdcore.sources.Source;
@@ -67,14 +69,24 @@ public final class MappingSource extends BaseSource {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("source", _source)
+                .put("findAndReplace", _findAndReplace)
+                .build();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("super", super.toString())
-                .add("Source", _source)
-                .toString();
+        return toLogValue().toString();
     }
 
     private MappingSource(final Builder builder) {

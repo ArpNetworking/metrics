@@ -17,20 +17,16 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
-import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.common.base.Optional;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -46,19 +42,9 @@ public final class PeriodFilteringSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        // WARNING: This is completely hacked on the fact that the emitter and aggregator
-        // only record data sets per period and therefore we either filter the entire
-        // data set or none of the data set. Therefore, we skip filtering of the conditions.
-        final List<AggregatedData> filteredData = Lists.newArrayListWithCapacity(data.size());
-        for (final AggregatedData datum : data) {
-            if (_cachedFilterResult.getUnchecked(datum.getPeriod())) {
-                filteredData.add(datum);
-            }
-        }
-
-        if (!filteredData.isEmpty()) {
-            _sink.recordAggregateData(filteredData, conditions);
+    public void recordAggregateData(final PeriodicData periodicData) {
+        if (_cachedFilterResult.getUnchecked(periodicData.getPeriod())) {
+            _sink.recordAggregateData(periodicData);
         }
     }
 
@@ -80,11 +66,11 @@ public final class PeriodFilteringSink extends BaseSink {
     public Object toLogValue() {
         return LogValueMapFactory.<String, Object>builder()
                 .put("super", super.toLogValue())
-                .put("Include", _include)
-                .put("Exclude", _exclude)
-                .put("ExcludeLessThan", _excludeLessThan)
-                .put("ExcludeGreaterThan", _excludeGreaterThan)
-                .put("Sink", _sink)
+                .put("include", _include)
+                .put("exclude", _exclude)
+                .put("excludeLessThan", _excludeLessThan)
+                .put("excludeGreaterThan", _excludeGreaterThan)
+                .put("sink", _sink)
                 .build();
     }
 

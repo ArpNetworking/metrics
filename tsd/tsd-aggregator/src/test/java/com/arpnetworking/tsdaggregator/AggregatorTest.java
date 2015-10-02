@@ -17,14 +17,15 @@ package com.arpnetworking.tsdaggregator;
 
 import com.arpnetworking.tsdaggregator.model.DefaultMetric;
 import com.arpnetworking.tsdaggregator.model.DefaultRecord;
-import com.arpnetworking.tsdaggregator.model.MetricType;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.MetricType;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.sinks.Sink;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.tsdcore.statistics.TP100Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
@@ -87,16 +88,18 @@ public class AggregatorTest {
                             .build());
 
             // Wait for the period to close
-            Thread.sleep(2000);
+            Thread.sleep(3000);
 
             // Verify the aggregation was emitted
-            Mockito.verify(sink).recordAggregateData(_dataCaptor.capture(), _conditionsCaptor.capture());
+            Mockito.verify(sink).recordAggregateData(_periodicDataCaptor.capture());
             Mockito.verifyNoMoreInteractions(sink);
 
-            final List<Condition> conditions = _conditionsCaptor.getValue();
+            final PeriodicData periodicData = _periodicDataCaptor.getValue();
+
+            final List<Condition> conditions = periodicData.getConditions();
             Assert.assertTrue(conditions.isEmpty());
 
-            final List<AggregatedData> data = _dataCaptor.getValue();
+            final List<AggregatedData> data = periodicData.getData();
             Assert.assertEquals(1, data.size());
             Assert.assertEquals(
                     new AggregatedData.Builder()
@@ -108,8 +111,9 @@ public class AggregatorTest {
                                     .build())
                             .setHost("MyHost")
                             .setPeriod(Period.seconds(1))
-                            .setPopulationSize(1L)
-                            .setSamples(Collections.singletonList(new Quantity.Builder().setValue(1d).build()))
+                            .setIsSpecified(true)
+                            .setPopulationSize(-1L)
+                            .setSamples(Collections.emptyList())
                             .setStart(dataTimeInThePast.withMillisOfSecond(0))
                             .setValue(new Quantity.Builder().setValue(1d).build())
                             .build(),
@@ -120,9 +124,8 @@ public class AggregatorTest {
     }
 
     @Captor
-    private ArgumentCaptor<List<AggregatedData>> _dataCaptor;
-    @Captor
-    private ArgumentCaptor<List<Condition>> _conditionsCaptor;
+    private ArgumentCaptor<PeriodicData> _periodicDataCaptor;
 
-    private static final Statistic MAX_STATISTIC = new TP100Statistic();
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MAX_STATISTIC = STATISTIC_FACTORY.getStatistic("max");
 }

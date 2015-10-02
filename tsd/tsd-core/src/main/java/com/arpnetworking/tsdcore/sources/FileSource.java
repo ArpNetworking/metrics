@@ -16,7 +16,6 @@
 package com.arpnetworking.tsdcore.sources;
 
 import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -83,11 +82,12 @@ public final class FileSource<T> extends BaseSource {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "SourceFile", _sourceFile,
-                "StateFile", _stateFile,
-                "Parser", LogReferenceOnly.of(_parser));
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("sourceFile", _sourceFile)
+                .put("stateFile", _stateFile)
+                .put("parser", _parser)
+                .build();
     }
 
     /**

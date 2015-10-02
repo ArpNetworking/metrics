@@ -18,8 +18,8 @@ package com.arpnetworking.tsdaggregator.test;
 import com.arpnetworking.tsdaggregator.model.DefaultMetric;
 import com.arpnetworking.tsdaggregator.model.DefaultRecord;
 import com.arpnetworking.tsdaggregator.model.Metric;
-import com.arpnetworking.tsdaggregator.model.MetricType;
 import com.arpnetworking.tsdaggregator.model.Record;
+import com.arpnetworking.tsdcore.model.MetricType;
 import com.arpnetworking.tsdcore.model.Quantity;
 
 import org.joda.time.DateTime;

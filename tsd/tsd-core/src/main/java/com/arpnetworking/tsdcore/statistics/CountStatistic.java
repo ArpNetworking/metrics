@@ -15,19 +15,23 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Counts the entries.
+ * Counts the entries. Use <code>StatisticFactory</code> for construction.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-public class CountStatistic extends BaseStatistic {
+@Loggable
+public final class CountStatistic extends BaseStatistic {
 
     /**
      * {@inheritDoc}
@@ -49,6 +53,14 @@ public class CountStatistic extends BaseStatistic {
      * {@inheritDoc}
      */
     @Override
+    public Calculator<Void> createCalculator() {
+        return new CountAccumulator(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Quantity calculate(final List<Quantity> unorderedValues) {
         return new Quantity.Builder().setValue((double) unorderedValues.size()).build();
     }
@@ -58,12 +70,72 @@ public class CountStatistic extends BaseStatistic {
      */
     @Override
     public Quantity calculateAggregations(final List<AggregatedData> aggregations) {
-        double samples = 0;
+        double count = 0;
         for (final AggregatedData aggregation : aggregations) {
-            samples += aggregation.getPopulationSize();
+            count += aggregation.getValue().getValue();
         }
-        return new Quantity.Builder().setValue(samples).build();
+        return new Quantity.Builder().setValue(count).build();
     }
 
+    private CountStatistic() { }
+
     private static final long serialVersionUID = 983762187313397225L;
+
+    /**
+     * Accumulator computing the count of values.
+     *
+     * @author Ville Koskela (vkoskela at groupon dot com)
+     */
+    private static final class CountAccumulator implements Accumulator<Void> {
+
+        /**
+         * Public constructor.
+         *
+         * @param statistic The <code>Statistic</code>.
+         */
+        public CountAccumulator(final Statistic statistic) {
+            _statistic = statistic;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Statistic getStatistic() {
+            return _statistic;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Accumulator<Void> accumulate(final Quantity quantity) {
+            ++_count;
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Accumulator<Void> accumulate(final CalculatedValue<Void> calculatedValue) {
+            _count += calculatedValue.getValue().getValue();
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public CalculatedValue<Void> calculate(final Map<Statistic, Calculator<?>> dependencies) {
+            return new CalculatedValue.Builder<Void>()
+                    .setValue(new Quantity.Builder()
+                            .setValue((double) _count)
+                            .build())
+                    .build();
+        }
+
+        private final Statistic _statistic;
+        private long _count = 0;
+    }
 }

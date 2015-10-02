@@ -98,11 +98,10 @@ public class Configurator<T extends Launchable, S> implements Listener, Launchab
      */
     @LogValue
     public synchronized Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "ConfigurationClass", _configurationClass,
-                "Launchable", _launchable);
+        return LogValueMapFactory.builder(this)
+                .put("configurationClass", _configurationClass)
+                .put("launchable", _launchable)
+                .build();
     }
 
     /**

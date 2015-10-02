@@ -16,6 +16,7 @@
 package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.test.TestBeanFactory;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.google.common.collect.Lists;
@@ -24,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -35,12 +37,12 @@ public class MedianStatisticTest {
 
     @Test
     public void testName() {
-        Assert.assertEquals("median", new MedianStatistic().getName());
+        Assert.assertEquals("median", MEDIAN_STATISTIC.getName());
     }
 
     @Test
     public void testAliases() {
-        final MedianStatistic statistic = new MedianStatistic();
+        final Statistic statistic = MEDIAN_STATISTIC;
         Assert.assertEquals(2, statistic.getAliases().size());
         Assert.assertTrue(statistic.getAliases().contains("tp50"));
         Assert.assertTrue(statistic.getAliases().contains("p50"));
@@ -48,7 +50,7 @@ public class MedianStatisticTest {
 
     @Test
     public void testMedianStat() {
-        final MedianStatistic tp = new MedianStatistic();
+        final Statistic tp = MEDIAN_STATISTIC;
         final ArrayList<Double> vList = Lists.newArrayList();
         for (int x = 0; x < 100; ++x) {
             vList.add((double) x);
@@ -66,13 +68,35 @@ public class MedianStatisticTest {
 
     @Test
     public void testEquality() {
-        Assert.assertFalse(new MedianStatistic().equals(null));
-        Assert.assertFalse(new MedianStatistic().equals("ABC"));
-        Assert.assertTrue(new MedianStatistic().equals(new MedianStatistic()));
+        Assert.assertFalse(MEDIAN_STATISTIC.equals(null));
+        Assert.assertFalse(MEDIAN_STATISTIC.equals("ABC"));
+        Assert.assertTrue(MEDIAN_STATISTIC.equals(MEDIAN_STATISTIC));
     }
 
     @Test
     public void testHashCode() {
-        Assert.assertEquals(new MedianStatistic().hashCode(), new MedianStatistic().hashCode());
+        Assert.assertEquals(MEDIAN_STATISTIC.hashCode(), MEDIAN_STATISTIC.hashCode());
     }
+
+    @Test
+    public void testCalculator() {
+        final Accumulator<HistogramStatistic.HistogramSupportingData> accumulator =
+                (Accumulator<HistogramStatistic.HistogramSupportingData>) HISTOGRAM_STATISTIC.createCalculator();
+        for (int x = 0; x < 100; ++x) {
+            accumulator.accumulate(new Quantity.Builder().setValue((double) x).build());
+        }
+        final CalculatedValue calculated = MEDIAN_STATISTIC.createCalculator().calculate(
+                Collections.singletonMap(HISTOGRAM_STATISTIC, accumulator));
+        Assert.assertTrue(areClose(new Quantity.Builder().setValue(50.0).build(), calculated.getValue()));
+    }
+
+
+    private boolean areClose(final Quantity expected, final Quantity actual) {
+        final double diff = Math.abs(expected.getValue() - actual.getValue());
+        return diff / expected.getValue() <= (0.01 * expected.getValue());
+    }
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final MedianStatistic MEDIAN_STATISTIC = (MedianStatistic) STATISTIC_FACTORY.getStatistic("median");
+    private static final HistogramStatistic HISTOGRAM_STATISTIC = (HistogramStatistic) STATISTIC_FACTORY.getStatistic("histogram");
 }

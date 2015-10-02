@@ -23,7 +23,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
@@ -63,8 +62,6 @@ public final class AggDataUnifier {
         }
     }
 
-    private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(AggDataUnifier.class);
-
     private static final class ConvertUnitTransform implements Function<AggregatedData, AggregatedData> {
         public ConvertUnitTransform(final Optional<Unit> unit) {
             _unit = unit;
@@ -72,8 +69,11 @@ public final class AggDataUnifier {
 
         @Nonnull
         @Override
-        public AggregatedData apply(@Nonnull final AggregatedData input) {
+        public AggregatedData apply(final AggregatedData input) {
             boolean transformSamples = false;
+            if (input == null) {
+                throw new IllegalArgumentException("input cannot be null");
+            }
 
             for (final Quantity quantity : input.getSamples()) {
                 if (!quantity.getUnit().equals(_unit)) {

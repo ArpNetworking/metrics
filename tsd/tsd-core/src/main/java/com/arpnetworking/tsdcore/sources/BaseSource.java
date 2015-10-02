@@ -71,10 +71,9 @@ public abstract class BaseSource implements Source {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Name", _name);
+        return LogValueMapFactory.builder(this)
+                .put("name", _name)
+                .build();
     }
 
     /**

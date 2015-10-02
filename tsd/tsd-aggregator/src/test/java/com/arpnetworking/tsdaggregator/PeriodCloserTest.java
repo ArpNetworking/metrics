@@ -29,7 +29,6 @@ import org.junit.Test;
  */
 public class PeriodCloserTest {
 
-
     @Test
     public void testGetStartTime() {
         // 1-second period
@@ -106,7 +105,7 @@ public class PeriodCloserTest {
 
     @Test
     public void testGetPeriodTimeout() {
-        Assert.assertEquals(new Duration(250), PeriodCloser.getPeriodTimeout(Period.millis(500)));
+        Assert.assertEquals(new Duration(1000), PeriodCloser.getPeriodTimeout(Period.millis(500)));
         Assert.assertEquals(new Duration(7500), PeriodCloser.getPeriodTimeout(Period.seconds(15)));
         Assert.assertEquals(new Duration(30000), PeriodCloser.getPeriodTimeout(Period.seconds(60)));
         Assert.assertEquals(new Duration(30000), PeriodCloser.getPeriodTimeout(Period.minutes(1)));

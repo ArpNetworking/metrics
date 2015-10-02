@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
@@ -35,8 +36,11 @@ import java.io.Serializable;
  * statistic. To refer to a specific value in the data space or hypercube of
  * a metric you should use a fully qualified statistic name (<code>FQSN</code>).
  *
+ * The identified data space is a time series by period.
+ *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class FQDSN implements Serializable {
 
     public String getCluster() {

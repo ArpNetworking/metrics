@@ -16,6 +16,7 @@
 
 package models.messages;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
 
@@ -27,7 +28,8 @@ import java.util.Set;
  *
  * @author Mohammed Kamel (mkamel at groupon dot com)
  */
-public class LogsList {
+@Loggable
+public final class LogsList {
     /**
      * Public constructor.
      *
@@ -37,6 +39,10 @@ public class LogsList {
         _logs = ImmutableSet.copyOf(logs);
     }
 
+    public Set<Path> getLogs() {
+        return _logs;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -44,12 +50,9 @@ public class LogsList {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Logs", _logs)
                 .toString();
-    }
-
-    public Set<Path> getLogs() {
-        return _logs;
     }
 
     private final Set<Path> _logs;

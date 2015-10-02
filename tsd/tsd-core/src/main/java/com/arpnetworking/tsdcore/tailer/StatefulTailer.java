@@ -16,7 +16,6 @@
 package com.arpnetworking.tsdcore.tailer;
 
 import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -70,15 +69,11 @@ public final class StatefulTailer implements Tailer {
      */
     @Override
     public void run() {
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(final Thread thread, final Throwable throwable) {
-                LOGGER.error()
+        Thread.currentThread().setUncaughtExceptionHandler(
+                (thread, throwable) -> LOGGER.error()
                         .setMessage("Unhandled exception")
                         .setThrowable(throwable)
-                        .log();
-            }
-        });
+                        .log());
 
         try {
             fileLoop();
@@ -103,13 +98,11 @@ public final class StatefulTailer implements Tailer {
     @LogValue
     public Object toLogValue() {
         return LogValueMapFactory.<String, Object>builder()
-                .put("id", Integer.toHexString(System.identityHashCode(this)))
-                .put("class", this.getClass())
-                .put("File", _file)
-                .put("PositionStore", LogReferenceOnly.of(_positionStore))
-                .put("Listener", _listener)
-                .put("IsRunning", _isRunning)
-                .put("Trigger", _trigger)
+                .put("file", _file)
+                .put("positionStore", _positionStore)
+                .put("listener", _listener)
+                .put("isRunning", _isRunning)
+                .put("trigger", _trigger)
                 .build();
     }
 
@@ -152,9 +145,20 @@ public final class StatefulTailer implements Tailer {
                     long position = nextInitialPosition.get(reader);
                     // Any subsequent file opens we should start at the beginning
                     nextInitialPosition = InitialPosition.START;
+                    // Override position with last known position from store
                     _hash = computeHash(reader, REQUIRED_BYTES_FOR_HASH);
                     if (_hash.isPresent()) {
-                        position = _positionStore.getPosition(_hash.get()).or(position);
+                        final Optional<Long> storedPosition = _positionStore.getPosition(_hash.get());
+                        if (storedPosition.isPresent()) {
+                            // Optionally limit the size of the backlog to process
+                            final long fileSize = reader.size();
+                            if (_maximumOffsetOnResume.isPresent() && fileSize - storedPosition.get() > _maximumOffsetOnResume.get()) {
+                                position = fileSize - _maximumOffsetOnResume.get();
+                                // TODO(vkoskela): Discard the current potentially partial line [AINT-584]
+                            } else {
+                                position = storedPosition.get();
+                            }
+                        }
                     }
                     LOGGER.info()
                             .setMessage("Starting tailer")
@@ -513,6 +517,7 @@ public final class StatefulTailer implements Tailer {
         }
 
         _initialPosition = builder._initialPosition;
+        _maximumOffsetOnResume = Optional.fromNullable(builder._maximumOffsetOnResume);
         _listener.initialize(this);
     }
 
@@ -528,6 +533,7 @@ public final class StatefulTailer implements Tailer {
     private final ByteArrayOutputStream _lineBuffer;
     private final MessageDigest _md5;
     private final InitialPosition _initialPosition;
+    private final Optional<Long> _maximumOffsetOnResume;
     private final Trigger _trigger;
 
     private volatile boolean _isRunning = true;
@@ -646,6 +652,17 @@ public final class StatefulTailer implements Tailer {
             return this;
         }
 
+        /**
+         * Sets the maximum offset on resume. Optional. Default is no maximum.
+         *
+         * @param maximumOffsetOnResume The maximum offset on resume.
+         * @return This instance of {@link Builder}
+         */
+        public Builder setMaximumOffsetOnResume(final Long maximumOffsetOnResume) {
+            _maximumOffsetOnResume = maximumOffsetOnResume;
+            return this;
+        }
+
         @NotNull
         private File _file;
         @NotNull
@@ -656,5 +673,6 @@ public final class StatefulTailer implements Tailer {
         private Duration _readInterval = Duration.millis(250);
         @NotNull
         private InitialPosition _initialPosition = InitialPosition.START;
+        private Long _maximumOffsetOnResume = null;
     }
 }

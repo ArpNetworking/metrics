@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>> {
+public final class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>> {
 
     /**
      * Public constructor.
@@ -152,7 +152,7 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
 
     private String createTimerName(final HttpRequest request) {
         final StringBuilder nameBuilder = new StringBuilder()
-                .append("RestService/")
+                .append("rest_service/")
                 .append(request.method().value());
         if (!request.getUri().path().startsWith("/")) {
             nameBuilder.append("/");

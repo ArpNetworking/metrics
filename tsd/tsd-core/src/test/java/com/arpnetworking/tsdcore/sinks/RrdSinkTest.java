@@ -17,7 +17,8 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.statistics.MeanStatistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -80,7 +81,7 @@ public class RrdSinkTest {
         final AggregatedData datumA = TestBeanFactory.createAggregatedDataBuilder()
                 .setFQDSN(TestBeanFactory.createFQDSNBuilder()
                         .setMetric("metric")
-                        .setStatistic(new MeanStatistic())
+                        .setStatistic(MEAN_STATISTIC)
                         .build())
                 .setHost("localhost")
                 .setPeriod(Period.minutes(5))
@@ -93,7 +94,7 @@ public class RrdSinkTest {
         final AggregatedData datumB = TestBeanFactory.createAggregatedDataBuilder()
                 .setFQDSN(TestBeanFactory.createFQDSNBuilder()
                         .setMetric("metric")
-                        .setStatistic(new MeanStatistic())
+                        .setStatistic(MEAN_STATISTIC)
                         .build())
                 .setHost("localhost")
                 .setPeriod(Period.minutes(5))
@@ -133,4 +134,7 @@ public class RrdSinkTest {
 
     private RrdSink.Builder _rrdSinkBuilder;
     private File _path;
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MEAN_STATISTIC = STATISTIC_FACTORY.getStatistic("mean");
 }

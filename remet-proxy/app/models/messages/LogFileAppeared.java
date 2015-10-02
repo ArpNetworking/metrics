@@ -15,6 +15,7 @@
  */
 package models.messages;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 
 import java.nio.file.Path;
@@ -24,7 +25,8 @@ import java.nio.file.Path;
  *
  * @author Mohammed Kamel (mkamel at groupon dot com))
  */
-public class LogFileAppeared {
+@Loggable
+public final class LogFileAppeared {
     /**
      * Public constructor.
      *
@@ -34,16 +36,6 @@ public class LogFileAppeared {
         _file = file;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("File", _file)
-                .toString();
-    }
 
     /**
      * Gets the file path.
@@ -52,6 +44,18 @@ public class LogFileAppeared {
      */
     public Path getFile() {
         return _file;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
+                .add("File", _file)
+                .toString();
     }
 
     private final Path _file;

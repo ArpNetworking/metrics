@@ -1,0 +1,12 @@
+<root>
+  <item name='com.google.common.collect.Iterables T getFirst(java.lang.Iterable&lt;? extends T&gt;, T)'>
+    <annotation name='org.jetbrains.annotations.Contract'>
+      <val val="&quot;_, null -&gt; null; _, !null -&gt; !null&quot;"/>
+    </annotation>
+  </item>
+  <item name='com.google.common.collect.Iterables T getLast(java.lang.Iterable&lt;? extends T&gt;, T)'>
+    <annotation name='org.jetbrains.annotations.Contract'>
+      <val val="&quot;_, null -&gt; null; _, !null -&gt; !null&quot;"/>
+    </annotation>
+  </item>
+</root>

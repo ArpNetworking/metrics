@@ -29,7 +29,7 @@ import akka.http.javadsl.ServerBinding;
 import akka.stream.ActorFlowMaterializer;
 import akka.stream.ActorFlowMaterializerSettings;
 import com.arpnetworking.clusteraggregator.aggregation.AggMessageExtractor;
-import com.arpnetworking.clusteraggregator.aggregation.Aggregator;
+import com.arpnetworking.clusteraggregator.aggregation.AggregationRouter;
 import com.arpnetworking.clusteraggregator.aggregation.Bookkeeper;
 import com.arpnetworking.clusteraggregator.bookkeeper.persistence.InMemoryBookkeeper;
 import com.arpnetworking.clusteraggregator.client.AggClientServer;
@@ -50,6 +50,7 @@ import com.arpnetworking.metrics.impl.TsdQueryLogSink;
 import com.arpnetworking.utility.ActorConfigurator;
 import com.arpnetworking.utility.ParallelLeastShardAllocationStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
@@ -60,7 +61,6 @@ import com.typesafe.config.ConfigFactory;
 import scala.concurrent.Future;
 
 import java.util.Collections;
-import java.util.Optional;
 
 /**
  * The primary Guice module used to bootstrap the cluster aggregator. NOTE: this module will be constructed whenever
@@ -225,7 +225,7 @@ public class GuiceModule extends AbstractModule {
         final RebalanceConfiguration rebalanceConfiguration = _configuration.getRebalanceConfiguration();
         return clusterSharding.start(
                 "Aggregator",
-                GuiceActorCreator.props(injector, Aggregator.class),
+                GuiceActorCreator.props(injector, AggregationRouter.class),
                 extractor,
                 new ParallelLeastShardAllocationStrategy(
                         rebalanceConfiguration.getMaxParallel(),

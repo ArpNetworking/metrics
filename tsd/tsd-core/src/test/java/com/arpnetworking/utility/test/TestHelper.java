@@ -45,7 +45,9 @@ public final class TestHelper {
      * @return True if and only if the method is a getter method.
      */
     public static boolean isGetterMethod(final Method method) {
-        return method.getName().startsWith(GETTER_METHOD_PREFIX)
+        return (method.getName().startsWith(GETTER_GET_METHOD_PREFIX)
+                        ||
+                        method.getName().startsWith(GETTER_IS_METHOD_PREFIX))
                 &&
                 !Void.class.equals(method.getReturnType())
                 &&
@@ -55,27 +57,35 @@ public final class TestHelper {
     }
 
     /**
-     * Return the corresponding setter method name for a getter method.
-     * 
-     * @param getterMethod The getter method.
-     * @return The name of the corresponding setter method.
-     */
-    public static String setterMethodNameForGetter(final Method getterMethod) {
-        return SETTER_METHOD_PREFIX + getterMethod.getName().substring(GETTER_METHOD_PREFIX.length());
-    }
-
-    /**
-     * Return the corresponding getter method name for a setter method.
-     * 
+     * Return the corresponding getter method for a setter method.
+     *
      * @param setterMethod The setter method.
+     * @param clazz The <code>Class</code> to inspect.
      * @return The name of the corresponding getter method.
      */
-    public static String getterMethodNameForSetter(final Method setterMethod) {
-        return GETTER_METHOD_PREFIX + setterMethod.getName().substring(SETTER_METHOD_PREFIX.length());
+    public static Method getterMethodForSetter(final Method setterMethod, final Class<?> clazz) {
+        final String baseName = setterMethod.getName().substring(SETTER_METHOD_PREFIX.length());
+        try {
+            final String getterName = GETTER_GET_METHOD_PREFIX + baseName;
+            return clazz.getDeclaredMethod(getterName);
+        } catch (final NoSuchMethodException e1) {
+            try {
+                final String getterName = GETTER_IS_METHOD_PREFIX + baseName;
+                return clazz.getDeclaredMethod(getterName);
+            } catch (final NoSuchMethodException e2) {
+                try {
+                    final String getterName = baseName.substring(0, 1).toLowerCase() + baseName.substring(1);
+                    return clazz.getDeclaredMethod(getterName);
+                } catch (final NoSuchMethodException e3) {
+                    throw new IllegalArgumentException("No matching getter method found for setter: " + setterMethod);
+                }
+            }
+        }
     }
 
     private TestHelper() {}
 
-    private static final String GETTER_METHOD_PREFIX = "get";
+    private static final String GETTER_GET_METHOD_PREFIX = "get";
+    private static final String GETTER_IS_METHOD_PREFIX = "is";
     private static final String SETTER_METHOD_PREFIX = "set";
 }

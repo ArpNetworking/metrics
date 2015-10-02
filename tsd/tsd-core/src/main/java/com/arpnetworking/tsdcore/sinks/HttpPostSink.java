@@ -15,33 +15,27 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
+import akka.http.javadsl.model.HttpMethods;
+import akka.http.javadsl.model.MediaTypes;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.collect.Lists;
+import com.ning.http.client.AsyncHttpClientConfig;
+import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.params.HttpParams;
+import org.joda.time.Period;
+import play.libs.ws.WSRequest;
+import play.libs.ws.ning.NingWSClient;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Publishes to an HTTP endpoint. This class is thread safe.
@@ -54,70 +48,8 @@ public abstract class HttpPostSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        LOGGER.debug()
-                .setMessage("Writing aggregated data")
-                .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
-                .addData("uri", _uri)
-                .log();
-
-        if (!data.isEmpty() || !conditions.isEmpty()) {
-            // TODO(vkoskela): Support parallel post requests [MAI-97]
-            for (final HttpUriRequest request : createRequests(data, conditions)) {
-                HttpEntity responseEntity = null;
-                try {
-                    // TODO(vkoskela): Add logging to client [MAI-89]
-                    // TODO(vkoskela): Add instrumentation to client [MAI-90]
-                    final HttpResponse result = CLIENT.execute(request);
-                    responseEntity = result.getEntity();
-                    final int responseStatusCode = result.getStatusLine().getStatusCode();
-
-                    if (responseStatusCode == HttpStatus.SC_OK) {
-                        LOGGER.debug()
-                                .setMessage("Post accepted")
-                                .addData("sink", getName())
-                                .addData("uri", _uri)
-                                .addData("status", responseStatusCode)
-                                .log();
-                    } else {
-                        LOGGER.warn()
-                                .setMessage("Post rejected")
-                                .addData("sink", getName())
-                                .addData("uri", _uri)
-                                .addData("status", responseStatusCode)
-                                .addData("requestSize", getContentLength(request))
-                                .log();
-                    }
-                    _postRequests.incrementAndGet();
-                } catch (final IOException e) {
-                    LOGGER.error()
-                            .setMessage("Post error")
-                            .addData("sink", getName())
-                            .addData("uri", _uri)
-                            .addData("requestSize", getContentLength(request))
-                            .setThrowable(e)
-                            .log();
-                } finally {
-                    if (responseEntity != null) {
-                        try {
-                            responseEntity.getContent().close();
-                            // CHECKSTYLE.OFF: IllegalCatch - Catch all exceptions
-                        } catch (final Exception e) {
-                            // CHECKSTYLE.ON: IllegalCatch
-                            LOGGER.warn()
-                                    .setMessage("Error closing response content stream")
-                                    .addData("sink", getName())
-                                    .addData("uri", _uri)
-                                    .addData("requestSize", getContentLength(request))
-                                    .setThrowable(e)
-                                    .log();
-                        }
-                    }
-                }
-            }
-        }
+    public void recordAggregateData(final PeriodicData data) {
+        _sinkActor.tell(new HttpSinkActor.EmitAggregation(data), ActorRef.noSender());
     }
 
     /**
@@ -128,9 +60,9 @@ public abstract class HttpPostSink extends BaseSink {
         LOGGER.info()
                 .setMessage("Closing sink")
                 .addData("sink", getName())
-                .addData("recordsWritten", _postRequests)
                 .addData("uri", _uri)
                 .log();
+        _sinkActor.tell(PoisonPill.getInstance(), ActorRef.noSender());
     }
 
     /**
@@ -141,41 +73,42 @@ public abstract class HttpPostSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Uri", _uri,
-                "PostRequests", _postRequests);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("actor", _sinkActor)
+                .put("uri", _uri)
+                .build();
     }
 
     /**
      * Creates an HTTP request from a serialized data entry. Default is an <code>HttpPost</code> containing
      * serializedData as the body with content type of application/json
+     *
+     * @param client The http client to build the request with.
      * @param serializedData The serialized data.
      * @return <code>HttpRequest</code> to execute
      */
-    protected HttpUriRequest createRequest(final String serializedData) {
-        final StringEntity requestEntity = new StringEntity(serializedData, ContentType.APPLICATION_JSON);
-        final HttpPost request = new HttpPost(_uri);
-        request.setEntity(requestEntity);
-        return request;
+    protected WSRequest createRequest(final NingWSClient client, final String serializedData) {
+        return client.url(_uri.toString())
+                .setContentType(MediaTypes.APPLICATION_JSON.toString())
+                .setBody(serializedData)
+                .setMethod(HttpMethods.POST.value());
     }
 
     /**
      * Create HTTP requests for each serialized data entry. The list is
      * guaranteed to be non-empty.
      *
-     * @param data The <code>List</code> of <code>AggregatedData</code> to be
-     * serialized.
-     * @param conditions The <code>List</code> of <code>Condition</code>
-     * instances to be published
+     * @param client The http client to build the request with.
+     * @param periodicData The <code>PeriodicData</code> to be serialized.
      * @return The <code>HttpRequest</code> instance to execute.
      */
-    protected Collection<HttpUriRequest> createRequests(
-            final Collection<AggregatedData> data,
-            final Collection<Condition> conditions) {
-        final Collection<HttpUriRequest> requests = Lists.newArrayList();
-        for (final String serializedData : serialize(data, conditions)) {
-            requests.add(createRequest(serializedData));
+    protected Collection<WSRequest> createRequests(
+            final NingWSClient client,
+            final PeriodicData periodicData) {
+        final Collection<WSRequest> requests = Lists.newArrayList();
+        for (final String serializedData : serialize(periodicData)) {
+            requests.add(createRequest(client, serializedData));
         }
         return requests;
     }
@@ -193,27 +126,10 @@ public abstract class HttpPostSink extends BaseSink {
      * Serialize the <code>AggregatedData</code> and <code>Condition</code> instances
      * for posting.
      *
-     * @param data The <code>List</code> of <code>AggregatedData</code> to be
-     * serialized.
-     * @param conditions The <code>List</code> of <code>Condition</code>
-     * instances to be published
+     * @param periodicData The <code>PeriodicData</code> to be serialized.
      * @return The serialized representation of <code>AggregatedData</code>.
      */
-    protected abstract Collection<String> serialize(
-            final Collection<AggregatedData> data,
-            final Collection<Condition> conditions);
-
-
-    private static long getContentLength(final HttpUriRequest request) {
-        if (request instanceof HttpEntityEnclosingRequestBase) {
-            final HttpEntityEnclosingRequestBase entityRequest = (HttpEntityEnclosingRequestBase) request;
-            final HttpEntity entity = entityRequest.getEntity();
-            if (entity != null) {
-                return entity.getContentLength();
-            }
-        }
-        return -1;
-    }
+    protected abstract Collection<String> serialize(final PeriodicData periodicData);
 
     /**
      * Protected constructor.
@@ -223,20 +139,15 @@ public abstract class HttpPostSink extends BaseSink {
     protected HttpPostSink(final Builder<?, ?> builder) {
         super(builder);
         _uri = builder._uri;
+        final NingWSClient client = new NingWSClient(new AsyncHttpClientConfig.Builder().build());
+        _sinkActor = builder._actorSystem.actorOf(
+                HttpSinkActor.props(client, this, builder._maximumConcurrency, builder._maximumQueueSize, builder._spreadPeriod));
     }
 
     private final URI _uri;
-    private final AtomicLong _postRequests = new AtomicLong(0);
+    private final ActorRef _sinkActor;
 
-    private static final ClientConnectionManager CONNECTION_MANAGER = new PoolingClientConnectionManager();
-    private static final HttpClient CLIENT = new DefaultHttpClient(CONNECTION_MANAGER);
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpPostSink.class);
-    private static final int CONNECTION_TIMEOUT_IN_MILLISECONDS = 3000;
-
-    static {
-        final HttpParams params = CLIENT.getParams();
-        params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MILLISECONDS);
-    }
 
     /**
      * Implementation of abstract builder pattern for <code>HttpPostSink</code>.
@@ -257,6 +168,53 @@ public abstract class HttpPostSink extends BaseSink {
         }
 
         /**
+         * Sets the actor system to create the sink actor in. Required. Cannot be null. Injected by default.
+         *
+         * @param value the actor system
+         * @return this builder
+         */
+        public B setActorSystem(final ActorSystem value) {
+            _actorSystem = value;
+            return self();
+        }
+
+        /**
+         * Sets the maximum concurrency of the http requests. Optional. Cannot be null.
+         * Default is 1. Minimum is 1.
+         *
+         * @param value the maximum concurrency
+         * @return this builder
+         */
+        public B setMaximumConcurrency(final Integer value) {
+            _maximumConcurrency = value;
+            return self();
+        }
+
+        /**
+         * Sets the maximum delay before starting to send data to the server. Optional. Cannot be null.
+         * Default is 0.
+         *
+         * @param value the maximum delay before sending new data
+         * @return this builder
+         */
+        public B setSpreadPeriod(final Period value) {
+            _spreadPeriod = value;
+            return self();
+        }
+
+        /**
+         * Sets the maximum pending queue size. Optional Cannot be null.
+         * Default is 25000. Minimum is 1.
+         *
+         * @param value the maximum pending queue size
+         * @return this builder
+         */
+        public B setMaximumQueueSize(final Integer value) {
+            _maximumQueueSize = value;
+            return self();
+        }
+
+        /**
          * Protected constructor for subclasses.
          *
          * @param targetClass The concrete type to be created by the builder of
@@ -265,8 +223,18 @@ public abstract class HttpPostSink extends BaseSink {
         protected Builder(final Class<S> targetClass) {
             super(targetClass);
         }
-
         @NotNull
         private URI _uri;
+        @JacksonInject
+        @NotNull
+        private ActorSystem _actorSystem;
+        @NotNull
+        @Min(1)
+        private Integer _maximumConcurrency = 1;
+        @NotNull
+        @Min(1)
+        private Integer _maximumQueueSize = 25000;
+        @NotNull
+        private Period _spreadPeriod = Period.ZERO;
     }
 }

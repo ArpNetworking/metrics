@@ -22,11 +22,14 @@ import com.arpnetworking.configuration.triggers.FileTrigger;
 import com.arpnetworking.configuration.triggers.UriTrigger;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.expressions.Expression;
 import com.arpnetworking.remet.gui.expressions.ExpressionQuery;
 import com.arpnetworking.remet.gui.expressions.ExpressionRepository;
 import com.arpnetworking.remet.gui.impl.DefaultQueryResult;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.OvalBuilder;
@@ -57,7 +60,7 @@ import java.util.stream.Collectors;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class DynamicConfigurationExpressionRepository
+public final class DynamicConfigurationExpressionRepository
         implements ExpressionRepository, Relaunchable<DynamicConfigurationExpressionRepository.ExpressionConfiguration> {
 
     /**
@@ -162,7 +165,10 @@ public class DynamicConfigurationExpressionRepository
                 .collect(Collectors.toList());
         final int start = query.getOffset().orElse(0);
         final int end = start + Math.max(Math.min(expressions.size() - start, query.getLimit()), 0);
-        return new DefaultQueryResult<>(expressions.subList(start, end), expressions.size(), Integer.toHexString(_expressions.hashCode()));
+        return new DefaultQueryResult<>(
+                expressions.subList(start, end),
+                expressions.size(),
+                Integer.toHexString(_expressions.toString().hashCode()));
     }
 
     /**
@@ -197,6 +203,28 @@ public class DynamicConfigurationExpressionRepository
         _isOpen.set(true);
     }
 
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("isOpen", _isOpen)
+                .put("configurationUri", _configurationUri)
+                .put("expressions", _expressions)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
+
     private void assertIsOpen() {
         assertIsOpen(true);
     }
@@ -210,6 +238,7 @@ public class DynamicConfigurationExpressionRepository
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final URI _configurationUri;
 
+    // Do not log the dynamic configuration since _this_ is a listener for changes.
     private DynamicConfiguration _dynamicConfiguration;
     private volatile List<Expression> _expressions = Collections.emptyList();
 
@@ -252,6 +281,7 @@ public class DynamicConfigurationExpressionRepository
     /**
      * Expression configuration.
      */
+    @Loggable
     public static final class ExpressionConfiguration {
 
         public List<Expression> getExpressions() {

@@ -30,6 +30,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.scripting.Alert;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
 import com.arpnetworking.tsdcore.scripting.lua.LuaAlert;
@@ -40,16 +41,13 @@ import com.arpnetworking.utility.ReflectionsDatabase;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.internal.MoreTypes;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.DateTime;
-import org.joda.time.Period;
 
 import java.lang.reflect.ParameterizedType;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -67,20 +65,21 @@ public final class AlertSink extends BaseSink implements Sink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+    public void recordAggregateData(final PeriodicData periodicData) {
         LOGGER.debug()
                 .setMessage("Writing aggregated data")
                 .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
+                .addData("dataSize", periodicData.getData().size())
+                .addData("conditionsSize", periodicData.getConditions().size())
                 .log();
 
-        final List<Condition> newConditions = Lists.newArrayList();
+        final ImmutableList.Builder<Condition> newConditions = ImmutableList.builder();
+        boolean haveNewConditions = false;
 
         try (final Metrics metrics = _metricsFactory.create()) {
             // Check for new clusters or services
             boolean newClusterServices = false;
-            for (final AggregatedData datum : data) {
+            for (final AggregatedData datum : periodicData.getData()) {
                 final  DynamicConfigurationFactory.Key clusterServiceKey = new DynamicConfigurationFactory.Key(
                         datum.getFQDSN().getCluster(),
                         datum.getFQDSN().getService());
@@ -111,18 +110,21 @@ public final class AlertSink extends BaseSink implements Sink {
                 }
                 newConfiguration.launch();
             }
-            metrics.setGauge("Sinks/AlertSink/" + getMetricSafeName() + "/ClusterServices", _clusterServices.size());
+            metrics.setGauge("sinks/alert/" + getMetricSafeName() + "/cluster_services", _clusterServices.size());
 
             // Evaluate all expressions currently loaded
-            evaluateAlerts(data, newConditions, metrics);
+            haveNewConditions = evaluateAlerts(periodicData, newConditions, metrics);
         }
 
         // Invoke nested sink
-        if (newConditions.isEmpty()) {
-            _sink.recordAggregateData(data, conditions);
+        if (!haveNewConditions) {
+            _sink.recordAggregateData(periodicData);
         } else {
-            newConditions.addAll(conditions);
-            _sink.recordAggregateData(data, newConditions);
+            newConditions.addAll(periodicData.getConditions());
+            _sink.recordAggregateData(
+                    PeriodicData.Builder.clone(periodicData, new PeriodicData.Builder())
+                            .setConditions(newConditions.build())
+                            .build());
         }
     }
 
@@ -145,48 +147,36 @@ public final class AlertSink extends BaseSink implements Sink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Alerts", _alerts,
-                "ClusterServices", _clusterServices,
-                "Sink", _sink);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("alerts", _alerts)
+                .put("clusterServices", _clusterServices)
+                .put("sink", _sink)
+                .build();
     }
 
-    private void evaluateAlerts(
-            final Collection<AggregatedData> data,
-            final Collection<Condition> newConditions,
+    private boolean evaluateAlerts(
+            final PeriodicData periodicData,
+            final ImmutableList.Builder<Condition> newConditions,
             final Metrics metrics) {
 
-        // ** HACK ** HACK ** HACK ** HACK **
-        //
-        // See ExpressionSink for details.
-        //
-
-        final AggregatedData hackDatum = Iterables.getFirst(data, null);
-        final String host = hackDatum != null ? hackDatum.getHost() : null;
-        final Period period = hackDatum != null ? hackDatum.getPeriod() : null;
-        final DateTime periodStart = hackDatum != null ? hackDatum.getPeriodStart() : null;
-
-        // ** HACK ** HACK ** HACK ** HACK **
+        boolean haveNewConditions = false;
 
         // Evaluate alerts
-        final Counter evaluations = metrics.createCounter("Sinks/AlertSink/" + getMetricSafeName() + "/Evaluations");
-        final Counter failures = metrics.createCounter("Sinks/AlertSink/" + getMetricSafeName() + "/Failures");
-        final Counter missing = metrics.createCounter("Sinks/AlertSink/" + getMetricSafeName() + "/Missing");
+        final Counter evaluations = metrics.createCounter("sinks/alert/" + getMetricSafeName() + "/evaluations");
+        final Counter failures = metrics.createCounter("sinks/alert/" + getMetricSafeName() + "/failures");
+        final Counter missing = metrics.createCounter("sinks/alert/" + getMetricSafeName() + "/missing");
         final List<Alert> alerts = _alerts.get();
         if (alerts != null) {
             for (final Alert alert : alerts) {
                 try {
                     // Evaluate the alert and store the result
                     evaluations.increment();
-                    final Condition condition = alert.evaluate(
-                            host,
-                            period,
-                            periodStart,
-                            data);
+                    final Condition condition = alert.evaluate(periodicData);
                     if (!condition.isTriggered().isPresent()) {
                         missing.increment();
                     }
+                    haveNewConditions = true;
                     newConditions.add(condition);
                 } catch (final ScriptingException e) {
                     // TODO(vkoskela): Configure an alert failure alert! [MAI-450]
@@ -194,12 +184,14 @@ public final class AlertSink extends BaseSink implements Sink {
                     LOGGER.warn()
                             .setMessage("Failed to evalaute alert")
                             .addData("alert", alert)
-                            .addData("data", data)
+                            .addData("data", periodicData.getData())
                             .setThrowable(e)
                             .log();
                 }
             }
         }
+
+        return haveNewConditions;
     }
 
     private AlertSink(final Builder builder) {
@@ -252,7 +244,7 @@ public final class AlertSink extends BaseSink implements Sink {
         public void applyConfiguration() {
             _alerts.set(_offeredAlerts);
             LOGGER.debug()
-                    .setMessage("Updaetd alerts")
+                    .setMessage("Updated alerts")
                     .addData("alerts", _alerts)
                     .log();
         }

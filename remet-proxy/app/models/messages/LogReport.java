@@ -16,6 +16,7 @@
 
 package models.messages;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
@@ -28,6 +29,7 @@ import java.util.List;
  *
  * @author Mohammed Kamel (mkamel at groupon dot com)
  */
+@Loggable
 public final class LogReport {
 
     /**
@@ -72,6 +74,7 @@ public final class LogReport {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("File", _file)
                 .add("Line", _line)
                 .add("Timestamp", _timestamp)

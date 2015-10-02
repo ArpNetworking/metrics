@@ -14,6 +14,33 @@
 package com.arpnetworking.tsdcore;
 option java_package = "com.arpnetworking.tsdcore";
 
+message StatisticRecord {
+    required string statistic = 1;
+    required double value = 2;
+    required string unit = 3;
+    required bool user_specified = 4;
+    optional bytes supporting_data = 5;
+}
+
+message SamplesSupportingData {
+    required string unit = 1;
+    repeated double samples = 2 [packed=true];
+}
+
+message SparseHistogramEntry {
+    required double bucket = 1;
+    required int32 count = 2;
+}
+
+message SparseHistogramSupportingData {
+    required string unit = 1;
+    repeated SparseHistogramEntry entries = 2;
+}
+
+message HdrHistogramSupportingData {
+    required bytes encoded = 1;
+}
+
 message HostIdentification {
     optional string host_name = 1;
     optional string cluster_name = 2;
@@ -40,6 +67,15 @@ message AggregationRecord {
     repeated double samples = 7 [packed=true];
     required int64  population_size = 8;
     required string unit = 9;
+}
+
+message StatisticSetRecord {
+    required string service = 1;
+    required string cluster = 2;
+    required string metric = 3;
+    required string period = 4;
+    required string period_start = 5;
+    repeated StatisticRecord statistics = 6;
 }
 
 message HeartbeatRecord {

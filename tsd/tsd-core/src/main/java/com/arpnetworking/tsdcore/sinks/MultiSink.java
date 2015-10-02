@@ -19,8 +19,7 @@ import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
 
@@ -30,7 +29,7 @@ import java.util.Collection;
  * A publisher that wraps multiple others and publishes to all of them. This
  * class is thread safe.
  *
- * TODO(vkoskela): Support concurent execution [MAI-98]
+ * TODO(vkoskela): Support concurrent execution [MAI-98]
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
@@ -40,16 +39,16 @@ public final class MultiSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+    public void recordAggregateData(final PeriodicData periodicData) {
         LOGGER.debug()
                 .setMessage("Writing aggregated data")
                 .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
+                .addData("dataSize", periodicData.getData().size())
+                .addData("conditionsSize", periodicData.getConditions().size())
                 .log();
 
         for (final Sink sink : _sinks) {
-            sink.recordAggregateData(data, conditions);
+            sink.recordAggregateData(periodicData);
         }
     }
 
@@ -75,9 +74,10 @@ public final class MultiSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Sinks", _sinks);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("sinks", _sinks)
+                .build();
     }
 
     private MultiSink(final Builder builder) {

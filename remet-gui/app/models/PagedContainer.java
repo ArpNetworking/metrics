@@ -15,6 +15,7 @@
  */
 package models;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 
 import java.util.Collections;
@@ -27,6 +28,7 @@ import java.util.List;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class PagedContainer<T> {
 
     /**
@@ -55,6 +57,7 @@ public final class PagedContainer<T> {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Data", _data)
                 .add("Pagination", _pagination)
                 .toString();

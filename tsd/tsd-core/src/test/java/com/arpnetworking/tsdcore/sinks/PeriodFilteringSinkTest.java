@@ -17,8 +17,8 @@ package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.collect.Lists;
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.google.common.collect.ImmutableList;
 import org.joda.time.Period;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,10 +26,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Tests for the <code>PeriodFilteringSink</code> class.
@@ -49,12 +46,17 @@ public class PeriodFilteringSinkTest {
                 .setName("testDefaultInclude")
                 .setSink(_sink)
                 .build();
-        final Collection<AggregatedData> data = Lists.newArrayList(
+        final ImmutableList<AggregatedData> data = ImmutableList.of(
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setPeriod(Period.minutes(1))
                         .build());
-        periodFilteringSink.recordAggregateData(data, Collections.<Condition>emptyList());
-        Mockito.verify(_sink).recordAggregateData(data, Collections.<Condition>emptyList());
+        final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
+                .setPeriod(Period.minutes(1))
+                .setData(data)
+                .build();
+
+        periodFilteringSink.recordAggregateData(periodicData);
+        Mockito.verify(_sink).recordAggregateData(periodicData);
     }
 
     @Test
@@ -64,120 +66,96 @@ public class PeriodFilteringSinkTest {
                 .setSink(_sink)
                 .setExclude(Collections.singleton(Period.minutes(5)))
                 .build();
-        final Collection<AggregatedData> excludedData = Lists.newArrayList(
+        final AggregatedData excludedDatum =
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setPeriod(Period.minutes(5))
-                        .build());
-        final Collection<AggregatedData> includedData = Lists.newArrayList(
-                TestBeanFactory.createAggregatedDataBuilder()
-                        .setPeriod(Period.minutes(1))
-                        .build());
-        periodFilteringSink.recordAggregateData(
-                Stream.concat(excludedData.stream(), includedData.stream())
-                        .collect(Collectors.toList()),
-                Collections.<Condition>emptyList());
-        Mockito.verify(_sink).recordAggregateData(includedData, Collections.<Condition>emptyList());
-    }
-
-    @Test
-    public void testAllExclude() {
-        final PeriodFilteringSink periodFilteringSink = new PeriodFilteringSink.Builder()
-                .setName("testAllExclude")
-                .setSink(_sink)
-                .setExclude(Collections.singleton(Period.minutes(5)))
+                        .build();
+        final PeriodicData periodicDataIn = TestBeanFactory.createPeriodicDataBuilder()
+                .setPeriod(Period.minutes(5))
+                .setData(ImmutableList.of(excludedDatum))
                 .build();
-        final Collection<AggregatedData> excludedData = Lists.newArrayList(
-                TestBeanFactory.createAggregatedDataBuilder()
-                        .setPeriod(Period.minutes(5))
-                        .build());
-        final Collection<AggregatedData> includedData = Lists.newArrayList();
-        periodFilteringSink.recordAggregateData(
-                Stream.concat(excludedData.stream(), includedData.stream())
-                        .collect(Collectors.toList()),
-                Collections.<Condition>emptyList());
+        periodFilteringSink.recordAggregateData(periodicDataIn);
         Mockito.verifyZeroInteractions(_sink);
     }
 
     @Test
-    public void testExcludeLessThan() {
+    public void testExcludeLessThanExclude() {
         final PeriodFilteringSink periodFilteringSink = new PeriodFilteringSink.Builder()
-                .setName("testExcludeLessThan")
+                .setName("testExcludeLessThanExclude")
                 .setSink(_sink)
                 .setExcludeLessThan(Period.minutes(5))
                 .build();
-        final Collection<AggregatedData> excludedData = Lists.newArrayList(
+        final AggregatedData excludedDatum =
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setPeriod(Period.minutes(1))
-                        .build());
-        final Collection<AggregatedData> includedData = Lists.newArrayList(
-                TestBeanFactory.createAggregatedDataBuilder()
-                        .setPeriod(Period.minutes(5))
-                        .build());
-        periodFilteringSink.recordAggregateData(
-                Stream.concat(excludedData.stream(), includedData.stream())
-                        .collect(Collectors.toList()),
-                Collections.<Condition>emptyList());
-        Mockito.verify(_sink).recordAggregateData(includedData, Collections.<Condition>emptyList());
+                        .build();
+        final PeriodicData.Builder periodicDataBuilder = TestBeanFactory.createPeriodicDataBuilder()
+                .setPeriod(Period.minutes(1));
+        final PeriodicData periodicDataExcluded = periodicDataBuilder
+                .setData(ImmutableList.of(excludedDatum))
+                .build();
+        periodFilteringSink.recordAggregateData(periodicDataExcluded);
+        Mockito.verifyZeroInteractions(_sink);
     }
 
     @Test
-    public void testAllExcludeLessThan() {
+    public void testExcludeLessThanInclude() {
         final PeriodFilteringSink periodFilteringSink = new PeriodFilteringSink.Builder()
-                .setName("testAllExcludeLessThan")
+                .setName("testExcludeLessThanInclude")
                 .setSink(_sink)
                 .setExcludeLessThan(Period.minutes(5))
                 .build();
-        final Collection<AggregatedData> excludedData = Lists.newArrayList(
-                TestBeanFactory.createAggregatedDataBuilder()
-                        .setPeriod(Period.minutes(1))
-                        .build());
-        final Collection<AggregatedData> includedData = Lists.newArrayList();
-        periodFilteringSink.recordAggregateData(
-                Stream.concat(excludedData.stream(), includedData.stream())
-                        .collect(Collectors.toList()),
-                Collections.<Condition>emptyList());
-        Mockito.verifyZeroInteractions(_sink);
-    }
-
-    @Test
-    public void testExcludeGreaterThan() {
-        final PeriodFilteringSink periodFilteringSink = new PeriodFilteringSink.Builder()
-                .setName("testExcludeGreaterThan")
-                .setSink(_sink)
-                .setExcludeGreaterThan(Period.minutes(5))
-                .build();
-        final Collection<AggregatedData> excludedData = Lists.newArrayList(
-                TestBeanFactory.createAggregatedDataBuilder()
-                        .setPeriod(Period.minutes(10))
-                        .build());
-        final Collection<AggregatedData> includedData = Lists.newArrayList(
+        final AggregatedData includedDatum =
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setPeriod(Period.minutes(5))
-                        .build());
-        periodFilteringSink.recordAggregateData(
-                Stream.concat(excludedData.stream(), includedData.stream())
-                        .collect(Collectors.toList()),
-                Collections.<Condition>emptyList());
-        Mockito.verify(_sink).recordAggregateData(includedData, Collections.<Condition>emptyList());
+                        .build();
+        final PeriodicData.Builder periodicDataBuilder = TestBeanFactory.createPeriodicDataBuilder()
+                .setPeriod(Period.minutes(5));
+        final PeriodicData periodicDataIncluded = periodicDataBuilder
+                .setData(ImmutableList.of(includedDatum))
+                .build();
+        periodFilteringSink.recordAggregateData(periodicDataIncluded);
+        Mockito.verify(_sink).recordAggregateData(periodicDataIncluded);
     }
 
     @Test
-    public void testAllExcludeGreaterThan() {
+    public void testExcludeGreaterThanExclude() {
         final PeriodFilteringSink periodFilteringSink = new PeriodFilteringSink.Builder()
-                .setName("testAllExcludeGreaterThan")
+                .setName("testExcludeGreaterThanExclude")
                 .setSink(_sink)
                 .setExcludeGreaterThan(Period.minutes(5))
                 .build();
-        final Collection<AggregatedData> excludedData = Lists.newArrayList(
+        final AggregatedData excludedDatum =
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setPeriod(Period.minutes(10))
-                        .build());
-        final Collection<AggregatedData> includedData = Lists.newArrayList();
-        periodFilteringSink.recordAggregateData(
-                Stream.concat(excludedData.stream(), includedData.stream())
-                        .collect(Collectors.toList()),
-                Collections.<Condition>emptyList());
+                        .build();
+        final PeriodicData.Builder periodicDataBuilder = TestBeanFactory.createPeriodicDataBuilder()
+                .setPeriod(Period.minutes(10));
+        final PeriodicData periodicDataExcluded = periodicDataBuilder
+                .setData(ImmutableList.of(excludedDatum))
+                .build();
+        periodFilteringSink.recordAggregateData(periodicDataExcluded);
         Mockito.verifyZeroInteractions(_sink);
+    }
+
+    @Test
+    public void testExcludeGreaterThanInclude() {
+        final PeriodFilteringSink periodFilteringSink = new PeriodFilteringSink.Builder()
+                .setName("testExcludeGreaterThanInclude")
+                .setSink(_sink)
+                .setExcludeGreaterThan(Period.minutes(5))
+                .build();
+        final AggregatedData includedDatum =
+                TestBeanFactory.createAggregatedDataBuilder()
+                        .setPeriod(Period.minutes(5))
+                        .build();
+        final PeriodicData.Builder periodicDataBuilder = TestBeanFactory.createPeriodicDataBuilder()
+                .setPeriod(Period.minutes(5));
+        final PeriodicData periodicDataIncluded = periodicDataBuilder
+                .setData(ImmutableList.of(includedDatum))
+                .build();
+        periodFilteringSink.recordAggregateData(periodicDataIncluded);
+        Mockito.verify(_sink).recordAggregateData(periodicDataIncluded);
     }
 
     @Test
@@ -189,12 +167,17 @@ public class PeriodFilteringSinkTest {
                 .setInclude(Collections.singleton(includePeriod))
                 .setExclude(Collections.singleton(includePeriod))
                 .build();
-        final Collection<AggregatedData> data = Lists.newArrayList(
+        final AggregatedData includedDatum =
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setPeriod(includePeriod)
-                        .build());
-        periodFilteringSink.recordAggregateData(data, Collections.<Condition>emptyList());
-        Mockito.verify(_sink).recordAggregateData(data, Collections.<Condition>emptyList());
+                        .build();
+        final PeriodicData.Builder periodicDataBuilder = TestBeanFactory.createPeriodicDataBuilder()
+                .setPeriod(Period.minutes(5));
+        final PeriodicData periodicData = periodicDataBuilder
+                .setData(ImmutableList.of(includedDatum))
+                .build();
+        periodFilteringSink.recordAggregateData(periodicData);
+        Mockito.verify(_sink).recordAggregateData(periodicData);
     }
 
     @Test
@@ -206,12 +189,17 @@ public class PeriodFilteringSinkTest {
                 .setInclude(Collections.singleton(includePeriod))
                 .setExcludeLessThan(Period.minutes(10))
                 .build();
-        final Collection<AggregatedData> data = Lists.newArrayList(
+        final AggregatedData includedDatum =
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setPeriod(includePeriod)
-                        .build());
-        periodFilteringSink.recordAggregateData(data, Collections.<Condition>emptyList());
-        Mockito.verify(_sink).recordAggregateData(data, Collections.<Condition>emptyList());
+                        .build();
+        final PeriodicData.Builder periodicDataBuilder = TestBeanFactory.createPeriodicDataBuilder()
+                .setPeriod(Period.minutes(10));
+        final PeriodicData periodicData = periodicDataBuilder
+                .setData(ImmutableList.of(includedDatum))
+                .build();
+        periodFilteringSink.recordAggregateData(periodicData);
+        Mockito.verify(_sink).recordAggregateData(periodicData);
     }
 
     @Test
@@ -221,14 +209,18 @@ public class PeriodFilteringSinkTest {
                 .setName("testIncludeOverGreaterThanExclude")
                 .setSink(_sink)
                 .setInclude(Collections.singleton(includePeriod))
-                .setExcludeLessThan(Period.minutes(1))
+                .setExcludeGreaterThan(Period.minutes(10))
                 .build();
-        final Collection<AggregatedData> data = Lists.newArrayList(
+        final ImmutableList<AggregatedData> data = ImmutableList.of(
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setPeriod(includePeriod)
                         .build());
-        periodFilteringSink.recordAggregateData(data, Collections.<Condition>emptyList());
-        Mockito.verify(_sink).recordAggregateData(data, Collections.<Condition>emptyList());
+        final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
+                .setPeriod(Period.minutes(10))
+                .setData(data)
+                .build();
+        periodFilteringSink.recordAggregateData(periodicData);
+        Mockito.verify(_sink).recordAggregateData(periodicData);
     }
 
     @Mock

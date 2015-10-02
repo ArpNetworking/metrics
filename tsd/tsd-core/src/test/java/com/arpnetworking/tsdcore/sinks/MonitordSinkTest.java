@@ -15,19 +15,19 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import akka.actor.ActorSystem;
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.collect.Lists;
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.google.common.collect.ImmutableList;
 import org.joda.time.Period;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Tests for the <code>MonitordSink</code> class.
@@ -36,10 +36,16 @@ import java.util.List;
  */
 public class MonitordSinkTest {
 
+    @AfterClass
+    public static void afterClass() {
+        ACTOR_SYSTEM.shutdown();
+    }
+
     @Before
     public void before() {
         _monitordSinkBuilder = new MonitordSink.Builder()
                 .setName("monitord_sink_test")
+                .setActorSystem(ACTOR_SYSTEM)
                 .setUri(URI.create("http://localhost:8888"));
     }
 
@@ -50,13 +56,13 @@ public class MonitordSinkTest {
         final Period period = Period.minutes(5);
         final String host = "test-host";
         final String cluster = "test-cluster";
-        final List<AggregatedData> data = Lists.newArrayList(
+        final ImmutableList<AggregatedData> data = ImmutableList.of(
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setFQDSN(TestBeanFactory.createFQDSNBuilder()
-                            .setService(service)
-                            .setCluster(cluster)
-                            .setMetric(metric)
-                            .build())
+                                .setService(service)
+                                .setCluster(cluster)
+                                .setMetric(metric)
+                                .build())
                         .setPeriod(period)
                         .setHost(host)
                         .build(),
@@ -70,7 +76,10 @@ public class MonitordSinkTest {
                         .setHost(host)
                         .build());
         final MonitordSink monitordSink = _monitordSinkBuilder.build();
-        final Collection<String> results = monitordSink.serialize(data, Collections.<Condition>emptyList());
+        final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
+                .setData(data)
+                .build();
+        final Collection<String> results = monitordSink.serialize(periodicData);
         Assert.assertEquals(1, results.size());
     }
 
@@ -79,7 +88,7 @@ public class MonitordSinkTest {
         final String service = "service-testSerializeNoMergeService";
         final String metric = "metric-testSerializeNoMergeService";
         final Period period = Period.minutes(5);
-        final List<AggregatedData> data = Lists.newArrayList(
+        final ImmutableList<AggregatedData> data = ImmutableList.of(
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setFQDSN(TestBeanFactory.createFQDSNBuilder()
                                 .setService(service + "-1")
@@ -95,7 +104,10 @@ public class MonitordSinkTest {
                         .setPeriod(period)
                         .build());
         final MonitordSink monitordSink = _monitordSinkBuilder.build();
-        final Collection<String> results = monitordSink.serialize(data, Collections.<Condition>emptyList());
+        final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
+                .setData(data)
+                .build();
+        final Collection<String> results = monitordSink.serialize(periodicData);
         Assert.assertEquals(2, results.size());
     }
 
@@ -104,7 +116,7 @@ public class MonitordSinkTest {
         final String service = "service-testSerializeNoMergeMetric";
         final String metric = "metric-testSerializeNoMergeMetric";
         final Period period = Period.minutes(5);
-        final List<AggregatedData> data = Lists.newArrayList(
+        final ImmutableList<AggregatedData> data = ImmutableList.of(
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setFQDSN(TestBeanFactory.createFQDSNBuilder()
                                 .setService(service)
@@ -120,7 +132,10 @@ public class MonitordSinkTest {
                         .setPeriod(period)
                         .build());
         final MonitordSink monitordSink = _monitordSinkBuilder.build();
-        final Collection<String> results = monitordSink.serialize(data, Collections.<Condition>emptyList());
+        final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
+                .setData(data)
+                .build();
+        final Collection<String> results = monitordSink.serialize(periodicData);
         Assert.assertEquals(2, results.size());
     }
 
@@ -128,7 +143,7 @@ public class MonitordSinkTest {
     public void testSerializeNoMergePeriod() {
         final String service = "service-testSerializeNoMergePeriod";
         final String metric = "metric-testSerializeNoMergePeriod";
-        final List<AggregatedData> data = Lists.newArrayList(
+        final ImmutableList<AggregatedData> data = ImmutableList.of(
                 TestBeanFactory.createAggregatedDataBuilder()
                         .setFQDSN(TestBeanFactory.createFQDSNBuilder()
                                 .setService(service)
@@ -144,9 +159,13 @@ public class MonitordSinkTest {
                         .setPeriod(Period.minutes(1))
                         .build());
         final MonitordSink monitordSink = _monitordSinkBuilder.build();
-        final Collection<String> results = monitordSink.serialize(data, Collections.<Condition>emptyList());
+        final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
+                .setData(data)
+                .build();
+        final Collection<String> results = monitordSink.serialize(periodicData);
         Assert.assertEquals(2, results.size());
     }
 
     private MonitordSink.Builder _monitordSinkBuilder;
+    private static final ActorSystem ACTOR_SYSTEM = ActorSystem.apply();
 }

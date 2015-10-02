@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.tsdaggregator;
 
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.model.Record;
@@ -24,7 +26,11 @@ import com.arpnetworking.utility.Launchable;
 import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.observer.Observable;
 import com.arpnetworking.utility.observer.Observer;
-import com.google.common.base.MoreObjects;
+import com.google.common.base.Optional;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotEmpty;
@@ -32,10 +38,13 @@ import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * Performs aggregation of <code>Record</code> instances per <code>Period</code>.
@@ -64,9 +73,14 @@ public final class Aggregator implements Observer, Launchable {
                         .setPeriod(period)
                         .setBucketBuilder(
                                 new Bucket.Builder()
-                                        .setCounterStatistics(_counterStatistics)
-                                        .setGaugeStatistics(_gaugeStatistics)
-                                        .setTimerStatistics(_timerStatistics)
+                                        .setSpecifiedCounterStatistics(_specifiedCounterStatistics)
+                                        .setSpecifiedGaugeStatistics(_specifiedGaugeStatistics)
+                                        .setSpecifiedTimerStatistics(_specifiedTimerStatistics)
+                                        .setDependentCounterStatistics(_dependentCounterStatistics)
+                                        .setDependentGaugeStatistics(_dependentGaugeStatistics)
+                                        .setDependentTimerStatistics(_dependentTimerStatistics)
+                                        .setSpecifiedStatistics(_cachedSpecifiedStatistics)
+                                        .setDependentStatistics(_cachedDependentStatistics)
                                         .setPeriod(period)
                                         .setCluster(_cluster)
                                         .setHost(_host)
@@ -127,22 +141,42 @@ public final class Aggregator implements Observer, Launchable {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("service", _service)
+                .put("cluster", _cluster)
+                .put("host", _host)
+                .put("sink", _sink)
+                .put("timerStatistics", _specifiedTimerStatistics)
+                .put("counterStatistics", _specifiedCounterStatistics)
+                .put("gaugeStatistics", _specifiedGaugeStatistics)
+                .put("periodClosers", _periodClosers)
+                .build();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Service", _service)
-                .add("Cluster", _cluster)
-                .add("Host", _host)
-                .add("Sink", _sink)
-                .add("TimerStatistics", _timerStatistics)
-                .add("CounterStatistics", _counterStatistics)
-                .add("GaugeStatistics", _gaugeStatistics)
-                .add("PeriodClosers", _periodClosers)
-                .toString();
+        return toLogValue().toString();
+    }
 
+    private ImmutableSet<Statistic> computeDependentStatistics(final ImmutableSet<Statistic> statistics) {
+        final ImmutableSet.Builder<Statistic> builder = ImmutableSet.builder();
+        for (final Statistic statistic : statistics) {
+            for (final Statistic dependency : statistic.getDependencies()) {
+                if (!statistics.contains(dependency)) {
+                    builder.add(dependency);
+                }
+            }
+        }
+        return builder.build();
     }
 
     private Aggregator(final Builder builder) {
@@ -151,9 +185,51 @@ public final class Aggregator implements Observer, Launchable {
         _cluster = builder._cluster;
         _host = builder._host;
         _sink = builder._sink;
-        _counterStatistics = ImmutableSet.copyOf(builder._counterStatistics);
-        _gaugeStatistics = ImmutableSet.copyOf(builder._gaugeStatistics);
-        _timerStatistics = ImmutableSet.copyOf(builder._timerStatistics);
+        _specifiedCounterStatistics = ImmutableSet.copyOf(builder._counterStatistics);
+        _specifiedGaugeStatistics = ImmutableSet.copyOf(builder._gaugeStatistics);
+        _specifiedTimerStatistics = ImmutableSet.copyOf(builder._timerStatistics);
+        _dependentCounterStatistics = computeDependentStatistics(_specifiedCounterStatistics);
+        _dependentGaugeStatistics = computeDependentStatistics(_specifiedGaugeStatistics);
+        _dependentTimerStatistics = computeDependentStatistics(_specifiedTimerStatistics);
+        final ImmutableMap.Builder<Pattern, ImmutableSet<Statistic>> statisticsBuilder = ImmutableMap.builder();
+        for (final Map.Entry<String, Set<Statistic>> entry : builder._statistics.entrySet()) {
+            final Pattern pattern = Pattern.compile(entry.getKey());
+            final ImmutableSet<Statistic> statistics = ImmutableSet.copyOf(entry.getValue());
+            statisticsBuilder.put(pattern, statistics);
+        }
+        _statistics = statisticsBuilder.build();
+
+        _cachedSpecifiedStatistics = CacheBuilder
+                .newBuilder()
+                .concurrencyLevel(1)
+                .build(
+                        new CacheLoader<String, Optional<ImmutableSet<Statistic>>>() {
+                            @Override
+                            public Optional<ImmutableSet<Statistic>> load(final String metric) throws Exception {
+                                for (final Map.Entry<Pattern, ImmutableSet<Statistic>> entry : _statistics.entrySet()) {
+                                    final Pattern pattern = entry.getKey();
+                                    final ImmutableSet<Statistic> statistics = entry.getValue();
+                                    if (pattern.matcher(metric).matches()) {
+                                        return Optional.of(statistics);
+                                    }
+                                }
+                                return Optional.absent();
+                            }
+                        });
+        _cachedDependentStatistics = CacheBuilder
+                .newBuilder()
+                .concurrencyLevel(1)
+                .build(new CacheLoader<String, Optional<ImmutableSet<Statistic>>>() {
+                           @Override
+                           public Optional<ImmutableSet<Statistic>> load(final String metric) throws Exception {
+                               final Optional<ImmutableSet<Statistic>> statistics = _cachedSpecifiedStatistics.get(metric);
+                               if (statistics.isPresent()) {
+                                   return Optional.of(computeDependentStatistics(statistics.get()));
+                               } else {
+                                   return Optional.absent();
+                               }
+                           }
+                       });
     }
 
     private final ImmutableSet<Period> _periods;
@@ -161,9 +237,15 @@ public final class Aggregator implements Observer, Launchable {
     private final String _cluster;
     private final String _host;
     private final Sink _sink;
-    private final ImmutableSet<Statistic> _timerStatistics;
-    private final ImmutableSet<Statistic> _counterStatistics;
-    private final ImmutableSet<Statistic> _gaugeStatistics;
+    private final ImmutableSet<Statistic> _specifiedTimerStatistics;
+    private final ImmutableSet<Statistic> _specifiedCounterStatistics;
+    private final ImmutableSet<Statistic> _specifiedGaugeStatistics;
+    private final ImmutableSet<Statistic> _dependentTimerStatistics;
+    private final ImmutableSet<Statistic> _dependentCounterStatistics;
+    private final ImmutableSet<Statistic> _dependentGaugeStatistics;
+    private final ImmutableMap<Pattern, ImmutableSet<Statistic>> _statistics;
+    private final LoadingCache<String, Optional<ImmutableSet<Statistic>>> _cachedSpecifiedStatistics;
+    private final LoadingCache<String, Optional<ImmutableSet<Statistic>>> _cachedDependentStatistics;
     private final ArrayList<PeriodCloser> _periodClosers = Lists.newArrayList();
 
     private ExecutorService _periodCloserExecutor = null;
@@ -270,6 +352,18 @@ public final class Aggregator implements Observer, Launchable {
             return this;
         }
 
+        /**
+         * The statistics to compute for a metric pattern. Optional. Cannot be null.
+         * Default is empty.
+         *
+         * @param value The gauge statistics.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setStatistics(final Map<String, Set<Statistic>> value) {
+            _statistics = value;
+            return this;
+        }
+
         @NotNull
         @NotEmpty
         private String _service;
@@ -289,5 +383,7 @@ public final class Aggregator implements Observer, Launchable {
         private Set<Statistic> _counterStatistics;
         @NotNull
         private Set<Statistic> _gaugeStatistics;
+        @NotNull
+        private Map<String, Set<Statistic>> _statistics = Collections.emptyMap();
     }
 }

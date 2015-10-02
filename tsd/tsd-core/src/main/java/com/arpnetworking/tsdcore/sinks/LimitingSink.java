@@ -26,9 +26,10 @@ import com.arpnetworking.tsdcore.limiter.NoLimitMetricsLimiter;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
@@ -40,8 +41,6 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,23 +61,23 @@ public final class LimitingSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+    public void recordAggregateData(final PeriodicData periodicData) {
         LOGGER.debug()
                 .setMessage("Writing aggregated data")
                 .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
+                .addData("dataSize", periodicData.getData().size())
+                .addData("conditionsSize", periodicData.getConditions().size())
                 .log();
 
         final DateTime now = DateTime.now();
-        final List<AggregatedData> filteredData = Lists.newArrayListWithExpectedSize(data.size());
-        final List<Condition> filteredConditions = Lists.newArrayListWithExpectedSize(conditions.size());
-        final Multimap<FQDSN, Condition> conditionsByFQDSN = Multimaps.index(conditions, Condition::getFQDSN);
+        final ImmutableList.Builder<AggregatedData> filteredDataBuilder = ImmutableList.builder();
+        final ImmutableList.Builder<Condition> filteredConditionsBuilder = ImmutableList.builder();
+        final Multimap<FQDSN, Condition> conditionsByFQDSN = Multimaps.index(periodicData.getConditions(), Condition::getFQDSN);
         final Set<FQDSN> filteredFQDSNs = Sets.newHashSet();
         long limited = 0;
-        for (final AggregatedData datum : data) {
+        for (final AggregatedData datum : periodicData.getData()) {
             if (_metricsLimiter.offer(datum, now)) {
-                filteredData.add(datum);
+                filteredDataBuilder.add(datum);
                 filteredFQDSNs.add(datum.getFQDSN());
             } else {
                 LOGGER.warn()
@@ -90,10 +89,14 @@ public final class LimitingSink extends BaseSink {
             }
         }
         for (final FQDSN fqdsn : filteredFQDSNs) {
-            filteredConditions.addAll(conditionsByFQDSN.get(fqdsn));
+            filteredConditionsBuilder.addAll(conditionsByFQDSN.get(fqdsn));
         }
         _limited.getAndAdd(limited);
-        _sink.recordAggregateData(filteredData, filteredConditions);
+        _sink.recordAggregateData(
+                PeriodicData.Builder.clone(periodicData, new PeriodicData.Builder())
+                        .setData(filteredDataBuilder.build())
+                        .setConditions(filteredConditionsBuilder.build())
+                        .build());
     }
 
     /**
@@ -120,11 +123,12 @@ public final class LimitingSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "MetricsLimiter", _metricsLimiter,
-                "Sink", _sink,
-                "Limited", _limited.get());
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("metricsLimiter", _metricsLimiter)
+                .put("sink", _sink)
+                .put("limited", _limited.get())
+                .build();
     }
 
     private void flushMetrics() {
@@ -168,7 +172,7 @@ public final class LimitingSink extends BaseSink {
         _metricsLimiter = metricsLimiter;
 
         _metricsFactory = builder._metricsFactory;
-        _limitedName = "Sinks/LimitingSink/" + getMetricSafeName() + "/Limited";
+        _limitedName = "sinks/limiting/" + getMetricSafeName() + "/limited";
         _metrics.set(createMetrics());
 
         // Write the metrics periodically

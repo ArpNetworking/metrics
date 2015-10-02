@@ -15,13 +15,8 @@
  */
 package com.arpnetworking.tsdcore.scripting;
 
-import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.PeriodicData;
-import org.joda.time.DateTime;
-import org.joda.time.Period;
-
-import java.util.Collection;
 
 /**
  * Interface for classes providing alert condition evaluation capabilities. The
@@ -31,29 +26,6 @@ import java.util.Collection;
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
 public interface Alert {
-
-    /**
-     * Evaluate the alert condition in the context of the <code>List</code> of
-     * <code>AggregatedData</code>. If the data required to evaluate the
-     * alert is not present an <code>Optional.absent</code> value is
-     * returned. If evaluation fails for any other reason an exception is
-     * thrown.
-     *
-     * <b>TO BE REMOVED!</b>
-     *
-     * @param host The target host of the evaluation.
-     * @param period The target period of the evaluation.
-     * @param start The target period start for the expression.
-     * @param data The data input for the alert.
-     * @return Evaluated <code>Condition</code> or <code>Optional.absent</code>.
-     * @throws ScriptingException if evaluation fails for any reason.
-     */
-    Condition evaluate(
-            final String host,
-            final Period period,
-            final DateTime start,
-            final Collection<AggregatedData> data)
-            throws ScriptingException;
 
     /**
      * Evaluate the alert in the context of the specified periodic aggregated

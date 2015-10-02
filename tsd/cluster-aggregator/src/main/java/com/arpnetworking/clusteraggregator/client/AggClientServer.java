@@ -19,11 +19,11 @@ package com.arpnetworking.clusteraggregator.client;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
 import com.arpnetworking.clusteraggregator.configuration.ClusterAggregatorConfiguration;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -55,7 +55,12 @@ public final class AggClientServer extends UntypedActor {
     @Override
     public void preStart() throws Exception {
         final ActorRef tcp = Tcp.get(getContext().system()).manager();
-        _log.info("binding to socket");
+        LOGGER.debug()
+                .setMessage("Binding to socket")
+                .addData("address", _clusterConfiguration.getAggregationHost())
+                .addData("port", _clusterConfiguration.getAggregationPort())
+                .addContext("actor", self())
+                .log();
         tcp.tell(
                 TcpMessage.bind(
                         getSelf(),
@@ -71,7 +76,11 @@ public final class AggClientServer extends UntypedActor {
     public void onReceive(final Object message) throws Exception {
         if (message instanceof Tcp.Bound) {
             final Tcp.Bound bound = (Tcp.Bound) message;
-            _log.info("Successfully bound to " + bound.localAddress());
+            LOGGER.debug()
+                    .setMessage("Successfully bound")
+                    .addData("address", bound.localAddress())
+                    .addContext("actor", self())
+                    .log();
         } else if (message instanceof Tcp.Connected) {
             final Tcp.Connected conn = (Tcp.Connected) message;
             final ActorRef handler = getContext().actorOf(
@@ -84,7 +93,8 @@ public final class AggClientServer extends UntypedActor {
 
     }
 
-    private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
     private final Provider<Props> _supervisorProvider;
     private final ClusterAggregatorConfiguration _clusterConfiguration;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AggClientServer.class);
 }
+

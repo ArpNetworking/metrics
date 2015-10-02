@@ -41,14 +41,14 @@ import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.runtime.AbstractFunction1;
 
@@ -82,9 +82,10 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
     public Future<HttpResponse> apply(final HttpRequest request) {
         final Metrics metrics = _metricsFactory.create();
         final Timer timer = metrics.createTimer(createTimerName(request));
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("Request; %s", request));
-        }
+        LOGGER.trace()
+                .setMessage("Request")
+                .addData("request", request)
+                .log();
         final Future<HttpResponse> futureResponse = process(request);
         futureResponse.onComplete(
                 new OnComplete<HttpResponse>() {
@@ -92,9 +93,10 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                     public void onComplete(final Throwable failure, final HttpResponse response) {
                         timer.close();
                         metrics.close();
-                        if (LOGGER.isTraceEnabled()) {
-                            LOGGER.trace(String.format("Response; %s", response));
-                        }
+                        LOGGER.trace()
+                                .setMessage("Response")
+                                .addData("response", response)
+                                .log();
                     }
                 },
                 _actorSystem.dispatcher());
@@ -161,7 +163,12 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                         new JavaPartialFunction<Throwable, T>() {
                             @Override
                             public T apply(final Throwable t, final boolean isCheck) throws Exception {
-                                LOGGER.error(String.format("Error when asking actor; actorPath=%s, request=%s", actorPath, request), t);
+                                LOGGER.error()
+                                        .setMessage("Error when asking actor")
+                                        .setThrowable(t)
+                                        .addData("actorPath", actorPath)
+                                        .addData("request", request)
+                                        .log();
                                 return defaultValue;
                             }
                         },
@@ -170,7 +177,7 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
 
     private String createTimerName(final HttpRequest request) {
         final StringBuilder nameBuilder = new StringBuilder()
-                .append("RestService/")
+                .append("rest_service/")
                 .append(request.method().value());
         if (!request.getUri().path().startsWith("/")) {
             nameBuilder.append("/");

@@ -16,7 +16,6 @@
 package com.arpnetworking.utility;
 
 import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.arpnetworking.steno.LogValueMapFactory;
 import org.reflections.Reflections;
 
@@ -68,10 +67,9 @@ public final class ReflectionsDatabase implements InterfaceDatabase, AnnotationD
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Reflections", LogReferenceOnly.of(_reflections));
+        return LogValueMapFactory.builder(this)
+                .put("reflections", _reflections)
+                .build();
     }
 
     /**

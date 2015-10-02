@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
@@ -33,6 +34,7 @@ import javax.annotation.Nullable;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Loggable
 public final class Quantity implements Comparable<Quantity>, Serializable {
 
     public double getValue() {
@@ -41,6 +43,96 @@ public final class Quantity implements Comparable<Quantity>, Serializable {
 
     public Optional<Unit> getUnit() {
         return _unit;
+    }
+
+    /**
+     * Add this <code>Quantity</code> to the specified one returning the
+     * result. Both <code>Quantity</code> instances must either not have a
+     * <code>Unit</code> or the <code>Unit</code> must be of the same type.
+     *
+     * @param otherQuantity The other <code>Quantity</code>.
+     * @return The resulting sum <code>Quantity</code>.
+     */
+    public Quantity add(final Quantity otherQuantity) {
+        if (_unit.isPresent() != otherQuantity._unit.isPresent()) {
+            throw new IllegalStateException(String.format(
+                    "Units must both be present or absent; thisQuantity=%s otherQuantity=%s",
+                    this,
+                    otherQuantity));
+        }
+        if (_unit.equals(otherQuantity._unit)) {
+            return new Quantity(_value + otherQuantity._value, _unit);
+        }
+        final Unit smallerUnit = _unit.get().getSmallerUnit(otherQuantity.getUnit().get());
+        return new Quantity(
+                smallerUnit.convert(_value, _unit.get())
+                        + smallerUnit.convert(otherQuantity._value, otherQuantity._unit.get()),
+                Optional.of(smallerUnit));
+    }
+
+    /**
+     * Subtract the specified <code>Quantity</code> from this one returning
+     * the result. Both <code>Quantity</code> instances must either not have
+     * a <code>Unit</code> or the <code>Unit</code> must be of the same type.
+     *
+     * @param otherQuantity The other <code>Quantity</code>.
+     * @return The resulting difference <code>Quantity</code>.
+     */
+    public Quantity subtract(final Quantity otherQuantity) {
+        if (_unit.isPresent() != otherQuantity._unit.isPresent()) {
+            throw new IllegalStateException(String.format(
+                    "Units must both be present or absent; thisQuantity=%s otherQuantity=%s",
+                    this,
+                    otherQuantity));
+        }
+        if (_unit.equals(otherQuantity._unit)) {
+            return new Quantity(_value - otherQuantity._value, _unit);
+        }
+        final Unit smallerUnit = _unit.get().getSmallerUnit(otherQuantity.getUnit().get());
+        return new Quantity(
+                smallerUnit.convert(_value, _unit.get())
+                        - smallerUnit.convert(otherQuantity._value, otherQuantity._unit.get()),
+                Optional.of(smallerUnit));
+    }
+
+    /**
+     * Multiply this <code>Quantity</code> with the specified one returning
+     * the result.
+     *
+     * @param otherQuantity The other <code>Quantity</code>.
+     * @return The resulting product <code>Quantity</code>.
+     */
+    public Quantity multiply(final Quantity otherQuantity) {
+        // TODO(vkoskela): Support division by quantity with unit [2F].
+        if (otherQuantity._unit.isPresent()) {
+            throw new UnsupportedOperationException("Compount units not supported yet");
+        }
+        if (_unit.equals(otherQuantity._unit)) {
+            return new Quantity(_value * otherQuantity._value, Optional.absent());
+        }
+        return new Quantity(
+                _value * otherQuantity._value,
+                _unit);
+    }
+
+    /**
+     * Divide this <code>Quantity</code> by the specified one returning
+     * the result.
+     *
+     * @param otherQuantity The other <code>Quantity</code>.
+     * @return The resulting quotient <code>Quantity</code>.
+     */
+    public Quantity divide(final Quantity otherQuantity) {
+        // TODO(vkoskela): Support division by quantity with unit [2F].
+        if (otherQuantity._unit.isPresent()) {
+            throw new UnsupportedOperationException("Compount units not supported yet");
+        }
+        if (_unit.equals(otherQuantity._unit)) {
+            return new Quantity(_value / otherQuantity._value, Optional.absent());
+        }
+        return new Quantity(
+                _value / otherQuantity._value,
+                _unit);
     }
 
     /**
@@ -57,10 +149,35 @@ public final class Quantity implements Comparable<Quantity>, Serializable {
                     "Cannot convert a quantity without a unit; this=%s",
                     this));
         }
-        return new Quantity.Builder()
-                .setValue(unit.convert(_value, _unit.get()))
-                .setUnit(unit)
-                .build();
+        if (_unit.get().equals(unit)) {
+            return this;
+        }
+        return new Quantity(
+                unit.convert(_value, _unit.get()),
+                Optional.of(unit));
+    }
+
+    /**
+     * Convert this <code>Quantity</code> to one in the specified optional unit.
+     * Either this <code>Quantity</code> also has a <code>Unit</code> in the
+     * same domain as the provided unit or both units are absent.
+     *
+     * @param unit <code>Optional</code> <code>Unit</code> to convert to.
+     * @return <code>Quantity</code> in specified unit.
+     */
+    public Quantity convertTo(final Optional<Unit> unit) {
+        if (_unit.isPresent() != unit.isPresent()) {
+            throw new IllegalStateException(String.format(
+                    "Units must both be present or absent; quantity=%s unit=%s",
+                    this,
+                    unit));
+        }
+        if (_unit.equals(unit)) {
+            return this;
+        }
+        return new Quantity(
+                unit.get().convert(_value, _unit.get()),
+                unit);
     }
 
     /**
@@ -152,8 +269,12 @@ public final class Quantity implements Comparable<Quantity>, Serializable {
     }
 
     private Quantity(final Builder builder) {
-        _value = builder._value;
-        _unit = Optional.fromNullable(builder._unit);
+        this(builder._value, Optional.fromNullable(builder._unit));
+    }
+
+    private Quantity(final double value, final Optional<Unit> unit) {
+        _value = value;
+        _unit = unit;
     }
 
     private final Optional<Unit> _unit;

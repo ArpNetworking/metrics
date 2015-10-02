@@ -15,25 +15,29 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.utility.OvalBuilder;
-import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Contains the data for a specific period in time.
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class PeriodicData {
 
     public Period getPeriod() {
@@ -44,22 +48,70 @@ public final class PeriodicData {
         return _start;
     }
 
-    public Map<String, String> getDimensions() {
-        return Collections.unmodifiableMap(_dimensions);
+    public ImmutableMap<String, String> getDimensions() {
+        return _dimensions;
     }
 
-    public Collection<AggregatedData> getData() {
-        return Collections.unmodifiableCollection(_dataIndexedByFQDSN.values());
+    public ImmutableList<AggregatedData> getData() {
+        return _data;
+    }
+
+    public ImmutableList<Condition> getConditions() {
+        return _conditions;
     }
 
     /**
-     * Lookup data by <code>FQDSN</code>.
+     * Retrieve <code>AggregatedData</code> instance by <code>FQDSN</code>.
      *
-     * @param fqdsn The <code>FQDSN</code>.
-     * @return <code>Optional</code> <code>AggregatedData</code> instance.
+     * @param fqdsn The <code>FQDSN</code> to query for.
+     * @return Tbe <code>Optional</code> instance of <code>AggregatedData</code>.
      */
-    public Optional<AggregatedData> getDataByFQDSN(final FQDSN fqdsn) {
-        return Optional.fromNullable(_dataIndexedByFQDSN.get(fqdsn));
+    public Optional<AggregatedData> getDatumByFqdsn(final FQDSN fqdsn) {
+        return Optional.fromNullable(_dataByFqdsn.get().get(fqdsn));
+    }
+
+    /**
+     * Retrieve <code>Condition</code> instance by <code>FQDSN</code>.
+     *
+     * @param fqdsn The <code>FQDSN</code> to query for.
+     * @return Tbe <code>Optional</code> instance of <code>Condition</code>.
+     */
+    public Optional<Condition> getConditionByFqdsn(final FQDSN fqdsn) {
+        return Optional.fromNullable(_conditionsByFqdsn.get().get(fqdsn));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(final Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+
+        final PeriodicData other = (PeriodicData) object;
+
+        return Objects.equal(_conditions, other._conditions)
+                && Objects.equal(_data, other._data)
+                && Objects.equal(_dimensions, other._dimensions)
+                && Objects.equal(_period, other._period)
+                && Objects.equal(_start, other._start);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(
+                _conditions,
+                _data,
+                _dimensions,
+                _period,
+                _start);
     }
 
     /**
@@ -72,7 +124,8 @@ public final class PeriodicData {
                 .add("Period", _period)
                 .add("Start", _start)
                 .add("Dimensions", _dimensions)
-                .add("Data", _dataIndexedByFQDSN.values())
+                .add("Data", _data)
+                .add("Conditions", _conditions)
                 .toString();
     }
 
@@ -80,22 +133,22 @@ public final class PeriodicData {
         _period = builder._period;
         _start = builder._start;
         _dimensions = builder._dimensions;
+        _data = builder._data;
+        _conditions = builder._conditions;
 
-        _dataIndexedByFQDSN = Maps.uniqueIndex(builder._data, INDEX_BY_FQDSN);
+        _dataByFqdsn = Suppliers.memoize(
+                () -> _data.stream().collect(Collectors.toMap(AggregatedData::getFQDSN, Function.identity())));
+        _conditionsByFqdsn = Suppliers.memoize(
+                () -> _conditions.stream().collect(Collectors.toMap(Condition::getFQDSN, Function.identity())));
     }
 
     private final Period _period;
     private final DateTime _start;
-    private final Map<String, String> _dimensions;
-    private final Map<FQDSN, AggregatedData> _dataIndexedByFQDSN;
-
-    private static final Function<AggregatedData, FQDSN> INDEX_BY_FQDSN = new Function<AggregatedData, FQDSN>() {
-        @Override
-        public FQDSN apply(final AggregatedData datum) {
-            assert datum != null : "AggregatedData cannot be null";
-            return datum.getFQDSN();
-        }
-    };
+    private final ImmutableMap<String, String> _dimensions;
+    private final ImmutableList<AggregatedData> _data;
+    private final ImmutableList<Condition> _conditions;
+    private final Supplier<Map<FQDSN, AggregatedData>> _dataByFqdsn;
+    private final Supplier<Map<FQDSN, Condition>> _conditionsByFqdsn;
 
     /**
      * <code>Builder</code> implementation for <code>PeriodicData</code>.
@@ -137,23 +190,8 @@ public final class PeriodicData {
          * @param value The dimensions.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setDimensions(final Map<String, String> value) {
-            _dimensions = Maps.newHashMap(value);
-            return this;
-        }
-
-        /**
-         * Add dimension. Optional. Cannot be null. Defaults to an empty <code>Map</code>.
-         *
-         * @param domain The domain.
-         * @param value The value.
-         * @return This <code>Builder</code> instance.
-         */
-        public Builder addDimension(final String domain, final String value) {
-            if (_dimensions == null) {
-                _dimensions = Maps.newHashMap();
-            }
-            _dimensions.put(domain, value);
+        public Builder setDimensions(final ImmutableMap<String, String> value) {
+            _dimensions = value;
             return this;
         }
 
@@ -163,22 +201,19 @@ public final class PeriodicData {
          * @param value The data.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setData(final Collection<AggregatedData> value) {
-            _data = Lists.newArrayList(value);
+        public Builder setData(final ImmutableList<AggregatedData> value) {
+            _data = value;
             return this;
         }
 
         /**
-         * Add datum. Optional. Cannot be null. Defaults to an empty <code>List</code>.
+         * Set the conditions. Optional. Cannot be null. Defaults to an empty <code>List</code>.
          *
-         * @param value The datum.
+         * @param value The conditions.
          * @return This <code>Builder</code> instance.
          */
-        public Builder addData(final AggregatedData value) {
-            if (_data == null) {
-                _data = Lists.newArrayList();
-            }
-            _data.add(value);
+        public Builder setConditions(final ImmutableList<Condition> value) {
+            _conditions = value;
             return this;
         }
 
@@ -187,8 +222,10 @@ public final class PeriodicData {
         @NotNull
         private DateTime _start;
         @NotNull
-        private Map<String, String> _dimensions = Maps.newHashMap();
+        private ImmutableMap<String, String> _dimensions = ImmutableMap.of();
         @NotNull
-        private Collection<AggregatedData> _data = Lists.newArrayList();
+        private ImmutableList<AggregatedData> _data = ImmutableList.of();
+        @NotNull
+        private ImmutableList<Condition> _conditions = ImmutableList.of();
     }
 }

@@ -20,7 +20,7 @@ import com.arpnetworking.metrics.com.arpnetworking.steno.Logger;
 import com.arpnetworking.metrics.com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotNull;
@@ -43,16 +43,17 @@ public final class ReMetSink extends HttpPostSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "MaxRequestSize", _maxRequestSize);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("maxRequestSize", _maxRequestSize)
+                .build();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected Collection<String> serialize(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+    protected Collection<String> serialize(final PeriodicData periodicData) {
         // TODO(vkoskela): Send conditions to ReMet [MAI-451]
         final StringBuilder buffer = new StringBuilder();
         buffer.append(HEADER);
@@ -61,7 +62,10 @@ public final class ReMetSink extends HttpPostSink {
 
         final List<String> serializedData = Lists.newArrayList();
 
-        for (final AggregatedData datum : data) {
+        for (final AggregatedData datum : periodicData.getData()) {
+            if (!datum.isSpecified()) {
+                continue;
+            }
             // TODO(vkoskela): Refactor into JSON serializer [MAI-88]
             // Question: We should consider carefully how to separate sinks and
             // data formats.

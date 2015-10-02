@@ -7,7 +7,7 @@
     "limiters": {
         "limiter": {
             "type": "com.arpnetworking.tsdcore.limiter.DefaultMetricsLimiter",
-            "maxAggregations": 1000,
+            "maxAggregations": 2000,
             "stateFile": "logs/limiter.state",
             "stateFlushInterval": "PT5M",
             "ageOutThreshold": "P7D"
@@ -27,5 +27,5 @@
                 }
             }
         }
-    } 
+    }
 }

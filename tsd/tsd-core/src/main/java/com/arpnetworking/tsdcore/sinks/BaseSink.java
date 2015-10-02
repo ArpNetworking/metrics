@@ -19,9 +19,17 @@ import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.arpnetworking.utility.OvalBuilder;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+import org.joda.time.DateTime;
+import org.joda.time.Period;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -38,8 +46,34 @@ public abstract class BaseSink implements Sink {
      * {@inheritDoc}
      */
     @Override
+    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+        final String host;
+        final Period period;
+        final DateTime start;
+        if (data.isEmpty()) {
+            return;
+        } else {
+            final AggregatedData datum = data.iterator().next();
+            host = datum.getHost();
+            period = datum.getPeriod();
+            start = datum.getStart();
+        }
+        final PeriodicData periodicData = new PeriodicData.Builder()
+                .setData(ImmutableList.copyOf(data))
+                .setConditions(ImmutableList.copyOf(conditions))
+                .setDimensions(ImmutableMap.of("host", host))
+                .setPeriod(period)
+                .setStart(start)
+                .build();
+        recordAggregateData(periodicData);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void recordAggregateData(final Collection<AggregatedData> data) {
-        recordAggregateData(data, Collections.<Condition>emptyList());
+        recordAggregateData(data, Collections.emptyList());
     }
 
     public String getName() {
@@ -57,10 +91,9 @@ public abstract class BaseSink implements Sink {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Name", _name);
+        return LogValueMapFactory.builder(this)
+                .put("name", _name)
+                .build();
     }
 
     /**
@@ -81,6 +114,9 @@ public abstract class BaseSink implements Sink {
     }
 
     private final String _name;
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final ImmutableSet<Statistic> ALL_STATISTICS = STATISTIC_FACTORY.getAllStatistics();
 
     /**
      * Base <code>Builder</code> implementation.

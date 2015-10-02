@@ -16,13 +16,18 @@
 package com.arpnetworking.tsdcore.statistics;
 
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -31,6 +36,15 @@ import java.util.Set;
  * @author Brandon Arp (barp at groupon dot com)
  */
 public abstract class TPStatistic extends BaseStatistic implements OrderedStatistic {
+
+    /**
+     * Accessor for the percentile from 0 to 100 (inclusive).
+     *
+     * @return The percentile.
+     */
+    public double getPercentile() {
+        return _percentile;
+    }
 
     /**
      * {@inheritDoc}
@@ -46,6 +60,22 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
     @Override
     public Set<String> getAliases() {
         return Collections.unmodifiableSet(_aliases);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Calculator<Void> createCalculator() {
+        return new PercentileCalculator(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<Statistic> getDependencies() {
+        return DEPENDENCIES.get();
     }
 
     /**
@@ -91,6 +121,53 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
     private final Set<String> _aliases;
 
     private static final DecimalFormat FORMAT = new DecimalFormat("##0.#");
-
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Supplier<Statistic> HISTOGRAM_STATISTIC =
+            Suppliers.memoize(() -> STATISTIC_FACTORY.getStatistic("histogram"));
+    private static final Supplier<Set<Statistic>> DEPENDENCIES =
+            Suppliers.memoize(() -> ImmutableSet.of(HISTOGRAM_STATISTIC.get()));
     private static final long serialVersionUID = 2002333257077042351L;
+
+    /**
+     * Calculator computing the percentile of values.
+     *
+     * @author Ville Koskela (vkoskela at groupon dot com)
+     */
+    public static final class PercentileCalculator implements Calculator<Void> {
+
+        /**
+         * Public constructor.
+         *
+         * @param statistic The <code>TPStatistic</code>.
+         */
+        public PercentileCalculator(final TPStatistic statistic) {
+            _statistic = statistic;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Statistic getStatistic() {
+            return _statistic;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public CalculatedValue<Void> calculate(final Map<Statistic, Calculator<?>> dependencies) {
+            final HistogramStatistic.HistogramAccumulator calculator =
+                    (HistogramStatistic.HistogramAccumulator) dependencies.get(HISTOGRAM_STATISTIC.get());
+            // TODO(vkoskela): Instead of sending the samples with each percentile just send the histogram. [NEXT]
+            // This requires Cluster Aggregator to use the same aggregation technique.
+            // Make sure we calculate the histogram first
+            calculator.calculate(dependencies);
+            return new CalculatedValue.Builder<Void>()
+                    .setValue(calculator.calculate(_statistic.getPercentile()))
+                    .build();
+        }
+
+        private TPStatistic _statistic;
+    }
 }

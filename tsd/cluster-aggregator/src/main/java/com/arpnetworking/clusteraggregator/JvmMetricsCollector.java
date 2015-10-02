@@ -129,7 +129,6 @@ public final class JvmMetricsCollector extends UntypedActor {
                 null
         );
     }
-
     private Cancellable _cancellable;
 
     private final FiniteDuration _interval;
@@ -137,7 +136,7 @@ public final class JvmMetricsCollector extends UntypedActor {
     private final Scheduler _scheduler;
 
     private static final FiniteDuration INITIAL_DELAY = FiniteDuration.Zero();
-    private static final Logger LOGGER = LoggerFactory.getLogger("JvmMetricsCollector");
+    private static final Logger LOGGER = LoggerFactory.getLogger(JvmMetricsCollector.class);
 
     /**
      * Message class to collect JVM metrics. Package private for testing.

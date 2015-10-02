@@ -15,8 +15,6 @@
  */
 package com.arpnetworking.tsdcore.tailer;
 
-import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.google.common.base.Optional;
 
 import java.io.IOException;
@@ -49,23 +47,5 @@ public class NoPositionStore implements PositionStore {
     @Override
     public void close() throws IOException {
         // No need to do anything
-    }
-
-    /**
-     * Generate a Steno log compatible representation.
-     *
-     * @return Steno log compatible representation.
-     */
-    @LogValue
-    public Object toLogValue() {
-        return LogReferenceOnly.of(this);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return toLogValue().toString();
     }
 }

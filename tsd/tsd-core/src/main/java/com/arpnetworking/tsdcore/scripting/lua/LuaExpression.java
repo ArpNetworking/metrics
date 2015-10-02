@@ -26,16 +26,15 @@ import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.scripting.Expression;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
-import com.arpnetworking.tsdcore.statistics.ExpressionStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.utility.InterfaceDatabase;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.arpnetworking.utility.OvalBuilder;
-import com.arpnetworking.utility.ReflectionsDatabase;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -64,11 +63,9 @@ import org.luaj.vm2.parser.LuaParser;
 import org.luaj.vm2.parser.ParseException;
 
 import java.io.ByteArrayInputStream;
-import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -91,8 +88,8 @@ public class LuaExpression implements Expression {
         return evaluate(new PeriodicData.Builder()
                 .setPeriod(period)
                 .setStart(periodStart)
-                .addDimension("Host", host)
-                .setData(data)
+                .setDimensions(ImmutableMap.of("host", host))
+                .setData(ImmutableList.copyOf(data))
                 .build());
     }
 
@@ -103,7 +100,7 @@ public class LuaExpression implements Expression {
     public Optional<AggregatedData> evaluate(final PeriodicData periodicData) throws ScriptingException {
         // Check dependencies
         for (final FQDSN dependency : _dependencies) {
-            if (!periodicData.getDataByFQDSN(dependency).isPresent()) {
+            if (!periodicData.getDatumByFqdsn(dependency).isPresent()) {
                 LOGGER.debug()
                         .setMessage("Data does not contain dependency")
                         .addData("expression", this)
@@ -133,8 +130,9 @@ public class LuaExpression implements Expression {
                 .setPopulationSize(1L)
                 .setSamples(Collections.singletonList(result))
                 .setValue(result)
+                .setIsSpecified(true)
                 // TODO(vkoskela): Remove these once we move to PeriodicData [MAI-448]
-                .setHost(periodicData.getDimensions().get("Host"))
+                .setHost(periodicData.getDimensions().get("host"))
                 .setPeriod(periodicData.getPeriod())
                 .setStart(periodicData.getStart())
                 .build());
@@ -163,11 +161,10 @@ public class LuaExpression implements Expression {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "FQDSN", _fqdsn,
-                "Script", _script.replace("\n", "\\n").replace("\r", "\\r"));
+        return LogValueMapFactory.builder(this)
+                .put("fqdsn", _fqdsn)
+                .put("script", _script.replace("\n", "\\n").replace("\r", "\\r"))
+                .build();
     }
 
     /**
@@ -301,27 +298,10 @@ public class LuaExpression implements Expression {
     private final LuaValue _expression;
     private final Set<FQDSN> _dependencies;
 
-    private static final Statistic EXPRESSION_STATISTIC = new ExpressionStatistic();
-    private static final Map<String, Statistic> STATISTICS = Maps.newHashMap();
-    private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic EXPRESSION_STATISTIC = STATISTIC_FACTORY.getStatistic("expression");
     private static final CreateQuantityLuaFunction CREATE_QUANTITY_LUA_FUNCTION = new CreateQuantityLuaFunction();
     private static final Logger LOGGER = LoggerFactory.getLogger(LuaExpression.class);
-
-    static {
-        final Set<Class<? extends Statistic>> statisticClasses = INTERFACE_DATABASE.findClassesWithInterface(Statistic.class);
-        for (final Class<? extends Statistic> statisticClass : statisticClasses) {
-            try {
-                if (!statisticClass.isInterface() && !Modifier.isAbstract(statisticClass.getModifiers())) {
-                    final Statistic statistic = statisticClass.newInstance();
-                    STATISTICS.put(statistic.getName(), statistic);
-                }
-                // CHECKSTYLE.OFF: IllegalCatch - Must throw RuntimeException in static block
-            } catch (final Exception e) {
-                // CHECKSTYLE.ON: IllegalCatch
-                throw Throwables.propagate(e);
-            }
-        }
-    }
 
     private class DependencyVisitor extends Visitor {
 
@@ -464,7 +444,7 @@ public class LuaExpression implements Expression {
                             .setCluster(_tokens.get(0))
                             .setService(_tokens.get(1))
                             .setMetric(_tokens.get(2))
-                            .setStatistic(STATISTICS.get(_tokens.get(3)))
+                            .setStatistic(STATISTIC_FACTORY.getStatistic(_tokens.get(3)))
                             .build();
 
                     LOGGER.debug()
@@ -493,7 +473,7 @@ public class LuaExpression implements Expression {
                             .setCluster(_tokens.get(0))
                             .setService(_tokens.get(1))
                             .setMetric(_tokens.get(2))
-                            .setStatistic(STATISTICS.get(_tokens.get(3)))
+                            .setStatistic(STATISTIC_FACTORY.getStatistic(_tokens.get(3)))
                             .build();
 
                     LOGGER.debug()

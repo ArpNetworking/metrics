@@ -48,10 +48,11 @@ public final class JsonNodeFileSource extends BaseJsonNodeSource implements Json
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "File", _file,
-                "JsonNode", _jsonNode);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("file", _file)
+                .put("jsonNode", _jsonNode)
+                .build();
     }
 
     /* package private */ Optional<JsonNode> getJsonNode() {

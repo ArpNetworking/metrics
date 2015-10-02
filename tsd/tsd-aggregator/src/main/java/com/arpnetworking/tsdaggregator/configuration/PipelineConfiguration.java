@@ -18,19 +18,13 @@ package com.arpnetworking.tsdaggregator.configuration;
 import com.arpnetworking.configuration.jackson.DynamicConfigurationFactory;
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.parsers.Parser;
 import com.arpnetworking.tsdcore.sinks.Sink;
 import com.arpnetworking.tsdcore.sources.Source;
-import com.arpnetworking.tsdcore.statistics.CountStatistic;
-import com.arpnetworking.tsdcore.statistics.MeanStatistic;
-import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.StatisticDeserializer;
-import com.arpnetworking.tsdcore.statistics.SumStatistic;
-import com.arpnetworking.tsdcore.statistics.TP0Statistic;
-import com.arpnetworking.tsdcore.statistics.TP100Statistic;
-import com.arpnetworking.tsdcore.statistics.TP90Statistic;
-import com.arpnetworking.tsdcore.statistics.TP99Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.arpnetworking.utility.InterfaceDatabase;
 import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.ReflectionsDatabase;
@@ -42,6 +36,7 @@ import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Injector;
@@ -51,6 +46,7 @@ import org.joda.time.Period;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -59,6 +55,7 @@ import java.util.Set;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class PipelineConfiguration {
 
     /**
@@ -149,6 +146,10 @@ public final class PipelineConfiguration {
         return _gaugeStatistic;
     }
 
+    public ImmutableMap<String, Set<Statistic>> getStatistics() {
+        return _statistics;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -179,6 +180,7 @@ public final class PipelineConfiguration {
         _timerStatistic = ImmutableSet.copyOf(builder._timerStatistics);
         _counterStatistic = ImmutableSet.copyOf(builder._counterStatistics);
         _gaugeStatistic = ImmutableSet.copyOf(builder._gaugeStatistics);
+        _statistics = ImmutableMap.copyOf(builder._statistics);
     }
 
     private final String _name;
@@ -191,8 +193,10 @@ public final class PipelineConfiguration {
     private final ImmutableSet<Statistic> _timerStatistic;
     private final ImmutableSet<Statistic> _counterStatistic;
     private final ImmutableSet<Statistic> _gaugeStatistic;
+    private final ImmutableMap<String, Set<Statistic>> _statistics;
 
     private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
 
     /**
      * Implementation of builder pattern for <code>PipelineConfiguration</code>.
@@ -323,6 +327,18 @@ public final class PipelineConfiguration {
             return this;
         }
 
+        /**
+         * The statistics to compute for a metric pattern. Optional. Cannot be null.
+         * Default is empty.
+         *
+         * @param value The gauge statistics.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setStatistics(final Map<String, Set<Statistic>> value) {
+            _statistics = value;
+            return this;
+        }
+
         @NotNull
         @NotEmpty
         private String _name;
@@ -344,14 +360,24 @@ public final class PipelineConfiguration {
         @NotNull
         @NotEmpty
         private Set<Statistic> _timerStatistics = Sets.<Statistic>newHashSet(
-                new MedianStatistic(), new TP90Statistic(), new TP99Statistic(), new MeanStatistic(), new CountStatistic());
+                STATISTIC_FACTORY.getStatistic("mean"),
+                STATISTIC_FACTORY.getStatistic("tp90"),
+                STATISTIC_FACTORY.getStatistic("tp99"),
+                STATISTIC_FACTORY.getStatistic("mean"),
+                STATISTIC_FACTORY.getStatistic("count"));
         @NotNull
         @NotEmpty
         private Set<Statistic> _counterStatistics = Sets.<Statistic>newHashSet(
-                new MeanStatistic(), new SumStatistic(), new CountStatistic());
+                STATISTIC_FACTORY.getStatistic("mean"),
+                STATISTIC_FACTORY.getStatistic("sum"),
+                STATISTIC_FACTORY.getStatistic("count"));
         @NotNull
         @NotEmpty
         private Set<Statistic> _gaugeStatistics = Sets.<Statistic>newHashSet(
-                new TP0Statistic(), new TP100Statistic(), new MeanStatistic());
+                STATISTIC_FACTORY.getStatistic("min"),
+                STATISTIC_FACTORY.getStatistic("max"),
+                STATISTIC_FACTORY.getStatistic("mean"));
+        @NotNull
+        private Map<String, Set<Statistic>> _statistics = Collections.emptyMap();
     }
 }

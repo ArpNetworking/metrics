@@ -19,8 +19,10 @@ import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.dispatch.ExecutionContexts;
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -153,6 +155,27 @@ public class ConnectionContext extends UntypedActor {
         _connection.write(node);
     }
 
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("connection", _connection)
+                .put("messageProcessors", _messageProcessors)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
+
     private Metrics createMetrics() {
         final Metrics metrics = _metricsFactory.create();
         metrics.resetCounter(UNKONOWN_COMMAND_COUNTER);
@@ -179,8 +202,8 @@ public class ConnectionContext extends UntypedActor {
 
     private Metrics _metrics;
 
-    private static final String METRICS_PREFIX = "Actors/Connection/";
-    private static final String UNKONOWN_COMMAND_COUNTER = METRICS_PREFIX + "Command/UNKNOWN";
+    private static final String METRICS_PREFIX = "actors/connection/";
+    private static final String UNKONOWN_COMMAND_COUNTER = METRICS_PREFIX + "command/UNKNOWN";
     private static final String UNKNOWN_COUNTER = METRICS_PREFIX + "UNKNOWN";
 
     private static final ObjectNode OK_RESPONSE = JsonNodeFactory.instance.objectNode().put("response", "ok");

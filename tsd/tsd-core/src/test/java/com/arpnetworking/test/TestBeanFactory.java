@@ -18,11 +18,14 @@ package com.arpnetworking.test;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
-import com.arpnetworking.tsdcore.statistics.MeanStatistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
@@ -71,7 +74,7 @@ public final class TestBeanFactory {
      */
     public static FQDSN.Builder createFQDSNBuilder() {
         return new FQDSN.Builder()
-                .setStatistic(new MeanStatistic())
+                .setStatistic(MEAN_STATISTIC)
                 .setService("service-" + UUID.randomUUID())
                 .setMetric("metric-" + UUID.randomUUID())
                 .setCluster("cluster-" + UUID.randomUUID());
@@ -98,6 +101,7 @@ public final class TestBeanFactory {
                 .setValue(createSample())
                 .setStart(DateTime.now())
                 .setPeriod(Period.minutes(5))
+                .setIsSpecified(true)
                 .setSamples(Lists.newArrayList(createSample()))
                 .setPopulationSize((long) (Math.random() * 100));
     }
@@ -109,6 +113,29 @@ public final class TestBeanFactory {
      */
     public static AggregatedData createAggregatedData() {
         return createAggregatedDataBuilder().build();
+    }
+
+    /**
+     * Create a builder for pseudo-random <code>PeriodicData</code>.
+     *
+     * @return New builder for pseudo-random <code>PeriodicData</code>.
+     */
+    public static PeriodicData.Builder createPeriodicDataBuilder() {
+        return new PeriodicData.Builder()
+                .setDimensions(ImmutableMap.of("host", "host-" + UUID.randomUUID()))
+                .setData(ImmutableList.of(createAggregatedData()))
+                .setConditions(ImmutableList.of())
+                .setPeriod(Period.minutes(5))
+                .setStart(DateTime.now());
+    }
+
+    /**
+     * Create a new reasonable pseudo-random <code>PeriodicData</code>.
+     *
+     * @return New reasonable pseudo-random <code>PeriodicData</code>.
+     */
+    public static PeriodicData createPeriodicData() {
+        return createPeriodicDataBuilder().build();
     }
 
     /**
@@ -149,4 +176,7 @@ public final class TestBeanFactory {
     };
 
     private TestBeanFactory() {}
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MEAN_STATISTIC = STATISTIC_FACTORY.getStatistic("mean");
 }

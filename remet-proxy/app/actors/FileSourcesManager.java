@@ -18,6 +18,8 @@ package actors;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
+import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.sources.FileSource;
@@ -44,7 +46,7 @@ import java.util.Map;
  *
  * @author Mohammed Kamel (mkamel at groupon dot com)
  */
-public class FileSourcesManager extends UntypedActor {
+public final class FileSourcesManager extends UntypedActor {
     //TODO(barp): Add metrics to this class [MAI-406]
 
     /**
@@ -55,8 +57,7 @@ public class FileSourcesManager extends UntypedActor {
      */
     @Inject
     public FileSourcesManager(final Configuration configuration, @Named("StreamContext") final ActorRef streamContextActor) {
-        _fileSourceIntervalMilliseconds = Duration.millis(configuration.getLong("fileSource.interval", 500L));
-
+        _fileSourceInterval = Duration.millis(configuration.getLong("fileSource.interval", 500L));
         _streamContextActor = streamContextActor;
     }
 
@@ -87,6 +88,28 @@ public class FileSourcesManager extends UntypedActor {
         }
     }
 
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("fileSourceInterval", _fileSourceInterval)
+                .put("fileSources", _fileSources)
+                .put("streamContextActor", _streamContextActor)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
+    }
+
     private void addSource(final Path filepath) {
         LOGGER.info()
                 .setMessage("Adding new log file source")
@@ -98,7 +121,7 @@ public class FileSourcesManager extends UntypedActor {
                     new FileSource.Builder<LogLine>()
                             .setName("File: " + filepath)
                             .setSourceFile(filepath.toFile())
-                            .setInterval(_fileSourceIntervalMilliseconds)
+                            .setInterval(_fileSourceInterval)
                             .setParser(new LogLineParser(filepath))
                             .setInitialPosition(InitialPosition.END)
                             .build();
@@ -130,16 +153,15 @@ public class FileSourcesManager extends UntypedActor {
         }
     }
 
-    private final Duration _fileSourceIntervalMilliseconds;
+    private final Duration _fileSourceInterval;
     private final Map<Path, Source> _fileSources = Maps.newHashMap();
     private final ActorRef _streamContextActor;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileSourcesManager.class);
 
-    /*package private*/
-    static class LogFileObserver implements Observer {
+    /* package private */ static final class LogFileObserver implements Observer {
 
-        /*package private*/LogFileObserver(final ActorRef streamContextActor, final ActorRef messageSender) {
+        /* package private */ LogFileObserver(final ActorRef streamContextActor, final ActorRef messageSender) {
             _streamContextActor = streamContextActor;
             _messageSender = messageSender;
         }
@@ -151,6 +173,27 @@ public class FileSourcesManager extends UntypedActor {
         public void notify(final Observable observable, final Object event) {
             final LogLine logLine = (LogLine) event;
             _streamContextActor.tell(logLine, _messageSender);
+        }
+
+        /**
+         * Generate a Steno log compatible representation.
+         *
+         * @return Steno log compatible representation.
+         */
+        @LogValue
+        public Object toLogValue() {
+            return LogValueMapFactory.builder(this)
+                    .put("streamContextActor", _streamContextActor)
+                    .put("messageSender", _messageSender)
+                    .build();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return toLogValue().toString();
         }
 
         private final ActorRef _streamContextActor;

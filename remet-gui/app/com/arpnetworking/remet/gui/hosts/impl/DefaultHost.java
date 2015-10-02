@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.remet.gui.hosts.impl;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
 import com.arpnetworking.utility.OvalBuilder;
@@ -28,6 +29,7 @@ import net.sf.oval.constraint.NotNull;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class DefaultHost implements Host {
 
     /**
@@ -88,6 +90,7 @@ public final class DefaultHost implements Host {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Hostname", _hostname)
                 .add("MetricsSoftwareState", _metricsSoftwareState)
                 .add("Cluster", _cluster)

@@ -18,6 +18,7 @@ package com.arpnetworking.tsdcore.sinks;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -48,6 +49,11 @@ public class BaseSinkTest {
     }
 
     private static final class TestAggregatedDataSink extends BaseSink {
+
+        @Override
+        public void recordAggregateData(final PeriodicData data) {
+            // Nothing to do
+        }
 
         @Override
         public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {

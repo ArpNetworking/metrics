@@ -67,10 +67,9 @@ public final class NoLimitMetricsLimiter implements MetricsLimiter {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "IsRunning", _isRunning);
+        return LogValueMapFactory.builder(this)
+                .put("isRunning", _isRunning)
+                .build();
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdaggregator.model.querylog;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -46,6 +47,7 @@ import java.util.regex.Pattern;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public final class Version2e {
 
     public DateTime getTime() {
@@ -182,6 +184,7 @@ public final class Version2e {
     /**
      * Represents the metrics data or payload in the container.
      */
+    @Loggable
     public static final class Data {
 
         public Map<String, Element> getTimers() {
@@ -298,6 +301,7 @@ public final class Version2e {
     /**
      * Represents a single sample.
      */
+    @Loggable
     public static final class Sample {
         public Optional<Unit> getUnit() {
             return _unit;
@@ -358,6 +362,7 @@ public final class Version2e {
      * Represents a counter, timer, or gauge element.  Includes a list of
      * samples.
      */
+    @Loggable
     public static final class Element {
 
         public List<Sample> getValues() {
@@ -400,6 +405,7 @@ public final class Version2e {
     /**
      * Represents the set of annotations on a line.
      */
+    @Loggable
     public static final class Annotations {
         public DateTime getInitTimestamp() {
             return _initTimestamp;

@@ -49,7 +49,7 @@ public class AggregatorTest extends BaseActorTest {
 
     public ActorRef createAggregator(final TestProbe probe) {
         final TestProbe ignored = TestProbe.apply(getSystem());
-        return TestActorRef.apply(Aggregator.props(ignored.ref(), ignored.ref(), ignored.ref()), probe.ref(), "agg", getSystem());
+        return TestActorRef.apply(AggregationRouter.props(ignored.ref(), ignored.ref(), ignored.ref()), probe.ref(), "agg", getSystem());
     }
 
     private static final FiniteDuration TIMEOUT = FiniteDuration.apply(10, TimeUnit.SECONDS);

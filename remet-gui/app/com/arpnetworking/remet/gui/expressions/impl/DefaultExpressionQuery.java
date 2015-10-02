@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.remet.gui.expressions.impl;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.expressions.Expression;
 import com.arpnetworking.remet.gui.expressions.ExpressionQuery;
@@ -28,7 +29,8 @@ import java.util.Optional;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class DefaultExpressionQuery implements ExpressionQuery {
+@Loggable
+public final class DefaultExpressionQuery implements ExpressionQuery {
 
     /**
      * Public constructor.
@@ -139,6 +141,7 @@ public class DefaultExpressionQuery implements ExpressionQuery {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Repository", _repository)
                 .add("Contains", _contains)
                 .add("Cluster", _cluster)

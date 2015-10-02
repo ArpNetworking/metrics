@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdaggregator.model.querylog;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -38,6 +39,7 @@ import java.util.regex.Pattern;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Loggable
 public final class Version2d {
     public Map<String, Element> getTimers() {
         return _timers;
@@ -86,7 +88,7 @@ public final class Version2d {
 
         /**
          * Sets the annotations field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -97,7 +99,7 @@ public final class Version2d {
 
         /**
          * Sets the version field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -108,7 +110,7 @@ public final class Version2d {
 
         /**
          * Sets the counters field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -119,7 +121,7 @@ public final class Version2d {
 
         /**
          * Sets the timers field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -130,7 +132,7 @@ public final class Version2d {
 
         /**
          * Sets the gauges field.
-         * 
+         *
          * @param value Value
          * @return This builder
          */
@@ -155,6 +157,7 @@ public final class Version2d {
     /**
      * Represents a single sample.
      */
+    @Loggable
     public static final class Sample {
         public Optional<Unit> getUnit() {
             return _unit;
@@ -185,7 +188,7 @@ public final class Version2d {
 
             /**
              * Sets the unit field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -196,7 +199,7 @@ public final class Version2d {
 
             /**
              * Sets the value field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -212,9 +215,10 @@ public final class Version2d {
     }
 
     /**
-     * Represents a counter, timer, or gauge element.  Includes a list of 
+     * Represents a counter, timer, or gauge element.  Includes a list of
      * samples.
      */
+    @Loggable
     public static final class Element {
 
         public List<Sample> getValues() {
@@ -240,7 +244,7 @@ public final class Version2d {
 
             /**
              * Sets the value field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -257,6 +261,7 @@ public final class Version2d {
     /**
      * Represents the set of annotations on a line.
      */
+    @Loggable
     public static final class Annotations {
         public DateTime getInitTimestamp() {
             return _initTimestamp;
@@ -293,7 +298,7 @@ public final class Version2d {
 
             /**
              * Sets the initTimestamp field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -304,7 +309,7 @@ public final class Version2d {
 
             /**
              * Sets the finalTimestamp field.
-             * 
+             *
              * @param value Value
              * @return This builder
              */
@@ -314,9 +319,9 @@ public final class Version2d {
             }
 
             /**
-             * Called by json deserialization to store non-member elements of 
+             * Called by json deserialization to store non-member elements of
              * the json object. Stores the value in the otherAnnotations field.
-             * 
+             *
              * @param key key
              * @param value value
              */

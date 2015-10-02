@@ -17,6 +17,7 @@ package com.arpnetworking.remet.gui.hosts.impl;
 
 import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.hosts.Host;
@@ -24,12 +25,12 @@ import com.arpnetworking.remet.gui.hosts.HostQuery;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
 import com.arpnetworking.remet.gui.impl.DefaultQueryResult;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -67,7 +68,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Brandon Arp (barp at groupon dot com)
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class ElasticSearchHostRepository implements HostRepository {
+public final class ElasticSearchHostRepository implements HostRepository {
 
     /**
      * Public constructor.
@@ -308,14 +309,24 @@ public class ElasticSearchHostRepository implements HostRepository {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("client", _client)
+                .put("isOpen", _isOpen)
+                .build();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("Client", _client)
-                .toString();
+        return toLogValue().toString();
     }
 
     private String mapField(final HostQuery.Field field) {

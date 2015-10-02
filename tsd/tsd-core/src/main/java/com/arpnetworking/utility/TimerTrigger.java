@@ -50,10 +50,9 @@ public class TimerTrigger implements Trigger {
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Duration", _duration);
+        return LogValueMapFactory.builder(this)
+                .put("duration", _duration)
+                .build();
     }
 
     /**

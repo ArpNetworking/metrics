@@ -16,8 +16,6 @@
 package com.arpnetworking.configuration.jackson.akka;
 
 import akka.actor.ActorRef;
-import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 /**
@@ -39,23 +37,5 @@ public class AkkaLoggingModule extends SimpleModule {
     public void setupModule(final SetupContext context) {
         addSerializer(ActorRef.class, new ActorRefLoggingSerializer());
         super.setupModule(context);
-    }
-
-    /**
-     * Generate a Steno log compatible representation.
-     *
-     * @return Steno log compatible representation.
-     */
-    @LogValue
-    public Object toLogValue() {
-        return LogReferenceOnly.of(this);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return toLogValue().toString();
     }
 }

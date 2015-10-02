@@ -143,13 +143,11 @@ public final class DirectoryTrigger implements Trigger {
     @LogValue
     public Object toLogValue() {
         return LogValueMapFactory.<String, Object>builder()
-                .put("id", Integer.toHexString(System.identityHashCode(this)))
-                .put("class", this.getClass())
-                .put("Directory", _directory)
-                .put("Exists", _exists)
-                .put("FileNames", _fileNames)
-                .put("FileNamePatterns", _fileNamePatterns)
-                .put("EvaluationFileTriggers", _evaluationFileTriggers)
+                .put("directory", _directory)
+                .put("exists", _exists)
+                .put("fileNames", _fileNames)
+                .put("fileNamePatterns", _fileNamePatterns)
+                .put("evaluationFileTriggers", _evaluationFileTriggers)
                 .build();
     }
 

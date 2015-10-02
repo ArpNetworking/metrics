@@ -27,7 +27,8 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
-import com.arpnetworking.tsdcore.statistics.MedianStatistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.arpnetworking.utility.BaseActorTest;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -272,6 +273,7 @@ public class PeriodicStatisticsActorTest extends BaseActorTest {
                 .setPeriod(period)
                 .setStart(start)
                 .setHost("testhost")
+                .setIsSpecified(true)
                 .setValue(new Quantity.Builder().setValue(0d).build())
                 .setSamples(Collections.<Quantity>emptyList())
                 .setPopulationSize(0L);
@@ -282,7 +284,7 @@ public class PeriodicStatisticsActorTest extends BaseActorTest {
                 .setCluster("testcluster")
                 .setService("testservice")
                 .setMetric("testmetric")
-                .setStatistic(new MedianStatistic());
+                .setStatistic(MEDIAN_STATISTIC);
     }
 
     @Captor
@@ -293,7 +295,9 @@ public class PeriodicStatisticsActorTest extends BaseActorTest {
     @Mock
     private Metrics _metrics;
 
-    private static final String CLUSTER_PERIOD_METRICS_SEEN = "Cluster/Period/MetricsSeen";
-    private static final String CLUSTER_PERIOD_STATISTICS_SEEN = "Cluster/Period/StatisticsSeen";
-    private static final String CLUSTER_PERIOD_SERVICES_SEEN = "Cluster/Period/ServicesSeen";
+    private static final String CLUSTER_PERIOD_METRICS_SEEN = "cluster/period/metrics_seen";
+    private static final String CLUSTER_PERIOD_STATISTICS_SEEN = "cluster/period/statistics_seen";
+    private static final String CLUSTER_PERIOD_SERVICES_SEEN = "cluster/period/services_seen";
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MEDIAN_STATISTIC = STATISTIC_FACTORY.getStatistic("median");
 }

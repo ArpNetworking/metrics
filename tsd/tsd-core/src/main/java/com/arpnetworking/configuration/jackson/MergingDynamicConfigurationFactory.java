@@ -62,10 +62,9 @@ public final class MergingDynamicConfigurationFactory implements DynamicConfigur
      */
     @LogValue
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "id", Integer.toHexString(System.identityHashCode(this)),
-                "class", this.getClass(),
-                "Factories", _factories);
+        return LogValueMapFactory.builder(this)
+                .put("factories", _factories)
+                .build();
     }
 
     /**

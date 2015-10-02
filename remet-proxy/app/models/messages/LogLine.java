@@ -16,11 +16,14 @@
 
 package models.messages;
 
+import com.arpnetworking.logback.annotations.Loggable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.Bytes;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +34,8 @@ import java.util.List;
  * @author Mohammed Kamel (mkamel at groupon dot com)
  * @author Vivek Muppala (vivek at groupon dot com)
  */
-public class LogLine {
+@Loggable
+public final class LogLine {
     /**
      * Public constructor.
      *
@@ -51,6 +55,8 @@ public class LogLine {
         return _file;
     }
 
+    // TODO(vkoskela): Switch to @LogIgnore once available in Logback-Steno [ISSUE-3]
+    @JsonIgnore
     public List<Byte> getLine() {
         return Collections.unmodifiableList(Bytes.asList(_line));
     }
@@ -61,9 +67,20 @@ public class LogLine {
      *
      * @return The line data as a <code>String</code> interpreted as UTF-8.
      */
-    public String getLineAsString() {
+    public String convertLineToString() {
+        return convertLineToString(Charsets.UTF_8);
+    }
+
+    /**
+     * Return the log line as a <code>String</code>. Callers should cache this
+     * value.
+     *
+     * @param charset The character set to use.
+     * @return The line data as a <code>String</code>.
+     */
+    public String convertLineToString(final Charset charset) {
         // CHECKSTYLE.OFF: IllegalInstantiation - Unavoidable.
-        return new String(_line, Charsets.UTF_8);
+        return new String(_line, charset);
         // CHECKSTYLE.ON: IllegalInstantiation
     }
 
@@ -74,6 +91,7 @@ public class LogLine {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("File", _file)
                 .add("Line", _line)
                 .toString();

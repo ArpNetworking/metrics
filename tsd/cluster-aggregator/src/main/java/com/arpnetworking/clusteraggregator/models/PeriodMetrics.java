@@ -20,9 +20,12 @@ import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Maps;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import org.joda.time.DateTime;
+
+import java.util.Map;
 
 /**
  * Holds the node metrics for a single period.
@@ -65,21 +68,8 @@ public class PeriodMetrics {
 
         //TODO(barp): rework statistic collection [MAI-379]
         if (_latestPeriod == null || _latestPeriod.isBefore(report.getPeriodStart())) {
-            if (_latestPeriod != null) {
-                try (final Metrics metrics = _metricsFactory.create()) {
-                    metrics.incrementCounter("Cluster/Period/MetricsSeen", _metricsLatestPeriod);
-                    metrics.incrementCounter("Cluster/Period/StatisticsSeen", _statisticsLatestPeriod);
-                    metrics.incrementCounter("Cluster/Period/ServicesSeen", _servicesLatestPeriod);
-                }
-            }
-
-            _latestPeriod = report.getPeriodStart();
-            _metricsLatestPeriod = 0;
-            _servicesLatestPeriod = 0;
-            _statisticsLatestPeriod = 0;
-            _latestPeriodMetricsBloomFilter = createMetricsBF();
-            _latestPeriodServicesBloomFilter = createServicesBF();
-            _latestPeriodStatsBloomFilter = createStatisticsBF();
+            dumpMetrics();
+            clearForNextPeriod(report);
         }
 
         if (_latestPeriod.equals(report.getPeriodStart())) {
@@ -97,7 +87,39 @@ public class PeriodMetrics {
                 _latestPeriodMetricsBloomFilter.put(metricName);
                 ++_metricsLatestPeriod;
             }
+
+            final String serviceCluster = report.getFQDSN().getService() + "/" + report.getFQDSN().getCluster();
+            Long sampleCount = _sampleCountLatestPeriod.getOrDefault(serviceCluster, 0L);
+            sampleCount += report.getPopulationSize();
+            _sampleCountLatestPeriod.put(serviceCluster, sampleCount);
         }
+    }
+
+    private void dumpMetrics() {
+        if (_latestPeriod != null) {
+            try (final Metrics metrics = _metricsFactory.create()) {
+                long totalSamples = 0L;
+                metrics.incrementCounter("cluster/period/metrics_seen", _metricsLatestPeriod);
+                metrics.incrementCounter("cluster/period/statistics_seen", _statisticsLatestPeriod);
+                metrics.incrementCounter("cluster/period/services_seen", _servicesLatestPeriod);
+                for (final Map.Entry<String, Long> entry : _sampleCountLatestPeriod.entrySet()) {
+                    metrics.incrementCounter("cluster/period/sample_count/" + entry.getKey(), entry.getValue());
+                    totalSamples += entry.getValue();
+                }
+                metrics.incrementCounter("cluster/period/sample_count/total", totalSamples);
+            }
+        }
+    }
+
+    private void clearForNextPeriod(final AggregatedData report) {
+        _latestPeriod = report.getPeriodStart();
+        _metricsLatestPeriod = 0;
+        _servicesLatestPeriod = 0;
+        _statisticsLatestPeriod = 0;
+        _latestPeriodMetricsBloomFilter = createMetricsBF();
+        _latestPeriodServicesBloomFilter = createServicesBF();
+        _latestPeriodStatsBloomFilter = createStatisticsBF();
+        _sampleCountLatestPeriod.clear();
     }
 
     public DateTime getLatestPeriod() {
@@ -143,6 +165,7 @@ public class PeriodMetrics {
     private long _metricsLatestPeriod = 0;
     private long _servicesLatestPeriod = 0;
     private long _statisticsLatestPeriod = 0;
+    private Map<String, Long> _sampleCountLatestPeriod = Maps.newHashMap();
     private BloomFilter<CharSequence> _latestPeriodMetricsBloomFilter = createMetricsBF();
     private BloomFilter<CharSequence> _latestPeriodServicesBloomFilter = createServicesBF();
     private BloomFilter<CharSequence> _latestPeriodStatsBloomFilter = createStatisticsBF();

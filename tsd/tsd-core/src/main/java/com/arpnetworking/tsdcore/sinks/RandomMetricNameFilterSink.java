@@ -18,14 +18,11 @@ package com.arpnetworking.tsdcore.sinks;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
-import com.google.common.collect.Lists;
+import com.arpnetworking.tsdcore.model.PeriodicData;
+import com.google.common.collect.ImmutableList;
 import net.sf.oval.constraint.Max;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
-
-import java.util.Collection;
-import java.util.List;
 
 /**
  * A {@link com.arpnetworking.tsdcore.sinks.Sink} that only allows a percentage of data through to the wrapped
@@ -39,14 +36,17 @@ public final class RandomMetricNameFilterSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        final List<AggregatedData> filteredData = Lists.newArrayListWithCapacity(expectedSize(data.size()));
-        for (final AggregatedData datum : data) {
-            if (shouldPass(datum)) {
-                filteredData.add(datum);
-            }
-        }
-        _sink.recordAggregateData(filteredData, conditions);
+    public void recordAggregateData(final PeriodicData periodicData) {
+        final ImmutableList.Builder<AggregatedData> filteredDataBuilder = ImmutableList.builder();
+        periodicData.getData()
+                .stream()
+                .filter(this::shouldPass)
+                .forEach(filteredDataBuilder::add);
+
+        _sink.recordAggregateData(
+                PeriodicData.Builder.clone(periodicData, new PeriodicData.Builder())
+                        .setData(filteredDataBuilder.build())
+                        .build());
     }
 
     /**
@@ -65,10 +65,11 @@ public final class RandomMetricNameFilterSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "PassPercent", _passPercent,
-                "Sink", _sink);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("passPercent", _passPercent)
+                .put("sink", _sink)
+                .build();
     }
 
 

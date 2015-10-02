@@ -31,7 +31,7 @@ import play.mvc.Result;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class MetricsActionWrapper extends Action.Simple {
+public final class MetricsActionWrapper extends Action.Simple {
 
     /**
      * Public constructor.
@@ -79,7 +79,7 @@ public class MetricsActionWrapper extends Action.Simple {
     protected String createTimerName(final Http.Context context) {
         // TODO(vkoskela): Use routes information to replace variable path parts with variable names. [MAI-280]
         final Http.Request r = context.request();
-        final StringBuilder metricNameBuilder = new StringBuilder("RestService/");
+        final StringBuilder metricNameBuilder = new StringBuilder("rest_service/");
         metricNameBuilder.append(r.method());
 
         if (!Strings.isNullOrEmpty(r.path())) {

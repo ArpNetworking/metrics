@@ -101,13 +101,11 @@ public final class FilePositionStore implements PositionStore {
     @LogValue
     public Object toLogValue() {
         return LogValueMapFactory.<String, Object>builder()
-                .put("id", Integer.toHexString(System.identityHashCode(this)))
-                .put("class", this.getClass())
-                .put("File", _file)
-                .put("FlushInterval", _flushInterval)
-                .put("FlushThreshold", _flushThreshold)
-                .put("Retention", _retention)
-                .put("LastFlush", _lastFlush)
+                .put("file", _file)
+                .put("flushInterval", _flushInterval)
+                .put("flushThreshold", _flushThreshold)
+                .put("retention", _retention)
+                .put("lastFlush", _lastFlush)
                 .build();
     }
 

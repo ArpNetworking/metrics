@@ -15,15 +15,16 @@
  */
 package com.arpnetworking.remet.gui.hosts.impl;
 
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.remet.gui.QueryResult;
 import com.arpnetworking.remet.gui.hosts.Host;
 import com.arpnetworking.remet.gui.hosts.HostQuery;
 import com.arpnetworking.remet.gui.hosts.HostRepository;
 import com.arpnetworking.remet.gui.hosts.MetricsSoftwareState;
 import com.arpnetworking.remet.gui.impl.DefaultQueryResult;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
 
 import java.util.Collections;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public class NoHostRepository implements HostRepository {
+public final class NoHostRepository implements HostRepository {
 
     /**
      * Public constructor.
@@ -136,13 +137,23 @@ public class NoHostRepository implements HostRepository {
     }
 
     /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        return LogValueMapFactory.builder(this)
+                .put("isOpen", _isOpen)
+                .build();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .toString();
+        return toLogValue().toString();
     }
 
     private void assertIsOpen() {

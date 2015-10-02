@@ -15,6 +15,7 @@
  */
 package models;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -28,6 +29,7 @@ import java.util.Optional;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@Loggable
 public class Pagination {
 
     /**
@@ -94,6 +96,7 @@ public class Pagination {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("Total", _total)
                 .add("Size", _size)
                 .add("Offset", _offset)

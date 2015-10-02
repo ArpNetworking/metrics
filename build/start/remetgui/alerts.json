@@ -18,7 +18,7 @@
       "extensions":
       {
         "severity": "critical",
-        "notify": "alerts@example.com",
+        "notify": "notify@example.com",
         "max_check_attempts": 1
       }
     },
@@ -39,7 +39,7 @@
       "extensions":
       {
         "severity": "critical",
-        "notify": "alerts@example.com",
+        "notify": "notify@example.com",
         "max_check_attempts": 1
       }
     }

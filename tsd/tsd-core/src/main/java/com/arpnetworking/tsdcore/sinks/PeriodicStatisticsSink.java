@@ -23,7 +23,7 @@ import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
@@ -31,7 +31,6 @@ import com.google.common.collect.Sets;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 
-import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -68,17 +67,17 @@ public final class PeriodicStatisticsSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
+    public void recordAggregateData(final PeriodicData periodicData) {
         LOGGER.debug()
                 .setMessage("Writing aggregated data")
                 .addData("sink", getName())
-                .addData("dataSize", data.size())
-                .addData("conditionsSize", conditions.size())
+                .addData("dataSize", periodicData.getData().size())
+                .addData("conditionsSize", periodicData.getConditions().size())
                 .log();
 
         final long now = System.currentTimeMillis();
-        _aggregatedData.addAndGet(data.size());
-        for (final AggregatedData datum : data) {
+        _aggregatedData.addAndGet(periodicData.getData().size());
+        for (final AggregatedData datum : periodicData.getData()) {
             final String fqsn = new StringBuilder()
                     .append(datum.getFQDSN().getCluster()).append(".")
                     .append(datum.getHost()).append(".")
@@ -124,11 +123,12 @@ public final class PeriodicStatisticsSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "AggregatedData", _aggregatedData,
-                "UniqueMetrics", _uniqueMetrics.get().size(),
-                "UniqueStatistics", _uniqueStatistics.get().size());
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("aggregatedData", _aggregatedData)
+                .put("uniqueMetrics", _uniqueMetrics.get().size())
+                .put("uniqueStatistics", _uniqueStatistics.get().size())
+                .build();
     }
 
     private void flushMetrics(final Metrics metrics) {
@@ -165,10 +165,10 @@ public final class PeriodicStatisticsSink extends BaseSink {
 
         // Initialize the metrics factory and metrics instance
         _metricsFactory = builder._metricsFactory;
-        _aggregatedDataName = "Sinks/PeriodicStatisticsSink/" + getMetricSafeName() + "/AggregatedData";
-        _uniqueMetricsName = "Sinks/PeriodicStatisticsSink/" + getMetricSafeName() + "/UniqueMetrics";
-        _uniqueStatisticsName = "Sinks/PeriodicStatisticsSink/" + getMetricSafeName() + "/UniqueStatistics";
-        _ageName = "Sinks/PeriodicStatisticsSink/" + getMetricSafeName() + "/Age";
+        _aggregatedDataName = "sinks/periodic_statistics/" + getMetricSafeName() + "/aggregated_data";
+        _uniqueMetricsName = "sinks/periodic_statistics/" + getMetricSafeName() + "/unique_metrics";
+        _uniqueStatisticsName = "sinks/periodic_statistics/" + getMetricSafeName() + "/unique_statistics";
+        _ageName = "sinks/periodic_statistics/" + getMetricSafeName() + "/age";
         _metrics.set(createMetrics());
 
         // Write the metrics periodically

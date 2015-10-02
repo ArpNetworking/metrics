@@ -15,9 +15,8 @@
  */
 package com.arpnetworking.tsdcore.model;
 
-import com.arpnetworking.tsdcore.statistics.MedianStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.tsdcore.statistics.TP99Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.arpnetworking.utility.test.BuildableEqualsAndHashCodeTester;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -35,7 +34,7 @@ public class FQSNTest {
 
     @Test
     public void testBuilder() {
-        final Statistic expectedStatistic = new TP99Statistic();
+        final Statistic expectedStatistic = TP99_STATISTIC;
         final String expectedService = "MyService";
         final String expectedMetric = "MyMetric";
         final String expectedCluster = "MyCluster";
@@ -65,7 +64,7 @@ public class FQSNTest {
 
     @Test
     public void testBuilderSetDimensions() {
-        final Statistic expectedStatistic = new TP99Statistic();
+        final Statistic expectedStatistic = TP99_STATISTIC;
         final String expectedService = "MyService";
         final String expectedMetric = "MyMetric";
         final String expectedCluster = "MyCluster";
@@ -95,7 +94,7 @@ public class FQSNTest {
 
     @Test
     public void testBuilderWithFQDSN() {
-        final Statistic expectedStatistic = new TP99Statistic();
+        final Statistic expectedStatistic = TP99_STATISTIC;
         final String expectedService = "MyService";
         final String expectedMetric = "MyMetric";
         final String expectedCluster = "MyCluster";
@@ -130,7 +129,7 @@ public class FQSNTest {
         final DateTime now = DateTime.now();
         BuildableEqualsAndHashCodeTester.assertEqualsAndHashCode(
                 new FQSN.Builder()
-                        .setStatistic(new TP99Statistic())
+                        .setStatistic(TP99_STATISTIC)
                         .setService("MyServiceA")
                         .setMetric("MyMetricA")
                         .setCluster("MyClusterA")
@@ -138,7 +137,7 @@ public class FQSNTest {
                         .setStart(now),
                         //.addDimension("host", "MyHostA"),
                 new FQSN.Builder()
-                        .setStatistic(new MedianStatistic())
+                        .setStatistic(MEDIAN_STATISTIC)
                         .setService("MyServiceB")
                         .setMetric("MyMetricB")
                         .setCluster("MyClusterB")
@@ -150,7 +149,7 @@ public class FQSNTest {
     @Test
     public void testToString() {
         final String asString = new FQSN.Builder()
-                .setStatistic(new TP99Statistic())
+                .setStatistic(TP99_STATISTIC)
                 .setService("MyService")
                 .setMetric("MyMetric")
                 .setCluster("MyCluster")
@@ -162,4 +161,8 @@ public class FQSNTest {
         Assert.assertNotNull(asString);
         Assert.assertFalse(asString.isEmpty());
     }
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic MEDIAN_STATISTIC = STATISTIC_FACTORY.getStatistic("median");
+    private static final Statistic TP99_STATISTIC = STATISTIC_FACTORY.getStatistic("tp99");
 }

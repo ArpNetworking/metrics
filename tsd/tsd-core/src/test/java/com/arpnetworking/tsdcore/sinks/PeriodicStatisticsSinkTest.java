@@ -19,13 +19,11 @@ import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.test.TestBeanFactory;
 
-import com.arpnetworking.tsdcore.model.Condition;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.util.Collections;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -74,12 +72,12 @@ public class PeriodicStatisticsSinkTest {
         Mockito.verify(_mockMetricsFactory).create();
         Mockito.verify(_mockMetrics).resetCounter(COUNTER_NAME);
 
-        statisticsSink.recordAggregateData(Collections.singletonList(TestBeanFactory.createAggregatedData()));
+        statisticsSink.recordAggregateData(TestBeanFactory.createPeriodicData());
         periodicRunnable.run();
         Mockito.verify(_mockMetrics, Mockito.times(1)).incrementCounter(COUNTER_NAME, 1);
         Mockito.verify(_mockMetrics, Mockito.times(1)).close();
 
-        statisticsSink.recordAggregateData(Collections.singletonList(TestBeanFactory.createAggregatedData()));
+        statisticsSink.recordAggregateData(TestBeanFactory.createPeriodicData());
         periodicRunnable.run();
         Mockito.verify(_mockMetrics, Mockito.times(2)).incrementCounter(COUNTER_NAME, 1);
         Mockito.verify(_mockMetrics, Mockito.times(2)).close();
@@ -97,9 +95,7 @@ public class PeriodicStatisticsSinkTest {
         Mockito.verify(_mockMetricsFactory).create();
         Mockito.verify(_mockMetrics).resetCounter(COUNTER_NAME);
 
-        statisticsSink.recordAggregateData(
-                Collections.singletonList(TestBeanFactory.createAggregatedData()),
-                Collections.<Condition>emptyList());
+        statisticsSink.recordAggregateData(TestBeanFactory.createPeriodicData());
         statisticsSink.close();
         Mockito.verify(_mockMetrics).incrementCounter(COUNTER_NAME, 1);
         Mockito.verify(_mockMetrics).close();
@@ -109,5 +105,5 @@ public class PeriodicStatisticsSinkTest {
     private Metrics _mockMetrics;
     private MetricsFactory _mockMetricsFactory;
 
-    private static final String COUNTER_NAME = "Sinks/PeriodicStatisticsSink/periodic_statistics_sink_test/AggregatedData";
+    private static final String COUNTER_NAME = "sinks/periodic_statistics/periodic_statistics_sink_test/aggregated_data";
 }

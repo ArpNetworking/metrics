@@ -3,6 +3,42 @@
     "service": "remet_gui",
     "cluster": "tsd_aggregator_dev",
     "host": "tsd-agg-test1.local",
+    "timerStatistics": [
+        "min",
+        "median",
+        "p90",
+        "p95",
+        "p99",
+        "p99p9",
+        "max",
+        "count",
+        "mean",
+        "sum"
+    ],
+    "counterStatistics": [
+        "min",
+        "median",
+        "p90",
+        "p95",
+        "p99",
+        "p99p9",
+        "max",
+        "count",
+        "mean",
+        "sum"
+    ],
+    "gaugeStatistics": [
+        "min",
+        "median",
+        "p90",
+        "p95",
+        "p99",
+        "p99p9",
+        "max",
+        "count",
+        "mean",
+        "sum"
+    ],
     "sources":
     [
         {

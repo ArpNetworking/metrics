@@ -18,9 +18,9 @@ package com.arpnetworking.clusteraggregator;
 
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import com.arpnetworking.clusteraggregator.configuration.EmitterConfiguration;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.sinks.MultiSink;
 import com.arpnetworking.tsdcore.sinks.Sink;
@@ -53,7 +53,10 @@ public class Emitter extends UntypedActor {
                 .setName("EmitterMultiSink")
                 .setSinks(config.getSinks())
                 .build();
-        _log.debug(String.format("Emitter starting up; sink=%s", _sink));
+        LOGGER.info()
+                .setMessage("Emitter starting up")
+                .addData("sink", _sink)
+                .log();
     }
 
     /**
@@ -63,7 +66,10 @@ public class Emitter extends UntypedActor {
     public void onReceive(final Object message) throws Exception {
         if (message instanceof AggregatedData) {
             final AggregatedData data = (AggregatedData) message;
-            _log.debug("Emitting data to sink: " + message);
+            LOGGER.debug()
+                    .setMessage("Emitting data to sink")
+                    .addData("data", message)
+                    .log();
             _sink.recordAggregateData(Collections.singletonList(data));
         } else {
             unhandled(message);
@@ -79,6 +85,6 @@ public class Emitter extends UntypedActor {
         _sink.close();
     }
 
-    private final LoggingAdapter _log = Logging.getLogger(getContext().system(), this);
     private final Sink _sink;
+    private static final Logger LOGGER = LoggerFactory.getLogger(Emitter.class);
 }

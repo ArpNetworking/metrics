@@ -45,10 +45,11 @@ public final class JsonNodeLiteralSource extends BaseJsonNodeSource implements J
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Source", _source,
-                "JsonNode", _jsonNode);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("source", _source)
+                .put("jsonNode", _jsonNode)
+                .build();
     }
 
     /* package private */ Optional<JsonNode> getJsonNode() {

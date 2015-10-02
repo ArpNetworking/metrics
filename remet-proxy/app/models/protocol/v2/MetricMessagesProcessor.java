@@ -16,7 +16,9 @@
 
 package models.protocol.v2;
 
+import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -114,6 +116,27 @@ public class MetricMessagesProcessor implements MessagesProcessor {
         metrics.resetCounter(NEW_METRIC_COUNTER);
         metrics.resetCounter(UNSUBSCRIBE_COUNTER);
         metrics.resetCounter(SUBSCRIBE_COUNTER);
+    }
+
+    /**
+     * Generate a Steno log compatible representation.
+     *
+     * @return Steno log compatible representation.
+     */
+    @LogValue
+    public Object toLogValue() {
+        // NOTE: Do not log connection context as this creates a circular reference
+        return LogValueMapFactory.builder(this)
+                .put("subscriptions", _subscriptions)
+                .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return toLogValue().toString();
     }
 
     private void processNewMetric(final NewMetric newMetric) {
@@ -234,11 +257,13 @@ public class MetricMessagesProcessor implements MessagesProcessor {
     private static final String COMMAND_SUBSCRIBE_METRIC = "subscribeMetric";
     private static final String COMMAND_UNSUBSCRIBE_METRIC = "unsubscribeMetric";
     private static final String COMMAND_GET_METRICS = "getMetrics";
-    private static final String METRICS_PREFIX = "Actors/Connection/";
-    private static final String METRICS_LIST_COUNTER = METRICS_PREFIX + "MetricsList";
-    private static final String REPORT_COUNTER = METRICS_PREFIX + "MetricReport";
-    private static final String NEW_METRIC_COUNTER = METRICS_PREFIX + "NewMetric";
-    private static final String UNSUBSCRIBE_COUNTER = METRICS_PREFIX + "Command/Unsubscribe";
-    private static final String SUBSCRIBE_COUNTER = METRICS_PREFIX + "Command/Subscribe";
+
+    private static final String METRICS_PREFIX = "actors/connection/";
+    private static final String METRICS_LIST_COUNTER = METRICS_PREFIX + "metrics_list";
+    private static final String REPORT_COUNTER = METRICS_PREFIX + "metric_report";
+    private static final String NEW_METRIC_COUNTER = METRICS_PREFIX + "new_metric";
+    private static final String UNSUBSCRIBE_COUNTER = METRICS_PREFIX + "command/unsubscribe";
+    private static final String SUBSCRIBE_COUNTER = METRICS_PREFIX + "command/subscribe";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricMessagesProcessor.class);
 }

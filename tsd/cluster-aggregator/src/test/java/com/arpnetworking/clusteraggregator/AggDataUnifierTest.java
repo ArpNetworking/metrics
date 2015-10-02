@@ -20,7 +20,8 @@ import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.FQDSN;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
-import com.arpnetworking.tsdcore.statistics.SumStatistic;
+import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import org.joda.time.DateTime;
@@ -292,15 +293,19 @@ public class AggDataUnifierTest {
                         .setCluster("testcluster")
                         .setService("testservice")
                         .setMetric("someSumStat")
-                        .setStatistic(new SumStatistic())
+                        .setStatistic(SUM_STATISTIC)
                         .build())
                 .setPeriod(Period.minutes(1))
                 .setStart(DateTime.now().hourOfDay().roundFloorCopy())
                 .setHost("testhost")
+                .setIsSpecified(true)
                 .setPopulationSize(0L)
                 .setSamples(Collections.<Quantity>emptyList())
                 .setValue(new Quantity.Builder()
                         .setValue(0d)
                         .build());
     }
+
+    private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
+    private static final Statistic SUM_STATISTIC = STATISTIC_FACTORY.getStatistic("sum");
 }

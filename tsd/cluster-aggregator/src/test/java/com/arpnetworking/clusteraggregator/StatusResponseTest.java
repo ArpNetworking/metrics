@@ -19,12 +19,12 @@ import akka.actor.ActorRef;
 import akka.testkit.TestProbe;
 import com.arpnetworking.utility.BaseActorTest;
 import com.arpnetworking.utility.ParallelLeastShardAllocationStrategy;
+import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.junit.Test;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**

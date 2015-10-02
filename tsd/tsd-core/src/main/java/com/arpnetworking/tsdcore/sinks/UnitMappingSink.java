@@ -19,14 +19,13 @@ import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.Condition;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotNull;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,15 +39,15 @@ public final class UnitMappingSink extends BaseSink {
      * {@inheritDoc}
      */
     @Override
-    public void recordAggregateData(final Collection<AggregatedData> data, final Collection<Condition> conditions) {
-        final List<AggregatedData> mappedData = Lists.newArrayListWithExpectedSize(data.size());
-        for (final AggregatedData datum : data) {
+    public void recordAggregateData(final PeriodicData periodicData) {
+        final ImmutableList.Builder<AggregatedData> dataBuilder = ImmutableList.builder();
+        for (final AggregatedData datum : periodicData.getData()) {
             final Quantity value = datum.getValue();
             if (value.getUnit().isPresent()) {
                 final Unit fromUnit = value.getUnit().get();
                 final Unit toUnit = _map.get(fromUnit);
                 if (toUnit != null) {
-                    mappedData.add(
+                    dataBuilder.add(
                             AggregatedData.Builder.<AggregatedData, AggregatedData.Builder>clone(datum)
                                     .setValue(new Quantity.Builder()
                                             .setValue(toUnit.convert(value.getValue(), fromUnit))
@@ -56,20 +55,20 @@ public final class UnitMappingSink extends BaseSink {
                                             .build())
                                     .build());
                 } else {
-                    mappedData.add(datum);
+                    dataBuilder.add(datum);
                 }
             } else {
-                mappedData.add(datum);
+                dataBuilder.add(datum);
             }
         }
-        final List<Condition> mappedConditions = Lists.newArrayListWithExpectedSize(conditions.size());
-        for (final Condition condition : conditions) {
+        final ImmutableList.Builder<Condition> conditionsBuilder = ImmutableList.builder();
+        for (final Condition condition : periodicData.getConditions()) {
             final Quantity threshold = condition.getThreshold();
             if (threshold.getUnit().isPresent()) {
                 final Unit fromUnit = threshold.getUnit().get();
                 final Unit toUnit = _map.get(fromUnit);
                 if (toUnit != null) {
-                    mappedConditions.add(
+                    conditionsBuilder.add(
                             Condition.Builder.<Condition, Condition.Builder>clone(condition)
                                     .setThreshold(new Quantity.Builder()
                                             .setValue(toUnit.convert(threshold.getValue(), fromUnit))
@@ -77,13 +76,17 @@ public final class UnitMappingSink extends BaseSink {
                                             .build())
                                     .build());
                 } else {
-                    mappedConditions.add(condition);
+                    conditionsBuilder.add(condition);
                 }
             } else {
-                mappedConditions.add(condition);
+                conditionsBuilder.add(condition);
             }
         }
-        _sink.recordAggregateData(mappedData, mappedConditions);
+        _sink.recordAggregateData(
+                PeriodicData.Builder.clone(periodicData, new PeriodicData.Builder())
+                        .setData(dataBuilder.build())
+                        .setConditions(conditionsBuilder.build())
+                        .build());
     }
 
     /**
@@ -102,10 +105,11 @@ public final class UnitMappingSink extends BaseSink {
     @LogValue
     @Override
     public Object toLogValue() {
-        return LogValueMapFactory.of(
-                "super", super.toLogValue(),
-                "Sink", _sink,
-                "Map", _map);
+        return LogValueMapFactory.builder(this)
+                .put("super", super.toLogValue())
+                .put("sink", _sink)
+                .put("map", _map)
+                .build();
     }
 
     private UnitMappingSink(final Builder builder) {

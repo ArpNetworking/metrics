@@ -16,6 +16,7 @@
 
 package models.messages;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.MoreObjects;
 import models.protocol.MessageProcessorsFactory;
@@ -26,6 +27,7 @@ import play.mvc.WebSocket;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
+@Loggable
 public final class Connect {
     /**
      * Public constructor.
@@ -62,6 +64,7 @@ public final class Connect {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
+                .add("class", this.getClass())
                 .add("OutputChannel", _outputChannel)
                 .add("InputChannel", _inputChannel)
                 .add("MessageProcessorsFactory", _messageProcessorsFactory)

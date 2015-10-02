@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.tsdcore.tailer;
 
-import com.arpnetworking.steno.LogReferenceOnly;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 
@@ -54,7 +53,7 @@ public enum InitialPosition {
             } catch (final IOException exception) {
                 LOGGER.warn()
                         .setMessage("Unable to see to end of byte channel")
-                        .addData("channel", LogReferenceOnly.of(channel))
+                        .addData("channel", channel)
                         .setThrowable(exception)
                         .log();
                 return 0;
