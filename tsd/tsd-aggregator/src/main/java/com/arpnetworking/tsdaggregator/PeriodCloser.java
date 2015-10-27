@@ -264,7 +264,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
         /**
          * Public constructor.
          */
+        // CHECKSTYLE.OFF: RedundantModifierCheck - This is probably a checkstyle bug.
         public Builder() {
+            // CHECKSTYLE.ON: RedundantModifierCheck
             super(PeriodCloser.class);
         }
 

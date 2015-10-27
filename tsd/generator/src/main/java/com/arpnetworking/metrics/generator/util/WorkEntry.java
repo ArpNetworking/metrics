@@ -23,14 +23,14 @@ import com.arpnetworking.metrics.generator.uow.UnitOfWorkSchedule;
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
-class WorkEntry {
+/* package private */ class WorkEntry {
     /**
      * Public constructor.
      *
      * @param schedule The unit of work schedule info.
      * @param value The current execution time.
      */
-    public WorkEntry(final UnitOfWorkSchedule schedule, final long value) {
+    /* package private */ WorkEntry(final UnitOfWorkSchedule schedule, final long value) {
         _schedule = schedule;
         _currentValue = value;
     }

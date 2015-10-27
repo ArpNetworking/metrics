@@ -140,7 +140,7 @@ public class StreamingAggregator extends UntypedActor {
                                     .setPopulationSize(0L)
                                     .setIsSpecified(bucket.isSpecified(entry.getKey()))
                                     .build();
-                            LOGGER.info()
+                            LOGGER.debug()
                                     .setMessage("Computed result")
                                     .addData("result", result)
                                     .addContext("actor", self())

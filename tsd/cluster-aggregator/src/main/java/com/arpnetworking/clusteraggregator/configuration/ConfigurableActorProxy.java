@@ -179,7 +179,7 @@ public class ConfigurableActorProxy<T> extends UntypedActor {
     }
 
     private static final class BufferedMessage {
-        public BufferedMessage(final ActorRef sender, final Object message) {
+        private BufferedMessage(final ActorRef sender, final Object message) {
             _sender = sender;
             _message = message;
         }

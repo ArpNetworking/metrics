@@ -1,8 +1,7 @@
 ReMet Gui
 =========
 
-Provides a web interface for viewing streamed metrics from one or more application hosts running [Tsd Aggregator](../tsd/README.md) and [ReMet Proxy](../remet-proxy/README.md) aggregated to 1-second periods. 
-
+Specialization of [Metrics Portal](https://github.com/ArpNetworking/metrics-portal).
 
 Setup
 -----
@@ -11,10 +10,10 @@ Setup
 
 Prerequisites:
 * [JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
-* [Play 2.3.0](http://www.playframework.com/download)
+* [Play 2.4.3](http://www.playframework.com/download)
 
 Building:
-    remet-gui> activate stage
+    remet-gui> activator stage
 
 ### Installing
 
@@ -22,7 +21,7 @@ The artifacts from the build are in *remet-gui/target/universal/stage* and shoul
 
 ### Execution
 
-In the installation's *bin* directory there are scripts to start ReMet Gui: *remet-gui* (Linux) and *remet-gui.bat* (Windows).  One of these should be executed on system start with appropriate parameters; for example:
+In the installation's *bin* directory there are scripts to start ReMet Gui: *remet-gui* (Linux/Mac) and *remet-gui.bat* (Windows).  One of these should be executed on system start with appropriate parameters; for example:
 
     /usr/local/lib/remet_gui/bin/remet-gui -J-Xmn150m -J-XX:+UseG1GC -J-XX:MaxGCPauseMillis=20 -Dhttp.port=80 -Dpidfile.path=/usr/local/var/REMETGUI_PID
 

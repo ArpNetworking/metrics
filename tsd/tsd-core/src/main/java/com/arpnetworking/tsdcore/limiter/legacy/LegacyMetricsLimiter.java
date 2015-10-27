@@ -121,7 +121,7 @@ public final class LegacyMetricsLimiter implements Closeable {
         // If we get here, there was no room for the new aggregations, log it (but not too often) and then ignore
         final Long lastLogged = _lastLogged.get(key);
         if (lastLogged == null || now - lastLogged >= _loggingInterval.getMillis()) {
-            LOGGER.error()
+            LOGGER.warn()
                     .setMessage("Limited aggregate")
                     .addData("key", key)
                     .addData("count", _nAggregations)

@@ -19,7 +19,9 @@ import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
+import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Optional;
+import net.sf.oval.constraint.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -102,9 +104,19 @@ public final class HistogramStatistic extends BaseStatistic {
         @Override
         public Accumulator<HistogramSupportingData> accumulate(final Quantity quantity) {
             // TODO(barp): Convert to canonical unit. [NEXT]
-            // Instead create and update an actual histogram.
-            _data.getHistogram().recordValue(quantity.getValue());
-            _data.setUnit(quantity.getUnit());
+            final Optional<Unit> quantityUnit = quantity.getUnit();
+            checkUnit(quantityUnit);
+            if (_unit.isPresent() && !_unit.equals(quantityUnit)) {
+                _histogram.recordValue(
+                        new Quantity.Builder()
+                                .setUnit(_unit.get())
+                                .setValue(_unit.get().convert(quantity.getValue(), quantityUnit.get()))
+                                .build().getValue());
+            } else {
+                _histogram.recordValue(quantity.getValue());
+            }
+
+            _unit = _unit.or(quantityUnit);
             return this;
         }
 
@@ -113,9 +125,25 @@ public final class HistogramStatistic extends BaseStatistic {
          */
         @Override
         public Accumulator<HistogramSupportingData> accumulate(final CalculatedValue<HistogramSupportingData> calculatedValue) {
-            _data.getHistogram().add(calculatedValue.getData().getHistogram());
-            _data.setUnit(calculatedValue.getData().getUnit().or(_data._unit));
+            final Optional<Unit> unit = calculatedValue.getData().getUnit();
+            checkUnit(unit);
+            if (_unit.isPresent() && !_unit.equals(unit)) {
+                _histogram.add(calculatedValue.getData().toUnit(_unit.get()).getHistogramSnapshot());
+            } else {
+                _histogram.add(calculatedValue.getData().getHistogramSnapshot());
+            }
+
+            _unit = _unit.or(unit);
             return this;
+        }
+
+        private void checkUnit(final Optional<Unit> unit) {
+            if (_unit.isPresent() != unit.isPresent() && _histogram._entriesCount > 0) {
+                throw new IllegalStateException(String.format(
+                        "Units must both be present or absent; histogramUnit=%s, otherUnit=%s",
+                        _unit,
+                        unit));
+            }
         }
 
         /**
@@ -123,13 +151,14 @@ public final class HistogramStatistic extends BaseStatistic {
          */
         @Override
         public CalculatedValue<HistogramSupportingData> calculate(final Map<Statistic, Calculator<?>> dependencies) {
-            // TODO(vkoskela): Remove the sample based implementation. [NEXT]
-            // Instead set the data to the underlying histogram's data.
             return new CalculatedValue.Builder<HistogramSupportingData>()
                     .setValue(new Quantity.Builder()
                             .setValue(1.0)
                             .build())
-                    .setData(_data)
+                    .setData(new HistogramSupportingData.Builder()
+                            .setHistogramSnapshot(_histogram.getSnapshot())
+                            .setUnit(_unit)
+                            .build())
                     .build();
         }
 
@@ -140,14 +169,16 @@ public final class HistogramStatistic extends BaseStatistic {
          * @return The value at the desired percentile.
          */
         public Quantity calculate(final double percentile) {
+            final HistogramSnapshot snapshot = _histogram.getSnapshot();
             return new Quantity.Builder()
-                    .setValue(_data.getHistogram().getValueAtPercentile(percentile))
-                    .setUnit(_data._unit.orNull())
+                    .setValue(snapshot.getValueAtPercentile(percentile))
+                    .setUnit(_unit.orNull())
                     .build();
         }
 
+        private Optional<Unit> _unit = Optional.absent();
         private final Statistic _statistic;
-        private final HistogramSupportingData _data = new HistogramSupportingData();
+        private final Histogram _histogram = new Histogram();
     }
 
     /**
@@ -158,34 +189,87 @@ public final class HistogramStatistic extends BaseStatistic {
     public static final class HistogramSupportingData {
         /**
          * Public constructor.
+         *
+         * @param builder The builder.
          */
-        public HistogramSupportingData() {
-            this(new Histogram());
+        public HistogramSupportingData(final Builder builder) {
+            _unit = builder._unit;
+            _histogramSnapshot = builder._histogramSnapshot;
+        }
+
+        public HistogramSnapshot getHistogramSnapshot() {
+            return _histogramSnapshot;
         }
 
         /**
-         * Public constructor.
+         * Transforms the histogram to a new unit. If there is no unit set,
+         * the result is a no-op.
          *
-         * @param histogram The histogram
+         * @param newUnit the new unit
+         * @return a new HistogramSupportingData with the units converted
          */
-        public HistogramSupportingData(final Histogram histogram) {
-            _histogram = histogram;
-        }
-
-        public Histogram getHistogram() {
-            return _histogram;
+        public HistogramSupportingData toUnit(final Unit newUnit) {
+            if (_unit.isPresent()) {
+                final Histogram newHistogram = new Histogram();
+                for (final Map.Entry<Double, Integer> entry : _histogramSnapshot.getValues()) {
+                    final Double newBucket = newUnit.convert(entry.getKey(), _unit.get());
+                    newHistogram.recordValue(newBucket, entry.getValue());
+                }
+                return new HistogramSupportingData.Builder()
+                        .setHistogramSnapshot(newHistogram.getSnapshot())
+                        .setUnit(Optional.of(newUnit))
+                        .build();
+            }
+            return this;
         }
 
         public Optional<Unit> getUnit() {
             return _unit;
         }
 
-        public void setUnit(final Optional<Unit> unit) {
-            _unit = unit;
-        }
+        private final Optional<Unit> _unit;
+        private final HistogramSnapshot _histogramSnapshot;
 
-        private Optional<Unit> _unit = Optional.absent();
-        private final Histogram _histogram;
+        /**
+         * Implementation of the builder pattern for a {@link HistogramSupportingData}.
+         *
+         * @author Brandon Arp (barp at groupon dot com)
+         */
+        public static class Builder extends OvalBuilder<HistogramSupportingData> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(HistogramSupportingData.class);
+            }
+
+            /**
+             * Sets the histogram. Required. Cannot be null.
+             *
+             * @param value the histogram
+             * @return This {@link Builder} instance.
+             */
+            public Builder setHistogramSnapshot(final HistogramSnapshot value) {
+                _histogramSnapshot = value;
+                return this;
+            }
+
+            /**
+             * Sets the unit. Optional. Cannot be null.
+             *
+             * @param value the unit
+             * @return This {@link Builder} instance.
+             */
+            public Builder setUnit(final Optional<Unit> value) {
+                _unit = value;
+                return this;
+            }
+
+            @NotNull
+            private Optional<Unit> _unit = Optional.absent();
+            @NotNull
+            private HistogramSnapshot _histogramSnapshot;
+        }
     }
 
     /**
@@ -214,15 +298,39 @@ public final class HistogramStatistic extends BaseStatistic {
         }
 
         /**
-         * Adds a histogram to this one.
+         * Adds a histogram snapshot to this one.
          *
-         * @param histogram The histogram to add to this one.
+         * @param histogramSnapshot The histogram snapshot to add to this one.
          */
-        public void add(final Histogram histogram) {
-            for (final Map.Entry<Double, Integer> entry : histogram._data.entrySet()) {
+        public void add(final HistogramSnapshot histogramSnapshot) {
+            for (final Map.Entry<Double, Integer> entry : histogramSnapshot._data.entrySet()) {
                 _data.merge(entry.getKey(), entry.getValue(), (i, j) -> i + j);
             }
-            _entriesCount += histogram._entriesCount;
+            _entriesCount += histogramSnapshot._entriesCount;
+        }
+
+        public HistogramSnapshot getSnapshot() {
+            return new HistogramSnapshot(_data, _entriesCount);
+        }
+
+        private static double truncate(final double val) {
+            final long mask = 0xffffe00000000000L;
+            return Double.longBitsToDouble(Double.doubleToRawLongBits(val) & mask);
+        }
+
+        private int _entriesCount = 0;
+        private final TreeMap<Double, Integer> _data = new TreeMap<>();
+    }
+
+    /**
+     * Represents a snapshot of immutable histogram data.
+     *
+     * @author Brandon Arp (barp at groupon dot com)
+     */
+    public static final class HistogramSnapshot {
+        private HistogramSnapshot(final TreeMap<Double, Integer> data, final int entriesCount) {
+            _entriesCount = entriesCount;
+            _data.putAll(data);
         }
 
         /**
@@ -250,12 +358,6 @@ public final class HistogramStatistic extends BaseStatistic {
         public Set<Map.Entry<Double, Integer>> getValues() {
             return _data.entrySet();
         }
-
-        private static double truncate(final double val) {
-            final long mask = 0xffffe00000000000L;
-            return Double.longBitsToDouble(Double.doubleToRawLongBits(val) & mask);
-        }
-
         private int _entriesCount = 0;
         private final TreeMap<Double, Integer> _data = new TreeMap<>();
     }

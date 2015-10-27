@@ -67,8 +67,9 @@ public class JsonBenchmarkConsumer extends AutocloseConsumer implements Closeabl
     public void close() {
         if (!_closed) {
             try {
-                if (!Files.exists(_path.toAbsolutePath().getParent())) {
-                    Files.createDirectories(_path.toAbsolutePath().getParent());
+                final Path parent = _path.toAbsolutePath().getParent();
+                if (parent != null && !Files.exists(parent)) {
+                    Files.createDirectories(parent);
                 }
                 LOGGER.info(String.format("Closing; file=%s", _path));
                 OBJECT_MAPPER.writeValue(_path.toFile(), this);

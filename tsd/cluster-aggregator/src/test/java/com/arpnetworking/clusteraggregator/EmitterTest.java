@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class EmitterTest extends BaseActorTest {
     @Before
-    public void setup() {
+    public void setUp() {
         _config = new EmitterConfiguration.Builder().setSinks(Collections.singletonList(_sink)).build();
     }
 

@@ -225,7 +225,7 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
     }
 
     private static final class RegionShardAllocations {
-        public RegionShardAllocations(final ActorRef region, final Set<String> shards) {
+        private RegionShardAllocations(final ActorRef region, final Set<String> shards) {
             _region = region;
             _shards = Sets.newHashSet(shards);
         }

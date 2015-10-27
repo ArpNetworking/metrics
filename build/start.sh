@@ -165,26 +165,6 @@ if [ -n "$verbose" ]; then
   verbose_arg="-v"
 fi
 
-# Generate Code
-# TODO(barp): Formalize this into standard build processes
-if [ $start_tsd_agg -gt 0 ]; then
-  pushd tsd/tsd-aggregator &> /dev/null
-  version=`grep "version = '[^']*'" ../build.gradle | grep -o -P "'[^']+'" | grep -o -P "[^']+"`
-  sha=`git log -n 1 --pretty=%H master -- "./"`
-  mkdir -p src/main/resources
-  echo "{\"name\":\"$project\",\"version\":\"$version\",\"sha\":\"$sha\"}" > "src/main/resources/status.json"
-  popd &> /dev/null
-fi
-
-if [ $start_cluster_agg -gt 0 ]; then
-  pushd tsd/cluster-aggregator &> /dev/null
-  version=`grep "version = '[^']*'" ../build.gradle | grep -o -P "'[^']+'" | grep -o -P "[^']+"`
-  sha=`git log -n 1 --pretty=%H master -- "./"`
-  mkdir -p src/main/resources
-  echo "{\"name\":\"$project\",\"version\":\"$version\",\"sha\":\"$sha\"}" > "src/main/resources/status.json"
-  popd &> /dev/null
-fi
-
 # Build projects
 if [ $start_remet_proxy -gt 0 ]; then
   pushd remet-proxy &> /dev/null
@@ -200,10 +180,17 @@ if [ $start_remet_gui -gt 0 ]; then
   popd &> /dev/null
 fi
 
-if [ $start_tsd_agg -gt 0 -o $start_cluster_agg -gt 0 ]; then
+if [ $start_tsd_agg -gt 0 ]; then
   pushd tsd &> /dev/null
-  ./gradlew installApp
-  if [ "$?" -ne 0 ]; then echo "Build failed: tsd-aggregator and/or cluster-aggregator"; exit 1; fi
+  ./mvnw install -pl tsd-aggregator -am -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
+  if [ "$?" -ne 0 ]; then echo "Build failed: tsd-aggregator"; exit 1; fi
+  popd &> /dev/null
+fi
+
+if [ $start_cluster_agg -gt 0 ]; then
+  pushd tsd &> /dev/null
+  ./mvnw install -pl cluster-aggregator -am -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
+  if [ "$?" -ne 0 ]; then echo "Build failed: cluster-aggregator"; exit 1; fi
   popd &> /dev/null
 fi
 
@@ -213,7 +200,7 @@ if [ $start_cluster_agg -gt 0 ]; then
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
   fi
-  ./build/install/cluster-aggregator/bin/cluster-aggregator ${dir}/start/clusteragg/config.json &
+  ./target/appassembler/bin/cluster-aggregator ${dir}/start/clusteragg/config.json &
   pid_cluster_agg=$!
   echo "Started: cluster-aggregator ($pid_cluster_agg)"
   if [ -n "$pinger" ]; then
@@ -227,7 +214,7 @@ if [ $start_tsd_agg -gt 0 ]; then
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
   fi
-  ./build/install/tsd-aggregator/bin/tsd-aggregator ${dir}/start/tsdagg/config.json &
+  ./target/appassembler/bin/tsd-aggregator ${dir}/start/tsdagg/config.json &
   pid_tsd_agg=$!
   echo "Started: tsd-aggregator ($pid_tsd_agg)"
   if [ -n "$pinger" ]; then

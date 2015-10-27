@@ -86,15 +86,15 @@ public class MeanStatisticTest {
                     .setValue(new Quantity.Builder().setValue(45.0).build())
                     .build())
                 .when(sumCalculator).calculate(Mockito.any());
-        final Calculator countCalculator = Mockito.mock(Calculator.class, "CountCalculator");
+        final Calculator<Void> countCalculator = Mockito.mock(Calculator.class, "CountCalculator");
         Mockito.doReturn(
                 new CalculatedValue.Builder<Void>()
                         .setValue(new Quantity.Builder().setValue(3.0).build())
                         .build())
                 .when(countCalculator).calculate(Mockito.any());
 
-        final Calculator calculator = MEAN_STATISTIC.createCalculator();
-        final CalculatedValue calculated = calculator.calculate(ImmutableMap.of(
+        final Calculator<Void> calculator = MEAN_STATISTIC.createCalculator();
+        final CalculatedValue<Void> calculated = calculator.calculate(ImmutableMap.of(
                 COUNT_STATISTIC, countCalculator,
                 SUM_STATISTIC, sumCalculator));
         Assert.assertEquals(calculated.getValue(), new Quantity.Builder().setValue(15.0).build());

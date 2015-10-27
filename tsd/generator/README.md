@@ -10,9 +10,10 @@ Setup
 
 Prerequisites:
 * [JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+* [Maven 3.2.5+](https://maven.apache.org/)
 
 Building:
-    generator> ./gradlew installApp
+    tsd> mvn install -pl generator -amd
 
 ### Installing ###
 

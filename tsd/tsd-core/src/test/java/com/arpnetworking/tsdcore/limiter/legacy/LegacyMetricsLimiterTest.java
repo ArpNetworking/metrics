@@ -21,6 +21,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.file.Files;
@@ -32,6 +33,7 @@ import java.util.Map;
  *
  * @author Joe Frisbie (jfrisbie at groupon dot com)
  */
+@Ignore // Test _class_ cannot be executed in parallel; soon to be deprecated anyway
 public class LegacyMetricsLimiterTest extends MetricsLimiterTestBase {
 
     @Before

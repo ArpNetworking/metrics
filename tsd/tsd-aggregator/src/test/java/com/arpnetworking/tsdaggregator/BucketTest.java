@@ -354,22 +354,10 @@ public class BucketTest {
     }
 
     private LoadingCache<String, Optional<ImmutableSet<Statistic>>> _specifiedStatsCache = CacheBuilder.newBuilder()
-            .build(
-                    new CacheLoader<String, Optional<ImmutableSet<Statistic>>>() {
-                        @Override
-                        public Optional<ImmutableSet<Statistic>> load(final String key) throws Exception {
-                            return Optional.absent();
-                        }
-                    });
+            .build(new AbsentStatisticCacheLoader());
 
     private LoadingCache<String, Optional<ImmutableSet<Statistic>>> _dependentStatsCache = CacheBuilder.newBuilder()
-            .build(
-                    new CacheLoader<String, Optional<ImmutableSet<Statistic>>>() {
-                        @Override
-                        public Optional<ImmutableSet<Statistic>> load(final String key) throws Exception {
-                            return Optional.absent();
-                        }
-                    });
+            .build(new AbsentStatisticCacheLoader());
 
 
     private static final Quantity ONE = new Quantity.Builder().setValue(1.0).build();
@@ -388,4 +376,11 @@ public class BucketTest {
     private static final Statistic SUM_STATISTIC = STATISTIC_FACTORY.getStatistic("sum");
     private static final Statistic COUNT_STATISTIC = STATISTIC_FACTORY.getStatistic("count");
     private static final Statistic MEDIAN_STATISTIC = STATISTIC_FACTORY.getStatistic("median");
+
+    private static final class AbsentStatisticCacheLoader extends CacheLoader<String, Optional<ImmutableSet<Statistic>>> {
+        @Override
+        public Optional<ImmutableSet<Statistic>> load(final String key) throws Exception {
+            return Optional.absent();
+        }
+    }
 }

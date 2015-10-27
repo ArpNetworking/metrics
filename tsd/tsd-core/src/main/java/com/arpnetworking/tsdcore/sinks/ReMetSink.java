@@ -23,8 +23,10 @@ import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 
@@ -53,14 +55,14 @@ public final class ReMetSink extends HttpPostSink {
      * {@inheritDoc}
      */
     @Override
-    protected Collection<String> serialize(final PeriodicData periodicData) {
+    protected Collection<byte[]> serialize(final PeriodicData periodicData) {
         // TODO(vkoskela): Send conditions to ReMet [MAI-451]
         final StringBuilder buffer = new StringBuilder();
         buffer.append(HEADER);
         int bufferLength = HEADER_BYTE_LENGTH;
         int chunkCount = 0;
 
-        final List<String> serializedData = Lists.newArrayList();
+        final List<byte[]> serializedData = Lists.newArrayList();
 
         for (final AggregatedData datum : periodicData.getData()) {
             if (!datum.isSpecified()) {
@@ -86,7 +88,7 @@ public final class ReMetSink extends HttpPostSink {
 
                     // Close the string builder and add the string to the serialized list
                     buffer.setCharAt(buffer.length() - 1, ']');
-                    serializedData.add(buffer.toString());
+                    serializedData.add(buffer.toString().getBytes(Charsets.UTF_8));
 
                     // Truncate all but the beginning '[' to prepare the next entries
                     buffer.setLength(HEADER_BYTE_LENGTH);
@@ -108,7 +110,7 @@ public final class ReMetSink extends HttpPostSink {
         }
         if (bufferLength > 1) {
             buffer.setCharAt(buffer.length() - 1, ']');
-            serializedData.add(buffer.toString());
+            serializedData.add(buffer.toString().getBytes(Charsets.UTF_8));
         }
         return serializedData;
     }
@@ -159,6 +161,7 @@ public final class ReMetSink extends HttpPostSink {
         }
 
         @NotNull
+        @Min(value = 0)
         private Long _maxRequestSize = 100 * 1024L;
     }
 }

@@ -94,24 +94,33 @@ public class StreamingAggregationBucket {
     public void update(final CombinedMetricData datum) {
         for (final Map.Entry<Statistic, CombinedMetricData.StatisticValue> entry : datum.getCalculatedValues().entrySet()) {
             final Statistic statistic = entry.getKey();
-            final CombinedMetricData.StatisticValue statisticValue = entry.getValue();
+            try {
+                final CombinedMetricData.StatisticValue statisticValue = entry.getValue();
 
-            Calculator<?> calculatorEntry = _data.get(statistic);
-            if (calculatorEntry == null) {
-                calculatorEntry =  statistic.createCalculator();
-                _data.put(statistic, calculatorEntry);
-                _specified.put(statistic, statisticValue.getUserSpecified());
-            }
+                Calculator<?> calculatorEntry = _data.get(statistic);
+                if (calculatorEntry == null) {
+                    calculatorEntry = statistic.createCalculator();
+                    _data.put(statistic, calculatorEntry);
+                    _specified.put(statistic, statisticValue.getUserSpecified());
+                }
 
-            if (calculatorEntry instanceof Accumulator) {
-                final Accumulator accumulator = (Accumulator) calculatorEntry;
-                accumulator.accumulate(statisticValue.getValue());
+                if (calculatorEntry instanceof Accumulator) {
+                    final Accumulator accumulator = (Accumulator) calculatorEntry;
+                    accumulator.accumulate(statisticValue.getValue());
+                }
+                final Boolean isSpecified = _specified.get(statistic);
+                if (!isSpecified && statisticValue.getUserSpecified()) {
+                    _specified.put(statistic, statisticValue.getUserSpecified());
+                }
+                // CHECKSTYLE.OFF: IllegalCatch - We want to make sure we catch all the exceptions
+            } catch (final Exception e) {
+                // CHECKSTYLE.ON: IllegalCatch
+                LOGGER.warn().setMessage("unable to update bucket with data")
+                        .addData("statistic", statistic)
+                        .addData("metric", datum.getMetricName())
+                        .setThrowable(e)
+                        .log();
             }
-            final Boolean isSpecified = _specified.get(statistic);
-            if (!isSpecified && statisticValue.getUserSpecified()) {
-                _specified.put(statistic, statisticValue.getUserSpecified());
-            }
-
         }
     }
 

@@ -38,7 +38,8 @@ public class HProfFilterTest {
     @Test
     public void regress() throws IOException {
         // Copy the resource to a real place
-        final Path tmp = Paths.get("build/tmp");
+        final Path tmp = Paths.get("target/tmp");
+        Files.createDirectories(tmp);
         final Path inputFile = Paths.get("profile.hprof.txt");
         final Path referenceFile = Paths.get("profile.hprof.filtered.ref.txt");
         final Path referencePath = tmp.resolve(referenceFile);
@@ -62,7 +63,8 @@ public class HProfFilterTest {
 
     @Test(expected = NoSuchFileException.class)
     public void missingInput() throws IOException {
-        final Path tmp = Paths.get("build/tmp");
+        final Path tmp = Paths.get("target/tmp");
+        Files.createDirectories(tmp);
         final Path inputFile = Paths.get("profile.doesnotexist.hprof.txt");
         final Path inputPath = tmp.resolve(inputFile);
         final HProfFilter filter = new HProfFilter(inputPath);
@@ -72,7 +74,8 @@ public class HProfFilterTest {
     @Test(expected = IllegalArgumentException.class)
     public void invalidSample() throws IOException {
         // Copy the resource to a real place
-        final Path tmp = Paths.get("build/tmp");
+        final Path tmp = Paths.get("target/tmp");
+        Files.createDirectories(tmp);
         final Path inputFile = Paths.get("profile.hprof.invalidSample.txt");
         final Path inputPath = tmp.resolve(inputFile);
         Resources.copy(Resources.getResource(inputFile.toString()), new FileOutputStream(inputPath.toFile()));
@@ -83,7 +86,8 @@ public class HProfFilterTest {
     @Test
     public void missingTrace() throws IOException {
         // Copy the resource to a real place
-        final Path tmp = Paths.get("build/tmp");
+        final Path tmp = Paths.get("target/tmp");
+        Files.createDirectories(tmp);
         final Path inputFile = Paths.get("profile.hprof.missingTrace.txt");
         final Path referenceFile = Paths.get("profile.hprof.missingTrace.filtered.ref.txt");
         final Path referencePath = tmp.resolve(referenceFile);
@@ -108,7 +112,8 @@ public class HProfFilterTest {
     @Test(expected = IllegalArgumentException.class)
     public void badTrace() throws IOException {
         // Copy the resource to a real place
-        final Path tmp = Paths.get("build/tmp");
+        final Path tmp = Paths.get("target/tmp");
+        Files.createDirectories(tmp);
         final Path inputFile = Paths.get("profile.hprof.badTrace.txt");
         final Path inputPath = tmp.resolve(inputFile);
         Resources.copy(Resources.getResource(inputFile.toString()), new FileOutputStream(inputPath.toFile()));
@@ -119,7 +124,8 @@ public class HProfFilterTest {
     @Test
     public void truncatedAfterHeader() throws IOException {
         // Copy the resource to a real place
-        final Path tmp = Paths.get("build/tmp");
+        final Path tmp = Paths.get("target/tmp");
+        Files.createDirectories(tmp);
         final Path inputFile = Paths.get("profile.hprof.truncatedAfterHeader.txt");
         final Path filteredFile = Paths.get("profile.hprof.truncatedAfterHeader.filtered.txt");
         final Path filteredPath = tmp.resolve(filteredFile);
@@ -141,7 +147,8 @@ public class HProfFilterTest {
     @Test
     public void truncatedInHeader() throws IOException {
         // Copy the resource to a real place
-        final Path tmp = Paths.get("build/tmp");
+        final Path tmp = Paths.get("target/tmp");
+        Files.createDirectories(tmp);
         final Path inputFile = Paths.get("profile.hprof.truncatedInHeader.txt");
         final Path filteredFile = Paths.get("profile.hprof.truncatedInHeader.filtered.txt");
         final Path filteredPath = tmp.resolve(filteredFile);

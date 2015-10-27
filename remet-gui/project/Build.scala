@@ -14,35 +14,33 @@
  * limitations under the License.
  */
 
-import com.arpnetworking.sbt.typescript.Import.TypescriptKeys
 import com.typesafe.sbt.SbtAspectj._
 import com.typesafe.sbt.SbtAspectj.AspectjKeys._
-import com.typesafe.sbt.rjs.Import._
-import com.typesafe.sbt.web.Import._
-import com.typesafe.sbt.digest.Import._
-import com.typesafe.sbt.gzip.Import._
-import com.typesafe.sbt.web.js.JS
 import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
-import RjsKeys._
 import de.johoop.findbugs4sbt.FindBugs._
 import de.johoop.findbugs4sbt.{Effort, Priority, ReportType}
+import net.virtualvoid.sbt.graph.Plugin.graphSettings
+import play.sbt.routes.RoutesKeys.routesGenerator
+import play.routes.compiler.InjectedRoutesGenerator
 import sbt._
 import Keys._
 
 object ApplicationBuild extends Build {
 
     val appName = "remet-gui"
-    val appVersion = "0.3.5"
-    val akkaVersion = "2.3.9"
+    val appVersion = "0.4.1"
+    val akkaVersion = "2.3.14"
     val jacksonVersion = "2.6.2"
 
-    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings
+    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings ++ graphSettings
 
     val appDependencies = Seq(
+      "com.arpnetworking.build" % "build-resources" % "1.0.2",
       "com.arpnetworking.logback" % "logback-steno" % "1.9.3",
-      "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.3.5",
       "com.arpnetworking.metrics" % "metrics-client" % "0.3.7",
-      "com.arpnetworking.metrics" % "tsd-core" % "0.3.4.GRPN.27",
+      "com.arpnetworking.metrics" %% "metrics-portal" % "0.4.3",
+      "com.arpnetworking.metrics" %% "metrics-portal" % "0.4.3" classifier "assets",
+      "com.arpnetworking.metrics" % "tsd-core" % "0.3.6",
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk7" % jacksonVersion,
@@ -50,29 +48,7 @@ object ApplicationBuild extends Build {
       "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonVersion,
       "com.google.code.findbugs" % "annotations" % "3.0.0",
       "com.google.guava" % "guava" % "18.0",
-      "com.google.inject" % "guice" % "4.0",
-      "com.google.inject.extensions" % "guice-assistedinject" % "4.0",
-      "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
-      "com.typesafe.akka" %% "akka-contrib" % akkaVersion,
-      "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-      "com.typesafe.play" % "play-ebean_2.11" % "1.0.0",
-      "org.elasticsearch" % "elasticsearch" % "1.7.2",
-      "org.flywaydb" % "flyway-play_2.10" % "2.2.0",
-      "org.postgresql" % "postgresql" % "9.4-1202-jdbc42",
-      "org.webjars" % "bean" % "1.0.14",
-      "org.webjars" % "bootstrap" % "3.2.0",
-      "org.webjars" % "d3js" % "3.4.8",
-      "org.webjars" % "durandal" % "2.1.0",
-      "org.webjars" % "flotr2" % "d43f8566e8",
-      "org.webjars" % "font-awesome" % "4.3.0-2",
-      "org.webjars" % "jQRangeSlider" % "5.7.0",
-      "org.webjars" % "jquery" % "2.1.1",
-      "org.webjars" % "jquery-ui" % "1.11.1",
-      "org.webjars" % "jquery-ui-themes" % "1.11.0",
-      "org.webjars" % "knockout" % "3.1.0",
-      "org.webjars" % "requirejs-text" % "2.0.10-1",
-      "org.webjars" % "typeaheadjs" % "0.10.4-1",
-      "org.webjars" % "underscorejs" % "1.6.0-3",
+      "net.sf.oval" % "oval" % "1.82",
       "com.github.tomakehurst" % "wiremock" % "1.57" % "test"
     )
 
@@ -80,6 +56,16 @@ object ApplicationBuild extends Build {
 
       // Generated unmanaged assests
       unmanagedResourceDirectories in Compile <+= baseDirectory( _ / "app/assets/unmanaged" ),
+
+      // Extract build resources
+      compile in Compile <<= (compile in Compile).dependsOn(Def.task {
+        val jar = (update in Compile).value
+          .select(configurationFilter("compile"))
+          .filter(_.name.startsWith("build-resources"))
+          .head
+        IO.unzip(jar, (target in Compile).value / "build-resources")
+        Seq.empty[File]
+      }),
 
       // Compiler warnings as errors
       javacOptions ++= Seq(
@@ -90,20 +76,13 @@ object ApplicationBuild extends Build {
       ),
 
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
-
-      TypescriptKeys.moduleKind := "amd",
-
-      mainConfig := "start_app",
-      mainModule := "start_app",
-      buildProfile := JS.Object("wrapShim" -> true),
-      pipelineStages := Seq(rjs, digest, gzip),
-      modules += JS.Object("name" -> "classes/shell"),
+      routesGenerator := InjectedRoutesGenerator,
 
       version := appVersion,
 
       scalaVersion := "2.11.6",
       resolvers += Resolver.mavenLocal,
-      
+
       libraryDependencies ++= appDependencies,
 
       // AspectJ
@@ -116,7 +95,7 @@ object ApplicationBuild extends Build {
 
       // Findbugs
       findbugsReportType := Some(ReportType.Html),
-      findbugsReportPath := Some(crossTarget.value / "findbugs.html"),
+      findbugsReportPath := Some(target.value / "findbugs" / "findbugs.html"),
       findbugsPriority := Priority.Low,
       findbugsEffort := Effort.Maximum,
       findbugsExcludeFilters := Some(
@@ -125,7 +104,10 @@ object ApplicationBuild extends Build {
             <Class name="~views\.html\..*"/>
           </Match>
           <Match>
-            <Class name="~Routes.*"/>
+            <Class name="~models.ebean.*"/>
+          </Match>
+          <Match>
+            <Class name="~router.Routes.*"/>
           </Match>
           <Match>
             <Class name="~_routes_.*"/>

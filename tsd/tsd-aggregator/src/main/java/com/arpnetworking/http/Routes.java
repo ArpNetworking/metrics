@@ -39,6 +39,7 @@ import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdaggregator.Status;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import scala.concurrent.Future;
 import scala.runtime.AbstractFunction1;
 
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+@SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
 public final class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>> {
 
     /**
@@ -177,5 +179,4 @@ public final class Routes extends AbstractFunction1<HttpRequest, Future<HttpResp
     private static final String HEALTHY_STATE = "HEALTHY";
 
     private static final ContentType JSON_CONTENT_TYPE = ContentType.create(MediaTypes.APPLICATION_JSON);
-
 }

@@ -67,7 +67,7 @@ public final class TestBeanFactory {
         return new DefaultMetric.Builder()
                 .setType(MetricType.COUNTER)
                 .setValues(Collections.singletonList(new Quantity.Builder()
-                        .setValue(3.14d)
+                        .setValue(1.23d)
                         .build()));
     }
 

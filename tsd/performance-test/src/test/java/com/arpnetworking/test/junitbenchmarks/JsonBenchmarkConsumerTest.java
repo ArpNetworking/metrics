@@ -40,7 +40,7 @@ import java.nio.file.Paths;
 public class JsonBenchmarkConsumerTest {
     @Test
     public void testNormalBenchmarkCase() throws IOException {
-        final Path path = Paths.get("build/tmp/test/testConsumer.json");
+        final Path path = Paths.get("target/tmp/test/testConsumer.json");
         path.toFile().deleteOnExit();
         Files.deleteIfExists(path);
         final JsonBenchmarkConsumer consumer = new JsonBenchmarkConsumer(path);
@@ -92,7 +92,7 @@ public class JsonBenchmarkConsumerTest {
 
     @Test
     public void testMultipleClose() throws IOException {
-        final Path path = Paths.get("build/tmp/test/testConsumerMultiClose.json");
+        final Path path = Paths.get("target/tmp/test/testConsumerMultiClose.json");
         path.toFile().deleteOnExit();
         Files.deleteIfExists(path);
         final JsonBenchmarkConsumer consumer = new JsonBenchmarkConsumer(path);
@@ -103,11 +103,12 @@ public class JsonBenchmarkConsumerTest {
         // Should not throw an exception
         consumer.close();
     }
+
     @Test
     public void testCreatesParentDirs() throws IOException {
-        final Path path = Paths.get("build/tmp/test/another/directory/testConsumerMultiClose.json");
+        final Path path = Paths.get("target/tmp/test/another/directory/testConsumerMultiClose.json");
         path.toFile().deleteOnExit();
-        FileUtils.deleteDirectory(Paths.get("build/tmp/test/another").toFile());
+        FileUtils.deleteDirectory(Paths.get("target/tmp/test/another").toFile());
         final JsonBenchmarkConsumer consumer = new JsonBenchmarkConsumer(path);
 
         final Result result = DataCreator.createResult();
@@ -117,7 +118,7 @@ public class JsonBenchmarkConsumerTest {
 
     @Test(expected = IllegalStateException.class)
     public void testWriteAfterClose() throws IOException {
-        final Path path = Paths.get("build/tmp/test/testConsumerMultiClose.json");
+        final Path path = Paths.get("target/tmp/test/testConsumerMultiClose.json");
         path.toFile().deleteOnExit();
         Files.deleteIfExists(path);
         final JsonBenchmarkConsumer consumer = new JsonBenchmarkConsumer(path);
@@ -131,7 +132,7 @@ public class JsonBenchmarkConsumerTest {
 
     @Test
     public void testWriteInvalidFile() throws IOException {
-        final Path path = Paths.get("/tmp");
+        final Path path = Paths.get("target/tmp/test/does_not_exist");
         final JsonBenchmarkConsumer consumer = new JsonBenchmarkConsumer(path);
 
         final Result result = DataCreator.createResult();

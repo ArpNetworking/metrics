@@ -17,6 +17,7 @@ package com.arpnetworking.tsdcore.sinks;
 
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import akka.dispatch.Recover;
 import akka.pattern.Patterns;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
@@ -24,14 +25,18 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.common.collect.EvictingQueue;
-import org.apache.http.HttpStatus;
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.Request;
+import com.ning.http.client.Response;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.joda.time.Period;
 import play.libs.F;
-import play.libs.ws.WSRequest;
-import play.libs.ws.WSResponse;
-import play.libs.ws.ning.NingWSClient;
+import scala.PartialFunction;
 import scala.concurrent.duration.FiniteDuration;
+import scala.runtime.AbstractPartialFunction;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +58,7 @@ public class HttpSinkActor extends UntypedActor {
      * @return A new Props
      */
     public static Props props(
-            final NingWSClient client,
+            final AsyncHttpClient client,
             final HttpPostSink sink,
             final int maximumConcurrency,
             final int maximumQueueSize,
@@ -71,7 +76,7 @@ public class HttpSinkActor extends UntypedActor {
      * @param spreadPeriod Maximum time to delay sending new aggregates to spread load.
      */
     public HttpSinkActor(
-            final NingWSClient client,
+            final AsyncHttpClient client,
             final HttpPostSink sink,
             final int maximumConcurrency,
             final int maximumQueueSize,
@@ -153,8 +158,9 @@ public class HttpSinkActor extends UntypedActor {
     private void processCompletedRequest(final PostComplete complete) {
         _postRequests++;
         _inflightRequestsCount--;
-        final int responseStatusCode = complete.getResponse().getStatus();
-        if (responseStatusCode == HttpStatus.SC_OK) {
+        final Response response = complete.getResponse();
+        final int responseStatusCode = response.getStatusCode();
+        if (responseStatusCode == HttpResponseStatus.OK.code()) {
             LOGGER.debug()
                     .setMessage("Post accepted")
                     .addData("sink", _sink)
@@ -162,10 +168,18 @@ public class HttpSinkActor extends UntypedActor {
                     .addContext("actor", self())
                     .log();
         } else {
+            String responseBody;
+            try {
+                responseBody = response.getResponseBody();
+            } catch (final IOException e) {
+                responseBody = null;
+            }
+
             LOGGER.warn()
                     .setMessage("Post rejected")
                     .addData("sink", _sink)
                     .addData("status", responseStatusCode)
+                    .addData("body", responseBody)
                     .addContext("actor", self())
                     .log();
         }
@@ -183,11 +197,11 @@ public class HttpSinkActor extends UntypedActor {
                 .log();
 
         if (!periodicData.getData().isEmpty() || !periodicData.getConditions().isEmpty()) {
-            final Collection<WSRequest> requests = _sink.createRequests(_client, periodicData);
+            final Collection<Request> requests = _sink.createRequests(_client, periodicData);
             final boolean pendingWasEmpty = _pendingRequests.isEmpty();
 
             final int evicted = Math.max(0, requests.size() - _pendingRequests.remainingCapacity());
-            for (final WSRequest request : requests) {
+            for (final Request request : requests) {
                 // TODO(vkoskela): Add logging to client [MAI-89]
                 // TODO(vkoskela): Add instrumentation to client [MAI-90]
                 _pendingRequests.offer(request);
@@ -237,10 +251,24 @@ public class HttpSinkActor extends UntypedActor {
     }
 
     private void fireNextRequest() {
-        final WSRequest request = _pendingRequests.poll();
+        final Request request = _pendingRequests.poll();
         _inflightRequestsCount++;
 
-        final F.Promise<Object> responsePromise = request.execute()
+        final scala.concurrent.Promise<Response> scalaPromise = scala.concurrent.Promise$.MODULE$.<Response>apply();
+        _client.executeRequest(request, new AsyncCompletionHandler<Response>() {
+            @Override
+            public Response onCompleted(final Response response) throws Exception {
+                scalaPromise.success(response);
+                return response;
+            }
+
+            @Override
+            public void onThrowable(final Throwable throwable) {
+                scalaPromise.failure(throwable);
+            }
+        });
+        // TODO(vkoskela): Remove Play Promise usage and Play Framework dependency. [AINT-?]
+        final F.Promise<Object> responsePromise = F.Promise.<Response>wrap(scalaPromise.future())
                 .<Object>map(PostComplete::new)
                 .recover(PostFailure::new);
         Patterns.pipe(responsePromise.wrapped(), context().dispatcher()).to(self());
@@ -263,8 +291,8 @@ public class HttpSinkActor extends UntypedActor {
     private long _postRequests = 0;
     private boolean _waiting = false;
     private final int _maximumConcurrency;
-    private final EvictingQueue<WSRequest> _pendingRequests;
-    private final NingWSClient _client;
+    private final EvictingQueue<Request> _pendingRequests;
+    private final AsyncHttpClient _client;
     private final HttpPostSink _sink;
     private final int _spreadingDelayMillis;
 
@@ -310,15 +338,15 @@ public class HttpSinkActor extends UntypedActor {
      * Message class to wrap an errored HTTP request.
      */
     private static final class PostComplete {
-        public PostComplete(final WSResponse response) {
+        public PostComplete(final Response response) {
             _response = response;
         }
 
-        public WSResponse getResponse() {
+        public Response getResponse() {
             return _response;
         }
 
-        private final WSResponse _response;
+        private final Response _response;
     }
 
     /**

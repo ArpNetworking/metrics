@@ -333,7 +333,7 @@ public final class Main implements Launchable {
 
     private static final class PipelinesLaunchable implements Launchable, Runnable {
 
-        public PipelinesLaunchable(final ObjectMapper objectMapper, final File directory) {
+        private PipelinesLaunchable(final ObjectMapper objectMapper, final File directory) {
             _objectMapper = objectMapper;
             _directory = directory;
             _fileToPipelineLaunchables = Maps.newConcurrentMap();

@@ -36,7 +36,7 @@ import java.util.Collections;
  */
 public class TimeThresholdSinkTest {
     @Before
-    public void setup() {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
     }
 

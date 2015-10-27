@@ -21,21 +21,14 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 // The SBT Community repository
 resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin-releases/"
 
-// Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.4.3")
+addSbtPlugin("de.johoop" %% "findbugs4sbt" % "1.4.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-aspectj" % "0.10.3")
 
-addSbtPlugin("de.johoop" %% "findbugs4sbt" % "1.4.0")
+addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.4.3")
 
-addSbtPlugin("com.typesafe.sbt" %% "sbt-rjs" % "1.0.7")
-
-addSbtPlugin("com.typesafe.sbt" %% "sbt-digest" % "1.1.0")
-
-addSbtPlugin("com.typesafe.sbt" %% "sbt-gzip" % "1.0.0")
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.5")
 
 libraryDependencies ++= Seq(
     "com.puppycrawl.tools" % "checkstyle" % "6.3"
 )
-
-addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.1.5")

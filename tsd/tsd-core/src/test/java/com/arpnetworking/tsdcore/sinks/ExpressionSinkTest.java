@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ExpressionSinkTest {
 
     @Before
-    public void setup() {
+    public void setUp() {
         _expressions = new AtomicReference<>();
         _listener = new ExpressionSink.ConfigurationListener(_expressions);
     }

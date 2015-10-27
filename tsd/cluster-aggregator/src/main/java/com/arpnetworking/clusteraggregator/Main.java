@@ -174,7 +174,7 @@ public final class Main implements Launchable {
                 .log();
         injector.getInstance(
                 Key.get(
-                        new TypeLiteral<Source<IncomingConnection, Future<ServerBinding>>>() {},
+                        SOURCE_TYPE_LITERAL,
                         Names.named("http-server")));
     }
 
@@ -220,4 +220,7 @@ public final class Main implements Launchable {
     private ActorSystem _system;
     private static final Logger LOGGER = com.arpnetworking.steno.LoggerFactory.getLogger(Main.class);
     private static final Duration SHUTDOWN_TIMEOUT = Duration.standardMinutes(3);
+    private static final SourceTypeLiteral SOURCE_TYPE_LITERAL = new SourceTypeLiteral();
+
+    private static class SourceTypeLiteral extends TypeLiteral<Source<IncomingConnection, Future<ServerBinding>>> {}
 }

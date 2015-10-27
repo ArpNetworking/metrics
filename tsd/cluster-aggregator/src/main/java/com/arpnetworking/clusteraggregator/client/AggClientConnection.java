@@ -27,24 +27,17 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.Messages;
 import com.arpnetworking.tsdcore.model.AggregationMessage;
-import com.arpnetworking.tsdcore.model.Quantity;
-import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.statistics.CountStatistic;
 import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.GeneratedMessage;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -98,7 +91,7 @@ public class AggClientConnection extends UntypedActor {
         if (message instanceof Tcp.Received) {
             final Tcp.Received received = (Tcp.Received) message;
             final ByteString data = received.data();
-            LOGGER.debug()
+            LOGGER.trace()
                     .setMessage("Received a tcp message")
                     .addData("length", data.length())
                     .addContext("actor", self())
@@ -106,7 +99,7 @@ public class AggClientConnection extends UntypedActor {
             _buffer = _buffer.concat(data);
             processMessages();
         } else if (message instanceof Tcp.CloseCommand) {
-            LOGGER.info()
+            LOGGER.debug()
                     .setMessage("Connection timeout hit, cycling connection")
                     .addData("remote", _remoteAddress)
                     .addContext("actor", self())
@@ -230,7 +223,7 @@ public class AggClientConnection extends UntypedActor {
             }
             final Messages.SparseHistogramSupportingData.Builder builder = Messages.SparseHistogramSupportingData.newBuilder();
             builder.setUnit(aggRecord.getUnit());
-            for (final Map.Entry<Double, Integer> entry : histogram.getValues()) {
+            for (final Map.Entry<Double, Integer> entry : histogram.getSnapshot().getValues()) {
                 builder.addEntriesBuilder()
                         .setBucket(entry.getKey())
                         .setCount(entry.getValue())
@@ -275,37 +268,6 @@ public class AggClientConnection extends UntypedActor {
         return Optional.of(setBuilder.build());
     }
 
-    private List<Quantity> sampleizeDoubles(final List<Double> samplesList, final Optional<Unit> recordUnit) {
-        final Quantity.Builder builder = new Quantity.Builder().setUnit(recordUnit.orNull());
-        final int skipFactor = Math.max(samplesList.size() / 1000, 1); // Determine number to increment the index by
-
-        // Target for 1k samples
-        final Quantity[] samples = new Quantity[(int) Math.ceil(samplesList.size() / (double) skipFactor)];
-        int index = 0;
-        for (int samplesIndex = 0; samplesIndex < samplesList.size(); samplesIndex += skipFactor) {
-            samples[index++] = builder.setValue(samplesList.get(samplesIndex)).build();
-        }
-        if (samplesList.size() != samples.length) {
-            LOGGER.debug()
-                    .setMessage("Downsampling AggregatedData")
-                    .addData("originalSize", samplesList.size())
-                    .addData("resampledSize", samples.length)
-                    .addContext("actor", self())
-                    .log();
-        }
-        return createImmutableListFromArray(samples);
-    }
-
-    private static <T> ImmutableList<T> createImmutableListFromArray(final T[] array) {
-        try {
-            @SuppressWarnings("unchecked")
-            final ImmutableList<T> list = (ImmutableList<T>) IMMUTABLE_FROM_ARRAY.invoke(null, new Object[]{array});
-            return list;
-        } catch (final IllegalAccessException | InvocationTargetException e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
     private Optional<String> _hostName = Optional.absent();
     private Optional<String> _clusterName = Optional.absent();
     private ByteString _buffer = ByteString.empty();
@@ -313,16 +275,17 @@ public class AggClientConnection extends UntypedActor {
     private final InetSocketAddress _remoteAddress;
     private final StatisticFactory _statisticFactory = new StatisticFactory();
     private static final Logger LOGGER = LoggerFactory.getLogger(AggClientConnection.class);
-    private static final Method IMMUTABLE_FROM_ARRAY;
 
     private static final boolean IS_ENABLED = true;
 
     static {
+        // Determine the local host name
+        String localHost = "UNKNOWN";
         try {
-            IMMUTABLE_FROM_ARRAY = ImmutableList.class.getDeclaredMethod("asImmutableList", Object[].class);
-            IMMUTABLE_FROM_ARRAY.setAccessible(true);
-        } catch (final NoSuchMethodException e) {
-            throw Throwables.propagate(e);
+            localHost = InetAddress.getLocalHost().getCanonicalHostName();
+            LOGGER.info(String.format("Determined local host name as: %s", localHost));
+        } catch (final UnknownHostException e) {
+            LOGGER.warn("Unable to determine local host name", e);
         }
     }
 }

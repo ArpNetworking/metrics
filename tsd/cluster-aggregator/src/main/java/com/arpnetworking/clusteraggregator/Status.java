@@ -130,43 +130,22 @@ public class Status extends UntypedActor {
                 new MetricsRequest(),
                 Timeout.apply(3, TimeUnit.SECONDS))
                 .map(new CastMapper<>(), executor)
-                .recover(
-                        new Recover<BookkeeperData>() {
-                             @Override
-                             public BookkeeperData recover(final Throwable failure) {
-                                 return null;
-                             }
-                         },
-                        executor);
+                .recover(new AsNullRecovery<>(), executor);
         final Future<ClusterStatusCache.StatusResponse> clusterStateFuture =
                 Patterns.ask(
                         _clusterStatusCache,
                         new ClusterStatusCache.GetRequest(),
                         Timeout.apply(3, TimeUnit.SECONDS))
                 .map(CAST_MAPPER, executor)
-                .recover(
-                        new Recover<ClusterStatusCache.StatusResponse>() {
-                            @Override
-                            public ClusterStatusCache.StatusResponse recover(final Throwable failure) throws Throwable {
-                                return null;
-                            }
-                        },
-                        executor);
+                .recover(new AsNullRecovery<>(), executor);
 
         final Future<Map<Period, PeriodMetrics>> localMetricsFuture =
                 Patterns.ask(
                         _localMetrics,
                         new MetricsRequest(),
                         Timeout.apply(3, TimeUnit.SECONDS))
-                .map(new CastMapper<Object, Map<Period, PeriodMetrics>>(), executor)
-                .recover(
-                        new Recover<Map<Period, PeriodMetrics>>() {
-                            @Override
-                            public Map<Period, PeriodMetrics> recover(final Throwable failure) throws Throwable {
-                                return null;
-                            }
-                        },
-                        executor);
+                .map(new CastMapper<>(), executor)
+                .recover(new AsNullRecovery<>(), executor);
 
         final Future<StatusResponse> future = new CollectFutureBuilder<StatusResponse>()
                 .addFuture(bookkeeperFuture)
@@ -204,6 +183,13 @@ public class Status extends UntypedActor {
     private final ActorRef _localMetrics;
 
     private static final CastMapper<Object, ClusterStatusCache.StatusResponse> CAST_MAPPER = new CastMapper<>();
+
+    private static class AsNullRecovery<T> extends Recover<T> {
+        @Override
+        public T recover(final Throwable failure) {
+            return null;
+        }
+    }
 
     /**
      * Represents a health check request.

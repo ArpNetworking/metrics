@@ -1,16 +1,25 @@
-# Gradle
-.settings
-.classpath
-.gradle
-build
-*/bin
-gradle-app.setting
+# Output
+target/
+logs/
+pom.xml.versionsBackup
+dependency-reduced-pom.xml
 
-# Netbeans
-.nb-gradle
-
-# Projects
+# Generated
 **/src/main/resources/status.json
-cluster-aggregator/journal
-cluster-aggregator/log
-cluster-aggregator/snapshots
+
+# Eclipse
+.metadata/
+.externalToolBuilders/
+maven-eclipse.xml
+bin/
+eclipse-bin/
+**/.classpath
+**/RemoteSystemsTempFiles/
+
+# IntelliJ
+.idea
+.settings/
+*.iml
+
+# Mac
+.DS_Store

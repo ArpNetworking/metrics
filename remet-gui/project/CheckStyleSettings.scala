@@ -26,27 +26,26 @@ object CheckstyleSettings {
   val checkstyleTask = checkstyle <<=
     (streams, baseDirectory, sourceDirectory in Compile, target) map {
       (streams, base, src, target) =>
-      import com.puppycrawl.tools.checkstyle.Main.{ main => CsMain }
-      val outputDir = (target / "checkstyle").mkdirs
-      val outputFile = (target / "checkstyle" / "checkstyle-report.xml").getAbsolutePath
-      val inputDir = src.getAbsolutePath
-      val buildDir = (base / ".." / "build").getAbsoluteFile
-      val args = List(
-        "-c", (buildDir / "checkstyle.xml").getAbsolutePath,
-        "-f", "xml",
-        "-o", outputFile,
-        inputDir
-      )
+        import com.puppycrawl.tools.checkstyle.Main.{ main => CsMain }
+        val outputDir = (target / "checkstyle").mkdirs
+        val outputFile = (target / "checkstyle" / "checkstyle-report.xml").getAbsolutePath
+        val inputDir = src.getAbsolutePath
+        val buildDir = (target / "build-resources").getAbsoluteFile
+        val args = List(
+          "-c", (buildDir / "checkstyle.xml").getAbsolutePath,
+          "-f", "xml",
+          "-o", outputFile,
+          inputDir
+        )
 
-      System.setProperty("samedir", buildDir.toString)
+        System.setProperty("samedir", buildDir.toString)
 
-
-      trappingExits {
-        CsMain(args.toArray)
-      } match {
-        case 0 =>
-        case _ => throw CheckstyleFailedException
-      }
+        trappingExits {
+          CsMain(args.toArray)
+        } match {
+          case 0 =>
+          case _ => throw CheckstyleFailedException
+        }
     }
 
   def trappingExits(thunk: => Unit): Int = {

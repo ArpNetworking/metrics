@@ -109,7 +109,7 @@ public final class MappingSource extends BaseSource {
     // NOTE: Package private for testing
     /* package private */ static final class MappingObserver implements Observer {
 
-        public MappingObserver(final MappingSource source, final Map<Pattern, List<String>> findAndReplace) {
+        /* package private */ MappingObserver(final MappingSource source, final Map<Pattern, List<String>> findAndReplace) {
             _source = source;
             _findAndReplace = findAndReplace;
         }
@@ -149,12 +149,9 @@ public final class MappingSource extends BaseSource {
             _source.notify(
                     new DefaultRecord.Builder()
                             .setMetrics(
-                                    Maps.transformEntries(mergedMetrics, new Maps.EntryTransformer<String, MergingMetric, Metric>() {
-                                        @Override
-                                        public Metric transformEntry(final String key, final MergingMetric mergingMetric) {
-                                            return OvalBuilder.clone(mergingMetric, new DefaultMetric.Builder()).build();
-                                        }
-                                    }))
+                                    Maps.transformEntries(
+                                            mergedMetrics,
+                                            (key, mergingMetric) -> OvalBuilder.clone(mergingMetric, new DefaultMetric.Builder()).build()))
                             .setTime(record.getTime())
                             .setAnnotations(record.getAnnotations())
                             .build());
@@ -184,9 +181,9 @@ public final class MappingSource extends BaseSource {
     }
 
     // NOTE: Package private for testing
-    /* package private */static final class MergingMetric implements Metric {
+    /* package private */ static final class MergingMetric implements Metric {
 
-        public MergingMetric(final Metric metric) {
+        /* package private */ MergingMetric(final Metric metric) {
             _type = metric.getType();
             _values = Lists.newArrayList(metric.getValues());
         }

@@ -1,0 +1,26 @@
+# Output
+target/
+logs/
+pom.xml.versionsBackup
+dependency-reduced-pom.xml
+
+# Temporary state
+journal
+snapshots
+
+# Eclipse
+.metadata/
+.externalToolBuilders/
+maven-eclipse.xml
+bin/
+eclipse-bin/
+**/.classpath
+**/RemoteSystemsTempFiles/
+
+# IntelliJ
+.idea
+.settings/
+*.iml
+
+# Mac
+.DS_Store

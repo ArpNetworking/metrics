@@ -27,12 +27,13 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.collect.Lists;
+import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
-import play.libs.ws.WSRequest;
-import play.libs.ws.ning.NingWSClient;
 
 import java.net.URI;
 import java.util.Collection;
@@ -88,11 +89,13 @@ public abstract class HttpPostSink extends BaseSink {
      * @param serializedData The serialized data.
      * @return <code>HttpRequest</code> to execute
      */
-    protected WSRequest createRequest(final NingWSClient client, final String serializedData) {
-        return client.url(_uri.toString())
-                .setContentType(MediaTypes.APPLICATION_JSON.toString())
+    protected Request createRequest(final AsyncHttpClient client, final byte[] serializedData) {
+        return new RequestBuilder()
+                .setUrl(_uri.toString())
+                .setHeader("Content-Type", MediaTypes.APPLICATION_JSON.toString())
                 .setBody(serializedData)
-                .setMethod(HttpMethods.POST.value());
+                .setMethod(HttpMethods.POST.value())
+                .build();
     }
 
     /**
@@ -103,12 +106,13 @@ public abstract class HttpPostSink extends BaseSink {
      * @param periodicData The <code>PeriodicData</code> to be serialized.
      * @return The <code>HttpRequest</code> instance to execute.
      */
-    protected Collection<WSRequest> createRequests(
-            final NingWSClient client,
+    protected Collection<Request> createRequests(
+            final AsyncHttpClient client,
             final PeriodicData periodicData) {
-        final Collection<WSRequest> requests = Lists.newArrayList();
-        for (final String serializedData : serialize(periodicData)) {
-            requests.add(createRequest(client, serializedData));
+        final Collection<byte[]> serializedData = serialize(periodicData);
+        final Collection<Request> requests = Lists.newArrayListWithExpectedSize(serializedData.size());
+        for (final byte[] serializedDatum : serializedData) {
+            requests.add(createRequest(client, serializedDatum));
         }
         return requests;
     }
@@ -123,13 +127,13 @@ public abstract class HttpPostSink extends BaseSink {
     }
 
     /**
-     * Serialize the <code>AggregatedData</code> and <code>Condition</code> instances
+     * Serialize the <code>PeriodicData</code> and <code>Condition</code> instances
      * for posting.
      *
      * @param periodicData The <code>PeriodicData</code> to be serialized.
-     * @return The serialized representation of <code>AggregatedData</code>.
+     * @return The serialized representation of <code>PeriodicData</code>.
      */
-    protected abstract Collection<String> serialize(final PeriodicData periodicData);
+    protected abstract Collection<byte[]> serialize(final PeriodicData periodicData);
 
     /**
      * Protected constructor.
@@ -139,7 +143,7 @@ public abstract class HttpPostSink extends BaseSink {
     protected HttpPostSink(final Builder<?, ?> builder) {
         super(builder);
         _uri = builder._uri;
-        final NingWSClient client = new NingWSClient(new AsyncHttpClientConfig.Builder().build());
+        final AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
         _sinkActor = builder._actorSystem.actorOf(
                 HttpSinkActor.props(client, this, builder._maximumConcurrency, builder._maximumQueueSize, builder._spreadPeriod));
     }
@@ -223,6 +227,7 @@ public abstract class HttpPostSink extends BaseSink {
         protected Builder(final Class<S> targetClass) {
             super(targetClass);
         }
+
         @NotNull
         private URI _uri;
         @JacksonInject

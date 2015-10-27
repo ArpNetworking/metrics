@@ -25,3 +25,10 @@ maven-eclipse.xml
 
 # Mac
 .DS_Store
+
+# Collectd
+extras/collectd-extra/collectd-5.4.1
+extras/collectd-extra/collectd-dotci.tar.gz
+extras/collectd-extra/collectd-dotci
+extras/collectd-extra/rollerize
+
