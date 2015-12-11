@@ -2,7 +2,7 @@ Tsd
 ===
 
 This folder contains projects associated with the processing and transmission of metrics.  The build is structured
-as a Gradle project with sub-projects for the various components.
+as a Maven project with sub-projects for each component.
 
 Sub-projects
 ------------
@@ -11,7 +11,7 @@ Sub-projects
 [Generator](generator/README.md) - Generates metrics data for testing the system.
 [Cluster Aggregator](cluster-aggregator/README.md) - Responsible for aggregating aggregates from multiple sources.
 [Performance-Test](performance-test/README.md) - Helper classes for performance testing.
-TSD Core - Core library containing shared metrics functionality. 
+TSD Core - Core library containing shared metrics functionality.
 
 Building All Projects
 ---------------------
@@ -21,7 +21,8 @@ Prerequisites:
 * [Protobuf 2.5.0](https://code.google.com/p/protobuf/downloads/list)
 
 Building:
-    tsd> ./gradlew installApp
+    tsd> mvn wrapper:wrapper -N
+    tsd> ./mvnw install
 
 Running
 -------

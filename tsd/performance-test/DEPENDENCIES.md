@@ -10,10 +10,10 @@ Project                    | License                    | Project link
 ---------------------------|----------------------------|-------------
 Checkstyle                 | LGPL 2                     | http://checkstyle.sourceforge.net/
 FindBugs                   | LGPL                       | http://findbugs.sourceforge.net/ 
-Gradle                     | Apache License 2           | http://www.gradle.org/ 
 Jacoco                     | Eclipse Public License 1.0 | http://www.eclemma.org/jacoco/
 jUnit                      | Eclipse Public License 1.0 | https://github.com/junit-team/junit/
 jUnit Benchmarks           | Apache License 2           | http://labs.carrotsearch.com/junit-benchmarks.html
+Maven                      | Apache License 2           | http://maven.apache.org/
 Mockito                    | MIT                        | https://code.google.com/p/mockito/
 
 

@@ -127,6 +127,30 @@ public class QueryLogParserV2eTest {
     }
 
     @Test
+    public void testNaNValues() throws ParsingException, IOException {
+        final Record record = parseRecord("QueryLogParserV2eTest.testNaNValues.json");
+        Assert.assertNotNull(record);
+
+        Assert.assertEquals(DateTime.parse("2014-03-24T12:15:41.010Z"), record.getTime());
+        Assert.assertTrue(record.getAnnotations().isEmpty());
+
+        final Map<String, ? extends Metric> variables = record.getMetrics();
+        Assert.assertEquals(3, variables.size());
+
+        Assert.assertThat(variables, Matchers.<String>hasKey("t1"));
+        final Metric t1 = variables.get("t1");
+        Assert.assertTrue(t1.getValues().isEmpty());
+
+        Assert.assertThat(variables, Matchers.<String>hasKey("g1"));
+        final Metric g1 = variables.get("g1");
+        Assert.assertTrue(g1.getValues().isEmpty());
+
+        Assert.assertThat(variables, Matchers.<String>hasKey("c1"));
+        final Metric c1 = variables.get("c1");
+        Assert.assertTrue(c1.getValues().isEmpty());
+    }
+
+    @Test
     public void testUpperCaseVersion() throws ParsingException, IOException {
         final Record record = parseRecord("QueryLogParserV2eTest.testUpperCaseVersion.json");
         Assert.assertNotNull(record);

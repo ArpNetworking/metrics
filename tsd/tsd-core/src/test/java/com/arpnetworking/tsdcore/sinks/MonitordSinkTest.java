@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Collection;
 
@@ -79,7 +80,7 @@ public class MonitordSinkTest {
         final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
                 .setData(data)
                 .build();
-        final Collection<String> results = monitordSink.serialize(periodicData);
+        final Collection<byte[]> results = monitordSink.serialize(periodicData);
         Assert.assertEquals(1, results.size());
     }
 
@@ -107,7 +108,7 @@ public class MonitordSinkTest {
         final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
                 .setData(data)
                 .build();
-        final Collection<String> results = monitordSink.serialize(periodicData);
+        final Collection<byte[]> results = monitordSink.serialize(periodicData);
         Assert.assertEquals(2, results.size());
     }
 
@@ -135,7 +136,7 @@ public class MonitordSinkTest {
         final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
                 .setData(data)
                 .build();
-        final Collection<String> results = monitordSink.serialize(periodicData);
+        final Collection<byte[]> results = monitordSink.serialize(periodicData);
         Assert.assertEquals(2, results.size());
     }
 
@@ -162,7 +163,7 @@ public class MonitordSinkTest {
         final PeriodicData periodicData = TestBeanFactory.createPeriodicDataBuilder()
                 .setData(data)
                 .build();
-        final Collection<String> results = monitordSink.serialize(periodicData);
+        final Collection<byte[]> results = monitordSink.serialize(periodicData);
         Assert.assertEquals(2, results.size());
     }
 

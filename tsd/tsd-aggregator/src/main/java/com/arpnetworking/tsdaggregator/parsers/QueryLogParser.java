@@ -19,6 +19,9 @@ import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.jackson.EnumerationDeserializer;
 import com.arpnetworking.jackson.EnumerationDeserializerStrategyUsingToUpperCase;
 import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
+import com.arpnetworking.steno.RateLimitLogBuilder;
 import com.arpnetworking.tsdaggregator.model.DefaultMetric;
 import com.arpnetworking.tsdaggregator.model.DefaultRecord;
 import com.arpnetworking.tsdaggregator.model.Metric;
@@ -31,6 +34,7 @@ import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.parsers.Parser;
 import com.arpnetworking.tsdcore.parsers.exceptions.ParsingException;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -40,14 +44,14 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import net.sf.oval.exception.ConstraintsViolatedException;
-
 import org.joda.time.DateTime;
 import org.joda.time.chrono.ISOChronology;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -327,7 +331,7 @@ public final class QueryLogParser implements Parser<Record> {
         if (versionNode == null) {
             throw new ParsingException(String.format("Unable to determine version; jsonNode=%s", jsonNode));
         }
-        final String version = versionNode.textValue().toLowerCase();
+        final String version = versionNode.textValue().toLowerCase(Locale.getDefault());
         switch (version) {
             case "2c":
                 return parseV2cLogLine(jsonNode);
@@ -499,13 +503,28 @@ public final class QueryLogParser implements Parser<Record> {
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
     private static final String DATA_KEY = "data";
     private static final String VERSION_KEY = "version";
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueryLogParser.class);
+    private static final RateLimitLogBuilder INVALID_SAMPLE_LOG = new RateLimitLogBuilder(
+            LOGGER.warn().setMessage("Invalid sample for metric"),
+            Duration.ofMinutes(1));
 
     private static final Function<String, Quantity> VERSION_2C_SAMPLE_TO_QUANTITY = new Function<String, Quantity>() {
         @Override
         public Quantity apply(final String sample) {
-            try {
-                return sample != null ? new Quantity.Builder().setValue(Double.parseDouble(sample)).build() : null;
-            } catch (final NumberFormatException nfe) {
+            if (sample != null) {
+                try {
+                    final double value = Double.parseDouble(sample);
+                    if (Double.isFinite(value)) {
+                        return new Quantity.Builder().setValue(value).build();
+                    } else {
+                        // TODO(barp): Create a counter for invalid metrics [AINT-680]
+                        INVALID_SAMPLE_LOG.addData("value", sample).log();
+                        return null;
+                    }
+                } catch (final NumberFormatException nfe) {
+                    return null;
+                }
+            } else {
                 return null;
             }
         }
@@ -514,14 +533,34 @@ public final class QueryLogParser implements Parser<Record> {
     private static final Function<Version2d.Sample, Quantity> VERSION_2D_SAMPLE_TO_QUANTITY = new Function<Version2d.Sample, Quantity>() {
         @Override
         public Quantity apply(final Version2d.Sample sample) {
-            return sample != null ? new Quantity.Builder().setValue(sample.getValue()).setUnit(sample.getUnit().orNull()).build() : null;
+            if (sample != null) {
+                if (Double.isFinite(sample.getValue())) {
+                    return new Quantity.Builder().setValue(sample.getValue()).setUnit(sample.getUnit().orNull()).build();
+                } else {
+                    // TODO(barp): Create a counter for invalid metrics [AINT-680]
+                    INVALID_SAMPLE_LOG.addData("value", sample.getValue()).log();
+                    return null;
+                }
+            } else {
+                return null;
+            }
         }
     };
 
     private static final Function<Version2e.Sample, Quantity> VERSION_2E_SAMPLE_TO_QUANTITY = new Function<Version2e.Sample, Quantity>() {
         @Override
         public Quantity apply(final Version2e.Sample sample) {
-            return sample != null ? new Quantity.Builder().setValue(sample.getValue()).setUnit(sample.getUnit().orNull()).build() : null;
+            if (sample != null) {
+                if (Double.isFinite(sample.getValue())) {
+                    return new Quantity.Builder().setValue(sample.getValue()).setUnit(sample.getUnit().orNull()).build();
+                } else {
+                    // TODO(barp): Create a counter for invalid metrics [AINT-680]
+                    INVALID_SAMPLE_LOG.addData("value", sample.getValue()).log();
+                    return null;
+                }
+            } else {
+                return null;
+            }
         }
     };
 
@@ -535,6 +574,7 @@ public final class QueryLogParser implements Parser<Record> {
                 EnumerationDeserializer.newInstance(
                         Unit.class,
                         EnumerationDeserializerStrategyUsingToUpperCase.<Unit>newInstance()));
+        OBJECT_MAPPER.configure(JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS, true);
         OBJECT_MAPPER.registerModule(queryLogParserModule);
     }
 }

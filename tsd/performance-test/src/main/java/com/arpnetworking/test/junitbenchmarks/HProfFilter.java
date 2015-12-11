@@ -17,7 +17,6 @@
 package com.arpnetworking.test.junitbenchmarks;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
@@ -29,7 +28,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +64,7 @@ public final class HProfFilter {
         final String reportExt = com.google.common.io.Files.getFileExtension(_report.toString());
 
         final String filteredName = reportNoExt + ".filtered." + reportExt;
-        final Path filtered = _report.toAbsolutePath().normalize().getParent().resolve(filteredName);
+        final Path filtered = _report.toAbsolutePath().normalize().resolveSibling(filteredName);
         System.out.printf("Filtering file %s%n", _report);
         System.out.printf("Output file is %s%n", filtered);
 
@@ -196,8 +194,8 @@ public final class HProfFilter {
 
     private static final int READ_AHEAD_LIMIT = 256 * 1024;
 
-    private static class Trace {
-        public Trace(final int id) {
+    private static final class Trace {
+        private Trace(final int id) {
             _id = id;
         }
 
@@ -256,23 +254,19 @@ public final class HProfFilter {
             }
 
             final List<Sample> filteredSamples = FluentIterable.from(_samples)
-                    .filter(new Predicate<Sample>() {
-                        @Override
-                        public boolean apply(final Sample input) {
-                            final int traceId = input.getTrace();
-                            final Trace trace = traces.get(traceId);
-                            if (trace == null || trace.shouldFilter()) {
-                                return false;
-                            }
-                            return true;
-                        }
-                    })
-                    .toSortedList(new Comparator<Sample>() {
-                        @Override
-                        public int compare(final Sample o1, final Sample o2) {
-                            return Integer.compare(o2.getCount(), o1.getCount());
-                        }
-                    });
+                    .filter(
+                            input -> {
+                                if (input == null) {
+                                    return false;
+                                }
+                                final int traceId = input.getTrace();
+                                final Trace trace = traces.get(traceId);
+                                if (trace == null || trace.shouldFilter()) {
+                                    return false;
+                                }
+                                return true;
+                            })
+                    .toSortedList((s1, s2) -> Integer.compare(s2.getCount(), s1.getCount()));
 
             long filteredSamplesCount = 0;
             for (final Sample filteredSample : filteredSamples) {
@@ -304,8 +298,8 @@ public final class HProfFilter {
         private final Splitter _splitter = Splitter.on(" ").omitEmptyStrings().trimResults().limit(6);
         private final List<Sample> _samples = Lists.newArrayList();
 
-        private static class Sample {
-            public Sample(final int count, final int trace, final String method) {
+        private static final class Sample {
+            private Sample(final int count, final int trace, final String method) {
                 _count = count;
                 _trace = trace;
                 _method = method;

@@ -88,7 +88,7 @@ public final class Aggregator implements Observer, Launchable {
                                         .setSink(_sink))
                         .build();
                 _periodClosers.add(periodCloser);
-                _periodCloserExecutor.submit(periodCloser);
+                _periodCloserExecutor.execute(periodCloser);
             }
         }
     }

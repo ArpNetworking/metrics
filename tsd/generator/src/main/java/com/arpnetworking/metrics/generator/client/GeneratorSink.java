@@ -18,16 +18,15 @@ package com.arpnetworking.metrics.generator.client;
 
 import com.arpnetworking.metrics.Quantity;
 import com.arpnetworking.metrics.Sink;
-// CHECKSTYLE.OFF: RegexpSingleline - We are replacing shaded classes, so we need these
 import com.arpnetworking.metrics.ch.qos.logback.classic.LoggerContext;
 import com.arpnetworking.metrics.ch.qos.logback.classic.spi.ILoggingEvent;
 import com.arpnetworking.metrics.ch.qos.logback.core.FileAppender;
 import com.arpnetworking.metrics.com.arpnetworking.logback.StenoEncoder;
-// CHECKSTYLE.ON: RegexpSingleline
 import com.arpnetworking.metrics.impl.TsdQueryLogSink;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -51,6 +50,7 @@ public class GeneratorSink implements Sink {
      * @param outputPath The file to write to.
      * @param initialTime The time to use in the replacement.
      */
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getParent() may return null
     public GeneratorSink(final Path outputPath, final DateTime initialTime) {
         _time = initialTime;
         final Path file = outputPath.toAbsolutePath().normalize();

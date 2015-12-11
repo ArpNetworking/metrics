@@ -140,7 +140,7 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
                                         new Quantity.Builder()
-                                                .setValue(3.14d)
+                                                .setValue(1.23d)
                                                 .setUnit(Unit.BYTE)
                                                 .build()))
                                 .build(),
@@ -149,7 +149,7 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
                                         new Quantity.Builder()
-                                                .setValue(6.28d)
+                                                .setValue(2.46d)
                                                 .build()))
                                 .build()))
                 .build();
@@ -171,11 +171,11 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
                                         new Quantity.Builder()
-                                                .setValue(3.14d)
+                                                .setValue(1.23d)
                                                 .setUnit(Unit.BYTE)
                                                 .build(),
                                         new Quantity.Builder()
-                                                .setValue(6.28d)
+                                                .setValue(2.46d)
                                                 .build()))
                                 .build()))
                 .build();
@@ -192,13 +192,13 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
-                                        new Quantity.Builder().setValue(3.14d).build()))
+                                        new Quantity.Builder().setValue(1.23d).build()))
                                 .build(),
                         "foo/2/bar",
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.TIMER)
                                 .setValues(Collections.singletonList(
-                                        new Quantity.Builder().setValue(6.28d).build()))
+                                        new Quantity.Builder().setValue(2.46d).build()))
                                 .build()))
                 .build();
 
@@ -218,7 +218,7 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
-                                        new Quantity.Builder().setValue(3.14d).build()))
+                                        new Quantity.Builder().setValue(1.23d).build()))
                                 .build()))
                 .build();
         final Record expectedRecord2 = TestBeanFactory.createRecordBuilder()
@@ -229,7 +229,7 @@ public class MappingSourceTest {
                         TestBeanFactory.createMetricBuilder()
                                 .setType(MetricType.TIMER)
                                 .setValues(ImmutableList.of(
-                                        new Quantity.Builder().setValue(6.28d).build()))
+                                        new Quantity.Builder().setValue(2.46d).build()))
                                 .build()))
                 .build();
 
@@ -249,7 +249,7 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
                                         new Quantity.Builder()
-                                                .setValue(3.14d)
+                                                .setValue(1.23d)
                                                 .setUnit(Unit.BYTE)
                                                 .build()))
                                 .build()))
@@ -272,7 +272,7 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
                                         new Quantity.Builder()
-                                                .setValue(3.14d)
+                                                .setValue(1.23d)
                                                 .setUnit(Unit.BYTE)
                                                 .build()))
                                 .build()))
@@ -292,7 +292,7 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
                                         new Quantity.Builder()
-                                                .setValue(3.14d)
+                                                .setValue(1.23d)
                                                 .setUnit(Unit.BYTE)
                                                 .build()))
                                 .build(),
@@ -301,7 +301,7 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(Collections.singletonList(
                                         new Quantity.Builder()
-                                                .setValue(6.28d)
+                                                .setValue(2.46d)
                                                 .build()))
                                 .build()))
                 .build();
@@ -323,11 +323,11 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
                                         new Quantity.Builder()
-                                                .setValue(3.14d)
+                                                .setValue(1.23d)
                                                 .setUnit(Unit.BYTE)
                                                 .build(),
                                         new Quantity.Builder()
-                                                .setValue(6.28d)
+                                                .setValue(2.46d)
                                                 .build()))
                                 .build(),
                         "cat/dog/sheep",
@@ -335,7 +335,7 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
                                         new Quantity.Builder()
-                                                .setValue(6.28d)
+                                                .setValue(2.46d)
                                                 .build()))
                                 .build(),
                         "cat/dog/bear",
@@ -343,7 +343,7 @@ public class MappingSourceTest {
                                 .setType(MetricType.GAUGE)
                                 .setValues(ImmutableList.of(
                                         new Quantity.Builder()
-                                                .setValue(3.14d)
+                                                .setValue(1.23d)
                                                 .setUnit(Unit.BYTE)
                                                 .build()))
                                 .build()))

@@ -9,3 +9,4 @@ tmp
 dist
 app/assets/unmanaged/**
 data
+conf/evolutions

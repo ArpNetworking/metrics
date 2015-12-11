@@ -58,6 +58,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import scala.concurrent.Future;
 
 import java.util.Collections;
@@ -89,12 +90,14 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("akka-config")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Config provideAkkaConfig() {
         return ConfigFactory.parseMap(_configuration.getAkkaConfiguration(), _configuration.toString());
     }
 
     @Provides
     @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private MetricsFactory provideMetricsFactory() {
         final Sink sink = new TsdQueryLogSink.Builder()
                 .setName("cluster-aggregator-query")
@@ -108,6 +111,7 @@ public class GuiceModule extends AbstractModule {
 
     @Provides
     @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorSystem provideActorSystem(@Named("akka-config") final Config akkaConfig) {
         return ActorSystem.apply("Metrics", akkaConfig);
     }
@@ -115,6 +119,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("emitter")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideEmitter(final Injector injector, final ActorSystem system) {
         final ActorRef emitterConfigurationProxy = system.actorOf(ConfigurableActorProxy.props(Emitter::props), "emitter-configurator");
         final ActorConfigurator<EmitterConfiguration> configurator =
@@ -138,6 +143,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("bookkeeper-proxy")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideBookkeeperProxy(final ActorSystem system) {
         system.actorOf(
                 ClusterSingletonManager.defaultProps(
@@ -157,6 +163,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("status-cache")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideStatusCache(
             final ActorSystem system,
             @Named("bookkeeper-proxy") final ActorRef bookkeeperProxy,
@@ -169,6 +176,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("tcp-server")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideTcpServer(final Injector injector, final ActorSystem system) {
         return system.actorOf(GuiceActorCreator.props(injector, AggClientServer.class), "tcp-server");
     }
@@ -176,6 +184,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("aggregator-lifecycle")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideAggregatorLifecycleTracker(
             final ActorSystem system,
             @Named("bookkeeper-proxy") final ActorRef bookkeeperProxy) {
@@ -187,6 +196,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("http-server")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private akka.stream.javadsl.Source<IncomingConnection, Future<ServerBinding>> provideHttpServer(
             final ActorSystem system,
             final MetricsFactory metricsFactory) {
@@ -210,6 +220,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("periodic-statistics")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef providePeriodicStatsActor(final ActorSystem system, final MetricsFactory metricsFactory) {
         return system.actorOf(PeriodicStatisticsActor.props(metricsFactory));
     }
@@ -217,6 +228,7 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("aggregator-shard-region")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideAggregatorShardRegion(
             final ActorSystem system,
             final Injector injector,
@@ -236,18 +248,21 @@ public class GuiceModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("jvm-metrics-collector")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideJvmMetricsCollector(final ActorSystem system, final MetricsFactory metricsFactory) {
         return system.actorOf(JvmMetricsCollector.props(_configuration.getJvmMetricsCollectionInterval(), metricsFactory));
     }
 
     @Provides
     @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private AggMessageExtractor provideExtractor() {
         return new AggMessageExtractor();
     }
 
     @Provides
     @Named("agg-client-supervisor")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Props provideAggClientSupervisorProvider(final Injector injector) {
         return GuiceActorCreator.props(injector, AggClientSupervisor.class);
     }

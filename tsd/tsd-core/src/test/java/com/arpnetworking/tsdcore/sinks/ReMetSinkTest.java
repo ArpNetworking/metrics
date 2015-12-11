@@ -21,7 +21,6 @@ import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import org.hamcrest.Matchers;
@@ -61,7 +60,7 @@ public class ReMetSinkTest {
         final AggregatedData datum = TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build();
         final ImmutableList<AggregatedData> data = ImmutableList.of(datum);
         final ReMetSink remetSink = _remetSinkBuilder.build();
-        final Collection<String> serializedData = remetSink.serialize(
+        final Collection<byte[]> serializedData = remetSink.serialize(
                 TestBeanFactory.createPeriodicDataBuilder()
                         .setData(data)
                         .build());
@@ -81,7 +80,7 @@ public class ReMetSinkTest {
         final AggregatedData datumB = TestBeanFactory.createAggregatedDataBuilder().setPeriod(Period.seconds(1)).build();
         final ImmutableList<AggregatedData> data = ImmutableList.of(datumA, datumB);
         final ReMetSink remetSink = _remetSinkBuilder.build();
-        final Collection<String> serializedData = remetSink.serialize(
+        final Collection<byte[]> serializedData = remetSink.serialize(
                 TestBeanFactory.createPeriodicDataBuilder()
                         .setData(data)
                         .build());
@@ -106,7 +105,7 @@ public class ReMetSinkTest {
         final ImmutableList<AggregatedData> data = dataBuilder.build();
         final int maxChunkSize = 83 * 1024;
         final ReMetSink remetSink = _remetSinkBuilder.setMaxRequestSize((long) maxChunkSize).build();
-        final Collection<String> serializedData = remetSink.serialize(
+        final Collection<byte[]> serializedData = remetSink.serialize(
                 TestBeanFactory.createPeriodicDataBuilder()
                         .setData(data)
                         .build());
@@ -114,8 +113,8 @@ public class ReMetSinkTest {
 
         Assert.assertThat(serializedData.size(), Matchers.greaterThan(1));
         int x = 0;
-        for (final String serialized : serializedData) {
-            Assert.assertThat(serialized.getBytes(Charsets.UTF_8).length, Matchers.lessThanOrEqualTo(maxChunkSize));
+        for (final byte[] serialized : serializedData) {
+            Assert.assertThat(serialized.length, Matchers.lessThanOrEqualTo(maxChunkSize));
             final JsonNode jsonArrayNode = OBJECT_MAPPER.readTree(serialized);
             Assert.assertTrue(jsonArrayNode.isArray());
             for (final JsonNode jsonNode : jsonArrayNode) {

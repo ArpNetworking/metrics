@@ -22,6 +22,7 @@ import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
+import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotNull;
@@ -42,25 +43,15 @@ public final class UnitMappingSink extends BaseSink {
     public void recordAggregateData(final PeriodicData periodicData) {
         final ImmutableList.Builder<AggregatedData> dataBuilder = ImmutableList.builder();
         for (final AggregatedData datum : periodicData.getData()) {
-            final Quantity value = datum.getValue();
-            if (value.getUnit().isPresent()) {
-                final Unit fromUnit = value.getUnit().get();
-                final Unit toUnit = _map.get(fromUnit);
-                if (toUnit != null) {
-                    dataBuilder.add(
-                            AggregatedData.Builder.<AggregatedData, AggregatedData.Builder>clone(datum)
-                                    .setValue(new Quantity.Builder()
-                                            .setValue(toUnit.convert(value.getValue(), fromUnit))
-                                            .setUnit(toUnit)
-                                            .build())
-                                    .build());
-                } else {
-                    dataBuilder.add(datum);
-                }
-            } else {
-                dataBuilder.add(datum);
-            }
+            final Object supportingData = mapSupportingData(datum.getSupportingData());
+            final Quantity value = mapQuantity(datum.getValue());
+            dataBuilder.add(
+                    AggregatedData.Builder.<AggregatedData, AggregatedData.Builder>clone(datum)
+                            .setValue(value)
+                            .setSupportingData(supportingData)
+                            .build());
         }
+
         final ImmutableList.Builder<Condition> conditionsBuilder = ImmutableList.builder();
         for (final Condition condition : periodicData.getConditions()) {
             final Quantity threshold = condition.getThreshold();
@@ -110,6 +101,33 @@ public final class UnitMappingSink extends BaseSink {
                 .put("sink", _sink)
                 .put("map", _map)
                 .build();
+    }
+
+    private Quantity mapQuantity(final Quantity quantity) {
+        if (quantity.getUnit().isPresent()) {
+            final Unit fromUnit = quantity.getUnit().get();
+            final Unit toUnit = _map.get(fromUnit);
+            if (toUnit != null) {
+                return new Quantity.Builder()
+                        .setValue(toUnit.convert(quantity.getValue(), fromUnit))
+                        .setUnit(toUnit)
+                        .build();
+            }
+        }
+        return quantity;
+    }
+
+    private Object mapSupportingData(final Object supportingData) {
+        if (supportingData instanceof HistogramStatistic.HistogramSupportingData) {
+            final HistogramStatistic.HistogramSupportingData hsd = (HistogramStatistic.HistogramSupportingData) supportingData;
+            if (hsd.getUnit().isPresent()) {
+                final Unit toUnit = _map.get(hsd.getUnit().get());
+                if (toUnit != null) {
+                    return hsd.toUnit(toUnit);
+                }
+            }
+        }
+        return supportingData;
     }
 
     private UnitMappingSink(final Builder builder) {

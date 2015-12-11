@@ -49,6 +49,7 @@
   <logger name="global" level="DEBUG" />
   <logger name="models" level="DEBUG" />
   <logger name="org.reflections.Reflections" level="ERROR" />
+  <!-- <logger name="org.avaje.ebean.SQL" level="TRACE" /> -->
 
   <root level="INFO">
     <appender-ref ref="RemetGuiAsync" />

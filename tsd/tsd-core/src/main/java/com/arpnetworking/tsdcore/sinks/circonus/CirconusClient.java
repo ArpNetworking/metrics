@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.base.Throwables;
 import com.ning.http.client.AsyncHttpClientConfig;
+import net.sf.oval.constraint.NotNull;
 import play.libs.F;
 import play.libs.ws.WSRequest;
 import play.libs.ws.WSResponse;
@@ -40,7 +41,6 @@ import scala.concurrent.ExecutionContext;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import javax.validation.constraints.NotNull;
 import javax.xml.ws.WebServiceException;
 
 /**

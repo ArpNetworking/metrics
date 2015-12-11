@@ -38,7 +38,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.http.HttpStatus;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
 import play.libs.F;
@@ -46,6 +46,9 @@ import play.libs.ws.WSResponse;
 import scala.concurrent.ExecutionContextExecutor;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -237,7 +240,7 @@ public final class CirconusSinkActor extends UntypedActor {
     private void processCompletedRequest(final PostComplete complete) {
         _inflightRequestsCount--;
         final int responseStatusCode = complete.getResponse().getStatus();
-        if (responseStatusCode == HttpStatus.SC_OK) {
+        if (responseStatusCode == HttpResponseStatus.OK.code()) {
             LOGGER.debug()
                     .setMessage("Data submission accepted")
                     .addData("status", responseStatusCode)
@@ -275,14 +278,14 @@ public final class CirconusSinkActor extends UntypedActor {
             if (_enableHistograms && aggregatedData.getFQDSN().getStatistic() instanceof HistogramStatistic) {
                 final HistogramStatistic.HistogramSupportingData histogramSupportingData = (HistogramStatistic.HistogramSupportingData)
                         aggregatedData.getSupportingData();
-                final HistogramStatistic.Histogram histogram = histogramSupportingData.getHistogram();
-
-                // Add the faked samples to the list
-                // TODO(barp): send the raw histogram [AINT-666]
-                final ArrayList<Double> valueList = new ArrayList<>(histogram.getEntriesCount());
+                final HistogramStatistic.HistogramSnapshot histogram = histogramSupportingData.getHistogramSnapshot();
+                final ArrayList<String> valueList = new ArrayList<>(histogram.getEntriesCount());
+                final MathContext context = new MathContext(2, RoundingMode.DOWN);
                 for (final Map.Entry<Double, Integer> entry : histogram.getValues()) {
                     for (int i = 0; i < entry.getValue(); i++) {
-                        valueList.add(entry.getKey());
+                        final BigDecimal decimal = new BigDecimal(entry.getKey(), context);
+                        final String bucketString = String.format("H[%s]=%d", decimal.toPlainString(), entry.getValue());
+                        valueList.add(bucketString);
                     }
                 }
 

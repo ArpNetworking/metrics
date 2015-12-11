@@ -80,8 +80,8 @@ public class AggClientSupervisor extends UntypedActor {
             connection.tell(TcpMessage.register(handler, true, true), getSelf());
             getContext().watch(handler);
         } else if (message instanceof Terminated) {
-            LOGGER.info()
-                    .setMessage("Handler shutdown, shutting down supervisor")
+            LOGGER.debug()
+                    .setMessage("Handler shutdown., shutting down supervisor")
                     .addContext("actor", self())
                     .log();
             getContext().stop(getSelf());

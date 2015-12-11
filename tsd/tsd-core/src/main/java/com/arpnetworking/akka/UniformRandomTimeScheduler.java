@@ -21,6 +21,7 @@ import akka.actor.Scheduler;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.OvalBuilder;
+import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.duration.Duration;
@@ -29,7 +30,6 @@ import scala.concurrent.duration.FiniteDuration;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.validation.constraints.NotNull;
 
 /**
  * Scheduler that will send a message in a uniform random time interval.

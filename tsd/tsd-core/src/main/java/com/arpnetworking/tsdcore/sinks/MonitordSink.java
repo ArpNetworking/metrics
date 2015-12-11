@@ -30,12 +30,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
-import play.libs.ws.WSRequest;
-import play.libs.ws.ning.NingWSClient;
 
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -66,13 +68,13 @@ public final class MonitordSink extends HttpPostSink {
      * {@inheritDoc}
      */
     @Override
-    protected Collection<String> serialize(final PeriodicData periodicData) {
+    protected Collection<byte[]> serialize(final PeriodicData periodicData) {
         final Period period = periodicData.getPeriod();
         final Multimap<String, AggregatedData> indexedData = prepareData(periodicData.getData());
         final Multimap<String, Condition> indexedConditions = prepareConditions(periodicData.getConditions());
 
         // Serialize
-        final List<String> serializedData = Lists.newArrayListWithCapacity(indexedData.size());
+        final List<byte[]> serializedData = Lists.newArrayListWithCapacity(indexedData.size());
         final StringBuilder stringBuilder = new StringBuilder();
         for (final String key : indexedData.keySet()) {
             final Collection<AggregatedData> namedData = indexedData.get(key);
@@ -129,7 +131,7 @@ public final class MonitordSink extends HttpPostSink {
                         .append(dataBuilder.toString());
 
                 stringBuilder.setLength(stringBuilder.length() - 3);
-                serializedData.add(stringBuilder.toString());
+                serializedData.add(stringBuilder.toString().getBytes(Charset.forName("UTF-8")));
                 stringBuilder.setLength(0);
             }
         }
@@ -141,11 +143,13 @@ public final class MonitordSink extends HttpPostSink {
      * {@inheritDoc}
      */
     @Override
-    protected WSRequest createRequest(final NingWSClient client, final String serializedData) {
-        return client.url(getUri().toString())
-                .setContentType(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED.toString())
+    protected Request createRequest(final AsyncHttpClient client, final byte[] serializedData) {
+        return new RequestBuilder()
+                .setUrl(getUri().toString())
+                .setHeader("Content-Type", MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED.toString())
                 .setBody(serializedData)
-                .setMethod(HttpMethods.POST.value());
+                .setMethod(HttpMethods.POST.value())
+                .build();
     }
 
     private Multimap<String, Condition> prepareConditions(final Collection<Condition> conditions) {

@@ -26,7 +26,7 @@ import PlayKeys._
 object ApplicationBuild extends Build {
 
     val appName = "remet-proxy"
-    val appVersion = "0.3.5"
+    val appVersion = "0.3.6"
     val jacksonVersion = "2.6.2"
 
     val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings

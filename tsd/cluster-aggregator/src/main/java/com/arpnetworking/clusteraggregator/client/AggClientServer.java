@@ -25,10 +25,10 @@ import com.arpnetworking.clusteraggregator.configuration.ClusterAggregatorConfig
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.name.Named;
 
 import java.net.InetSocketAddress;
-import javax.inject.Provider;
 
 /**
  * TCP Server that listens for aggregation client connections.

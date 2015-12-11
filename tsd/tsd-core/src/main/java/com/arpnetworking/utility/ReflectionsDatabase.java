@@ -87,5 +87,5 @@ public final class ReflectionsDatabase implements InterfaceDatabase, AnnotationD
 
     private final Reflections _reflections;
 
-    private static final Reflections REFLECTIONS = new Reflections();
+    private static final Reflections REFLECTIONS = new Reflections("com.arpnetworking");
 }

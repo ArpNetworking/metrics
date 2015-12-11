@@ -405,7 +405,9 @@ import java.util.function.BiFunction;
         /**
          * Public constructor.
          */
+        // CHECKSTYLE.OFF: RedundantModifierCheck - This is probably a checkstyle bug.
         public Builder() {
+            // CHECKSTYLE.ON: RedundantModifierCheck
             super(Bucket.class);
         }
 

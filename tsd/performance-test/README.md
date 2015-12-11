@@ -10,10 +10,11 @@ Setup
 
 Prerequisites:
 * [JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+* [Maven 3.2.5+](https://maven.apache.org/)
 
 Building:
-    generator> ./gradlew build
-    
+    tsd> mvn install -pl performance-test -amd
+
 Note: This module is a library that is used by other modules as part of their build process.
 
 License

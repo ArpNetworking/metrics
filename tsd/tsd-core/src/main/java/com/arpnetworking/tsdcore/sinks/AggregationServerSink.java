@@ -138,7 +138,7 @@ public final class AggregationServerSink extends VertxSink {
         if (data instanceof HistogramStatistic.HistogramSupportingData) {
             final HistogramStatistic.HistogramSupportingData histogramSupportingData = (HistogramStatistic.HistogramSupportingData) data;
             final Messages.SparseHistogramSupportingData.Builder builder = Messages.SparseHistogramSupportingData.newBuilder();
-            final HistogramStatistic.Histogram histogram = histogramSupportingData.getHistogram();
+            final HistogramStatistic.HistogramSnapshot histogram = histogramSupportingData.getHistogramSnapshot();
             final String unit;
             if (histogramSupportingData.getUnit().isPresent()) {
                 unit = histogramSupportingData.getUnit().get().toString();

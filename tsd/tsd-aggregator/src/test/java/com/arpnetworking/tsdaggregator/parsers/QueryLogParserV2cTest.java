@@ -22,7 +22,7 @@ import com.arpnetworking.tsdcore.model.MetricType;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.parsers.exceptions.ParsingException;
 import com.google.common.io.Resources;
-
+import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsMapContaining;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.ISOChronology;
@@ -265,6 +265,30 @@ public class QueryLogParserV2cTest {
     @Test(expected = ParsingException.class)
     public void testMissingAnnotations() throws ParsingException, IOException {
         parseRecord("QueryLogParserV2cTest.testMissingAnnotations.json");
+    }
+
+    @Test
+    public void testNaNValues() throws ParsingException, IOException {
+        final Record record = parseRecord("QueryLogParserV2cTest.testNaNValues.json");
+        Assert.assertNotNull(record);
+
+        Assert.assertEquals(new DateTime((long) (1347527687.686 * 1000d), ISOChronology.getInstanceUTC()), record.getTime());
+        Assert.assertTrue(record.getAnnotations().isEmpty());
+
+        final Map<String, ? extends Metric> variables = record.getMetrics();
+        Assert.assertEquals(3, variables.size());
+
+        Assert.assertThat(variables, Matchers.<String>hasKey("t1"));
+        final Metric t1 = variables.get("t1");
+        Assert.assertTrue(t1.getValues().isEmpty());
+
+        Assert.assertThat(variables, Matchers.<String>hasKey("g1"));
+        final Metric g1 = variables.get("g1");
+        Assert.assertTrue(g1.getValues().isEmpty());
+
+        Assert.assertThat(variables, Matchers.<String>hasKey("c1"));
+        final Metric c1 = variables.get("c1");
+        Assert.assertTrue(c1.getValues().isEmpty());
     }
 
     private static Record parseRecord(final String fileName) throws ParsingException, IOException {

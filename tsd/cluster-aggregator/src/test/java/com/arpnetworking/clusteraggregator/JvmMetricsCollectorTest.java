@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 public final class JvmMetricsCollectorTest extends BaseActorTest {
 
     @Before
-    public void setup() {
+    public void setUp() {
         Mockito.doReturn(_metrics).when(_metricsFactory).create();
     }
 

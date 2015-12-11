@@ -63,7 +63,7 @@ public final class AggDataUnifier {
     }
 
     private static final class ConvertUnitTransform implements Function<AggregatedData, AggregatedData> {
-        public ConvertUnitTransform(final Optional<Unit> unit) {
+        private ConvertUnitTransform(final Optional<Unit> unit) {
             _unit = unit;
         }
 
