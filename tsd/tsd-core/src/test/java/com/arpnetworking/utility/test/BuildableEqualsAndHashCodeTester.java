@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.utility.test;
 
-import com.arpnetworking.utility.Builder;
+import com.arpnetworking.commons.builder.Builder;
 import com.google.common.base.Throwables;
 
 import org.junit.Assert;

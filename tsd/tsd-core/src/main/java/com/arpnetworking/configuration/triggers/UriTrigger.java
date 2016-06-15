@@ -15,12 +15,12 @@
  */
 package com.arpnetworking.configuration.triggers;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.configuration.Trigger;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import net.sf.oval.constraint.NotNull;
@@ -39,7 +39,9 @@ import org.apache.http.params.HttpParams;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * <code>Trigger</code> implementation based on a uri's last modified date and
@@ -62,8 +64,12 @@ public final class UriTrigger implements Trigger {
             LOGGER.debug()
                     .setMessage("Evaluating trigger")
                     .addData("uri", _uri)
+                    .addData("headers", _headers)
                     .log();
             request = new HttpGet(_uri);
+            if (!_headers.isEmpty()) {
+                request.setHeaders(_headers.toArray(new Header[_headers.size()]));
+            }
             if (_previousETag.isPresent()) {
                 request.addHeader(HttpHeaders.IF_NONE_MATCH, _previousETag.get());
             }
@@ -164,6 +170,7 @@ public final class UriTrigger implements Trigger {
                 .put("uri", _uri)
                 .put("previousLastModified", _previousLastModified)
                 .put("previousETag", _previousETag)
+                .put("headers", _headers)
                 .build();
     }
 
@@ -184,12 +191,14 @@ public final class UriTrigger implements Trigger {
         _uri = builder._uri;
         _previousLastModified = Optional.absent();
         _previousETag = Optional.absent();
+        _headers = new ArrayList<>(builder._headers);
     }
 
     private final URI _uri;
 
     private Optional<Date> _previousLastModified;
     private Optional<String> _previousETag;
+    private List<Header> _headers;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UriTrigger.class);
     private static final ClientConnectionManager CONNECTION_MANAGER = new PoolingClientConnectionManager();
@@ -224,7 +233,42 @@ public final class UriTrigger implements Trigger {
             return this;
         }
 
+        /**
+         * Add a <code>Header</code> to the uri.
+         *
+         * @param value A HTTP header.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder addHeader(final Header value) {
+            _headers.add(value);
+            return this;
+        }
+
+        /**
+         * Add a <code>List</code> of <code>Header</code> to the uri.
+         *
+         * @param values A <code>List</code> of HTTP headers.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder addHeaders(final List<Header> values) {
+            _headers.addAll(values);
+            return this;
+        }
+
+        /**
+         * Overrides the existing headers with  a <code>List</code> of <code>Header</code>.
+         *
+         * @param values A <code>List</code> of HTTP headers.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setHeaders(final List<Header> values) {
+            _headers = new ArrayList<>(values);
+            return this;
+        }
+
         @NotNull
         private URI _uri;
+        @NotNull
+        private List<Header> _headers = new ArrayList<>();
     }
 }

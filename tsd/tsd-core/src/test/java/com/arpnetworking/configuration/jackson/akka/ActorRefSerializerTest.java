@@ -22,7 +22,7 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
-import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.utility.BaseActorTest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;

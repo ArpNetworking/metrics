@@ -23,10 +23,12 @@ import com.arpnetworking.steno.LogValueMapFactory;
 import com.google.inject.Injector;
 
 /**
-* A Guice-based factory for Akka actors.
-*
-* @author Brandon Arp (barp at groupon dot com)
-*/
+ * A Guice-based factory for Akka actors.
+ *
+ * TODO(vkoskela): This is _duplicated_ in metrics-portal and should find its way to a common utility package.
+ *
+ * @author Brandon Arp (barp at groupon dot com)
+ */
 public class GuiceActorCreator implements IndirectActorProducer {
     /**
      * Creates a <code>Props</code> for this creator.

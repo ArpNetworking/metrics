@@ -175,7 +175,7 @@ public enum Unit {
         TEMPERATURE
     }
 
-    private Unit(final long scale, final Type type) {
+    Unit(final long scale, final Type type) {
         _scale = scale;
         _type = type;
     }

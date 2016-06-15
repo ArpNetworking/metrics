@@ -17,7 +17,8 @@ package com.arpnetworking.utility;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
-import akka.contrib.pattern.ShardCoordinator;
+import akka.cluster.sharding.ShardCoordinator;
+import akka.dispatch.Futures;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Optional;
@@ -29,6 +30,7 @@ import com.google.common.collect.Sets;
 import org.joda.time.DateTime;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.IndexedSeq;
+import scala.concurrent.Future;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -65,30 +67,32 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
      * {@inheritDoc}
      */
     @Override
-    public ActorRef allocateShard(
+    public Future<ActorRef> allocateShard(
             final ActorRef requester,
             final String shardId,
             final Map<ActorRef, IndexedSeq<String>> currentShardAllocations) {
         // If we already decided where this goes, return the destination
         if (_pendingRebalances.containsKey(shardId)) {
-            return _pendingRebalances.get(shardId);
+            return Futures.successful(_pendingRebalances.get(shardId));
         }
 
         // Otherwise default to giving it to the shard with the least amount of shards
-        return currentShardAllocations
+        return Futures.successful(currentShardAllocations
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparingInt(e -> e.getValue().size()))
                 .findFirst()
                 .get()
-                .getKey();
+                .getKey());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Set<String> rebalance(final Map<ActorRef, IndexedSeq<String>> currentShardAllocations, final Set<String> rebalanceInProgress) {
+    public Future<Set<String>> rebalance(
+            final Map<ActorRef, IndexedSeq<String>> currentShardAllocations,
+            final Set<String> rebalanceInProgress) {
         // Only keep the rebalances that are in progress
         _pendingRebalances.keySet().retainAll(rebalanceInProgress);
 
@@ -166,7 +170,7 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
         if (_notify.isPresent()) {
             _notify.get().tell(notification, ActorRef.noSender());
         }
-        return toRebalance;
+        return Futures.successful(toRebalance);
     }
 
     private Map<String, ActorRef> _pendingRebalances = Maps.newHashMap();

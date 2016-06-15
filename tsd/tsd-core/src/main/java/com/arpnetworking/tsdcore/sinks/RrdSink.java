@@ -163,7 +163,7 @@ public final class RrdSink extends BaseSink {
 
     private final class RrdNode {
 
-        public RrdNode(final String name) {
+        private RrdNode(final String name) {
             _fileName = _path + File.separator + name;
         }
 

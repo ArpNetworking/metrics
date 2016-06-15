@@ -26,7 +26,6 @@ import com.google.common.collect.Lists;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 

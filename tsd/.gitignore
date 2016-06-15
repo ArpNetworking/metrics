@@ -4,9 +4,6 @@ logs/
 pom.xml.versionsBackup
 dependency-reduced-pom.xml
 
-# Generated
-**/src/main/resources/status.json
-
 # Eclipse
 .metadata/
 .externalToolBuilders/

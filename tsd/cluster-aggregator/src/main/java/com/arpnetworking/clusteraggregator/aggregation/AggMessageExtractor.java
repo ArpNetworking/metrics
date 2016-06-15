@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.clusteraggregator.aggregation;
 
-import akka.contrib.pattern.ShardRegion;
-import com.arpnetworking.tsdcore.Messages;
+import akka.cluster.sharding.ShardRegion;
+import com.arpnetworking.metrics.aggregation.protocol.Messages;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 
 /**
@@ -32,7 +31,7 @@ public class AggMessageExtractor implements ShardRegion.MessageExtractor {
      * @param message The message instance.
      */
     @Override
-    public String entryId(final Object message) {
+    public String entityId(final Object message) {
         if (message instanceof AggregatedData) {
             final AggregatedData aggregationMessage = (AggregatedData) message;
             final StringBuilder builder = new StringBuilder();
@@ -63,7 +62,7 @@ public class AggMessageExtractor implements ShardRegion.MessageExtractor {
      * @param message The message instance.
      */
     @Override
-    public Object entryMessage(final Object message) {
+    public Object entityMessage(final Object message) {
         return message;
     }
 
@@ -74,7 +73,7 @@ public class AggMessageExtractor implements ShardRegion.MessageExtractor {
      */
     @Override
     public String shardId(final Object message) {
-        return String.format("shard_%d", Math.abs(entryId(message).hashCode() % SHARD_COUNT));
+        return String.format("shard_%d", Math.abs(entityId(message).hashCode() % SHARD_COUNT));
     }
 
     private static final int SHARD_COUNT = 10000;

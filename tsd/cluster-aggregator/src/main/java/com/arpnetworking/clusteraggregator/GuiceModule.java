@@ -20,9 +20,12 @@ import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.Cluster;
-import akka.contrib.pattern.ClusterSharding;
-import akka.contrib.pattern.ClusterSingletonManager;
-import akka.contrib.pattern.ClusterSingletonProxy;
+import akka.cluster.sharding.ClusterSharding;
+import akka.cluster.sharding.ClusterShardingSettings;
+import akka.cluster.singleton.ClusterSingletonManager;
+import akka.cluster.singleton.ClusterSingletonManagerSettings;
+import akka.cluster.singleton.ClusterSingletonProxy;
+import akka.cluster.singleton.ClusterSingletonProxySettings;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.IncomingConnection;
 import akka.http.javadsl.ServerBinding;
@@ -36,19 +39,23 @@ import com.arpnetworking.clusteraggregator.client.AggClientServer;
 import com.arpnetworking.clusteraggregator.client.AggClientSupervisor;
 import com.arpnetworking.clusteraggregator.configuration.ClusterAggregatorConfiguration;
 import com.arpnetworking.clusteraggregator.configuration.ConfigurableActorProxy;
+import com.arpnetworking.clusteraggregator.configuration.DatabaseConfiguration;
 import com.arpnetworking.clusteraggregator.configuration.EmitterConfiguration;
 import com.arpnetworking.clusteraggregator.configuration.RebalanceConfiguration;
 import com.arpnetworking.clusteraggregator.http.Routes;
+import com.arpnetworking.clusteraggregator.partitioning.DatabasePartitionSet;
 import com.arpnetworking.configuration.jackson.DynamicConfiguration;
 import com.arpnetworking.configuration.jackson.JsonNodeFileSource;
 import com.arpnetworking.configuration.triggers.FileTrigger;
 import com.arpnetworking.guice.akka.GuiceActorCreator;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Sink;
+import com.arpnetworking.metrics.impl.TsdLogSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
-import com.arpnetworking.metrics.impl.TsdQueryLogSink;
 import com.arpnetworking.utility.ActorConfigurator;
+import com.arpnetworking.utility.Database;
 import com.arpnetworking.utility.ParallelLeastShardAllocationStrategy;
+import com.arpnetworking.utility.partitioning.PartitionSet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.inject.AbstractModule;
@@ -56,12 +63,14 @@ import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import scala.concurrent.Future;
 
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * The primary Guice module used to bootstrap the cluster aggregator. NOTE: this module will be constructed whenever
@@ -85,6 +94,13 @@ public class GuiceModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(ClusterAggregatorConfiguration.class).toInstance(_configuration);
+
+        for (final Map.Entry<String, DatabaseConfiguration> entry : _configuration.getDatabaseConfigurations().entrySet()) {
+            bind(Database.class)
+                    .annotatedWith(Names.named(entry.getKey()))
+                    .toProvider(new DatabaseProvider(entry.getKey(), entry.getValue()))
+                    .in(Singleton.class);
+        }
     }
 
     @Provides
@@ -99,12 +115,14 @@ public class GuiceModule extends AbstractModule {
     @Singleton
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private MetricsFactory provideMetricsFactory() {
-        final Sink sink = new TsdQueryLogSink.Builder()
+        final Sink sink = new TsdLogSink.Builder()
                 .setName("cluster-aggregator-query")
-                .setPath(_configuration.getLogDirectory().getAbsolutePath())
+                .setDirectory(_configuration.getLogDirectory())
                 .build();
 
         return new TsdMetricsFactory.Builder()
+                .setClusterName(_configuration.getMonitoringCluster())
+                .setServiceName("cluster_aggregator")
                 .setSinks(Collections.singletonList(sink))
                 .build();
     }
@@ -113,15 +131,17 @@ public class GuiceModule extends AbstractModule {
     @Singleton
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorSystem provideActorSystem(@Named("akka-config") final Config akkaConfig) {
-        return ActorSystem.apply("Metrics", akkaConfig);
+        return ActorSystem.create("Metrics", akkaConfig);
     }
 
     @Provides
     @Singleton
-    @Named("emitter")
+    @Named("cluster-emitter")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private ActorRef provideEmitter(final Injector injector, final ActorSystem system) {
-        final ActorRef emitterConfigurationProxy = system.actorOf(ConfigurableActorProxy.props(Emitter::props), "emitter-configurator");
+    private ActorRef provideClusterEmitter(final Injector injector, final ActorSystem system) {
+        final ActorRef emitterConfigurationProxy = system.actorOf(
+                ConfigurableActorProxy.props(Emitter::props),
+                "cluster-emitter-configurator");
         final ActorConfigurator<EmitterConfiguration> configurator =
                 new ActorConfigurator<>(emitterConfigurationProxy, EmitterConfiguration.class);
         final ObjectMapper objectMapper = EmitterConfiguration.createObjectMapper(injector);
@@ -130,8 +150,34 @@ public class GuiceModule extends AbstractModule {
                 .addSourceBuilder(
                         new JsonNodeFileSource.Builder()
                                 .setObjectMapper(objectMapper)
-                                .setFile(_configuration.getPipelineConfiguration()))
-                .addTrigger(new FileTrigger.Builder().setFile(_configuration.getPipelineConfiguration()).build())
+                                .setFile(_configuration.getClusterPipelineConfiguration()))
+                .addTrigger(new FileTrigger.Builder().setFile(_configuration.getClusterPipelineConfiguration()).build())
+                .addListener(configurator)
+                .build();
+
+        configuration.launch();
+
+        return emitterConfigurationProxy;
+    }
+
+    @Provides
+    @Singleton
+    @Named("host-emitter")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private ActorRef provideHostEmitter(final Injector injector, final ActorSystem system) {
+        final ActorRef emitterConfigurationProxy = system.actorOf(
+                ConfigurableActorProxy.props(Emitter::props),
+                "host-emitter-configurator");
+        final ActorConfigurator<EmitterConfiguration> configurator =
+                new ActorConfigurator<>(emitterConfigurationProxy, EmitterConfiguration.class);
+        final ObjectMapper objectMapper = EmitterConfiguration.createObjectMapper(injector);
+        final DynamicConfiguration configuration = new DynamicConfiguration.Builder()
+                .setObjectMapper(objectMapper)
+                .addSourceBuilder(
+                        new JsonNodeFileSource.Builder()
+                                .setObjectMapper(objectMapper)
+                                .setFile(_configuration.getHostPipelineConfiguration()))
+                .addTrigger(new FileTrigger.Builder().setFile(_configuration.getHostPipelineConfiguration()).build())
                 .addListener(configurator)
                 .build();
 
@@ -146,17 +192,14 @@ public class GuiceModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideBookkeeperProxy(final ActorSystem system) {
         system.actorOf(
-                ClusterSingletonManager.defaultProps(
+                ClusterSingletonManager.props(
                         Bookkeeper.props(new InMemoryBookkeeper()),
-                        "bookkeeper",
                         PoisonPill.getInstance(),
-                        null),
-                "singleton");
+                        ClusterSingletonManagerSettings.create(system)),
+                "bookkeeper");
 
         return system.actorOf(
-                ClusterSingletonProxy.defaultProps(
-                        "/user/singleton/bookkeeper",
-                        null),
+                ClusterSingletonProxy.props("/user/bookkeeper", ClusterSingletonProxySettings.create(system)),
                 "bookkeeperProxy");
     }
 
@@ -238,11 +281,13 @@ public class GuiceModule extends AbstractModule {
         return clusterSharding.start(
                 "Aggregator",
                 GuiceActorCreator.props(injector, AggregationRouter.class),
+                ClusterShardingSettings.create(system),
                 extractor,
                 new ParallelLeastShardAllocationStrategy(
                         rebalanceConfiguration.getMaxParallel(),
                         rebalanceConfiguration.getThreshold(),
-                        Optional.of(system.actorSelection("/user/cluster-status"))));
+                        Optional.of(system.actorSelection("/user/cluster-status"))),
+                PoisonPill.getInstance());
     }
 
     @Provides
@@ -267,5 +312,54 @@ public class GuiceModule extends AbstractModule {
         return GuiceActorCreator.props(injector, AggClientSupervisor.class);
     }
 
+    @Provides
+    @Singleton
+    @Named("graceful-shutdown-actor")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private ActorRef provideGracefulShutdownActor(final ActorSystem system, final Injector injector) {
+        return system.actorOf(GuiceActorCreator.props(injector, GracefulShutdownActor.class), "graceful-shutdown");
+    }
+
+    @Provides
+    @Named("cluster-host-suffix")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private String provideClusterHostSuffix(final ClusterAggregatorConfiguration config) {
+        return config.getClusterHostSuffix();
+    }
+
+    @Provides
+    @Named("circonus-partition-set")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private PartitionSet provideDatabasePartitionSet(@Named("metrics_clusteragg") final Database database) {
+        final com.arpnetworking.clusteraggregator.models.ebean.PartitionSet partitionSet =
+                com.arpnetworking.clusteraggregator.models.ebean.PartitionSet.findOrCreate(
+                        "circonus-partition-set",
+                        database,
+                        1000,
+                        Integer.MAX_VALUE);
+        return new DatabasePartitionSet(database, partitionSet);
+    }
+
+
     private final ClusterAggregatorConfiguration _configuration;
+
+    private static final class DatabaseProvider implements com.google.inject.Provider<Database> {
+
+        private DatabaseProvider(final String name, final DatabaseConfiguration configuration) {
+            _name = name;
+            _configuration = configuration;
+        }
+
+        /**
+         *{@inheritDoc}
+         */
+        @Override
+        public Database get() {
+            final Database database = new Database(_name, _configuration);
+            return database;
+        }
+
+        private final String _name;
+        private final DatabaseConfiguration _configuration;
+    }
 }

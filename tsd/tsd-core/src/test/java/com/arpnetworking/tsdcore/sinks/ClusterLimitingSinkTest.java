@@ -129,9 +129,9 @@ public class ClusterLimitingSinkTest {
         Mockito.verify(mockLimitingSinks.get("./testClusterLimitingSink_ClusterA.state")).recordAggregateData(periodicData);
     }
 
-    private static class MockingSinkFactory implements ClusterLimitingSink.LimitingSinkFactory {
+    private static final class MockingSinkFactory implements ClusterLimitingSink.LimitingSinkFactory {
 
-        public MockingSinkFactory(final Sink targetSink) {
+        private MockingSinkFactory(final Sink targetSink) {
             _targetSink = targetSink;
             _sinks = Maps.newHashMap();
         }

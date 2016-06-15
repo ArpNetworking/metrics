@@ -18,7 +18,7 @@ package com.arpnetworking.tsdcore.sinks;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
-import com.arpnetworking.metrics.Unit;
+import com.arpnetworking.metrics.Units;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -77,6 +77,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
 
         final long now = System.currentTimeMillis();
         _aggregatedData.addAndGet(periodicData.getData().size());
+        final Set<String> uniqueMetrics = Sets.newHashSet();
         for (final AggregatedData datum : periodicData.getData()) {
             final String fqsn = new StringBuilder()
                     .append(datum.getFQDSN().getCluster()).append(".")
@@ -96,8 +97,14 @@ public final class PeriodicStatisticsSink extends BaseSink {
 
             _uniqueStatistics.get().add(fqsn);
 
-            _age.accumulate(now - datum.getPeriodStart().plus(datum.getPeriod()).getMillis());
+            if (uniqueMetrics.add(metricName)) {
+                // Allow each service/metric in the periodic data to contribute
+                // its population size (samples processed) to the sample count.
+                _metricSamples.accumulate(datum.getPopulationSize());
+            }
         }
+
+        _age.accumulate(now - periodicData.getStart().plus(periodicData.getPeriod()).getMillis());
     }
 
     /**
@@ -128,6 +135,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
                 .put("aggregatedData", _aggregatedData)
                 .put("uniqueMetrics", _uniqueMetrics.get().size())
                 .put("uniqueStatistics", _uniqueStatistics.get().size())
+                .put("metricSamples", _metricSamples.get())
                 .build();
     }
 
@@ -142,7 +150,8 @@ public final class PeriodicStatisticsSink extends BaseSink {
         metrics.incrementCounter(_aggregatedDataName, _aggregatedData.getAndSet(0));
         metrics.incrementCounter(_uniqueMetricsName, oldUniqueMetrics.size());
         metrics.incrementCounter(_uniqueStatisticsName, oldUniqueStatistics.size());
-        metrics.setGauge(_ageName, _age.getThenReset(), Unit.fromTimeUnit(TimeUnit.MILLISECONDS));
+        metrics.incrementCounter(_metricSamplesName, _metricSamples.getThenReset());
+        metrics.setGauge(_ageName, _age.getThenReset(), Units.MILLISECOND);
         metrics.close();
     }
 
@@ -151,6 +160,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
         metrics.resetCounter(_aggregatedDataName);
         metrics.resetCounter(_uniqueMetricsName);
         metrics.resetCounter(_uniqueStatisticsName);
+        metrics.resetCounter(_metricSamplesName);
         return metrics;
     }
 
@@ -168,6 +178,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
         _aggregatedDataName = "sinks/periodic_statistics/" + getMetricSafeName() + "/aggregated_data";
         _uniqueMetricsName = "sinks/periodic_statistics/" + getMetricSafeName() + "/unique_metrics";
         _uniqueStatisticsName = "sinks/periodic_statistics/" + getMetricSafeName() + "/unique_statistics";
+        _metricSamplesName = "sinks/periodic_statistics/" + getMetricSafeName() + "/metric_samples";
         _ageName = "sinks/periodic_statistics/" + getMetricSafeName() + "/age";
         _metrics.set(createMetrics());
 
@@ -182,7 +193,7 @@ public final class PeriodicStatisticsSink extends BaseSink {
 
 
     private PeriodicStatisticsSink(final Builder builder) {
-        this(builder, Executors.newSingleThreadScheduledExecutor());
+        this(builder, Executors.newSingleThreadScheduledExecutor((runnable) -> new Thread(runnable, "PeriodStatisticsSink")));
     }
 
     private final MetricsFactory _metricsFactory;
@@ -192,7 +203,9 @@ public final class PeriodicStatisticsSink extends BaseSink {
     private final String _aggregatedDataName;
     private final String _uniqueMetricsName;
     private final String _uniqueStatisticsName;
+    private final String _metricSamplesName;
     private final String _ageName;
+    private final LongAccumulator _metricSamples = new LongAccumulator((x, y) -> x + y, 0);
     private final AtomicLong _aggregatedData = new AtomicLong(0);
     private final AtomicReference<Set<String>> _uniqueMetrics = new AtomicReference<>(
             Sets.newSetFromMap(Maps.<String, Boolean>newConcurrentMap()));

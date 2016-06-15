@@ -16,7 +16,7 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import akka.actor.ActorSystem;
-import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.test.TestBeanFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.fasterxml.jackson.databind.JsonNode;

@@ -16,9 +16,11 @@
 package com.arpnetworking.tsdcore.sinks;
 
 import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.arpnetworking.steno.RateLimitLogBuilder;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.common.collect.ImmutableList;
@@ -26,6 +28,7 @@ import com.google.common.collect.Sets;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -102,8 +105,7 @@ public final class TimeThresholdSink extends BaseSink {
         _logOnly = builder._logOnly;
         _threshold = builder._threshold;
         _logger = (AggregatedData data) ->
-                LOGGER.warn()
-                        .setMessage("Dropped stale data")
+                STALE_DATA_LOG_BUILDER
                         .addData("sink", getName())
                         .addData("threshold", _threshold)
                         .addData("data", data)
@@ -118,9 +120,13 @@ public final class TimeThresholdSink extends BaseSink {
     private final Period _threshold;
     private final FilterPredicate _filterPredicate;
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeThresholdSink.class);
+    private static final LogBuilder STALE_DATA_LOG_BUILDER = new RateLimitLogBuilder(
+            LOGGER.warn().setMessage("Dropped stale data"),
+            Duration.ofSeconds(30));
+
 
     private static final class FilterPredicate implements Predicate<AggregatedData> {
-        public FilterPredicate(
+        private FilterPredicate(
                 final Period freshnessThreshold,
                 final Consumer<AggregatedData> excludedConsumer,
                 final Set<String> excludedServices) {

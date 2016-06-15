@@ -24,7 +24,6 @@ import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 
 import java.util.List;
 import java.util.Map;
@@ -89,10 +88,7 @@ public final class MeanStatistic extends BaseStatistic {
         int count = 0;
         Optional<Unit> unit = Optional.absent();
         for (final AggregatedData aggregation : aggregations) {
-            double populationSize = aggregation.getPopulationSize();
-            if (populationSize < 0.0) {
-                populationSize = Iterables.getFirst(aggregation.getSamples(), ZERO).getValue();
-            }
+            final double populationSize = aggregation.getPopulationSize();
             weighted += aggregation.getValue().getValue() * populationSize;
             count += populationSize;
             unit = unit.or(aggregation.getValue().getUnit());
@@ -120,7 +116,7 @@ public final class MeanStatistic extends BaseStatistic {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class MeanCalculator implements Calculator<Void> {
+    public static final class MeanCalculator extends BaseCalculator<Void> implements Calculator<Void> {
 
         /**
          * Public constructor.
@@ -128,15 +124,7 @@ public final class MeanStatistic extends BaseStatistic {
          * @param statistic The <code>Statistic</code>.
          */
         public MeanCalculator(final Statistic statistic) {
-            _statistic = statistic;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Statistic getStatistic() {
-            return _statistic;
+            super(statistic);
         }
 
         /**
@@ -147,13 +135,9 @@ public final class MeanStatistic extends BaseStatistic {
             final CalculatedValue<?> sum = dependencies.get(SUM_STATISTIC.get()).calculate(dependencies);
             final CalculatedValue<?> count = dependencies.get(COUNT_STATISTIC.get()).calculate(dependencies);
 
-            // TODO(vkoskela): Remove the supporting data. [NEXT]
-            // This requires Cluster Aggregator to support the new calculation model, specifically dependencies.
             return new CalculatedValue.Builder<Void>()
                     .setValue(sum.getValue().divide(count.getValue()))
                     .build();
         }
-
-        private final Statistic _statistic;
     }
 }

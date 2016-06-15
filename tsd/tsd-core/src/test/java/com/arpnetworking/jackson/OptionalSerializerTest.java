@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.jackson;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -90,7 +91,7 @@ public class OptionalSerializerTest {
 
     private static final class Widget {
 
-        public Widget(final String foo, final String bar) {
+        private Widget(final String foo, final String bar) {
             _foo = foo;
             _bar = bar;
         }

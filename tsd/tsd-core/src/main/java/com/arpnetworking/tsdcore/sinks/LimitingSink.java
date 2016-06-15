@@ -18,9 +18,11 @@ package com.arpnetworking.tsdcore.sinks;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.arpnetworking.steno.RateLimitLogBuilder;
 import com.arpnetworking.tsdcore.limiter.MetricsLimiter;
 import com.arpnetworking.tsdcore.limiter.NoLimitMetricsLimiter;
 import com.arpnetworking.tsdcore.model.AggregatedData;
@@ -41,6 +43,7 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -80,8 +83,7 @@ public final class LimitingSink extends BaseSink {
                 filteredDataBuilder.add(datum);
                 filteredFQDSNs.add(datum.getFQDSN());
             } else {
-                LOGGER.warn()
-                        .setMessage("Skipping publication of limited data")
+                LIMITED_DATA_LOG_BUILDER
                         .addData("sink", getName())
                         .addData("aggregatedData", datum)
                         .log();
@@ -193,6 +195,9 @@ public final class LimitingSink extends BaseSink {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LimitingSink.class);
     private static final int EXECUTOR_TIMEOUT_IN_SECONDS = 30;
+    private static final LogBuilder LIMITED_DATA_LOG_BUILDER = new RateLimitLogBuilder(
+            LOGGER.warn().setMessage("Skipping publication of limited data"),
+            Duration.ofSeconds(30));
 
     private final class MetricsLogger implements Runnable {
 

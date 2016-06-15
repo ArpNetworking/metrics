@@ -187,6 +187,20 @@ public class HistogramStatisticTest {
         Assert.assertEquals(99.5d, histogram.getValueAtPercentile(99.9d), 1d);
     }
 
+    @Test
+    public void histogramEnds() {
+        final Accumulator<HistogramStatistic.HistogramSupportingData> accumulator = HISTOGRAM_STATISTIC.createCalculator();
+        accumulator.accumulate(new Quantity.Builder().setValue((double) 10).setUnit(Unit.MILLISECOND).build());
+        accumulator.accumulate(new Quantity.Builder().setValue((double) 50).setUnit(Unit.MILLISECOND).build());
+
+        final CalculatedValue<HistogramStatistic.HistogramSupportingData> value = accumulator.calculate(Collections.emptyMap());
+        final HistogramStatistic.HistogramSupportingData supportingData = value.getData();
+        final HistogramStatistic.HistogramSnapshot histogram = supportingData.getHistogramSnapshot();
+
+        Assert.assertEquals(10d, histogram.getValueAtPercentile(0), 1d);
+        Assert.assertEquals(50d, histogram.getValueAtPercentile(100), 1d);
+    }
+
     private static final StatisticFactory STATISTIC_FACTORY = new StatisticFactory();
     private static final HistogramStatistic HISTOGRAM_STATISTIC = (HistogramStatistic) STATISTIC_FACTORY.getStatistic("histogram");
 }

@@ -188,9 +188,9 @@ public final class ServiceNameFilteringSink extends BaseSink {
         }
 
         /**
-         * The aggregated data sink to buffer. Cannot be null.
+         * The sink to wrap. Cannot be null.
          *
-         * @param value The aggregated data sink to buffer.
+         * @param value The sink to wrap.
          * @return This instance of <code>Builder</code>.
          */
         public Builder setSink(final Sink value) {

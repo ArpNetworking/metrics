@@ -138,9 +138,9 @@ public class ConfiguratorTest {
         Assert.assertFalse(asString.isEmpty());
     }
 
-    private static class TestLaunchable implements Launchable {
+    private static final class TestLaunchable implements Launchable {
 
-        public TestLaunchable(final String value) {
+        private TestLaunchable(final String value) {
             _value = value;
             _isRunning = false;
         }

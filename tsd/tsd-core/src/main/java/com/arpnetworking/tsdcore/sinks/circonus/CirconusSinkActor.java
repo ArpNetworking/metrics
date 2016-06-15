@@ -29,11 +29,9 @@ import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.sinks.circonus.api.BrokerListResponse;
 import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundle;
 import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
+import com.arpnetworking.utility.partitioning.PartitionSet;
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
 import com.google.common.collect.EvictingQueue;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -50,7 +48,6 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -60,6 +57,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Reports data to Circonus HttpTrap.
@@ -89,6 +87,7 @@ public final class CirconusSinkActor extends UntypedActor {
      * @param maximumQueueSize the maximum size of the pending metrics queue
      * @param spreadPeriod the maximum wait time before starting to send metrics
      * @param enableHistograms true to turn on histogram publication
+     * @param partitionSet the partition set to partition the check bundles with
      * @return A new {@link akka.actor.Props}
      */
     public static Props props(
@@ -97,8 +96,17 @@ public final class CirconusSinkActor extends UntypedActor {
             final int maximumConcurrency,
             final int maximumQueueSize,
             final Period spreadPeriod,
-            final boolean enableHistograms) {
-        return Props.create(CirconusSinkActor.class, client, broker, maximumConcurrency, maximumQueueSize, spreadPeriod, enableHistograms);
+            final boolean enableHistograms,
+            final PartitionSet partitionSet) {
+        return Props.create(
+                CirconusSinkActor.class,
+                client,
+                broker,
+                maximumConcurrency,
+                maximumQueueSize,
+                spreadPeriod,
+                enableHistograms,
+                partitionSet);
     }
 
     /**
@@ -110,6 +118,7 @@ public final class CirconusSinkActor extends UntypedActor {
      * @param maximumQueueSize the maximum size of the pending metrics queue
      * @param spreadPeriod the maximum wait time before starting to send metrics
      * @param enableHistograms true to turn on histogram publication
+     * @param partitionSet the partition set to partition the check bundles with
      */
     public CirconusSinkActor(
             final CirconusClient client,
@@ -117,11 +126,13 @@ public final class CirconusSinkActor extends UntypedActor {
             final int maximumConcurrency,
             final int maximumQueueSize,
             final Period spreadPeriod,
-            final boolean enableHistograms) {
+            final boolean enableHistograms,
+            final PartitionSet partitionSet) {
         _client = client;
         _brokerName = broker;
         _maximumConcurrency = maximumConcurrency;
         _enableHistograms = enableHistograms;
+        _partitionSet = partitionSet;
         _pendingRequests = EvictingQueue.create(maximumQueueSize);
         if (Period.ZERO.equals(spreadPeriod)) {
             _spreadingDelayMillis = 0;
@@ -172,20 +183,23 @@ public final class CirconusSinkActor extends UntypedActor {
         } else if (message instanceof CheckBundleLookupResponse) {
             final CheckBundleLookupResponse response = (CheckBundleLookupResponse) message;
             if (response.isSuccess()) {
-                final ServiceCheckBinding binding = response.getBinding().get();
-                _bundleMap.put(response.getKey(), binding);
+                _bundleMap.put(response.getKey(), response.getCheckBundle().getCid());
+                _checkBundles.put(response.getCheckBundle().getCid(), response.getCheckBundle());
                 _checkBundleRefresher.tell(
-                        new CheckBundleActivator.NotifyCheckBundle(response.getBinding().get().getCheckBundle()),
+                        new CheckBundleActivator.NotifyCheckBundle(response.getCheckBundle()),
                         self());
             } else {
                 LOGGER.error()
                         .setMessage("Error creating check bundle")
-                        .addData("request", response.getRequest())
+                        .addData("request", response.getCheckBundle())
                         .addData("actor", self())
                         .setThrowable(response.getCause().get())
                         .log();
                 _pendingLookups.remove(response.getKey());
             }
+        } else if (message instanceof CheckBundleActivator.CheckBundleRefreshComplete) {
+            final CheckBundleActivator.CheckBundleRefreshComplete update = (CheckBundleActivator.CheckBundleRefreshComplete) message;
+            _checkBundles.put(update.getCheckBundle().getCid(), update.getCheckBundle());
         } else if (message instanceof BrokerRefresher.BrokerLookupComplete) {
             handleBrokerLookupComplete((BrokerRefresher.BrokerLookupComplete) message);
         } else if (message instanceof PostComplete) {
@@ -300,29 +314,61 @@ public final class CirconusSinkActor extends UntypedActor {
         return dataNode;
     }
 
+    private String getMetricKey(final AggregatedData data) {
+        return String.format(
+                "%s_%s_%s_%s_%s_%s",
+                data.getFQDSN().getService(),
+                data.getFQDSN().getCluster(),
+                data.getHost(),
+                data.getPeriod().toString(ISOPeriodFormat.standard()),
+                data.getFQDSN().getMetric(),
+                data.getFQDSN().getStatistic().getName());
+    }
+
+    private String getCheckBundleKey(final AggregatedData data) {
+        final Integer partitionNumber = _partitionMap.get(getMetricKey(data));
+        return String.format(
+                "%s_%s_%s_%d",
+                data.getFQDSN().getService(),
+                data.getFQDSN().getCluster(),
+                data.getHost(),
+                partitionNumber);
+    }
+
+    private void registerMetricPartition(final AggregatedData data) {
+        final String metric = getMetricKey(data);
+        final Integer partition = _partitionMap.computeIfAbsent(metric, key -> _partitionSet.getOrCreatePartition(key).orNull());
+        if (partition == null) {
+            CANT_FIND_PARTITION_LOG_BUILDER
+                    .addData("actor", self())
+                    .addData("metric", metric)
+                    .log();
+        }
+
+    }
+
     /**
       * Queues the messages for transmission.
       */
     private void publish(final Collection<AggregatedData> data) {
-        // Collect the aggregated data by the "key".  In this case the key is unique part of a check_bundle:
-        // service, cluster, and host
-        final ImmutableListMultimap<String, AggregatedData> index = FluentIterable.from(data)
-                .index(
-                        input -> String.format(
-                                "%s_%s_%s",
-                                input.getFQDSN().getService(),
-                                input.getFQDSN().getCluster(),
-                                input.getHost()));
+        final Map<String, List<AggregatedData>> dataMap = data.stream()
+                // First, we need to make sure that the partitions for each of metrics has been registered
+                .peek(this::registerMetricPartition)
+                // Collect the aggregated data by the "key".  In this case the key is unique part of a check_bundle:
+                // service, cluster, host, and partition number
+                .collect(Collectors.groupingBy(this::getCheckBundleKey));
 
         final boolean pendingWasEmpty = _pendingRequests.isEmpty();
         final List<RequestQueueEntry> toQueue = Lists.newArrayList();
 
-        for (final Map.Entry<String, Collection<AggregatedData>> entry : index.asMap().entrySet()) {
+        for (final Map.Entry<String, List<AggregatedData>> entry : dataMap.entrySet()) {
             final String targetKey = entry.getKey();
             final Collection<AggregatedData> serviceData = entry.getValue();
-            final ServiceCheckBinding binding = _bundleMap.get(targetKey);
 
-            if (binding != null) {
+            // Check to see if we already have a checkbundle for this metric
+            final String bundleCid = _bundleMap.get(targetKey);
+            if (bundleCid != null) {
+                final CheckBundle binding = _checkBundles.get(bundleCid);
                 // Queue the request(s)
                 toQueue.add(new RequestQueueEntry(binding, serialize(serviceData)));
             } else {
@@ -392,7 +438,7 @@ public final class CirconusSinkActor extends UntypedActor {
         final RequestQueueEntry request = _pendingRequests.poll();
         _inflightRequestsCount++;
 
-        final F.Promise<Object> responsePromise = _client.sendToHttpTrap(request.getData(), request.getBinding()._url)
+        final F.Promise<Object> responsePromise = _client.sendToHttpTrap(request.getData(), request.getBinding().getSubmissionUrl())
                 .<Object>map(PostComplete::new)
                 .recover(PostFailure::new);
         Patterns.pipe(responsePromise.wrapped(), context().dispatcher()).to(self());
@@ -401,6 +447,7 @@ public final class CirconusSinkActor extends UntypedActor {
     private F.Promise<CheckBundleLookupResponse> createCheckBundle(
             final String targetKey,
             final AggregatedData aggregatedData) {
+        final Integer partition = _partitionMap.get(getMetricKey(aggregatedData));
         final CheckBundle request = new CheckBundle.Builder()
                 .addBroker(_selectedBrokerCid.get())
                 .addTag("monitoring_agent:aint")
@@ -410,9 +457,10 @@ public final class CirconusSinkActor extends UntypedActor {
                 .setTarget(aggregatedData.getHost())
                 .setDisplayName(
                         String.format(
-                                "%s/%s",
+                                "%s/%s/%s",
                                 aggregatedData.getFQDSN().getCluster(),
-                                aggregatedData.getFQDSN().getService()))
+                                aggregatedData.getFQDSN().getService(),
+                                partition))
                 .setStatus("active")
                 .build();
 
@@ -421,13 +469,8 @@ public final class CirconusSinkActor extends UntypedActor {
                 .map(
                         response -> {
                             final URI result;
-                            try {
-                                result = new URI(response.getConfig().get("submission_url"));
-                            } catch (final URISyntaxException e) {
-                                throw Throwables.propagate(e);
-                            }
-                            return CheckBundleLookupResponse.success(
-                                    new ServiceCheckBinding(targetKey, result, response), request);
+                            result = response.getSubmissionUrl();
+                            return CheckBundleLookupResponse.success(targetKey, response);
                         },
                         _dispatcher)
                 .recover(
@@ -442,11 +485,14 @@ public final class CirconusSinkActor extends UntypedActor {
 
     private final ExecutionContextExecutor _dispatcher;
     private final Set<String> _pendingLookups = Sets.newHashSet();
-    private final Map<String, ServiceCheckBinding> _bundleMap = Maps.newHashMap();
+    private final Map<String, String> _bundleMap = Maps.newHashMap(); // Holds check bundle name -> cid mapping
+    private final Map<String, Integer> _partitionMap = Maps.newHashMap(); // Holds metric name -> partition number
+    private final Map<String, CheckBundle> _checkBundles = Maps.newHashMap(); // Holds cid -> check bundle details
     private final CirconusClient _client;
     private final String _brokerName;
     private final int _maximumConcurrency;
     private final boolean _enableHistograms;
+    private final PartitionSet _partitionSet;
     private final int _spreadingDelayMillis;
     private final EvictingQueue<RequestQueueEntry> _pendingRequests;
 
@@ -460,6 +506,10 @@ public final class CirconusSinkActor extends UntypedActor {
             LOGGER.warn()
                     .setMessage("Unable to push data to Circonus")
                     .addData("reason", "check bundle not yet found or created"),
+            Duration.ofMinutes(1));
+    private static final LogBuilder CANT_FIND_PARTITION_LOG_BUILDER = new RateLimitLogBuilder(
+            LOGGER.warn()
+                    .setMessage("Cannot find or create partition for check bundle"),
             Duration.ofMinutes(1));
 
     /**
@@ -483,23 +533,21 @@ public final class CirconusSinkActor extends UntypedActor {
     }
 
     private static final class CheckBundleLookupResponse {
-        public static CheckBundleLookupResponse success(final ServiceCheckBinding binding, final CheckBundle request) {
-            return new CheckBundleLookupResponse(binding.getKey(), Optional.of(binding), Optional.<Throwable>absent(), request);
+        public static CheckBundleLookupResponse success(final String key, final CheckBundle checkBundle) {
+            return new CheckBundleLookupResponse(key, Optional.<Throwable>absent(), checkBundle);
         }
 
         public static CheckBundleLookupResponse failure(final String key, final Throwable throwable, final CheckBundle request) {
-            return new CheckBundleLookupResponse(key, Optional.<ServiceCheckBinding>absent(), Optional.of(throwable), request);
+            return new CheckBundleLookupResponse(key, Optional.of(throwable), request);
         }
 
         private CheckBundleLookupResponse(
                 final String key,
-                final Optional<ServiceCheckBinding> binding,
                 final Optional<Throwable> cause,
                 final CheckBundle request) {
             _key = key;
-            _binding = binding;
             _cause = cause;
-            _request = request;
+            _checkBundle = request;
         }
 
         public boolean isSuccess() {
@@ -510,10 +558,6 @@ public final class CirconusSinkActor extends UntypedActor {
             return _cause.isPresent();
         }
 
-        public Optional<ServiceCheckBinding> getBinding() {
-            return _binding;
-        }
-
         public Optional<Throwable> getCause() {
             return _cause;
         }
@@ -522,47 +566,22 @@ public final class CirconusSinkActor extends UntypedActor {
             return _key;
         }
 
-        public CheckBundle getRequest() {
-            return _request;
-        }
-
-        private final String _key;
-        private final Optional<ServiceCheckBinding> _binding;
-        private final Optional<Throwable> _cause;
-        private final CheckBundle _request;
-    }
-
-    private static final class ServiceCheckBinding {
-        public ServiceCheckBinding(final String key, final URI url, final CheckBundle checkBundle) {
-            _key = key;
-            _url = url;
-            _checkBundle = checkBundle;
-        }
-
-        public String getKey() {
-            return _key;
-        }
-
-        public URI getUrl() {
-            return _url;
-        }
-
         public CheckBundle getCheckBundle() {
             return _checkBundle;
         }
 
         private final String _key;
-        private final URI _url;
-        private final com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundle _checkBundle;
+        private final Optional<Throwable> _cause;
+        private final CheckBundle _checkBundle;
     }
 
     private static final class RequestQueueEntry {
-        public RequestQueueEntry(final ServiceCheckBinding binding, final Map<String, Object> data) {
+        private RequestQueueEntry(final CheckBundle binding, final Map<String, Object> data) {
             _binding = binding;
             _data = data;
         }
 
-        public ServiceCheckBinding getBinding() {
+        public CheckBundle getBinding() {
             return _binding;
         }
 
@@ -570,7 +589,7 @@ public final class CirconusSinkActor extends UntypedActor {
             return _data;
         }
 
-        private final ServiceCheckBinding _binding;
+        private final CheckBundle _binding;
         private final Map<String, Object> _data;
     }
 
@@ -578,7 +597,7 @@ public final class CirconusSinkActor extends UntypedActor {
      * Message class to wrap a completed HTTP request.
      */
     private static final class PostFailure {
-        public PostFailure(final Throwable throwable) {
+        private PostFailure(final Throwable throwable) {
             _throwable = throwable;
         }
 
@@ -593,7 +612,7 @@ public final class CirconusSinkActor extends UntypedActor {
      * Message class to wrap an errored HTTP request.
      */
     private static final class PostComplete {
-        public PostComplete(final WSResponse response) {
+        private PostComplete(final WSResponse response) {
             _response = response;
         }
 

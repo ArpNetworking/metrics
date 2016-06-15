@@ -15,12 +15,12 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.configuration.Configuration;
 import com.arpnetworking.configuration.Listener;
 import com.arpnetworking.configuration.jackson.DynamicConfiguration;
 import com.arpnetworking.configuration.jackson.DynamicConfigurationFactory;
 import com.arpnetworking.jackson.BuilderDeserializer;
-import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.Counter;
 import com.arpnetworking.metrics.Metrics;

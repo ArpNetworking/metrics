@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.tsdcore.sinks.circonus.api;
 
-import com.arpnetworking.utility.OvalBuilder;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 import net.sf.oval.constraint.NotEmpty;

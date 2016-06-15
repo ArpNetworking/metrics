@@ -37,6 +37,7 @@ import org.joda.time.Period;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.concurrent.Executors;
 
 /**
  * Publishes to an HTTP endpoint. This class is thread safe.
@@ -143,19 +144,29 @@ public abstract class HttpPostSink extends BaseSink {
     protected HttpPostSink(final Builder<?, ?> builder) {
         super(builder);
         _uri = builder._uri;
-        final AsyncHttpClient client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder().build());
+
         _sinkActor = builder._actorSystem.actorOf(
-                HttpSinkActor.props(client, this, builder._maximumConcurrency, builder._maximumQueueSize, builder._spreadPeriod));
+                HttpSinkActor.props(CLIENT, this, builder._maximumConcurrency, builder._maximumQueueSize, builder._spreadPeriod));
     }
 
     private final URI _uri;
     private final ActorRef _sinkActor;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpPostSink.class);
+    private static final AsyncHttpClient CLIENT;
+
+    static {
+        final AsyncHttpClientConfig.Builder clientConfigBuilder = new AsyncHttpClientConfig.Builder();
+        clientConfigBuilder.setExecutorService(Executors.newCachedThreadPool((r) -> new Thread(r, "HttpPostSinkWorker")));
+        final AsyncHttpClientConfig clientConfig = clientConfigBuilder.build();
+        CLIENT = new AsyncHttpClient(clientConfig);
+    }
 
     /**
      * Implementation of abstract builder pattern for <code>HttpPostSink</code>.
      *
+     * @param <B> type of the builder
+     * @param <S> type of the object to be built
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
     public abstract static class Builder<B extends BaseSink.Builder<B, S>, S extends HttpPostSink> extends BaseSink.Builder<B, S> {

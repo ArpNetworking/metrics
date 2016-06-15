@@ -15,13 +15,13 @@
  */
 package com.arpnetworking.remet.gui;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.configuration.jackson.DynamicConfiguration;
 import com.arpnetworking.configuration.jackson.DynamicConfigurationFactory;
 import com.arpnetworking.configuration.jackson.JsonNodePaginatedUriSource;
 import com.arpnetworking.configuration.triggers.UriTrigger;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import net.sf.oval.constraint.NotEmpty;

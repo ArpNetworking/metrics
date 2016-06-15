@@ -16,8 +16,8 @@
 package com.arpnetworking.clusteraggregator.models;
 
 import akka.actor.ActorRef;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.utility.LexicalNumericComparator;
-import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;

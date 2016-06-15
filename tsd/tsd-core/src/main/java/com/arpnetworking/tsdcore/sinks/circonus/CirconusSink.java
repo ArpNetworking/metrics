@@ -26,7 +26,9 @@ import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.sinks.BaseSink;
 import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
+import com.arpnetworking.utility.partitioning.PartitionSet;
 import com.fasterxml.jackson.annotation.JacksonInject;
+import com.google.inject.name.Named;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -105,7 +107,8 @@ public final class CirconusSink extends BaseSink {
                         builder._maximumConcurrency,
                         builder._maximumQueueSize,
                         builder._spreadPeriod,
-                        builder._enableHistograms));
+                        builder._enableHistograms,
+                        builder._partitionSet));
     }
 
     private final ActorRef _sinkActor;
@@ -241,6 +244,17 @@ public final class CirconusSink extends BaseSink {
         }
 
         /**
+         * Sets the partition set to partition check bundles. Required. Cannot be null.
+         *
+         * @param value a partition set
+         * @return this Builder
+         */
+        public Builder setPartitionSet(final PartitionSet value) {
+            _partitionSet = value;
+            return this;
+        }
+
+        /**
          * Called by setters to always return appropriate subclass of
          * <code>Builder</code>, even from setters of base class.
          *
@@ -278,6 +292,10 @@ public final class CirconusSink extends BaseSink {
         private Period _spreadPeriod = Period.ZERO;
         @NotNull
         private Boolean _enableHistograms = false;
+        @NotNull
+        @JacksonInject
+        @Named("circonus-partition-set")
+        private PartitionSet _partitionSet;
     }
 
 }

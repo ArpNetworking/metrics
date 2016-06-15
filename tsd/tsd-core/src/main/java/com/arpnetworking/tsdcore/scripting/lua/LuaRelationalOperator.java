@@ -58,7 +58,7 @@ public enum LuaRelationalOperator {
         return _token;
     }
 
-    private LuaRelationalOperator(final String token) {
+    LuaRelationalOperator(final String token) {
         _token = token;
     }
 

@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdcore.scripting.lua;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
@@ -25,7 +26,6 @@ import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.scripting.Alert;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.NotEmpty;

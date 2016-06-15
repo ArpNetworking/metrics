@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.clusteraggregator.aggregation;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.ReceiveTimeout;
 import akka.actor.UntypedActor;
-import akka.contrib.pattern.ShardRegion;
+import akka.cluster.sharding.ShardRegion;
+import com.arpnetworking.metrics.aggregation.protocol.Messages;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.tsdcore.Messages;
-import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import scala.Option;
@@ -46,10 +44,15 @@ public class AggregationRouter extends UntypedActor {
      * @param lifecycleTracker Where to register the liveliness of this aggregator.
      * @param metricsListener Where to send metrics about aggregation computations.
      * @param emitter Where to send the metrics data.
+     * @param clusterHostSuffix The suffix to append to the hostname for cluster aggregations.
      * @return A new <code>Props</code>.
      */
-    public static Props props(final ActorRef lifecycleTracker, final ActorRef metricsListener, final ActorRef emitter) {
-        return Props.create(AggregationRouter.class, lifecycleTracker, metricsListener, emitter);
+    public static Props props(
+            final ActorRef lifecycleTracker,
+            final ActorRef metricsListener,
+            final ActorRef emitter,
+            final String clusterHostSuffix) {
+        return Props.create(AggregationRouter.class, lifecycleTracker, metricsListener, emitter, clusterHostSuffix);
     }
 
     /**
@@ -58,14 +61,16 @@ public class AggregationRouter extends UntypedActor {
      * @param lifecycleTracker Where to register the liveliness of this aggregator.
      * @param periodicStatistics Where to send metrics about aggregation computations.
      * @param emitter Where to send the metrics data.
+     * @param clusterHostSuffix The suffix to append to the hostname for cluster aggregations.
      */
     @Inject
     public AggregationRouter(
             @Named("bookkeeper-proxy") final ActorRef lifecycleTracker,
             @Named("periodic-statistics") final ActorRef periodicStatistics,
-            @Named("emitter") final ActorRef emitter) {
-        _sampledChild = context().actorOf(SampleBasedAggregator.props(lifecycleTracker, periodicStatistics, emitter), "sampled");
-        _streamingChild = context().actorOf(StreamingAggregator.props(lifecycleTracker, periodicStatistics, emitter), "streaming");
+            @Named("cluster-emitter") final ActorRef emitter,
+            @Named("cluster-host-suffix") final String clusterHostSuffix) {
+        _streamingChild = context().actorOf(
+                StreamingAggregator.props(lifecycleTracker, periodicStatistics, emitter, clusterHostSuffix), "streaming");
         context().setReceiveTimeout(FiniteDuration.apply(30, TimeUnit.MINUTES));
     }
 
@@ -74,13 +79,10 @@ public class AggregationRouter extends UntypedActor {
      */
     @Override
     public void onReceive(final Object message) throws Exception {
-        if (message instanceof AggregatedData) {
-            _sampledChild.forward(message, context());
-        } else if (message instanceof Messages.StatisticSetRecord) {
+        if (message instanceof Messages.StatisticSetRecord) {
             _streamingChild.forward(message, context());
         } else if (message instanceof ShutdownAggregator) {
             // TODO(barp): review the implications of shutting down (do the children process all of the messages properly?) [AINT-?]
-            _sampledChild.forward(message, context());
             _streamingChild.forward(message, context());
             context().stop(self());
         } else if (message.equals(ReceiveTimeout.getInstance())) {
@@ -101,7 +103,6 @@ public class AggregationRouter extends UntypedActor {
         super.preRestart(reason, message);
     }
 
-    private final ActorRef _sampledChild;
     private final ActorRef _streamingChild;
     private static final Logger LOGGER = LoggerFactory.getLogger(AggregationRouter.class);
 

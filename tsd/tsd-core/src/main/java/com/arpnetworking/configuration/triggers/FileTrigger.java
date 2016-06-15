@@ -15,12 +15,12 @@
  */
 package com.arpnetworking.configuration.triggers;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.configuration.Trigger;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Throwables;
 import net.sf.oval.constraint.NotNull;
 

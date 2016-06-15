@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.configuration.jackson;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.configuration.triggers.DirectoryTrigger;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.collect.Lists;
 
 import java.io.File;

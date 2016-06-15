@@ -18,9 +18,9 @@ package com.arpnetworking.akka;
 import akka.actor.ActorRef;
 import akka.actor.Cancellable;
 import akka.actor.Scheduler;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 import scala.concurrent.ExecutionContext;
@@ -44,6 +44,25 @@ public final class UniformRandomTimeScheduler {
         final Cancellable cancellable = _scheduled.getAndSet(null);
         if (cancellable != null) {
             cancellable.cancel();
+        }
+    }
+
+    /**
+     * Pauses the scheduling of messages.  If already paused, is a no-op.
+     */
+    public void pause() {
+        final Cancellable cancellable = _scheduled.getAndSet(null);
+        if (cancellable != null) {
+            cancellable.cancel();
+        }
+    }
+
+    /**
+     * Resumes the scheduling of the messages.  If already resumed, is a no-op.
+     */
+    public void resume() {
+        if (_scheduled.get() == null) {
+            schedule();
         }
     }
 

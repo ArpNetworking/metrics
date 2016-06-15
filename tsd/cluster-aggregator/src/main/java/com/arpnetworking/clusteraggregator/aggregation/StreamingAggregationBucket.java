@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.clusteraggregator.aggregation;
 
 import com.arpnetworking.clusteraggregator.models.CombinedMetricData;
@@ -57,7 +56,7 @@ public class StreamingAggregationBucket {
     public Map<Statistic, CalculatedValue<?>> compute() {
         final Map<Statistic, CalculatedValue<?>> values = Maps.newHashMap();
         for (final Map.Entry<Statistic, Calculator<?>> entry : _data.entrySet()) {
-            final Calculator calculatorEntry = entry.getValue();
+            final Calculator<?> calculatorEntry = entry.getValue();
             final Statistic statistic = entry.getKey();
             try {
                 values.put(statistic, calculatorEntry.calculate(_data));

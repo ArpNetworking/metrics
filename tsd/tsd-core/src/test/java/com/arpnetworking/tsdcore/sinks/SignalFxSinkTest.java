@@ -1,3 +1,18 @@
+/**
+ * Copyright 2015 Groupon.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.arpnetworking.tsdcore.sinks;
 
 import akka.actor.ActorSystem;
@@ -10,7 +25,6 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.signalfx.metrics.protobuf.SignalFxProtocolBuffers;
 import org.joda.time.DateTime;
@@ -21,10 +35,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.net.URI;
-import java.util.AbstractMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Tests for the <code>SignalFxSink</code> class.
@@ -116,16 +127,19 @@ public class SignalFxSinkTest {
     @Test
     public void testSerialization() throws InvalidProtocolBufferException {
         // NOTE: This test is just here until we can deserialize the data received by WireMock above.
-        final String dataAsString = "10,115,10,4,65,73,78,84,18,17,80,84,49,83,95,77,121,77,101,116,114,105,99,95,109,105,110,24,-96,-77,-2,-102,-120,42,34,9,17,-82,71,-31,122,20,-82,-13,63,40,0,50,24,10,4,104,111,115,116,18,16,97,112,112,49,46,101,120,97,109,112,108,101,46,99,111,109,50,20,10,7,115,101,114,118,105,99,101,18,9,77,121,83,101,114,118,105,99,101,50,20,10,7,99,108,117,115,116,101,114,18,9,77,121,67,108,117,115,116,101,114";
+        final String dataAsString = "10,115,10,4,65,73,78,84,18,17,80,84,49,83,95,77,121,77,101,116,114,105,99,95,109,105,110,24,-96,"
+                + "-77,-2,-102,-120,42,34,9,17,-82,71,-31,122,20,-82,-13,63,40,0,50,24,10,4,104,111,115,116,18,16,97,112,112,49,46,101,"
+                + "120,97,109,112,108,101,46,99,111,109,50,20,10,7,115,101,114,118,105,99,101,18,9,77,121,83,101,114,118,105,99,101,50,"
+                + "20,10,7,99,108,117,115,116,101,114,18,9,77,121,67,108,117,115,116,101,114";
         final String[] dataAsStringArray = dataAsString.split(",");
         final byte[] bytes = new byte[dataAsStringArray.length];
         for (int i = 0; i < bytes.length; ++i) {
-            bytes[i] = (byte)Integer.parseInt(dataAsStringArray[i]);
+            bytes[i] = (byte) Integer.parseInt(dataAsStringArray[i]);
         }
         final SignalFxProtocolBuffers.DataPointUploadMessage sfxMessage =
                 SignalFxProtocolBuffers.DataPointUploadMessage.parseFrom(bytes);
     }
-
+    
     @Rule
     public WireMockRule _wireMockRule = new WireMockRule(8089);
 

@@ -104,11 +104,11 @@ public class StatisticFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(StatisticFactory.class);
 
     static {
+        // NOTE: Do not put log messages in static blocks since they can lock the logger thread!
         final Map<String, Statistic> statisticByNameAndAlias = Maps.newHashMap();
         final Set<Statistic> allStatistics = Sets.newHashSet();
         final Set<Class<? extends Statistic>> statisticClasses = INTERFACE_DATABASE.findClassesWithInterface(Statistic.class);
         for (final Class<? extends Statistic> statisticClass : statisticClasses) {
-            LOGGER.debug(String.format("Considering statistic; class=%s", statisticClass));
             if (!statisticClass.isInterface() && !Modifier.isAbstract(statisticClass.getModifiers())) {
                 try {
                     final Constructor<? extends Statistic> constructor = statisticClass.getDeclaredConstructor();
@@ -121,11 +121,6 @@ public class StatisticFactory {
                     for (final String alias : statistic.getAliases()) {
                         checkedPut(statisticByNameAndAlias, statistic, alias);
                     }
-                    LOGGER.info(String.format(
-                            "Registered statistic; name=%s, aliases=%s, class=%s",
-                            statistic.getName(),
-                            statistic.getAliases(),
-                            statisticClass));
                     // CHECKSTYLE.OFF: IllegalCatch - All exceptions fail.
                 } catch (final Exception e) {
                     // CHECKSTYLE.ON: IllegalCatch

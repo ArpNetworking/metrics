@@ -90,8 +90,8 @@ public class CarbonSinkTest {
 
     private CarbonSink.Builder _carbonSinkBuilder;
 
-    private static class CarbonTestSink extends CarbonSink {
-        public CarbonTestSink(final Consumer<Buffer> bufferConsumer, final Builder builder) {
+    private static final class CarbonTestSink extends CarbonSink {
+        private CarbonTestSink(final Consumer<Buffer> bufferConsumer, final Builder builder) {
             super(builder);
             _bufferConsumer = bufferConsumer;
         }

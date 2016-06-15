@@ -17,7 +17,7 @@ package com.arpnetworking.tsdcore.model;
 
 import akka.util.ByteIterator;
 import akka.util.ByteString;
-import com.arpnetworking.tsdcore.Messages;
+import com.arpnetworking.metrics.aggregation.protocol.Messages;
 import com.google.common.base.Optional;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -94,12 +94,6 @@ public final class AggregationMessage {
             switch (type) {
                 case 0x01:
                     return Optional.of(new AggregationMessage(Messages.HostIdentification.parseFrom(payloadBytes)));
-                case 0x02:
-                    try {
-                        return Optional.of(new AggregationMessage(Messages.AggregationRecord.parseFrom(payloadBytes)));
-                    } catch (final InvalidProtocolBufferException ignored) {
-                        return Optional.of(new AggregationMessage(Messages.LegacyAggRecord.parseFrom(payloadBytes)));
-                    }
                 case 0x03:
                     return Optional.of(new AggregationMessage(Messages.HeartbeatRecord.parseFrom(payloadBytes)));
                 case 0x04:
@@ -111,8 +105,6 @@ public final class AggregationMessage {
                             return Optional.of(new AggregationMessage(Messages.SamplesSupportingData.parseFrom(payloadBytes)));
                         case 0x02:
                             return Optional.of(new AggregationMessage(Messages.SparseHistogramSupportingData.parseFrom(payloadBytes)));
-                        case 0x03:
-                            return Optional.of(new AggregationMessage(Messages.HdrHistogramSupportingData.parseFrom(payloadBytes)));
                         default:
                             LOGGER.warn(
                                     String.format("Invalid protocol buffer, unknown subtype; type=%s, subtype=%s, bytes=%s",
@@ -146,8 +138,6 @@ public final class AggregationMessage {
         b.appendInt(0);
         if (_message instanceof Messages.HostIdentification) {
             b.appendByte((byte) 0x01);
-        } else if (_message instanceof Messages.AggregationRecord) {
-            b.appendByte((byte) 0x02);
         } else if (_message instanceof Messages.HeartbeatRecord) {
             b.appendByte((byte) 0x03);
         } else if (_message instanceof Messages.StatisticSetRecord) {
@@ -158,9 +148,6 @@ public final class AggregationMessage {
         } else if (_message instanceof Messages.SparseHistogramSupportingData) {
             b.appendByte((byte) 0x05);
             b.appendByte((byte) 0x02);
-        } else if (_message instanceof Messages.HdrHistogramSupportingData) {
-            b.appendByte((byte) 0x05);
-            b.appendByte((byte) 0x03);
         } else {
             throw new IllegalArgumentException(String.format("Unsupported message; message=%s", _message));
         }

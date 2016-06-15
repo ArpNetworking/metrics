@@ -41,7 +41,7 @@ public class LexicalNumericComparator implements Comparator<String>, Serializabl
         while (o1Found && o2Found) {
             final String first = o1Matcher.group();
             final String second = o2Matcher.group();
-            int val;
+            final int val;
             if (Character.isDigit(first.charAt(0)) && Character.isDigit(second.charAt(0))) {
                 val = Long.valueOf(first).compareTo(Long.valueOf(second));
             } else {

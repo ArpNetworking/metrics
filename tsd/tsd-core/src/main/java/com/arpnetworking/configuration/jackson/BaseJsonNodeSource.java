@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.configuration.jackson;
 
-import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
@@ -83,6 +83,9 @@ public abstract class BaseJsonNodeSource implements JsonNodeSource {
 
     /**
      * Builder for <code>BaseJsonNodeSource</code>.
+     *
+     * @param <T> type of the builder
+     * @param <S> type of the object to be built
      */
     protected abstract static class Builder<T extends Builder<?, ?>, S extends JsonNodeSource> extends OvalBuilder<S> {
 

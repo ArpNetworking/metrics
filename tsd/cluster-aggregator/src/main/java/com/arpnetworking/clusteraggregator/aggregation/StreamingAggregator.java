@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.clusteraggregator.aggregation;
 
 import akka.actor.ActorRef;
@@ -21,17 +20,20 @@ import akka.actor.Props;
 import akka.actor.ReceiveTimeout;
 import akka.actor.Scheduler;
 import akka.actor.UntypedActor;
-import akka.contrib.pattern.ShardRegion;
+import akka.cluster.sharding.ShardRegion;
 import com.arpnetworking.clusteraggregator.AggregatorLifecycle;
 import com.arpnetworking.clusteraggregator.models.CombinedMetricData;
+import com.arpnetworking.metrics.aggregation.protocol.Messages;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.tsdcore.Messages;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.statistics.Statistic;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -63,10 +65,15 @@ public class StreamingAggregator extends UntypedActor {
      * @param lifecycleTracker Where to register the liveliness of this aggregator.
      * @param metricsListener Where to send metrics about aggregation computations.
      * @param emitter Where to send the metrics data.
+     * @param clusterHostSuffix The suffix to append to the hostname for cluster aggregations.
      * @return A new <code>Props</code>.
      */
-    public static Props props(final ActorRef lifecycleTracker, final ActorRef metricsListener, final ActorRef emitter) {
-        return Props.create(StreamingAggregator.class, lifecycleTracker, metricsListener, emitter);
+    public static Props props(
+            final ActorRef lifecycleTracker,
+            final ActorRef metricsListener,
+            final ActorRef emitter,
+            final String clusterHostSuffix) {
+        return Props.create(StreamingAggregator.class, lifecycleTracker, metricsListener, emitter, clusterHostSuffix);
     }
 
     /**
@@ -75,14 +82,17 @@ public class StreamingAggregator extends UntypedActor {
      * @param lifecycleTracker Where to register the liveliness of this aggregator.
      * @param periodicStatistics Where to send metrics about aggregation computations.
      * @param emitter Where to send the metrics data.
+     * @param clusterHostSuffix The suffix to append to the hostname for cluster aggregations.
      */
     @Inject
     public StreamingAggregator(
             @Named("bookkeeper-proxy") final ActorRef lifecycleTracker,
             @Named("periodic-statistics") final ActorRef periodicStatistics,
-            @Named("emitter") final ActorRef emitter) {
+            @Named("cluster-emitter") final ActorRef emitter,
+            @Named("cluster-host-suffix") final String clusterHostSuffix) {
         _lifecycleTracker = lifecycleTracker;
         _periodicStatistics = periodicStatistics;
+        _clusterHostSuffix = clusterHostSuffix;
         context().setReceiveTimeout(FiniteDuration.apply(30, TimeUnit.MINUTES));
 
         final Scheduler scheduler = getContext().system().scheduler();
@@ -124,6 +134,7 @@ public class StreamingAggregator extends UntypedActor {
 
                         // Walk over every statistic in the bucket
                         final Map<Statistic, CalculatedValue<?>> values = bucket.compute();
+                        final ImmutableList.Builder<AggregatedData> builder = ImmutableList.builder();
                         for (final Map.Entry<Statistic, CalculatedValue<?>> entry : values.entrySet()) {
                             _statistics.add(entry.getKey());
                             final AggregatedData result = _resultBuilder
@@ -145,11 +156,18 @@ public class StreamingAggregator extends UntypedActor {
                                     .addData("result", result)
                                     .addContext("actor", self())
                                     .log();
-                            _emitter.tell(result, getSelf());
+                            builder.add(result);
 
                             _periodicStatistics.tell(result, getSelf());
-
                         }
+                        final PeriodicData periodicData = new PeriodicData.Builder()
+                                .setData(builder.build())
+                                .setDimensions(ImmutableMap.of("host", createHost()))
+                                .setConditions(ImmutableList.of())
+                                .setPeriod(_period)
+                                .setStart(bucket.getPeriodStart())
+                                .build();
+                        _emitter.tell(periodicData, getSelf());
                     } else {
                         //Walk of the list is complete
                         break;
@@ -198,7 +216,7 @@ public class StreamingAggregator extends UntypedActor {
             _metric = metricData.getMetricName();
             _service = metricData.getService();
             _resultBuilder = new AggregatedData.Builder()
-                    .setHost(_cluster + "-cluster")
+                    .setHost(createHost())
                     .setPeriod(_period)
                     .setPopulationSize(1L)
                     .setSamples(Collections.<Quantity>emptyList())
@@ -275,10 +293,15 @@ public class StreamingAggregator extends UntypedActor {
         }
     }
 
+    private String createHost() {
+        return _cluster + "-cluster" + _clusterHostSuffix;
+    }
+
     private final LinkedList<StreamingAggregationBucket> _aggBuckets = Lists.newLinkedList();
     private final ActorRef _emitter;
     private final ActorRef _lifecycleTracker;
     private final ActorRef _periodicStatistics;
+    private final String _clusterHostSuffix;
     private final Set<Statistic> _statistics = Sets.newHashSet();
     private boolean _initialized = false;
     private Period _period;

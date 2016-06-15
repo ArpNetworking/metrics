@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.clusteraggregator.configuration;
 
-import com.arpnetworking.utility.OvalBuilder;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 

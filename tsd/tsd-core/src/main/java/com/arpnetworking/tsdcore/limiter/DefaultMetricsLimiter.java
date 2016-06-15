@@ -15,11 +15,11 @@
  */
 package com.arpnetworking.tsdcore.limiter;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.limiter.legacy.LegacyMetricsLimiter;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.utility.OvalBuilder;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;

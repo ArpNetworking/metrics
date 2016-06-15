@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.tsdcore.sinks.circonus.api;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
-import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -26,8 +26,11 @@ import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 /**
  * Represents a check bundle in Circonus.
@@ -57,6 +60,21 @@ public final class CheckBundle {
 
     public String getStatus() {
         return _status;
+    }
+
+    /**
+     * Gets the submission url for an http trap check bundle.
+     *
+     * @return The {@link URI} of the submission url.
+     */
+    @JsonIgnore
+    @Nullable
+    public URI getSubmissionUrl() {
+        try {
+            return new URI(_config.get("submission_url"));
+        } catch (final URISyntaxException e) {
+            return null;
+        }
     }
 
     private CheckBundle(final Builder builder) {

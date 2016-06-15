@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -199,7 +200,17 @@ public class ThrowingMetrics implements Metrics {
      * {@inheritDoc}
      */
     @Override
-    public void annotate(final String key, final String value) {
+    public void addAnnotation(final String s, final String s1) {
+        if (_throwOnRecord) {
+            throw new RuntimeException("boom");
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addAnnotations(final Map<String, String> map) {
         if (_throwOnRecord) {
             throw new RuntimeException("boom");
         }
@@ -212,7 +223,7 @@ public class ThrowingMetrics implements Metrics {
     public boolean isOpen() {
         return true;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -220,7 +231,7 @@ public class ThrowingMetrics implements Metrics {
     public Instant getOpenTime() {
         return Clock.systemUTC().instant();
     }
-    
+
     /**
      * {@inheritDoc}
      */
