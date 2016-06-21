@@ -18,12 +18,10 @@ dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 verbose=
 services=()
-start_tsd_agg=0
-pid_tsd_agg=
+start_mad=0
+pid_mad=
 start_cluster_agg=0
 pid_cluster_agg=
-start_remet_proxy=0
-pid_remet_proxy=
 start_remet_gui=0
 pid_remet_gui=
 clear_logs=
@@ -38,9 +36,8 @@ function show_help {
   echo " -h|-? -- print this help message"
   echo " -s service -- specify a service to start "
   echo "               services accepted:"
-  echo "                 tsd-aggregator"
+  echo "                 mad"
   echo "                 cluster-aggregator"
-  echo "                 remet-proxy"
   echo "                 remet-gui"
   echo " -a -- start all services"
   echo " -c -- clear logs"
@@ -58,10 +55,10 @@ function handle_interrupt {
 }
 
 function handle_childexit {
-  if [ -n "$pid_tsd_agg" ]; then
-     if is_dead "$pid_tsd_agg"; then
-        echo "Exited: tsd-aggregator ($pid_tsd_agg)"
-        pid_tsd_agg=
+  if [ -n "$pid_mad" ]; then
+     if is_dead "$pid_mad"; then
+        echo "Exited: mad ($pid_mad)"
+        pid_mad=
      fi
   fi
   if [ -n "$pid_cluster_agg" ]; then
@@ -70,18 +67,27 @@ function handle_childexit {
         pid_cluster_agg=
      fi
   fi
-  if [ -n "$pid_remet_proxy" ]; then
-     if is_dead "$pid_remet_proxy"; then
-        echo "Exited: remet-proxy ($pid_remet_proxy)"
-        pid_remet_proxy=
-     fi
-  fi
   if [ -n "$pid_remet_gui" ]; then
      if is_dead "$pid_remet_gui"; then
         echo "Exited: remet-gui ($pid_remet_gui)"
         pid_remet_gui=
      fi
   fi
+}
+
+function find_path_up {
+  local l_name=$1
+  local l_path=${dir}
+  local l_found=false
+  until [[ "${l_path}" == "/" ]] || ${l_found}; do
+    if [[ -e "${l_path}/${l_name}" ]]; then
+      l_found=true
+      l_path="${l_path}/${l_name}"
+    else
+      l_path=$(dirname "${l_path}")
+    fi
+  done
+  echo ${l_path};
 }
 
 # Parse Options
@@ -102,26 +108,21 @@ while getopts ":h?vpacs:" opt; do
       pinger=1
       ;;
     a)
-      services+=("tsd-aggregator")
-      start_tsd_agg=1
+      services+=("mad")
+      start_mad=1
       services+=("cluster-aggregator")
       start_cluster_agg=1
-      services+=("remet-proxy")
-      start_remet_proxy=1
       services+=("remet-gui")
       start_remet_gui=1
       ;;
     s)
       lower_service=$(echo "$OPTARG" | tr '[:upper:]' '[:lower:]')
-      if [ ${lower_service} == "tsd-aggregator" ]; then
-        services+=("tsd-aggregator")
-        start_tsd_agg=1
+      if [ ${lower_service} == "mad" ]; then
+        services+=("mad")
+        start_mad=1
       elif [ ${lower_service} == "cluster-aggregator" ]; then
         services+=("cluster-aggregator")
         start_cluster_agg=1
-      elif [ ${lower_service} == "remet-proxy" ]; then
-        services+=("remet-proxy")
-        start_remet_proxy=1
       elif [ ${lower_service} == "remet-gui" ]; then
         services+=("remet-gui")
         start_remet_gui=1
@@ -159,6 +160,26 @@ set -e
 trap handle_interrupt SIGINT SIGTERM
 trap handle_childexit SIGCHLD
 
+# Find project directories
+dir_tsd="./tsd"
+dir_mad=`find_path_up metrics-aggregator-daemon`
+dir_cluster_agg="./tsd/cluster-aggregator"
+dir_remet_gui=`find_path_up metrics-remet-gui`
+
+# Verify locations for each requested project
+if [ "${start_mad}" -gt 0 ] && [ ! -d "${dir_mad}" ]; then
+  echo "No directory found for requested project mad"
+  exit 1
+fi
+if [ "${start_cluster_agg}" -gt 0 ] && [ ! -d "${dir_cluster_agg}" ]; then
+  echo "No directory found for requested project cluster-aggregator"
+  exit 1
+fi
+if [ "${start_remet_gui}" -gt 0 ] && [ ! -d "${dir_remet_gui}" ]; then
+  echo "No directory found for requested project remet-gui"
+  exit 1
+fi
+
 # Build verbose argument to child programs
 verbose_arg=
 if [ -n "$verbose" ]; then
@@ -166,29 +187,22 @@ if [ -n "$verbose" ]; then
 fi
 
 # Build projects
-if [ $start_remet_proxy -gt 0 ]; then
-  pushd remet-proxy &> /dev/null
-  activator stage
-  if [ "$?" -ne 0 ]; then echo "Build failed: remet-proxy"; exit 1; fi
-  popd &> /dev/null
-fi
-
 if [ $start_remet_gui -gt 0 ]; then
-  pushd remet-gui &> /dev/null
-  activator stage
+  pushd ${dir_remet_gui} &> /dev/null
+  ./activator stage
   if [ "$?" -ne 0 ]; then echo "Build failed: remet-gui"; exit 1; fi
   popd &> /dev/null
 fi
 
-if [ $start_tsd_agg -gt 0 ]; then
-  pushd tsd &> /dev/null
-  ./mvnw install -pl tsd-aggregator -am -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
-  if [ "$?" -ne 0 ]; then echo "Build failed: tsd-aggregator"; exit 1; fi
+if [ $start_mad -gt 0 ]; then
+  pushd ${dir_mad} &> /dev/null
+  ./mvnw install -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
+  if [ "$?" -ne 0 ]; then echo "Build failed: mad"; exit 1; fi
   popd &> /dev/null
 fi
 
 if [ $start_cluster_agg -gt 0 ]; then
-  pushd tsd &> /dev/null
+  pushd ${dir_tsd} &> /dev/null
   ./mvnw install -pl cluster-aggregator -am -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
   if [ "$?" -ne 0 ]; then echo "Build failed: cluster-aggregator"; exit 1; fi
   popd &> /dev/null
@@ -196,10 +210,11 @@ fi
 
 # Run projects
 if [ $start_cluster_agg -gt 0 ]; then
-  pushd tsd/cluster-aggregator &> /dev/null
+  pushd ${dir_cluster_agg} &> /dev/null
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
   fi
+  rm -rf ./target/h2
   ./target/appassembler/bin/cluster-aggregator ${dir}/start/clusteragg/config.json &
   pid_cluster_agg=$!
   echo "Started: cluster-aggregator ($pid_cluster_agg)"
@@ -209,38 +224,14 @@ if [ $start_cluster_agg -gt 0 ]; then
   popd &> /dev/null
 fi
 
-if [ $start_tsd_agg -gt 0 ]; then
-  pushd tsd/tsd-aggregator &> /dev/null
+if [ $start_mad -gt 0 ]; then
+  pushd ${dir_mad} &> /dev/null
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
   fi
-  ./target/appassembler/bin/tsd-aggregator ${dir}/start/tsdagg/config.json &
-  pid_tsd_agg=$!
-  echo "Started: tsd-aggregator ($pid_tsd_agg)"
-  if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:6080/ping" &
-  fi
-  popd &> /dev/null
-fi
-
-if [ $start_remet_proxy -gt 0 ]; then
-  pushd remet-proxy &> /dev/null
-  if [ -e "./target/universal/stage/RUNNING_PID" ]; then
-    pid=`cat ./target/universal/stage/RUNNING_PID`
-    if kill -0 ${pid}; then
-      echo "Service still running: remet-proxy"
-      exit 1
-    else
-      echo "Removing pid file for remet-proxy"
-      rm "./target/universal/stage/RUNNING_PID"
-    fi
-  fi
-  if [ -n "$clear_logs" ]; then
-    rm -rf ./logs
-  fi
-  ./target/universal/stage/bin/remet-proxy -Dhttp.port=7090 &
-  pid_remet_proxy=$!
-  echo "Started: remet-proxy ($pid_remet_proxy)"
+  ./target/appassembler/bin/mad ${dir}/start/mad/config.json &
+  pid_mad=$!
+  echo "Started: mad ($pid_mad)"
   if [ -n "$pinger" ]; then
     ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7090/ping" &
   fi
@@ -248,7 +239,7 @@ if [ $start_remet_proxy -gt 0 ]; then
 fi
 
 if [ $start_remet_gui -gt 0 ]; then
-  pushd remet-gui &> /dev/null
+  pushd ${dir_remet_gui} &> /dev/null
   if [ -e "./target/universal/stage/RUNNING_PID" ]; then
     pid=`cat ./target/universal/stage/RUNNING_PID`
     if kill -0 ${pid}; then
@@ -262,6 +253,7 @@ if [ $start_remet_gui -gt 0 ]; then
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
   fi
+  rm -rf ./target/h2
   ./target/universal/stage/bin/remet-gui -Dhttp.port=8080 &
   pid_remet_gui=$!
   echo "Started: remet-gui ($pid_remet_gui)"
