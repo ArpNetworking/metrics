@@ -22,8 +22,8 @@ start_mad=0
 pid_mad=
 start_cluster_agg=0
 pid_cluster_agg=
-start_remet_gui=0
-pid_remet_gui=
+start_metrics_portal=0
+pid_metrics_portal=
 clear_logs=
 pinger=
 
@@ -38,7 +38,7 @@ function show_help {
   echo "               services accepted:"
   echo "                 mad"
   echo "                 cluster-aggregator"
-  echo "                 remet-gui"
+  echo "                 metrics-portal"
   echo " -a -- start all services"
   echo " -c -- clear logs"
   echo " -p -- run pinger"
@@ -67,10 +67,10 @@ function handle_childexit {
         pid_cluster_agg=
      fi
   fi
-  if [ -n "$pid_remet_gui" ]; then
-     if is_dead "$pid_remet_gui"; then
-        echo "Exited: remet-gui ($pid_remet_gui)"
-        pid_remet_gui=
+  if [ -n "$pid_metrics_portal" ]; then
+     if is_dead "$pid_metrics_portal"; then
+        echo "Exited: metrics-portal ($pid_metrics_portal)"
+        pid_metrics_portal=
      fi
   fi
 }
@@ -112,8 +112,8 @@ while getopts ":h?vpacs:" opt; do
       start_mad=1
       services+=("cluster-aggregator")
       start_cluster_agg=1
-      services+=("remet-gui")
-      start_remet_gui=1
+      services+=("metrics-portal")
+      start_metrics_portal=1
       ;;
     s)
       lower_service=$(echo "$OPTARG" | tr '[:upper:]' '[:lower:]')
@@ -123,9 +123,9 @@ while getopts ":h?vpacs:" opt; do
       elif [ ${lower_service} == "cluster-aggregator" ]; then
         services+=("cluster-aggregator")
         start_cluster_agg=1
-      elif [ ${lower_service} == "remet-gui" ]; then
-        services+=("remet-gui")
-        start_remet_gui=1
+      elif [ ${lower_service} == "metrics-portal" ]; then
+        services+=("metrics-portal")
+        start_metrics_portal=1
       else
         echo "Unknown service ${OPTARG}"
         exit 1
@@ -161,10 +161,9 @@ trap handle_interrupt SIGINT SIGTERM
 trap handle_childexit SIGCHLD
 
 # Find project directories
-dir_tsd="./tsd"
 dir_mad=`find_path_up metrics-aggregator-daemon`
-dir_cluster_agg="./tsd/cluster-aggregator"
-dir_remet_gui=`find_path_up metrics-remet-gui`
+dir_cluster_agg=`find_path_up metrics-cluster-aggregator`
+dir_metrics_portal=`find_path_up metrics-portal`
 
 # Verify locations for each requested project
 if [ "${start_mad}" -gt 0 ] && [ ! -d "${dir_mad}" ]; then
@@ -175,8 +174,8 @@ if [ "${start_cluster_agg}" -gt 0 ] && [ ! -d "${dir_cluster_agg}" ]; then
   echo "No directory found for requested project cluster-aggregator"
   exit 1
 fi
-if [ "${start_remet_gui}" -gt 0 ] && [ ! -d "${dir_remet_gui}" ]; then
-  echo "No directory found for requested project remet-gui"
+if [ "${start_metrics_portal}" -gt 0 ] && [ ! -d "${dir_metrics_portal}" ]; then
+  echo "No directory found for requested project metrics-portal"
   exit 1
 fi
 
@@ -187,10 +186,10 @@ if [ -n "$verbose" ]; then
 fi
 
 # Build projects
-if [ $start_remet_gui -gt 0 ]; then
-  pushd ${dir_remet_gui} &> /dev/null
+if [ $start_metrics_portal -gt 0 ]; then
+  pushd ${dir_metrics_portal} &> /dev/null
   ./activator stage
-  if [ "$?" -ne 0 ]; then echo "Build failed: remet-gui"; exit 1; fi
+  if [ "$?" -ne 0 ]; then echo "Build failed: metrics-portal"; exit 1; fi
   popd &> /dev/null
 fi
 
@@ -202,8 +201,8 @@ if [ $start_mad -gt 0 ]; then
 fi
 
 if [ $start_cluster_agg -gt 0 ]; then
-  pushd ${dir_tsd} &> /dev/null
-  ./mvnw install -pl cluster-aggregator -am -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
+  pushd ${dir_cluster_agg} &> /dev/null
+  ./mvnw install -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
   if [ "$?" -ne 0 ]; then echo "Build failed: cluster-aggregator"; exit 1; fi
   popd &> /dev/null
 fi
@@ -215,7 +214,9 @@ if [ $start_cluster_agg -gt 0 ]; then
     rm -rf ./logs
   fi
   rm -rf ./target/h2
-  ./target/appassembler/bin/cluster-aggregator ${dir}/start/clusteragg/config.json &
+  rm -rf ./journal
+  rm -rf ./query.log
+  ./target/appassembler/bin/cluster-aggregator ${dir}/config/clusteragg/config.json &
   pid_cluster_agg=$!
   echo "Started: cluster-aggregator ($pid_cluster_agg)"
   if [ -n "$pinger" ]; then
@@ -229,7 +230,8 @@ if [ $start_mad -gt 0 ]; then
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
   fi
-  ./target/appassembler/bin/mad ${dir}/start/mad/config.json &
+  rm -rf ./query.log
+  ./target/appassembler/bin/mad ${dir}/config/mad/config.json &
   pid_mad=$!
   echo "Started: mad ($pid_mad)"
   if [ -n "$pinger" ]; then
@@ -238,15 +240,15 @@ if [ $start_mad -gt 0 ]; then
   popd &> /dev/null
 fi
 
-if [ $start_remet_gui -gt 0 ]; then
-  pushd ${dir_remet_gui} &> /dev/null
+if [ $start_metrics_portal -gt 0 ]; then
+  pushd ${dir_metrics_portal} &> /dev/null
   if [ -e "./target/universal/stage/RUNNING_PID" ]; then
     pid=`cat ./target/universal/stage/RUNNING_PID`
     if kill -0 ${pid}; then
-      echo "Service still running: remet-gui"
+      echo "Service still running: metrics-portal"
       exit 1
     else
-      echo "Removing pid file for remet-gui"
+      echo "Removing pid file for metrics-portal"
       rm "./target/universal/stage/RUNNING_PID"
     fi
   fi
@@ -254,9 +256,9 @@ if [ $start_remet_gui -gt 0 ]; then
     rm -rf ./logs
   fi
   rm -rf ./target/h2
-  ./target/universal/stage/bin/remet-gui -Dhttp.port=8080 &
-  pid_remet_gui=$!
-  echo "Started: remet-gui ($pid_remet_gui)"
+  ./target/universal/stage/bin/metrics-portal -Dhttp.port=8080 -Dconfig.resource=portal.application.conf &
+  pid_metrics_portal=$!
+  echo "Started: metrics-portal ($pid_metrics_portal)"
   if [ -n "$pinger" ]; then
     ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8080/ping" &
   fi

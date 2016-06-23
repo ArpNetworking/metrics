@@ -1,0 +1,95 @@
+{
+  "name": "MadPipeline",
+  "timerStatistics": [
+    "min",
+    "median",
+    "p90",
+    "p95",
+    "p99",
+    "p99p9",
+    "max",
+    "count",
+    "mean",
+    "sum"
+  ],
+  "counterStatistics": [
+    "min",
+    "median",
+    "p90",
+    "p95",
+    "p99",
+    "p99p9",
+    "max",
+    "count",
+    "mean",
+    "sum"
+  ],
+  "gaugeStatistics": [
+    "min",
+    "median",
+    "p90",
+    "p95",
+    "p99",
+    "p99p9",
+    "max",
+    "count",
+    "mean",
+    "sum"
+  ],
+  "statistics": {
+    ".*age": [
+      "max"
+    ]
+  },
+  "sources": [
+    {
+      "type": "com.arpnetworking.metrics.common.sources.FileSource",
+      "name": "mad_query_log",
+      "sourceFile": "logs/mad-query.log",
+      "stateFile": "logs/mad-query.log.state",
+      "parser": {
+        "type": "com.arpnetworking.metrics.mad.parsers.JsonToRecordParser",
+        "defaultService": "mad",
+        "defaultCluster": "metrics_dev",
+        "defaultHost": "localhost.dev"
+      }
+    }
+  ],
+  "sinks": [
+    {
+      "type": "com.arpnetworking.tsdcore.sinks.PeriodicStatisticsSink",
+      "name": "mad_periodic_statistics_sink"
+    },
+    {
+      "type": "com.arpnetworking.tsdcore.sinks.PeriodFilteringSink",
+      "name": "period_filtering_mad_telemetry_sink",
+      "excludeGreaterThan": "PT1S",
+      "sink": {
+        "type": "com.arpnetworking.tsdcore.sinks.TimeThresholdSink",
+        "name": "time_threshold_mad_telemetry_sink",
+        "threshold": "PT10M",
+        "sink": {
+          "type": "com.arpnetworking.tsdcore.sinks.TelemetrySink",
+          "name": "mad_telemetry_sink"
+        }
+      }
+    },
+    {
+      "type": "com.arpnetworking.tsdcore.sinks.PeriodFilteringSink",
+      "name": "period_filtering_mad_cluster_sink",
+      "excludeLessThan": "PT1M",
+      "sink": {
+        "type": "com.arpnetworking.tsdcore.sinks.TimeThresholdSink",
+        "name": "time_threshold_mad_cluster_sink",
+        "threshold": "PT10M",
+        "logOnly": true,
+        "sink": {
+          "type": "com.arpnetworking.tsdcore.sinks.AggregationServerSink",
+          "name": "mad_cluster_sink",
+          "serverAddress": "localhost",
+          "serverPort": 7065
+        }
+      }
+    }
+  ]
+}
