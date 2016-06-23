@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdcore.scripting.lua;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
@@ -28,7 +29,6 @@ import com.arpnetworking.tsdcore.scripting.Expression;
 import com.arpnetworking.tsdcore.scripting.ScriptingException;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.StatisticFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -303,9 +303,9 @@ public class LuaExpression implements Expression {
     private static final CreateQuantityLuaFunction CREATE_QUANTITY_LUA_FUNCTION = new CreateQuantityLuaFunction();
     private static final Logger LOGGER = LoggerFactory.getLogger(LuaExpression.class);
 
-    private class DependencyVisitor extends Visitor {
+    private final class DependencyVisitor extends Visitor {
 
-        public DependencyVisitor(final Set<FQDSN> dependencies) {
+        private DependencyVisitor(final Set<FQDSN> dependencies) {
             _dependencies = dependencies;
             _tokens = Lists.newArrayList();
             _isMetric = false;
@@ -603,18 +603,18 @@ public class LuaExpression implements Expression {
 
     private static final class LuaQuantity {
 
-        public LuaQuantity(final double value, final String unit) {
+        private LuaQuantity(final double value, final String unit) {
             this(value, unit == null ? null : Unit.valueOf(unit));
         }
 
-        public LuaQuantity(final double value, final Unit unit) {
+        private LuaQuantity(final double value, final Unit unit) {
             this(new Quantity.Builder()
                     .setValue(value)
                     .setUnit(unit)
                     .build());
         }
 
-        public LuaQuantity(final Quantity quantity) {
+        private LuaQuantity(final Quantity quantity) {
             _quantity = quantity;
         }
 

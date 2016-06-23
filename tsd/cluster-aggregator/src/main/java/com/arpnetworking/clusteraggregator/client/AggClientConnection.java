@@ -23,21 +23,26 @@ import akka.actor.UntypedActor;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
 import akka.util.ByteString;
+import com.arpnetworking.clusteraggregator.models.CombinedMetricData;
+import com.arpnetworking.metrics.aggregation.protocol.Messages;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.tsdcore.Messages;
+import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.AggregationMessage;
-import com.arpnetworking.tsdcore.statistics.CountStatistic;
-import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
+import com.arpnetworking.tsdcore.model.FQDSN;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.GeneratedMessage;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -124,7 +129,6 @@ public class AggClientConnection extends UntypedActor {
         } else {
             unhandled(message);
         }
-
     }
 
     private void processMessages() {
@@ -150,23 +154,15 @@ public class AggClientConnection extends UntypedActor {
                         .log();
             } else if (gm instanceof Messages.StatisticSetRecord) {
                 final Messages.StatisticSetRecord setRecord = (Messages.StatisticSetRecord) gm;
-                LOGGER.debug()
+                LOGGER.trace()
                         .setMessage("StatisticSet record received")
                         .addData("aggregation", setRecord)
                         .addContext("actor", self())
                         .log();
                 getContext().parent().tell(setRecord, getSelf());
-
-            } else if (gm instanceof Messages.AggregationRecord && IS_ENABLED) {
-                final Messages.AggregationRecord aggRecord = (Messages.AggregationRecord) gm;
-                LOGGER.debug()
-                        .setMessage("Aggregation received")
-                        .addData("aggregation", aggRecord)
-                        .addContext("actor", self())
-                        .log();
-                final Optional<Messages.StatisticSetRecord> record = createStatisticSetRecord(aggRecord);
-                if (record.isPresent()) {
-                    getContext().parent().tell(record.get(), getSelf());
+                if (setRecord.getStatisticsCount() > 0) {
+                    final PeriodicData periodicData = buildPeriodicData(setRecord);
+                    getContext().parent().tell(periodicData, self());
                 }
             } else if (gm instanceof Messages.HeartbeatRecord) {
                 LOGGER.debug()
@@ -195,77 +191,36 @@ public class AggClientConnection extends UntypedActor {
         _buffer = current;
     }
 
-    private Optional<Messages.StatisticSetRecord> createStatisticSetRecord(final Messages.AggregationRecord aggRecord) {
-        final Optional<Statistic> statisticOptional = _statisticFactory.tryGetStatistic(aggRecord.getStatistic());
-        if (!statisticOptional.isPresent()) {
-            LOGGER.error()
-                    .setMessage("Unsupported statistic")
-                    .addData("name", aggRecord.getStatistic())
-                    .addContext("actor", self())
-                    .log();
-            return Optional.absent();
+    private PeriodicData buildPeriodicData(final Messages.StatisticSetRecord setRecord) {
+        final CombinedMetricData combinedMetricData = CombinedMetricData.Builder.fromStatisticSetRecord(setRecord).build();
+        final ImmutableList.Builder<AggregatedData> builder = ImmutableList.builder();
+        for (final Map.Entry<Statistic, CombinedMetricData.StatisticValue> record
+                : combinedMetricData.getCalculatedValues().entrySet()) {
+            final AggregatedData aggregatedData = new AggregatedData.Builder()
+                    .setFQDSN(new FQDSN.Builder()
+                            .setCluster(setRecord.getCluster())
+                            .setMetric(setRecord.getMetric())
+                            .setService(setRecord.getService())
+                            .setStatistic(record.getKey())
+                            .build())
+                    .setHost(_hostName.or(""))
+                    .setIsSpecified(record.getValue().getUserSpecified())
+                    .setPeriod(combinedMetricData.getPeriod())
+                    .setPopulationSize(1L)
+                    .setSamples(Collections.emptyList())
+                    .setStart(combinedMetricData.getPeriodStart())
+                    .setSupportingData(record.getValue().getValue().getData())
+                    .setValue(record.getValue().getValue().getValue())
+                    .build();
+            builder.add(aggregatedData);
         }
-
-        final Messages.StatisticSetRecord.Builder setBuilder = Messages.StatisticSetRecord.newBuilder()
-                .setCluster(_clusterName.get())
-                .setMetric(aggRecord.getMetric())
-                .setPeriod(aggRecord.getPeriod())
-                .setPeriodStart(aggRecord.getPeriodStart())
-                .setService(aggRecord.getService());
-
-        // Counts dont have units, we dont want to mix a non-unit with a unit
-        if (aggRecord.getSamplesList().size() > 0 && !(statisticOptional.get() instanceof CountStatistic)) {
-            double sum = 0;
-            final HistogramStatistic.Histogram histogram = new HistogramStatistic.Histogram();
-            for (final Double val : aggRecord.getSamplesList()) {
-                histogram.recordValue(val);
-                sum += val;
-            }
-            final Messages.SparseHistogramSupportingData.Builder builder = Messages.SparseHistogramSupportingData.newBuilder();
-            builder.setUnit(aggRecord.getUnit());
-            for (final Map.Entry<Double, Integer> entry : histogram.getSnapshot().getValues()) {
-                builder.addEntriesBuilder()
-                        .setBucket(entry.getKey())
-                        .setCount(entry.getValue())
-                        .build();
-            }
-            final com.google.protobuf.ByteString byteString = com.google.protobuf.ByteString.copyFrom(
-                    AggregationMessage.create(builder.build()).serialize().getBytes());
-            setBuilder.addStatisticsBuilder()
-                    .setStatistic(aggRecord.getStatistic())
-                    .setUnit(aggRecord.getUnit())
-                    .setValue(aggRecord.getStatisticValue())
-                    .setUserSpecified(true)
-                    .build();
-            setBuilder.addStatisticsBuilder()
-                    .setStatistic("histogram")
-                    .setUnit(aggRecord.getUnit())
-                    .setValue(aggRecord.getStatisticValue())
-                    .setSupportingData(byteString)
-                    .setUserSpecified(false)
-                    .build();
-            setBuilder.addStatisticsBuilder()
-                    .setStatistic("count")
-                    .setUnit("")
-                    .setValue(aggRecord.getPopulationSize())
-                    .setUserSpecified(false)
-                    .build();
-            setBuilder.addStatisticsBuilder()
-                    .setStatistic("sum")
-                    .setUnit(aggRecord.getUnit())
-                    .setValue(sum)
-                    .setUserSpecified(false)
-                    .build();
-        } else {
-            setBuilder.addStatisticsBuilder()
-                    .setStatistic(aggRecord.getStatistic())
-                    .setUnit(aggRecord.getUnit())
-                    .setValue(aggRecord.getStatisticValue())
-                    .setUserSpecified(true)
-                    .build();
-        }
-
-        return Optional.of(setBuilder.build());
+        return new PeriodicData.Builder()
+                .setData(builder.build())
+                .setConditions(ImmutableList.of())
+                .setDimensions(ImmutableMap.of("host", _hostName.or("")))
+                .setPeriod(combinedMetricData.getPeriod())
+                .setStart(combinedMetricData.getPeriodStart())
+                .build();
     }
 
     private Optional<String> _hostName = Optional.absent();

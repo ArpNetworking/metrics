@@ -80,28 +80,9 @@ public final class SignalFxSink extends HttpPostSink {
                 continue;
             }
 
-            final SignalFxProtocolBuffers.Datum.Builder sfxDatum = SignalFxProtocolBuffers.Datum.newBuilder();
-            sfxDatum.setDoubleValue(datum.getValue().getValue());
-
-            final List<SignalFxProtocolBuffers.Dimension> sfxDimensions = Lists.newArrayList();
-            // TODO(vkoskela): The publication of cluster vs host metrics needs to be formalized. [AINT-678]
-            if (periodicData.getDimensions().get("host").endsWith("-cluster")) {
-                sfxDimensions.add(createSfxDimension("scope", "cluster"));
-            } else {
-                sfxDimensions.add(createSfxDimension("scope", "host"));
-                sfxDimensions.add(createSfxDimension("host", periodicData.getDimensions().get("host")));
-            }
-            sfxDimensions.add(createSfxDimension("service", datum.getFQDSN().getService()));
-            sfxDimensions.add(createSfxDimension("cluster", datum.getFQDSN().getCluster()));
-
-            final SignalFxProtocolBuffers.DataPoint.Builder sfxDataPoint = SignalFxProtocolBuffers.DataPoint.newBuilder();
-            sfxDataPoint.setMetricType(SignalFxProtocolBuffers.MetricType.GAUGE);
-            sfxDataPoint.setMetric(period + "_" + datum.getFQDSN().getMetric() + "_" + datum.getFQDSN().getStatistic().getName());
-            sfxDataPoint.addAllDimensions(sfxDimensions);
-            sfxDataPoint.setTimestamp(timestamp);
-            sfxDataPoint.setValue(sfxDatum);
-            sfxDataPoint.setSource(_source.orNull());
-            sfxMessage.addDatapoints(sfxDataPoint.build());
+            final List<SignalFxProtocolBuffers.Dimension> sfxDimensions = createDimensions(periodicData, datum);
+            final SignalFxProtocolBuffers.DataPoint dataPoint = createDataPoint(period, timestamp, datum, sfxDimensions);
+            sfxMessage.addDatapoints(dataPoint);
 
             // In conversation with the SignalFX team we were instructed to limit the number of data points sent per
             // request based on the data points and dimensions per data point.
@@ -137,6 +118,37 @@ public final class SignalFxSink extends HttpPostSink {
                 .build();
     }
 
+    private SignalFxProtocolBuffers.DataPoint createDataPoint(
+            final String period,
+            final long timestamp,
+            final AggregatedData datum,
+            final List<SignalFxProtocolBuffers.Dimension> sfxDimensions) {
+        final SignalFxProtocolBuffers.Datum.Builder sfxDatum = SignalFxProtocolBuffers.Datum.newBuilder();
+        sfxDatum.setDoubleValue(datum.getValue().getValue());
+        final SignalFxProtocolBuffers.DataPoint.Builder sfxDataPoint = SignalFxProtocolBuffers.DataPoint.newBuilder();
+        sfxDataPoint.setMetricType(SignalFxProtocolBuffers.MetricType.GAUGE);
+        sfxDataPoint.setMetric(period + "_" + datum.getFQDSN().getMetric() + "_" + datum.getFQDSN().getStatistic().getName());
+        sfxDataPoint.addAllDimensions(sfxDimensions);
+        sfxDataPoint.setTimestamp(timestamp);
+        sfxDataPoint.setValue(sfxDatum);
+        sfxDataPoint.setSource(_source.orNull());
+        return sfxDataPoint.build();
+    }
+
+    private List<SignalFxProtocolBuffers.Dimension> createDimensions(final PeriodicData periodicData, final AggregatedData datum) {
+        final List<SignalFxProtocolBuffers.Dimension> sfxDimensions = Lists.newArrayList();
+        // TODO(vkoskela): The publication of cluster vs host metrics needs to be formalized. [AINT-678]
+        if (periodicData.getDimensions().get("host").matches("^.*-cluster\\.[^\\.]+$")) {
+            sfxDimensions.add(createSfxDimension("scope", "cluster"));
+        } else {
+            sfxDimensions.add(createSfxDimension("scope", "host"));
+            sfxDimensions.add(createSfxDimension("host", periodicData.getDimensions().get("host")));
+        }
+        sfxDimensions.add(createSfxDimension("service", datum.getFQDSN().getService()));
+        sfxDimensions.add(createSfxDimension("cluster", datum.getFQDSN().getCluster()));
+        return sfxDimensions;
+    }
+
     private static SignalFxProtocolBuffers.Dimension createSfxDimension(final String key, final String value) {
         final SignalFxProtocolBuffers.Dimension.Builder sfxDimension = SignalFxProtocolBuffers.Dimension.newBuilder();
         sfxDimension.setKey(key);
@@ -158,7 +170,7 @@ public final class SignalFxSink extends HttpPostSink {
     private final int _maxMetricDimensions;
 
     /**
-     * Implementation of builder pattern for <code>MonitordSink</code>.
+     * Implementation of builder pattern for <code>SignalFxSink</code>.
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */

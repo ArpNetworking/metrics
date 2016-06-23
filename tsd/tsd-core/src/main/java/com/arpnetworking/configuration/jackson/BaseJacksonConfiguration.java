@@ -15,11 +15,11 @@
  */
 package com.arpnetworking.configuration.jackson;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.configuration.Configuration;
-import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -177,6 +177,9 @@ public abstract class BaseJacksonConfiguration extends com.arpnetworking.configu
 
     /**
      * Builder for <code>BaseObjectMapperConfiguration</code>.
+     *
+     * @param <T> type of the builder
+     * @param <S> type of the object to be built
      */
     protected abstract static class Builder<T extends Builder<?, ?>, S extends Configuration> extends OvalBuilder<S> {
 

@@ -34,7 +34,6 @@ import java.util.Set;
 @Loggable
 public final class MaxStatistic extends BaseStatistic {
 
-
     /**
      * {@inheritDoc}
      */
@@ -109,7 +108,7 @@ public final class MaxStatistic extends BaseStatistic {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class MaxAccumulator implements Accumulator<Void> {
+    public static final class MaxAccumulator extends BaseCalculator<Void> implements Accumulator<Void> {
 
         /**
          * Public constructor.
@@ -117,15 +116,7 @@ public final class MaxStatistic extends BaseStatistic {
          * @param statistic The <code>Statistic</code>.
          */
         public MaxAccumulator(final Statistic statistic) {
-            _statistic = statistic;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Statistic getStatistic() {
-            return _statistic;
+            super(statistic);
         }
 
         /**
@@ -161,7 +152,6 @@ public final class MaxStatistic extends BaseStatistic {
                     .build();
         }
 
-        private final Statistic _statistic;
         private Optional<Quantity> _max = Optional.absent();
     }
 }

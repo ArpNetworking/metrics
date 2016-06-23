@@ -86,23 +86,15 @@ public final class CountStatistic extends BaseStatistic {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    private static final class CountAccumulator implements Accumulator<Void> {
+    private static final class CountAccumulator extends BaseCalculator<Void> implements Accumulator<Void> {
 
         /**
          * Public constructor.
          *
          * @param statistic The <code>Statistic</code>.
          */
-        public CountAccumulator(final Statistic statistic) {
-            _statistic = statistic;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Statistic getStatistic() {
-            return _statistic;
+        private CountAccumulator(final Statistic statistic) {
+            super(statistic);
         }
 
         /**
@@ -135,7 +127,6 @@ public final class CountStatistic extends BaseStatistic {
                     .build();
         }
 
-        private final Statistic _statistic;
         private long _count = 0;
     }
 }

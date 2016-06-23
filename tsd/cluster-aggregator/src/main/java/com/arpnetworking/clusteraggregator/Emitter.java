@@ -22,6 +22,7 @@ import com.arpnetworking.clusteraggregator.configuration.EmitterConfiguration;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.sinks.MultiSink;
 import com.arpnetworking.tsdcore.sinks.Sink;
 
@@ -66,11 +67,18 @@ public class Emitter extends UntypedActor {
     public void onReceive(final Object message) throws Exception {
         if (message instanceof AggregatedData) {
             final AggregatedData data = (AggregatedData) message;
-            LOGGER.debug()
+            LOGGER.trace()
                     .setMessage("Emitting data to sink")
                     .addData("data", message)
                     .log();
             _sink.recordAggregateData(Collections.singletonList(data));
+        } else if (message instanceof PeriodicData) {
+            final PeriodicData data = (PeriodicData) message;
+            LOGGER.trace()
+                    .setMessage("Emitting data to sink")
+                    .addData("data", message)
+                    .log();
+            _sink.recordAggregateData(data);
         } else {
             unhandled(message);
         }

@@ -28,6 +28,7 @@ import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -133,7 +134,7 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class PercentileCalculator implements Calculator<Void> {
+    public static final class PercentileCalculator extends BaseCalculator<Void> implements Calculator<Void> {
 
         /**
          * Public constructor.
@@ -141,15 +142,7 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
          * @param statistic The <code>TPStatistic</code>.
          */
         public PercentileCalculator(final TPStatistic statistic) {
-            _statistic = statistic;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Statistic getStatistic() {
-            return _statistic;
+            super(statistic);
         }
 
         /**
@@ -159,15 +152,34 @@ public abstract class TPStatistic extends BaseStatistic implements OrderedStatis
         public CalculatedValue<Void> calculate(final Map<Statistic, Calculator<?>> dependencies) {
             final HistogramStatistic.HistogramAccumulator calculator =
                     (HistogramStatistic.HistogramAccumulator) dependencies.get(HISTOGRAM_STATISTIC.get());
-            // TODO(vkoskela): Instead of sending the samples with each percentile just send the histogram. [NEXT]
-            // This requires Cluster Aggregator to use the same aggregation technique.
-            // Make sure we calculate the histogram first
-            calculator.calculate(dependencies);
             return new CalculatedValue.Builder<Void>()
-                    .setValue(calculator.calculate(_statistic.getPercentile()))
-                    .build();
+                    .setValue(calculator.calculate(((TPStatistic) getStatistic()).getPercentile()))
+                            .build();
         }
 
-        private TPStatistic _statistic;
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            return Objects.hash(getClass(), getStatistic());
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals(final Object other) {
+            if (this == other) {
+                return true;
+            }
+
+            if (!getClass().equals(other.getClass())) {
+                return false;
+            }
+
+            final PercentileCalculator otherPercentileCalculator = (PercentileCalculator) other;
+            return getStatistic().equals(otherPercentileCalculator.getStatistic());
+        }
     }
 }

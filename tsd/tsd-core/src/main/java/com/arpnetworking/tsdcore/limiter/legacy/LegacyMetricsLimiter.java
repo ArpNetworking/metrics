@@ -15,13 +15,13 @@
  */
 package com.arpnetworking.tsdcore.limiter.legacy;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

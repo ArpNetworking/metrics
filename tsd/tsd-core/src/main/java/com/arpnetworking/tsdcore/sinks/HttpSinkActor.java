@@ -17,7 +17,6 @@ package com.arpnetworking.tsdcore.sinks;
 
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import akka.dispatch.Recover;
 import akka.pattern.Patterns;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
@@ -25,6 +24,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.common.collect.EvictingQueue;
+import com.google.common.collect.Sets;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
@@ -32,13 +32,13 @@ import com.ning.http.client.Response;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.joda.time.Period;
 import play.libs.F;
-import scala.PartialFunction;
 import scala.concurrent.duration.FiniteDuration;
-import scala.runtime.AbstractPartialFunction;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -160,7 +160,7 @@ public class HttpSinkActor extends UntypedActor {
         _inflightRequestsCount--;
         final Response response = complete.getResponse();
         final int responseStatusCode = response.getStatusCode();
-        if (responseStatusCode == HttpResponseStatus.OK.code()) {
+        if (ACCEPTED_STATUS_CODES.contains(responseStatusCode)) {
             LOGGER.debug()
                     .setMessage("Post accepted")
                     .addData("sink", _sink)
@@ -179,7 +179,10 @@ public class HttpSinkActor extends UntypedActor {
                     .setMessage("Post rejected")
                     .addData("sink", _sink)
                     .addData("status", responseStatusCode)
-                    .addData("body", responseBody)
+                    // CHECKSTYLE.OFF: IllegalInstantiation - This is ok for String from byte[]
+                    .addData("request", new String(complete.getRequest().getByteData()))
+                    // CHECKSTYLE.ON: IllegalInstantiation
+                    .addData("response", responseBody)
                     .addContext("actor", self())
                     .log();
         }
@@ -208,7 +211,7 @@ public class HttpSinkActor extends UntypedActor {
             }
 
             if (evicted > 0) {
-                LOGGER.warn()
+                EVICTED_LOGGER.warn()
                         .setMessage("Evicted data from HTTP sink queue")
                         .addData("sink", _sink)
                         .addData("count", evicted)
@@ -269,7 +272,7 @@ public class HttpSinkActor extends UntypedActor {
         });
         // TODO(vkoskela): Remove Play Promise usage and Play Framework dependency. [AINT-?]
         final F.Promise<Object> responsePromise = F.Promise.<Response>wrap(scalaPromise.future())
-                .<Object>map(PostComplete::new)
+                .<Object>map(response -> new PostComplete(request, response))
                 .recover(PostFailure::new);
         Patterns.pipe(responsePromise.wrapped(), context().dispatcher()).to(self());
     }
@@ -297,6 +300,16 @@ public class HttpSinkActor extends UntypedActor {
     private final int _spreadingDelayMillis;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpPostSink.class);
+    private static final Logger EVICTED_LOGGER = LoggerFactory.getRateLimitLogger(HttpPostSink.class, Duration.ofSeconds(30));
+    private static final Set<Integer> ACCEPTED_STATUS_CODES = Sets.newHashSet();
+
+    static {
+        // TODO(vkoskela): Make accepted status codes configurable [AINT-682]
+        ACCEPTED_STATUS_CODES.add(HttpResponseStatus.OK.code());
+        ACCEPTED_STATUS_CODES.add(HttpResponseStatus.CREATED.code());
+        ACCEPTED_STATUS_CODES.add(HttpResponseStatus.ACCEPTED.code());
+        ACCEPTED_STATUS_CODES.add(HttpResponseStatus.NO_CONTENT.code());
+    }
 
     /**
      * Message class to wrap a list of {@link com.arpnetworking.tsdcore.model.AggregatedData}.
@@ -323,7 +336,7 @@ public class HttpSinkActor extends UntypedActor {
      * Message class to wrap a completed HTTP request.
      */
     private static final class PostFailure {
-        public PostFailure(final Throwable throwable) {
+        private PostFailure(final Throwable throwable) {
             _throwable = throwable;
         }
 
@@ -338,14 +351,20 @@ public class HttpSinkActor extends UntypedActor {
      * Message class to wrap an errored HTTP request.
      */
     private static final class PostComplete {
-        public PostComplete(final Response response) {
+        private PostComplete(final Request request, final Response response) {
+            _request = request;
             _response = response;
+        }
+
+        public Request getRequest() {
+            return _request;
         }
 
         public Response getResponse() {
             return _response;
         }
 
+        private final Request _request;
         private final Response _response;
     }
 

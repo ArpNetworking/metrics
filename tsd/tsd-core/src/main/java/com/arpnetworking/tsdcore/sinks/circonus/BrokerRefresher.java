@@ -92,21 +92,23 @@ public class BrokerRefresher extends UntypedActor {
                     .log();
 
             context().parent().tell(message, self());
+            _brokerLookup.resume();
         } else if (message instanceof BrokerLookupFailure) {
             final BrokerLookupFailure failure = (BrokerLookupFailure) message;
 
             LOGGER.error()
-                    .setMessage("Failed to lookup broker, trying again in 5 seconds")
+                    .setMessage("Failed to lookup broker, trying again in 60 seconds")
                     .setThrowable(failure.getCause())
                     .addContext("actor", self())
                     .log();
 
             context().system().scheduler().scheduleOnce(
-                    FiniteDuration.apply(5, TimeUnit.SECONDS),
+                    FiniteDuration.apply(60, TimeUnit.SECONDS),
                     self(),
                     new LookupBrokers(),
                     context().dispatcher(),
                     self());
+            _brokerLookup.pause();
         } else {
             unhandled(message);
         }

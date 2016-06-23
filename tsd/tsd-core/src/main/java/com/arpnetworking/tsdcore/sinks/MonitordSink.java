@@ -79,6 +79,7 @@ public final class MonitordSink extends HttpPostSink {
         for (final String key : indexedData.keySet()) {
             final Collection<AggregatedData> namedData = indexedData.get(key);
             if (!namedData.isEmpty()) {
+                stringBuilder.setLength(0);
                 final AggregatedData first = Iterables.getFirst(namedData, null);
                 final String name = new StringBuilder()
                         .append(first.getFQDSN().getService())
@@ -121,6 +122,11 @@ public final class MonitordSink extends HttpPostSink {
                     }
                 }
 
+                // Don't send an empty payload
+                if (dataBuilder.length() == 0) {
+                    continue;
+                }
+
                 stringBuilder.append("run_every=").append(period.toStandardSeconds().getSeconds())
                         .append("&path=").append(first.getFQDSN().getCluster()).append("%2f").append(first.getHost())
                         .append("&monitor=").append(name)
@@ -132,7 +138,6 @@ public final class MonitordSink extends HttpPostSink {
 
                 stringBuilder.setLength(stringBuilder.length() - 3);
                 serializedData.add(stringBuilder.toString().getBytes(Charset.forName("UTF-8")));
-                stringBuilder.setLength(0);
             }
         }
 

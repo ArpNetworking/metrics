@@ -36,8 +36,8 @@ import akka.pattern.Patterns;
 import akka.util.Timeout;
 import com.arpnetworking.clusteraggregator.Status;
 import com.arpnetworking.clusteraggregator.models.StatusResponse;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.configuration.jackson.akka.AkkaModule;
-import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
@@ -113,7 +113,7 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                                 new Mapper<Boolean, HttpResponse>() {
                                     @Override
                                     public HttpResponse apply(final Boolean isHealthy) {
-                                        return (HttpResponse) response()
+                                        return response()
                                                 .withStatus(isHealthy ? StatusCodes.OK : StatusCodes.INTERNAL_SERVER_ERROR)
                                                 .addHeader(PING_CACHE_CONTROL_HEADER)
                                                 .withEntity(JSON_CONTENT_TYPE,
@@ -129,7 +129,7 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                                 new Mapper<StatusResponse, HttpResponse>() {
                                     @Override
                                     public HttpResponse checkedApply(final StatusResponse status) throws JsonProcessingException {
-                                        return (HttpResponse) response()
+                                        return response()
                                                 .withEntity(
                                                         JSON_CONTENT_TYPE,
                                                         _mapper.writeValueAsString(status));
@@ -138,7 +138,7 @@ public class Routes extends AbstractFunction1<HttpRequest, Future<HttpResponse>>
                                 _actorSystem.dispatcher());
             }
         }
-        return Futures.successful((HttpResponse) response().withStatus(404));
+        return Futures.successful(response().withStatus(404));
     }
 
     private HttpResponse response() {

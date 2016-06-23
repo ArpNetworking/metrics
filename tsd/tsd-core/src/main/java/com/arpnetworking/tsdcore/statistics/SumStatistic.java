@@ -86,7 +86,7 @@ public final class SumStatistic extends BaseStatistic {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class SumAccumulator implements Accumulator<Void> {
+    public static final class SumAccumulator extends BaseCalculator<Void> implements Accumulator<Void> {
 
         /**
          * Public constructor.
@@ -94,15 +94,7 @@ public final class SumStatistic extends BaseStatistic {
          * @param statistic The <code>Statistic</code>.
          */
         public SumAccumulator(final Statistic statistic) {
-            _statistic = statistic;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Statistic getStatistic() {
-            return _statistic;
+            super(statistic);
         }
 
         /**
@@ -136,7 +128,6 @@ public final class SumStatistic extends BaseStatistic {
                     .build();
         }
 
-        private final Statistic _statistic;
         private Optional<Quantity> _sum = Optional.absent();
     }
 }

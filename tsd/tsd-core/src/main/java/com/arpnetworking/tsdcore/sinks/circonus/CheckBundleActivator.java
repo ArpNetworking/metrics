@@ -103,6 +103,7 @@ public class CheckBundleActivator extends UntypedActor {
                     .addData("bundle", bundle.getCheckBundle())
                     .addContext("actor", self())
                     .log();
+            context().parent().tell(message, self());
             refreshNextBundle();
         } else if (message instanceof CheckBundleRefreshFailure) {
             final CheckBundleRefreshFailure failure = (CheckBundleRefreshFailure) message;
@@ -186,20 +187,8 @@ public class CheckBundleActivator extends UntypedActor {
 
     private static final class RefreshBundles { }
 
-    private static final class CheckBundleRefreshComplete {
-        public CheckBundleRefreshComplete(final CheckBundle checkBundle) {
-            _checkBundle = checkBundle;
-        }
-
-        public CheckBundle getCheckBundle() {
-            return _checkBundle;
-        }
-
-        private final CheckBundle _checkBundle;
-    }
-
     private static final class CheckBundleRefreshFailure {
-        public CheckBundleRefreshFailure(final Throwable cause) {
+        private CheckBundleRefreshFailure(final Throwable cause) {
             _cause = cause;
         }
 
@@ -211,7 +200,7 @@ public class CheckBundleActivator extends UntypedActor {
     }
 
     private static final class CheckBundleDisabled {
-        public CheckBundleDisabled(final String cid) {
+        private CheckBundleDisabled(final String cid) {
             _cid = cid;
         }
 
@@ -220,6 +209,21 @@ public class CheckBundleActivator extends UntypedActor {
         }
 
         private final String _cid;
+    }
+
+    /**
+     * Message class used to notify self and the CirconusSinkActor about an updated checkbundle.
+     */
+    /* package private */ static final class CheckBundleRefreshComplete {
+        private CheckBundleRefreshComplete(final CheckBundle checkBundle) {
+            _checkBundle = checkBundle;
+        }
+
+        public CheckBundle getCheckBundle() {
+            return _checkBundle;
+        }
+
+        private final CheckBundle _checkBundle;
     }
 
     /**
@@ -241,4 +245,6 @@ public class CheckBundleActivator extends UntypedActor {
 
         private final CheckBundle _checkBundle;
     }
+
+
 }

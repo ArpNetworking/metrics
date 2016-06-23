@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;

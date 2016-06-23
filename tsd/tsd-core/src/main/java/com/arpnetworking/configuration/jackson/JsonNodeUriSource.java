@@ -21,9 +21,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import net.sf.oval.constraint.NotNull;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.params.CoreConnectionPNames;
+import org.apache.http.params.HttpParams;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <code>JsonNode</code> based configuration sourced from a file.
@@ -67,18 +78,41 @@ public final class JsonNodeUriSource extends BaseJsonNodeSource implements JsonN
     private JsonNodeUriSource(final Builder builder) {
         super(builder);
         _uri = builder._uri;
+        _headers = new ArrayList<>(builder._headers);
 
         JsonNode jsonNode = null;
+        HttpGet request = null;
         try {
-            jsonNode = _objectMapper.readTree(_uri.toURL());
+            request = new HttpGet(_uri);
+            if (!_headers.isEmpty()) {
+                //NOTE: This overrides all headers for this request. If other headers are to be added, use addHeader
+                //method after this or change this to addHeaders
+                request.setHeaders(_headers.toArray(new Header[_headers.size()]));
+            }
+            final HttpResponse response = CLIENT.execute(request);
+            jsonNode = _objectMapper.readTree(response.getEntity().getContent());
         } catch (final IOException e) {
             throw Throwables.propagate(e);
+        } finally {
+            if (request != null) {
+                request.releaseConnection();
+            }
         }
         _jsonNode = Optional.fromNullable(jsonNode);
     }
 
     private final URI _uri;
+    private final List<Header> _headers;
     private final Optional<JsonNode> _jsonNode;
+
+    private static final ClientConnectionManager CONNECTION_MANAGER = new PoolingClientConnectionManager();
+    private static final HttpClient CLIENT = new DefaultHttpClient(CONNECTION_MANAGER);
+    private static final int CONNECTION_TIMEOUT_IN_MILLISECONDS = 3000;
+
+    static {
+        final HttpParams params = CLIENT.getParams();
+        params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MILLISECONDS);
+    }
 
     /**
      * Builder for <code>JsonNodeUriSource</code>.
@@ -104,6 +138,39 @@ public final class JsonNodeUriSource extends BaseJsonNodeSource implements JsonN
         }
 
         /**
+         * Add a request header for the source.
+         *
+         * @param value The <code>Header</code> value.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder addHeader(final Header value) {
+            _headers.add(value);
+            return this;
+        }
+
+        /**
+         * Add a list of request headers for the source.
+         *
+         * @param values The <code>List</code> of <code>Header</code> values.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder addHeaders(final List<Header> values) {
+            _headers.addAll(values);
+            return this;
+        }
+
+        /**
+         * Overrides the existing headers with  a <code>List</code> of <code>Header</code>.
+         *
+         * @param values A <code>List</code> of HTTP headers.
+         * @return This <code>Builder</code> instance.
+         */
+        public Builder setHeaders(final List<Header> values) {
+            _headers = new ArrayList<>(values);
+            return this;
+        }
+
+        /**
          * {@inheritDoc}
          */
         @Override
@@ -113,5 +180,7 @@ public final class JsonNodeUriSource extends BaseJsonNodeSource implements JsonN
 
         @NotNull
         private URI _uri;
+        @NotNull
+        private List<Header> _headers = new ArrayList<>();
     }
 }

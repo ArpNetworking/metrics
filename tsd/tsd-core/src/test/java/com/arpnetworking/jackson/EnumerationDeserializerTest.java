@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.jackson;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 

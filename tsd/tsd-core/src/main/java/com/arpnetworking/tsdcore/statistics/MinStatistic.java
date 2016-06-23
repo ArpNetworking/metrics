@@ -107,7 +107,7 @@ public final class MinStatistic extends BaseStatistic {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    public static final class MinAccumulator implements Accumulator<Void> {
+    public static final class MinAccumulator extends BaseCalculator<Void> implements Accumulator<Void> {
 
         /**
          * Public constructor.
@@ -115,15 +115,7 @@ public final class MinStatistic extends BaseStatistic {
          * @param statistic The <code>Statistic</code>.
          */
         public MinAccumulator(final Statistic statistic) {
-            _statistic = statistic;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Statistic getStatistic() {
-            return _statistic;
+            super(statistic);
         }
 
         /**
@@ -159,7 +151,6 @@ public final class MinStatistic extends BaseStatistic {
                     .build();
         }
 
-        private final Statistic _statistic;
         private Optional<Quantity> _min = Optional.absent();
     }
 }

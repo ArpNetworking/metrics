@@ -15,19 +15,19 @@
   -->
 <FindBugsFilter>
 
-     <!-- Match all DLS_DEAD_LOCAL_STORE violations. As per FindBugs 
+     <!-- Match all DLS_DEAD_LOCAL_STORE violations. As per FindBugs
          documentation these generate numerous false positives under Sun/Oracle
-         compilers. 
-         
+         compilers.
+
          http://findbugs.sourceforge.net/bugDescriptions.html#DLS_DEAD_LOCAL_STORE
      -->
      <Match>
          <Bug pattern="DLS_DEAD_LOCAL_STORE" />
      </Match>
-     
+
      <!-- Match all RV_RETURN_VALUE_IGNORED_BAD_PRACTICE violations on all unit
         test files since Mockito usage can cause this violation when stating
-        expectations. 
+        expectations.
      -->
      <Match>
          <Or>
@@ -40,6 +40,21 @@
             <Class name="~.*\.[^\.]+Test" />
             <Class name="~.*\.[^\.]+Test\$.*" />
          </Or>
+     </Match>
+
+     <!-- Suppress bugs created by ebean model enhancement.
+     -->
+     <Match>
+       <Or>
+         <Bug pattern="EI_EXPOSE_REP" />
+         <Bug pattern="MS_FINAL_PKGPROTECT" />
+         <Bug pattern="SE_NO_SERIALVERSIONID" />
+         <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED" />
+         <Bug pattern="CI_CONFUSED_INHERITANCE" />
+       </Or>
+       <Or>
+         <Class name="~com\.arpnetworking\.clusteraggregator\.models\.ebean.*" />
+       </Or>
      </Match>
 
 </FindBugsFilter>

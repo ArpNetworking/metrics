@@ -17,7 +17,6 @@ package com.arpnetworking.clusteraggregator;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.cluster.Cluster;
 import akka.http.javadsl.IncomingConnection;
 import akka.http.javadsl.ServerBinding;
 import akka.stream.javadsl.Source;
@@ -28,19 +27,23 @@ import com.arpnetworking.configuration.jackson.JsonNodeFileSource;
 import com.arpnetworking.configuration.triggers.FileTrigger;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.utility.Configurator;
+import com.arpnetworking.utility.Database;
 import com.arpnetworking.utility.Launchable;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.slf4j.LoggerFactory;
+import scala.concurrent.Await;
 import scala.concurrent.Future;
+import scala.concurrent.duration.Duration;
 
 import java.io.File;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Entry point for the akka-based cluster aggregator.
@@ -126,6 +129,7 @@ public final class Main implements Launchable {
     @Override
     public synchronized void launch() {
         final Injector injector = launchGuice();
+        launchDatabases(injector);
         launchAkka(injector);
         launchActors(injector);
     }
@@ -136,14 +140,29 @@ public final class Main implements Launchable {
     @Override
     public synchronized void shutdown() {
         shutdownAkka();
+        shutdownDatabases();
     }
 
     private Injector launchGuice() {
         return Guice.createInjector(new GuiceModule(_configuration));
     }
 
+    private void launchDatabases(final Injector injector) {
+        _databases = Lists.newArrayList();
+        for (final String databaseName : _configuration.getDatabaseConfigurations().keySet()) {
+            final Database database = injector.getInstance(Key.get(Database.class, Names.named(databaseName)));
+            _databases.add(database);
+            LOGGER.info()
+                    .setMessage("Launching database")
+                    .addData("database", database)
+                    .log();
+            database.launch();
+        }
+    }
+
     private void launchActors(final Injector injector) {
-        injector.getInstance(Key.get(ActorRef.class, Names.named("emitter")));
+        injector.getInstance(Key.get(ActorRef.class, Names.named("host-emitter")));
+        injector.getInstance(Key.get(ActorRef.class, Names.named("cluster-emitter")));
 
         LOGGER.info()
                 .setMessage("Launching bookkeeper singleton and proxy")
@@ -176,6 +195,11 @@ public final class Main implements Launchable {
                 Key.get(
                         SOURCE_TYPE_LITERAL,
                         Names.named("http-server")));
+
+        LOGGER.info()
+                .setMessage("Launching graceful shutdown actor")
+                .log();
+        _shutdownActor = injector.getInstance(Key.get(ActorRef.class, Names.named("graceful-shutdown-actor")));
     }
 
     private void launchAkka(final Injector injector) {
@@ -185,41 +209,41 @@ public final class Main implements Launchable {
         _system = injector.getInstance(ActorSystem.class);
     }
 
+    private void shutdownDatabases() {
+        for (final Database database : _databases) {
+            LOGGER.info()
+                    .setMessage("Stopping database")
+                    .addData("database", database)
+                    .log();
+            database.shutdown();
+        }
+    }
+
     private void shutdownAkka() {
         LOGGER.info()
                 .setMessage("Stopping Akka")
                 .log();
-        // TODO(barp): Implement a clean shutdown [MAI-420]
-        final Cluster cluster = Cluster.get(_system);
-        cluster.leave(cluster.selfAddress());
-        final DateTime shutdownDeadline = DateTime.now().plus(SHUTDOWN_TIMEOUT);
+        _shutdownActor.tell(GracefulShutdownActor.Shutdown.instance(), ActorRef.noSender());
         try {
-            // HACK! wait 30 seconds minimum
-            Thread.sleep(30000);
-            while (!cluster.isTerminated()) {
-                if (DateTime.now().isAfter(shutdownDeadline)) {
-                    LOGGER.warn()
-                            .setMessage("Timed out while waiting to exit cluster, forcing shutdown")
-                            .log();
-                    break;
-                }
-                Thread.sleep(100);
-            }
-        } catch (final InterruptedException e) {
-            Thread.interrupted();
+            Await.result(_system.whenTerminated(), SHUTDOWN_TIMEOUT);
+            // CHECKSTYLE.OFF: IllegalCatch - Prevent program shutdown
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
             LOGGER.warn()
                     .setMessage("Interrupted at shutdown")
                     .setThrowable(e)
                     .log();
         }
-        _system.shutdown();
     }
 
     private final ClusterAggregatorConfiguration _configuration;
 
-    private ActorSystem _system;
+    private volatile ActorSystem _system;
+    private volatile ActorRef _shutdownActor;
+    private volatile List<Database> _databases;
+
     private static final Logger LOGGER = com.arpnetworking.steno.LoggerFactory.getLogger(Main.class);
-    private static final Duration SHUTDOWN_TIMEOUT = Duration.standardMinutes(3);
+    private static final Duration SHUTDOWN_TIMEOUT = Duration.create(3, TimeUnit.MINUTES);
     private static final SourceTypeLiteral SOURCE_TYPE_LITERAL = new SourceTypeLiteral();
 
     private static class SourceTypeLiteral extends TypeLiteral<Source<IncomingConnection, Future<ServerBinding>>> {}

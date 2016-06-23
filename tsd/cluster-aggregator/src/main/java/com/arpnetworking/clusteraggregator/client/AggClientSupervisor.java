@@ -24,10 +24,11 @@ import akka.actor.UntypedActor;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
 import com.arpnetworking.clusteraggregator.configuration.ClusterAggregatorConfiguration;
+import com.arpnetworking.metrics.aggregation.protocol.Messages;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.tsdcore.Messages;
 import com.arpnetworking.tsdcore.model.AggregatedData;
+import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.joda.time.Period;
@@ -48,13 +49,16 @@ public class AggClientSupervisor extends UntypedActor {
      * Public constructor.
      *
      * @param shardRegion The aggregator shard region actor.
+     * @param emitter The emitter actor.
      * @param configuration The cluster aggregator configuration.
      */
     @Inject
     public AggClientSupervisor(
             @Named("aggregator-shard-region") final ActorRef shardRegion,
+            @Named("host-emitter") final ActorRef emitter,
             final ClusterAggregatorConfiguration configuration) {
         _shardRegion = shardRegion;
+        _emitter = emitter;
         _minConnectionTimeout = configuration.getMinConnectionTimeout();
         _maxConnectionTimeout = configuration.getMaxConnectionTimeout();
     }
@@ -64,9 +68,9 @@ public class AggClientSupervisor extends UntypedActor {
      */
     @Override
     public void onReceive(final Object message) throws Exception {
-        if (message instanceof AggregatedData) {
-            // Route the message to the sharding region
-            _shardRegion.forward(message, context());
+        if (message instanceof AggregatedData || message instanceof PeriodicData) {
+            // Route the host data to the emitter
+            _emitter.forward(message, context());
         } else if (message instanceof Messages.StatisticSetRecord) {
             // Route the message to the sharding region
             _shardRegion.forward(message, context());
@@ -124,6 +128,7 @@ public class AggClientSupervisor extends UntypedActor {
     private InetSocketAddress _remote;
 
     private final ActorRef _shardRegion;
+    private final ActorRef _emitter;
     private final Period _minConnectionTimeout;
     private final Period _maxConnectionTimeout;
     private final Random _random = new Random();

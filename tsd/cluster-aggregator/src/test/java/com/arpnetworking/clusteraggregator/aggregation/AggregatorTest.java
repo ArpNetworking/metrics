@@ -18,7 +18,7 @@ package com.arpnetworking.clusteraggregator.aggregation;
 import akka.actor.ActorRef;
 import akka.actor.ReceiveTimeout;
 import akka.actor.Terminated;
-import akka.contrib.pattern.ShardRegion;
+import akka.cluster.sharding.ShardRegion;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
 import com.arpnetworking.utility.BaseActorTest;
@@ -49,7 +49,8 @@ public class AggregatorTest extends BaseActorTest {
 
     public ActorRef createAggregator(final TestProbe probe) {
         final TestProbe ignored = TestProbe.apply(getSystem());
-        return TestActorRef.apply(AggregationRouter.props(ignored.ref(), ignored.ref(), ignored.ref()), probe.ref(), "agg", getSystem());
+        return TestActorRef.apply(
+                AggregationRouter.props(ignored.ref(), ignored.ref(), ignored.ref(), ""), probe.ref(), "agg", getSystem());
     }
 
     private static final FiniteDuration TIMEOUT = FiniteDuration.apply(10, TimeUnit.SECONDS);

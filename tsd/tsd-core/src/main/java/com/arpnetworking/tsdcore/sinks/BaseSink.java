@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.tsdcore.model.AggregatedData;
@@ -22,7 +23,6 @@ import com.arpnetworking.tsdcore.model.Condition;
 import com.arpnetworking.tsdcore.model.PeriodicData;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.StatisticFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -120,6 +120,9 @@ public abstract class BaseSink implements Sink {
 
     /**
      * Base <code>Builder</code> implementation.
+     *
+     * @param <B> type of the builder
+     * @param <S> type of the object to be built
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */

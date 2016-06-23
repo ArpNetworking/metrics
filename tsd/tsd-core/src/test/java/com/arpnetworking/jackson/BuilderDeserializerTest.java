@@ -15,7 +15,8 @@
  */
 package com.arpnetworking.jackson;
 
-import com.arpnetworking.utility.Builder;
+import com.arpnetworking.commons.builder.Builder;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -277,7 +278,7 @@ public class BuilderDeserializerTest {
         private final boolean _fieldBooleanPrimitive;
         private final TestBarBeanImpl _fieldBarBean;
 
-        public static class Builder implements com.arpnetworking.utility.Builder<TestFooBeanInterface> {
+        public static class Builder implements com.arpnetworking.commons.builder.Builder<TestFooBeanInterface> {
 
             public static Builder newInstance() {
                 return new Builder();
@@ -388,10 +389,10 @@ public class BuilderDeserializerTest {
         private final TestBarBeanImpl _fieldBarBean;
         private final List<String> _fieldListString;
 
-        public static class Builder implements com.arpnetworking.utility.Builder<TestBarBeanImpl> {
+        private static final class Builder implements com.arpnetworking.commons.builder.Builder<TestBarBeanImpl> {
 
             @SuppressWarnings("unused")
-            public Builder() {}
+            private Builder() {}
 
             @SuppressWarnings("unused")
             public Builder setFieldBar(final TestBarBeanImpl value) {
@@ -428,7 +429,7 @@ public class BuilderDeserializerTest {
     }
 
     private static final class TestJsonSubTypesClassA implements TestJsonSubTypesInterface {
-        public static class Builder implements com.arpnetworking.utility.Builder<TestJsonSubTypesClassA> {
+        private static class Builder implements com.arpnetworking.commons.builder.Builder<TestJsonSubTypesClassA> {
             @Override
             public TestJsonSubTypesClassA build() {
                 return null;
@@ -437,7 +438,7 @@ public class BuilderDeserializerTest {
     }
 
     private static final class TestJsonSubTypesClassB implements TestJsonSubTypesInterface {
-        public static class Builder implements com.arpnetworking.utility.Builder<TestJsonSubTypesClassB> {
+        private static class Builder implements com.arpnetworking.commons.builder.Builder<TestJsonSubTypesClassB> {
             @Override
             public TestJsonSubTypesClassB build() {
                 return null;

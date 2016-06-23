@@ -299,7 +299,7 @@ public class ExpressionSinkTest {
 
     private static final class TestExpression implements Expression {
 
-        public TestExpression(final FQDSN target, final FQDSN... dependencies) {
+        private TestExpression(final FQDSN target, final FQDSN... dependencies) {
             _target = target;
             _dependencies = Sets.newHashSet(dependencies);
         }

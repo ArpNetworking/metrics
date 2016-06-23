@@ -15,9 +15,9 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;

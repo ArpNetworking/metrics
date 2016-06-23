@@ -1,0 +1,32 @@
+[
+    {
+        "metric": "Sinks/ExpressionSink/mad_expression_sink/FailureRate",
+        "cluster": "mad_dev",
+        "service": "mad",
+        "script": "dividend = metrics[\"mad_dev\"][\"mad\"][\"Sinks/ExpressionSink/mad_expression_sink/Failures\"][\"sum\"]:getValue()\ndivisor = metrics[\"mad_dev\"][\"mad\"][\"Sinks/ExpressionSink/mad_expression_sink/Evaluations\"][\"sum\"]:getValue()\nif divisor == 0 then return 0 end\nreturn dividend / divisor"
+    },
+    {
+        "metric": "Sinks/ExpressionSink/remet_gui_expression_sink/FailureRate",
+        "cluster": "mad_dev",
+        "service": "mad",
+        "script": "dividend = metrics[\"mad_dev\"][\"mad\"][\"Sinks/ExpressionSink/remet_gui_expression_sink/Failures\"][\"sum\"]:getValue()\ndivisor= metrics[\"mad_dev\"][\"mad\"][\"Sinks/ExpressionSink/remet_gui_expression_sink/Evaluations\"][\"sum\"]:getValue()\nif divisor == 0 then return 0 end\nreturn dividend / divisor"
+    },
+    {
+        "metric": "Sinks/ExpressionSink/remet_proxy_expression_sink/FailureRate",
+        "cluster": "mad_dev",
+        "service": "mad",
+        "script": "dividend = metrics[\"mad_dev\"][\"mad\"][\"Sinks/ExpressionSink/remet_proxy_expression_sink/Failures\"][\"sum\"]:getValue()\ndivisor = metrics[\"mad_dev\"][\"mad\"][\"Sinks/ExpressionSink/remet_proxy_expression_sink/Evaluations\"][\"sum\"]:getValue()\nif divisor == 0 then return 0 end\nreturn dividend / divisor"
+    },
+    {
+        "metric": "Sinks/ExpressionSink/cluster_aggregator_expression_sink/FailureRate",
+        "cluster": "mad_dev",
+        "service": "mad",
+        "script": "dividend = metrics[\"mad_dev\"][\"mad\"][\"Sinks/ExpressionSink/cluster_aggregator_expression_sink/Failures\"][\"sum\"]:getValue()\ndivisor = metrics[\"mad_dev\"][\"mad\"][\"Sinks/ExpressionSink/cluster_aggregator_expression_sink/Evaluations\"][\"sum\"]:getValue()\nif divisor == 0 then return 0 end\nreturn dividend / divisor"
+    },
+    {
+        "metric": "constants/two",
+        "cluster": "mad_dev",
+        "service": "mad",
+        "script": "return 2"
+    }
+]

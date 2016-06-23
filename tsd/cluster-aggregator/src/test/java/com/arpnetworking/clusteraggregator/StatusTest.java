@@ -33,10 +33,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import scala.Option;
+import scala.collection.immutable.HashMap;
+import scala.collection.immutable.HashSet;
 import scala.collection.immutable.Set;
+import scala.collection.immutable.TreeSet;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -56,9 +59,12 @@ public class StatusTest extends BaseActorTest {
         final ClusterReadView readView = Mockito.mock(ClusterReadView.class);
         Mockito.when(readView.self()).thenReturn(selfMember);
         Mockito.when(_clusterMock.readView()).thenReturn(readView);
-        final ClusterEvent.CurrentClusterState state = Mockito.mock(ClusterEvent.CurrentClusterState.class);
-        Mockito.when(state.getMembers()).thenReturn(Collections.singletonList(
-                selfMember));
+        final ClusterEvent.CurrentClusterState state = new ClusterEvent.CurrentClusterState(
+                new TreeSet<>(Member.ordering()).$plus(selfMember),
+                Member.none(),
+                new HashSet<>(),
+                Option.empty(),
+                new HashMap<>());
         Mockito.doAnswer(
                 invocation -> {
                     final ActorRef ref = (ActorRef) invocation.getArguments()[0];

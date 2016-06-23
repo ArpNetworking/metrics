@@ -15,9 +15,9 @@
  */
 package com.arpnetworking.tsdcore.model;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.tsdcore.statistics.Statistic;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;

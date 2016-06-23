@@ -15,9 +15,9 @@
  */
 package com.arpnetworking.jackson;
 
+import com.arpnetworking.commons.builder.Builder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.utility.Builder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -40,6 +40,8 @@ import java.util.Set;
  * this deserializer with an <code>ObjectMapper</code> be sure to register the
  * transitive closure of builder deserializers (e.g. type-builder pairs) that
  * are required to deserialize an instance of the root type.
+ *
+ * TODO(vkoskela): This is _duplicated_ in metrics-portal and should find its way to a common utility package.
  *
  * @param <T> The type this deserializer supports.
  *
@@ -122,9 +124,11 @@ public final class BuilderDeserializer<T> extends JsonDeserializer<T> {
             try {
                 // Look-up and register the builder for this class
                 final Class<? extends Builder<? extends Object>> builderClass = getBuilderForClass(targetClass);
-                deserializerMap.put(targetClass, BuilderDeserializer.of(builderClass));
+                if (Builder.class.isAssignableFrom(builderClass)) {
+                    deserializerMap.put(targetClass, BuilderDeserializer.of(builderClass));
+                }
 
-                LOGGER.debug()
+                LOGGER.trace()
                         .setMessage("Registered builder for class")
                         .addData("targetClass", targetClass)
                         .addData("targetClassBuilder", builderClass)

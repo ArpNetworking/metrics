@@ -15,12 +15,12 @@
  */
 package com.arpnetworking.tsdcore.limiter.legacy;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.limiter.legacy.LegacyMetricsLimiter.Mark;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -163,7 +163,7 @@ public final class MetricsLimiterStateManager implements Runnable {
                         .addData("file", _stateFile)
                         .log();
                 _stop = false;
-                _autoWriterThread = new Thread(this, "AutoWriter");
+                _autoWriterThread = new Thread(this, "MetricsLimiterAutoWriter");
                 Runtime.getRuntime().addShutdownHook(_autoWriterShutdown);
                 _autoWriterThread.start();
             } else {
@@ -312,7 +312,7 @@ public final class MetricsLimiterStateManager implements Runnable {
     private final Object _autoWriterMutex = new Object();
     private volatile boolean _stop = false;
     private Thread _autoWriterThread;
-    private final Thread _autoWriterShutdown = new Thread() {
+    private final Thread _autoWriterShutdown = new Thread("MetricsLimiterShutdown") {
         @Override
         public void run() {
             stopAutoWriter(false);

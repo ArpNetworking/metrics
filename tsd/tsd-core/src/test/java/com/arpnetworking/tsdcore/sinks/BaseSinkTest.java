@@ -69,9 +69,9 @@ public class BaseSinkTest {
             super(builder);
         }
 
-        public static final class Builder extends BaseSink.Builder<Builder, TestAggregatedDataSink> {
+        private static final class Builder extends BaseSink.Builder<Builder, TestAggregatedDataSink> {
 
-            public Builder() {
+            private Builder() {
                 super(TestAggregatedDataSink.class);
             }
 

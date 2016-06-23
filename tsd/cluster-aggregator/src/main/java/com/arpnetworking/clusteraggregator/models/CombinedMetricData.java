@@ -16,9 +16,10 @@
 package com.arpnetworking.clusteraggregator.models;
 
 import akka.util.ByteString;
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.metrics.aggregation.protocol.Messages;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.tsdcore.Messages;
 import com.arpnetworking.tsdcore.model.AggregationMessage;
 import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
@@ -26,7 +27,6 @@ import com.arpnetworking.tsdcore.model.Unit;
 import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.StatisticFactory;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -157,7 +157,7 @@ public final class CombinedMetricData {
         }
 
         /**
-         * Initializes the builder with fields from a {@link com.arpnetworking.tsdcore.Messages.StatisticSetRecord}.
+         * Initializes the builder with fields from a {@link com.arpnetworking.metrics.aggregation.protocol.Messages.StatisticSetRecord}.
          *
          * @param record The record.
          * @return This {@link com.arpnetworking.clusteraggregator.models.CombinedMetricData.Builder}.

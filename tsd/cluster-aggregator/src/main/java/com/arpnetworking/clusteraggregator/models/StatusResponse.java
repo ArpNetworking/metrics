@@ -19,7 +19,7 @@ package com.arpnetworking.clusteraggregator.models;
 import akka.actor.Address;
 import akka.cluster.Member;
 import com.arpnetworking.clusteraggregator.ClusterStatusCache;
-import com.arpnetworking.utility.OvalBuilder;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;

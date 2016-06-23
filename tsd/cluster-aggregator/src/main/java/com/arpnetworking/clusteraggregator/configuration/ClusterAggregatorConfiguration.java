@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.clusteraggregator.configuration;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.jackson.BuilderDeserializer;
-import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.utility.InterfaceDatabase;
-import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.ReflectionsDatabase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -56,6 +55,10 @@ public final class ClusterAggregatorConfiguration {
         return objectMapper;
     }
 
+    public String getMonitoringCluster() {
+        return _monitoringCluster;
+    }
+
     public int getHttpPort() {
         return _httpPort;
     }
@@ -84,12 +87,20 @@ public final class ClusterAggregatorConfiguration {
         return Collections.unmodifiableMap(_akkaConfiguration);
     }
 
-    public File getPipelineConfiguration() {
-        return _pipelineConfiguration;
+    public File getHostPipelineConfiguration() {
+        return _hostPipelineConfiguration;
+    }
+
+    public File getClusterPipelineConfiguration() {
+        return _clusterPipelineConfiguration;
     }
 
     public RebalanceConfiguration getRebalanceConfiguration() {
         return _rebalanceConfiguration;
+    }
+
+    public Map<String, DatabaseConfiguration> getDatabaseConfigurations() {
+        return _databaseConfigurations;
     }
 
     public int getAggregationPort() {
@@ -98,6 +109,10 @@ public final class ClusterAggregatorConfiguration {
 
     public String getAggregationHost() {
         return _aggregationHost;
+    }
+
+    public String getClusterHostSuffix() {
+        return _clusterHostSuffix;
     }
 
     /**
@@ -111,30 +126,38 @@ public final class ClusterAggregatorConfiguration {
     }
 
     private ClusterAggregatorConfiguration(final Builder builder) {
+        _monitoringCluster = builder._monitoringCluster;
         _httpHost = builder._httpHost;
         _httpPort = builder._httpPort;
         _aggregationHost = builder._aggregationHost;
         _aggregationPort = builder._aggregationPort;
         _logDirectory = builder._logDirectory;
         _akkaConfiguration = Maps.newHashMap(builder._akkaConfiguration);
-        _pipelineConfiguration = builder._pipelineConfiguration;
+        _hostPipelineConfiguration = builder._hostPipelineConfiguration;
+        _clusterPipelineConfiguration = builder._clusterPipelineConfiguration;
         _minConnectionTimeout = builder._minConnectionTimeout;
         _maxConnectionTimeout = builder._maxConnectionTimeout;
         _jvmMetricsCollectionInterval = builder._jvmMetricsCollectionInterval;
         _rebalanceConfiguration = builder._rebalanceConfiguration;
+        _clusterHostSuffix = builder._clusterHostSuffix;
+        _databaseConfigurations = Maps.newHashMap(builder._databaseConfigurations);
     }
 
+    private final String _monitoringCluster;
     private final File _logDirectory;
     private final String _httpHost;
     private final int _httpPort;
     private final String _aggregationHost;
     private final int _aggregationPort;
     private final Map<String, ?> _akkaConfiguration;
-    private final File _pipelineConfiguration;
+    private final File _clusterPipelineConfiguration;
+    private final File _hostPipelineConfiguration;
     private final Period _minConnectionTimeout;
     private final Period _maxConnectionTimeout;
     private final Period _jvmMetricsCollectionInterval;
     private final RebalanceConfiguration _rebalanceConfiguration;
+    private final String _clusterHostSuffix;
+    private final Map<String, DatabaseConfiguration> _databaseConfigurations;
 
     private static final InterfaceDatabase INTERFACE_DATABASE = ReflectionsDatabase.newInstance();
 
@@ -152,6 +175,17 @@ public final class ClusterAggregatorConfiguration {
         }
 
         /**
+         * The monitoring cluster. Cannot be null or empty.
+         *
+         * @param value The monitoring cluster.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setMonitoringCluster(final String value) {
+            _monitoringCluster = value;
+            return this;
+        }
+
+        /**
          * The http host address to bind to. Cannot be null or empty.
          *
          * @param value The host address to bind to.
@@ -159,6 +193,18 @@ public final class ClusterAggregatorConfiguration {
          */
         public Builder setHttpHost(final String value) {
             _httpHost = value;
+            return this;
+        }
+
+        /**
+         * The suffix to append to the cluster host when reporting metrics. Optional.
+         * Cannot be null.  Default is the empty string.
+         *
+         * @param value The host suffix to append.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setClusterHostSuffix(final String value) {
+            _clusterHostSuffix = value;
             return this;
         }
 
@@ -259,13 +305,24 @@ public final class ClusterAggregatorConfiguration {
         }
 
         /**
-         * The pipeline configuration file. Cannot be null.
+         * The cluster pipeline configuration file. Cannot be null.
          *
-         * @param value The pipeline configuration file.
+         * @param value The cluster pipeline configuration file.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setPipelineConfiguration(final File value) {
-            _pipelineConfiguration = value;
+        public Builder setClusterPipelineConfiguration(final File value) {
+            _clusterPipelineConfiguration = value;
+            return this;
+        }
+
+        /**
+         * The host pipeline configuration file. Cannot be null.
+         *
+         * @param value The host pipeline configuration file.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setHostPipelineConfiguration(final File value) {
+            _hostPipelineConfiguration = value;
             return this;
         }
 
@@ -280,6 +337,20 @@ public final class ClusterAggregatorConfiguration {
             return this;
         }
 
+        /**
+         * Configuration for the databases.
+         *
+         * @param value The database configurations.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setDatabaseConfigurations(final Map<String, DatabaseConfiguration> value) {
+            _databaseConfigurations = value;
+            return this;
+        }
+
+        @NotNull
+        @NotEmpty
+        private String _monitoringCluster;
         @NotNull
         @NotEmpty
         private String _httpHost = "0.0.0.0";
@@ -295,7 +366,9 @@ public final class ClusterAggregatorConfiguration {
         @NotNull
         private File _logDirectory;
         @NotNull
-        private File _pipelineConfiguration;
+        private File _clusterPipelineConfiguration;
+        @NotNull
+        private File _hostPipelineConfiguration;
         @NotNull
         private Map<String, ?> _akkaConfiguration;
         @NotNull
@@ -306,5 +379,8 @@ public final class ClusterAggregatorConfiguration {
         private Period _jvmMetricsCollectionInterval;
         @NotNull
         private RebalanceConfiguration _rebalanceConfiguration;
+        @NotNull
+        private String _clusterHostSuffix = "";
+        private Map<String, DatabaseConfiguration> _databaseConfigurations;
     }
 }

@@ -18,7 +18,7 @@
   <parent>
     <groupId>com.arpnetworking.metrics</groupId>
     <artifactId>tsd-parent</artifactId>
-    <version>0.3.6</version>
+    <version>0.4.0</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -27,19 +27,22 @@
 
   <properties>
     <!--Dependency versions-->
-    <akka.persistence.cassandra.version>0.3.3</akka.persistence.cassandra.version>
+    <akka.persistence.cassandra.version>0.6</akka.persistence.cassandra.version>
     <ebean.version>6.8.1</ebean.version>
     <flyway.version>3.2.1</flyway.version>
-    <google.protobuf.version>2.6.1</google.protobuf.version>
-    <h2.version>1.4.189</h2.version>
+    <h2.version>1.4.190</h2.version>
     <hikari.version>2.4.1</hikari.version>
+    <javax.persistence.version>2.0</javax.persistence.version>
     <postgresql.version>9.4-1202-jdbc42</postgresql.version>
     <scala.library.version>2.11.7</scala.library.version>
     <typesafe.config.version>1.2.1</typesafe.config.version>
-    <vertx.core.version>2.1.6</vertx.core.version>
+    <leveldb.version>0.7</leveldb.version>
+    <leveldb.jni.version>1.8</leveldb.jni.version>
 
     <!--Plugin versions-->
     <avaje.ebeanorm.mavenenhancer.version>4.7.1</avaje.ebeanorm.mavenenhancer.version>
+    <maven.appassembler.plugin.version>1.10</maven.appassembler.plugin.version>
+    <maven.assembly.plugin.version>2.6</maven.assembly.plugin.version>
 
     <!-- Findbugs -->
     <findbugs.exclude>${project.basedir}/findbugs.exclude.xml</findbugs.exclude>
@@ -88,6 +91,8 @@
                 <ignoredDependency>org.avaje.ebeanorm:avaje-ebeanorm:*</ignoredDependency>
                 <ignoredDependency>org.flywaydb:flyway-core:*</ignoredDependency>
                 <ignoredDependency>com.zaxxer:HikariCP:*</ignoredDependency>
+                <ignoredDependency>org.iq80.leveldb:leveldb:*</ignoredDependency>
+                <ignoredDependency>org.fusesource.leveldbjni:leveldbjni-all:*</ignoredDependency>
               </ignoredDependencies>
             </configuration>
           </execution>
@@ -130,12 +135,23 @@
         <artifactId>versions-maven-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <suppressionsLocation>${basedir}/checkstyle-suppressions.xml</suppressionsLocation>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -147,9 +163,29 @@
               <mainClass>com.arpnetworking.clusteraggregator.Main</mainClass>
             </program>
           </programs>
+          <configurationDirectory>conf</configurationDirectory>
         </configuration>
       </plugin>
-      <!--<plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven.assembly.plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <descriptors>
+            <descriptor>src/assembly/assembly.xml</descriptor>
+          </descriptors>
+          <tarLongFileMode>posix</tarLongFileMode>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.avaje.ebeanorm</groupId>
         <artifactId>avaje-ebeanorm-mavenenhancer</artifactId>
         <version>${avaje.ebeanorm.mavenenhancer.version}</version>
@@ -166,9 +202,20 @@
             </goals>
           </execution>
         </executions>
-      </plugin>-->
+      </plugin>
     </plugins>
   </build>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <suppressionsLocation>${basedir}/checkstyle-suppressions.xml</suppressionsLocation>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
   <dependencies>
     <!-- Logging -->
     <dependency>
@@ -192,6 +239,10 @@
       <groupId>com.arpnetworking.metrics.extras</groupId>
       <artifactId>jvm-extra</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.arpnetworking.metrics</groupId>
+      <artifactId>metrics-aggregator-protocol</artifactId>
+    </dependency>
     <!-- Tsd Core -->
     <dependency>
       <groupId>com.arpnetworking.metrics</groupId>
@@ -210,7 +261,6 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>${google.protobuf.version}</version>
     </dependency>
     <!-- Jackson -->
     <dependency>
@@ -259,17 +309,17 @@
     </dependency>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-cluster-tools_${scala.version}</artifactId>
+      <version>${akka.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-remote_${scala.version}</artifactId>
       <version>${akka.version}</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-contrib_${scala.version}</artifactId>
-      <version>${akka.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-persistence-experimental_${scala.version}</artifactId>
+      <artifactId>akka-cluster-sharding_${scala.version}</artifactId>
       <version>${akka.version}</version>
     </dependency>
     <dependency>
@@ -278,6 +328,21 @@
       <version>${typesafe.config.version}</version>
     </dependency>
     <!-- Database -->
+    <dependency>
+      <groupId>javax.persistence</groupId>
+      <artifactId>persistence-api</artifactId>
+      <version>${javax.persistence.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.iq80.leveldb</groupId>
+      <artifactId>leveldb</artifactId>
+      <version>${leveldb.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.fusesource.leveldbjni</groupId>
+      <artifactId>leveldbjni-all</artifactId>
+      <version>${leveldb.jni.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.avaje.ebeanorm</groupId>
       <artifactId>avaje-ebeanorm</artifactId>
@@ -305,9 +370,8 @@
     </dependency>
     <!-- General -->
     <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-core</artifactId>
-      <version>${vertx.core.version}</version>
+      <groupId>com.arpnetworking.commons</groupId>
+      <artifactId>commons</artifactId>
     </dependency>
     <dependency>
       <groupId>joda-time</groupId>

@@ -16,12 +16,12 @@
 
 package com.arpnetworking.clusteraggregator.configuration;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.configuration.jackson.DynamicConfigurationFactory;
 import com.arpnetworking.jackson.BuilderDeserializer;
-import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.tsdcore.sinks.Sink;
 import com.arpnetworking.utility.InterfaceDatabase;
-import com.arpnetworking.utility.OvalBuilder;
 import com.arpnetworking.utility.ReflectionsDatabase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;

@@ -52,7 +52,7 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
                 Optional.<ActorSelection>absent());
         final Map<ActorRef, IndexedSeq<String>> currentAllocations = Maps.newHashMap();
 
-        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet());
+        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet()).value().get().get();
         Assert.assertTrue(rebalance.isEmpty());
     }
 
@@ -65,7 +65,7 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
         final Map<ActorRef, IndexedSeq<String>> currentAllocations = Maps.newHashMap();
         allocateShardsToNewActor(10, currentAllocations);
 
-        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet());
+        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet()).value().get().get();
         Assert.assertEquals(0, rebalance.size());
     }
 
@@ -79,7 +79,7 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
         allocateShardsToNewActor(10, currentAllocations);
         allocateShardsToNewActor(19, currentAllocations);
 
-        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet());
+        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet()).value().get().get();
         Assert.assertEquals(0, rebalance.size());
     }
 
@@ -93,7 +93,7 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
         allocateShardsToNewActor(10, currentAllocations);
         final TestActorRef<DoNothingActor> rebalancedActor = allocateShardsToNewActor(20, currentAllocations);
 
-        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet());
+        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet()).value().get().get();
         Assert.assertEquals(1, rebalance.size());
         rebalance.forEach(
                 e -> {
@@ -115,7 +115,10 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
         allocateShardsToNewActor(10, currentAllocations);
         final TestActorRef<DoNothingActor> rebalancedActor = allocateShardsToNewActor(20, currentAllocations);
 
-        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet("rebalancing_1"));
+        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet("rebalancing_1"))
+                .value()
+                .get()
+                .get();
         Assert.assertEquals(1, rebalance.size());
         rebalance.forEach(
                 e -> {
@@ -154,7 +157,7 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
         allocateShardsToNewActor(10, currentAllocations);
         final TestActorRef<DoNothingActor> rebalancedActor = allocateShardsToNewActor(30, currentAllocations);
 
-        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet());
+        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet()).value().get().get();
         Assert.assertEquals(5, rebalance.size());
         rebalance.forEach(
                 e -> {
@@ -180,7 +183,10 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
 
         final Set<String> rebalance = realloc.rebalance(
                 currentAllocations,
-                Sets.newHashSet("remapping_shard_1", "remapping_shard_2", "remapping_shard_3"));
+                Sets.newHashSet("remapping_shard_1", "remapping_shard_2", "remapping_shard_3"))
+                .value()
+                .get()
+                .get();
         Assert.assertEquals(2, rebalance.size());
         rebalance.forEach(
                 e -> {
@@ -204,7 +210,7 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
         allocateShardsToNewActor(10, currentAllocations);
         final TestActorRef<DoNothingActor> rebalancedActor = allocateShardsToNewActor(39, currentAllocations);
 
-        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet());
+        final Set<String> rebalance = realloc.rebalance(currentAllocations, Sets.newHashSet()).value().get().get();
         Assert.assertEquals(10, rebalance.size());
         rebalance.forEach(
                 e -> {
@@ -234,7 +240,7 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
             remapping.add("shard_" + x);
         }
 
-        final Set<String> rebalance = realloc.rebalance(currentAllocations, remapping);
+        final Set<String> rebalance = realloc.rebalance(currentAllocations, remapping).value().get().get();
         Assert.assertEquals(11, rebalance.size());
         rebalance.forEach(
                 e -> {
@@ -257,7 +263,7 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
         final TestActorRef<DoNothingActor> first = allocateShardsToNewActor(0, currentAllocations);
         final TestActorRef<DoNothingActor> sender = createShardRegion();
 
-        final ActorRef allocatedTo = realloc.allocateShard(sender, "shard_1", currentAllocations);
+        final ActorRef allocatedTo = realloc.allocateShard(sender, "shard_1", currentAllocations).value().get().get();
         Assert.assertEquals(first, allocatedTo);
     }
 
@@ -275,7 +281,10 @@ public class ParallelLeastShardAllocationStrategyTest extends BaseActorTest {
         final Map<ActorRef, Integer> allocations = Maps.newHashMap();
         for (int x = 0; x < 4; x++) {
             final String shardName = "shard_" + x + 10;
-            final ActorRef allocatedTo = realloc.allocateShard(sender, shardName, currentAllocations);
+            final ActorRef allocatedTo = realloc.allocateShard(sender, shardName, currentAllocations)
+                    .value()
+                    .get()
+                    .get();
             allocations.compute(allocatedTo, (k, v) -> v == null ? 1 : v + 1);
             final IndexedSeq<String> previousAllocations = currentAllocations.get(allocatedTo);
             final List<String> newAllocations = Lists.newArrayList(JavaConversions.seqAsJavaList(previousAllocations));

@@ -18,7 +18,7 @@
   <parent>
     <groupId>com.arpnetworking.metrics</groupId>
     <artifactId>tsd-parent</artifactId>
-    <version>0.3.6</version>
+    <version>0.4.0</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -31,13 +31,11 @@
     <apache.httpcore.version>4.4.3</apache.httpcore.version>
     <cglib.version>3.1</cglib.version>
     <commons.codec.version>1.10</commons.codec.version>
-    <commons.io.version>2.4</commons.io.version>
     <junitparams.version>1.0.3</junitparams.version>
     <luaj.version>3.0.1</luaj.version>
     <netty.all.version>4.0.21.Final</netty.all.version>
     <ning.http.client.version>1.9.31</ning.http.client.version>
     <play.version>2.4.3</play.version>
-    <protobuf.version>2.6.1</protobuf.version>
     <reflections.version>0.9.10</reflections.version>
     <scala.version>2.11</scala.version>
     <scala.java8.version>0.2.0</scala.java8.version>
@@ -45,9 +43,6 @@
     <signalfx.protoc.version>0.0.23</signalfx.protoc.version>
     <vertx.core.version>2.1.6</vertx.core.version>
     <wiremock.version>1.57</wiremock.version>
-
-    <!--Plugin versions-->
-    <protoc.jar.maven.plugin.version>3.0.0-a3</protoc.jar.maven.plugin.version>
 
     <!-- Findbugs -->
     <findbugs.exclude>${project.basedir}/findbugs.exclude.xml</findbugs.exclude>
@@ -141,6 +136,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>false</skip>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -154,68 +152,9 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
       </plugin>
-      <!-- TODO(vkoskela): Fix checkstyle issues. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${maven.checkstyle.plugin.version}</version>
-        <executions>
-          <execution>
-            <id>checkstyle-check</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
-              <goal>checkstyle</goal>
-              <goal>checkstyle-aggregate</goal>
-            </goals>
-            <configuration>
-              <consoleOutput>true</consoleOutput>
-              <logViolationsToConsole>true</logViolationsToConsole>
-              <failOnViolation>false</failOnViolation> <!-- Last check there were 2911 issues reported -->
-              <maxAllowedViolations>0</maxAllowedViolations>
-              <configLocation>checkstyle.xml</configLocation>
-              <includeTestSourceDirectory>true</includeTestSourceDirectory>
-              <propertyExpansion>suppressions.file=${project.build.directory}/checkstyle-suppressions.xml</propertyExpansion>
-              <propertyExpansion>samedir=${project.build.directory}</propertyExpansion>
-              <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
-              <linkXRef>false</linkXRef>
-            </configuration>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>com.puppycrawl.tools</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${checkstyle.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>com.arpnetworking.build</groupId>
-            <artifactId>build-resources</artifactId>
-            <version>${build-resources.version}</version>
-          </dependency>
-        </dependencies>
-      </plugin>
-      <plugin>
-        <groupId>com.github.os72</groupId>
-        <artifactId>protoc-jar-maven-plugin</artifactId>
-        <version>${protoc.jar.maven.plugin.version}</version>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <protocVersion>2.6.1</protocVersion>
-              <includeDirectories>
-                <include>src/main/proto</include>
-              </includeDirectories>
-              <inputDirectories>
-                <include>src/main/proto</include>
-              </inputDirectories>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
@@ -233,6 +172,10 @@
     <dependency>
       <groupId>com.arpnetworking.metrics</groupId>
       <artifactId>metrics-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.arpnetworking.metrics</groupId>
+      <artifactId>metrics-aggregator-protocol</artifactId>
     </dependency>
     <!-- Signal FX -->
     <dependency>
@@ -252,7 +195,6 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>${protobuf.version}</version>
     </dependency>
     <!-- Jackson -->
     <dependency>
@@ -264,24 +206,28 @@
       <artifactId>jackson-databind</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-guava</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-guava</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jdk7</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jdk8</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-joda</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <!-- Akka -->
     <dependency>
@@ -297,6 +243,10 @@
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala.library.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.arpnetworking.commons</groupId>
+      <artifactId>commons</artifactId>
     </dependency>
     <dependency>
       <groupId>joda-time</groupId>
@@ -318,6 +268,7 @@
       <groupId>cglib</groupId>
       <artifactId>cglib</artifactId>
       <version>${cglib.version}</version>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
@@ -358,11 +309,6 @@
       <groupId>org.luaj</groupId>
       <artifactId>luaj-jse</artifactId>
       <version>${luaj.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>${commons.io.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>

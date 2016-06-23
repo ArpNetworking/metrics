@@ -15,9 +15,9 @@
  */
 package com.arpnetworking.tsdcore.sinks;
 
+import com.arpnetworking.metrics.aggregation.protocol.Messages;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.arpnetworking.tsdcore.Messages;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.AggregationMessage;
 import com.arpnetworking.tsdcore.model.PeriodicData;
@@ -26,6 +26,7 @@ import com.arpnetworking.tsdcore.statistics.HistogramStatistic;
 import com.arpnetworking.tsdcore.statistics.Statistic;
 import com.arpnetworking.tsdcore.statistics.StatisticFactory;
 import com.google.protobuf.ByteString;
+import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.net.NetSocket;
@@ -174,6 +175,7 @@ public final class AggregationServerSink extends VertxSink {
 
     private AggregationServerSink(final Builder builder) {
         super(builder);
+        _forwardHostData = builder._forwardHostData;
         super.getVertx().setPeriodic(15000, new Handler<Long>() {
             @Override
             public void handle(final Long event) {
@@ -185,6 +187,8 @@ public final class AggregationServerSink extends VertxSink {
             }
         });
     }
+
+    private final boolean _forwardHostData;
 
     private boolean _sentHandshake = false;
 
@@ -211,11 +215,26 @@ public final class AggregationServerSink extends VertxSink {
         }
 
         /**
+         * Whether or not the aggregation server should forward this host data to its sinks.
+         * Optional. Default is false.
+         *
+         * @param value Forward the data; true = forward and aggregate, false = just aggregate.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setForwardHostData(final Boolean value) {
+            _forwardHostData = value;
+            return self();
+        }
+
+        /**
          * {@inheritDoc}
          */
         @Override
         protected Builder self() {
             return this;
         }
+
+        @NotNull
+        private Boolean _forwardHostData = false;
     }
 }

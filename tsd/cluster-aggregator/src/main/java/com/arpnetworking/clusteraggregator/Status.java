@@ -24,6 +24,7 @@ import akka.cluster.MemberStatus;
 import akka.dispatch.OnComplete;
 import akka.dispatch.Recover;
 import akka.pattern.Patterns;
+import akka.remote.AssociationErrorEvent;
 import akka.util.Timeout;
 import com.arpnetworking.clusteraggregator.models.BookkeeperData;
 import com.arpnetworking.clusteraggregator.models.MetricsRequest;
@@ -72,6 +73,7 @@ public class Status extends UntypedActor {
         _cluster = cluster;
         _clusterStatusCache = clusterStatusCache;
         _localMetrics = localMetrics;
+        context().system().eventStream().subscribe(self(), AssociationErrorEvent.class);
     }
 
     /**
@@ -100,6 +102,11 @@ public class Status extends UntypedActor {
         final ActorRef sender = getSender();
         if (message instanceof StatusRequest) {
             processStatusRequest(sender);
+        } else if (message instanceof AssociationErrorEvent) {
+            final AssociationErrorEvent error = (AssociationErrorEvent) message;
+            if (error.cause().getMessage().contains("quarantined this system")) {
+                _quarantined = true;
+            }
         } else if (message instanceof HealthRequest) {
             final ExecutionContextExecutor executor = getContext().dispatcher();
             final Future<ClusterStatusCache.StatusResponse> stateFuture = Patterns
@@ -112,7 +119,7 @@ public class Status extends UntypedActor {
                     new OnComplete<ClusterStatusCache.StatusResponse>() {
                         @Override
                         public void onComplete(final Throwable failure, final ClusterStatusCache.StatusResponse success) {
-                            final boolean healthy = _cluster.readView().self().status() == MemberStatus.up();
+                            final boolean healthy = _cluster.readView().self().status() == MemberStatus.up() && !_quarantined;
                             sender.tell(healthy, getSelf());
                         }
                     },
@@ -176,6 +183,8 @@ public class Status extends UntypedActor {
                 },
                 executor);
     }
+
+    private boolean _quarantined = false;
 
     private final ActorRef _metricsBookkeeper;
     private final Cluster _cluster;

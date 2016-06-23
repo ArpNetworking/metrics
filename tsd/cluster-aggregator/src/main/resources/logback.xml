@@ -35,6 +35,7 @@
   <appender name="clusteragg-async" class="ch.qos.logback.classic.AsyncAppender">
     <appender-ref ref="clusteragg-logger"/>
     <discardingThreshold>0</discardingThreshold>
+    <queueSize>500</queueSize>
   </appender>
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">

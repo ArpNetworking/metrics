@@ -28,6 +28,8 @@ import java.io.IOException;
  * is simply the serialized format of the object contained in the optional or
  * null if no instance is present.
  *
+ * TODO(vkoskela): This is _duplicated_ in metrics-portal and should find its way to a common utility package.
+ *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
 @SuppressWarnings("rawtypes")

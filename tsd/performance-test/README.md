@@ -1,25 +1,4 @@
 Performance Test
 ================
 
-Contains some helper classes to run profilers during performance testing and record results.
-
-Setup
------
-
-### Building ###
-
-Prerequisites:
-* [JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
-* [Maven 3.2.5+](https://maven.apache.org/)
-
-Building:
-    tsd> mvn install -pl performance-test -amd
-
-Note: This module is a library that is used by other modules as part of their build process.
-
-License
--------
-
-Published under Apache Software License 2.0, see LICENSE
-
-&copy; Groupon Inc., 2014
+This project is now maintained directly through its open source repository at [https://github.com/ArpNetworking/performance-test](https://github.com/ArpNetworking/performance-test).  New versions will be published to [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.arpnetworking.test%22%20a%3A%22performance-test%22). Contributors should fork the repository through the Github link above and submit contributions as a cross-fork pull request from [here](https://github.com/ArpNetworking/performance-test/compare).

@@ -141,8 +141,8 @@ public abstract class VertxSink extends BaseSink {
     protected void sendRawData(final Buffer data) {
         dispatch(
                 event -> {
+                    final NetSocket socket = _socket.get();
                     try {
-                        final NetSocket socket = _socket.get();
                         if (socket != null) {
                             socket.write(data);
                         } else {
@@ -155,6 +155,9 @@ public abstract class VertxSink extends BaseSink {
                         // CHECKSTYLE.OFF: IllegalCatch - Vertx might not log
                     } catch (final Exception e) {
                         // CHECKSTYLE.ON: IllegalCatch
+                        if (socket != null) {
+                            socket.close();
+                        }
                         LOGGER.error()
                                 .setMessage("Error writing data to socket")
                                 .addData("sink", getName())
@@ -421,9 +424,13 @@ public abstract class VertxSink extends BaseSink {
                 LOGGER.info()
                         .setMessage("Waiting")
                         .addData("sink", getName())
-                        .addData("curentReconnectWait", _currentReconnectWait)
+                        .addData("currentReconnectWait", _currentReconnectWait)
                         .log();
                 getVertx().setTimer(_currentReconnectWait, handler -> connectToServer());
+                final NetSocket socket = event.result();
+                if (socket != null) {
+                    socket.close();
+                }
                 _connecting.set(false);
                 _socket.set(null);
             }
@@ -433,6 +440,8 @@ public abstract class VertxSink extends BaseSink {
     /**
      * Implementation of base builder pattern for <code>VertxSink</code>.
      *
+     * @param <B> type of the builder
+     * @param <S> type of the object to be built
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
     public abstract static class Builder<B extends BaseSink.Builder<B, S>, S extends Sink> extends BaseSink.Builder<B, S> {

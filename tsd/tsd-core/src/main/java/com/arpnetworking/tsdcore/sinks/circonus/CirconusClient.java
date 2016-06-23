@@ -16,15 +16,15 @@
 package com.arpnetworking.tsdcore.sinks.circonus;
 
 import akka.http.javadsl.model.HttpMethods;
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.jackson.BuilderDeserializer;
-import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.tsdcore.sinks.circonus.api.BrokerListResponse;
 import com.arpnetworking.tsdcore.sinks.circonus.api.CheckBundle;
-import com.arpnetworking.utility.OvalBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,6 +41,7 @@ import scala.concurrent.ExecutionContext;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import javax.xml.ws.WebServiceException;
 
 /**
@@ -80,7 +81,7 @@ public final class CirconusClient {
                                 }
                                 throw new WebServiceException(
                                         String.format(
-                                                "Received non 200 response updating checkbundle; request=%s, response=%s, responseBody=%s",
+                                                "Received non 200 response getting broker list; request=%s, response=%s, responseBody=%s",
                                                 request,
                                                 response,
                                                 response.getBody()));
@@ -300,6 +301,7 @@ public final class CirconusClient {
         _executionContext = builder._executionContext;
 
         final AsyncHttpClientConfig.Builder clientBuilder = new AsyncHttpClientConfig.Builder();
+        clientBuilder.setExecutorService(Executors.newWorkStealingPool(8));
         if (!builder._safeHttps.booleanValue()) {
             clientBuilder.setAcceptAnyCertificate(true);
             clientBuilder.setHostnameVerifier((hostname, session) -> true);

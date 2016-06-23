@@ -16,7 +16,7 @@
 
 package com.arpnetworking.clusteraggregator.models;
 
-import com.arpnetworking.utility.OvalBuilder;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;

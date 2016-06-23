@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.tsdcore.model;
 
-import com.arpnetworking.utility.OvalBuilder;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import net.sf.oval.constraint.NotNull;
 
 /**
@@ -44,6 +44,8 @@ public final class CalculatedValue<T> {
 
     /**
      * <code>Builder</code> implementation for <code>CalculatedValue</code>.
+     *
+     * @param <T> type of the object to be built
      */
     public static final class Builder<T> extends OvalBuilder<CalculatedValue<T>> {
 

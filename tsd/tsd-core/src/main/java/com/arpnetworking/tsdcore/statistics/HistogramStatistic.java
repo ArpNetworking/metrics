@@ -15,11 +15,11 @@
  */
 package com.arpnetworking.tsdcore.statistics;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.tsdcore.model.AggregatedData;
 import com.arpnetworking.tsdcore.model.CalculatedValue;
 import com.arpnetworking.tsdcore.model.Quantity;
 import com.arpnetworking.tsdcore.model.Unit;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.Optional;
 import net.sf.oval.constraint.NotNull;
 
@@ -79,23 +79,17 @@ public final class HistogramStatistic extends BaseStatistic {
      *
      * @author Ville Koskela (vkoskela at groupon dot com)
      */
-    /* package private */ static final class HistogramAccumulator implements Accumulator<HistogramSupportingData> {
+    /* package private */ static final class HistogramAccumulator
+            extends BaseCalculator<HistogramSupportingData>
+            implements Accumulator<HistogramSupportingData> {
 
         /**
          * Public constructor.
          *
          * @param statistic The <code>Statistic</code>.
          */
-        public HistogramAccumulator(final Statistic statistic) {
-            _statistic = statistic;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Statistic getStatistic() {
-            return _statistic;
+        /* package private */ HistogramAccumulator(final Statistic statistic) {
+            super(statistic);
         }
 
         /**
@@ -177,7 +171,6 @@ public final class HistogramStatistic extends BaseStatistic {
         }
 
         private Optional<Unit> _unit = Optional.absent();
-        private final Statistic _statistic;
         private final Histogram _histogram = new Histogram();
     }
 
@@ -340,11 +333,14 @@ public final class HistogramStatistic extends BaseStatistic {
          * @return The value of the bucket at the percentile.
          */
         public Double getValueAtPercentile(final double percentile) {
-            final int target = (int) (_entriesCount * percentile / 100.0D);
+            // Always "round up" on fractional samples to bias toward 100%
+            // The Math.min is for the case where the computation may be just
+            // slightly larger than the _entriesCount and prevents an index out of range.
+            final int target = (int) Math.min(Math.ceil(_entriesCount * percentile / 100.0D), _entriesCount);
             int accumulated = 0;
             for (final Map.Entry<Double, Integer> next : _data.entrySet()) {
                 accumulated += next.getValue();
-                if (accumulated > target) {
+                if (accumulated >= target) {
                     return next.getKey();
                 }
             }

@@ -43,7 +43,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class DynamicConfiguration extends BaseJacksonConfiguration implements Configuration, Launchable {
 
-
     /**
      * {@inheritDoc}
      */
@@ -76,7 +75,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
                 .setMessage("Launching")
                 .addData("component", this)
                 .log();
-        _triggerEvaluatorExecutor = Executors.newSingleThreadExecutor();
+        _triggerEvaluatorExecutor = Executors.newSingleThreadExecutor((runnable) -> new Thread(runnable, "DynamicConfigTriggerEvaluator"));
         _triggerEvaluatorExecutor.submit(_triggerEvaluator);
     }
 
@@ -117,9 +116,10 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
     private void loadConfiguration() {
         final List<JsonNodeSource> sources = Lists.transform(
                 _sourceBuilders,
-                new Function<com.arpnetworking.utility.Builder<? extends JsonNodeSource>, JsonNodeSource>() {
+                new Function<com.arpnetworking.commons.builder.Builder<? extends JsonNodeSource>, JsonNodeSource>() {
                     @Override
-                    public JsonNodeSource apply(final com.arpnetworking.utility.Builder<? extends JsonNodeSource> jsonSourceBuilder) {
+                    public JsonNodeSource apply(
+                            final com.arpnetworking.commons.builder.Builder<? extends JsonNodeSource> jsonSourceBuilder) {
                         return jsonSourceBuilder.build();
                     }
                 });
@@ -187,7 +187,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
     }
 
     private final AtomicReference<StaticConfiguration> _snapshot = new AtomicReference<>();
-    private final List<com.arpnetworking.utility.Builder<? extends JsonNodeSource>> _sourceBuilders;
+    private final List<com.arpnetworking.commons.builder.Builder<? extends JsonNodeSource>> _sourceBuilders;
     private final List<Listener> _listeners;
     private final TriggerEvaluator _triggerEvaluator;
 
@@ -198,7 +198,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
 
     private final class TriggerEvaluator implements Runnable {
 
-        public TriggerEvaluator(final List<Trigger> triggers) {
+        private TriggerEvaluator(final List<Trigger> triggers) {
             _triggers = triggers;
             _isRunning = true;
         }
@@ -300,7 +300,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
          * instance <code>Builder</code> instances.
          * @return This <code>Builder</code> instance.
          */
-        public Builder setSourceBuilders(final List<com.arpnetworking.utility.Builder<? extends JsonNodeSource>> value) {
+        public Builder setSourceBuilders(final List<com.arpnetworking.commons.builder.Builder<? extends JsonNodeSource>> value) {
             _sourceBuilders = Lists.newArrayList(value);
             return self();
         }
@@ -311,7 +311,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
          * @param value The <code>JsonSource</code> <code>Builder</code> instance.
          * @return This <code>Builder</code> instance.
          */
-        public Builder addSourceBuilder(final com.arpnetworking.utility.Builder<? extends JsonNodeSource> value) {
+        public Builder addSourceBuilder(final com.arpnetworking.commons.builder.Builder<? extends JsonNodeSource> value) {
             if (_sourceBuilders == null) {
                 _sourceBuilders = Lists.newArrayList();
             }
@@ -380,7 +380,7 @@ public final class DynamicConfiguration extends BaseJacksonConfiguration impleme
         }
 
         @NotNull
-        private List<com.arpnetworking.utility.Builder<? extends JsonNodeSource>> _sourceBuilders;
+        private List<com.arpnetworking.commons.builder.Builder<? extends JsonNodeSource>> _sourceBuilders;
         @NotNull
         private List<Trigger> _triggers = Lists.newArrayList();
         @NotNull
