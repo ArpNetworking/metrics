@@ -15,20 +15,22 @@
 # limitations under the License.
 
 uri=
+name=
 
 function show_help {
   echo "Usage:"
   echo "./pinger.sh -h|-?"
-  echo "./pinger.sh -u URI [-v]"
+  echo "./pinger.sh -u URI -n NAME [-v]"
   echo ""
   echo " -h|-? -- print this help message"
   echo " -u uri -- specify a uri to ping"
+  echo " -n name -- specify the name of the service"
   echo " -v -- verbose mode"
 }
 
 # Parse Options
 OPTIND=1
-while getopts ":h?vu:" opt; do
+while getopts ":h?vu:n:" opt; do
   case "$opt" in
     h|\?)
       show_help
@@ -36,6 +38,9 @@ while getopts ":h?vu:" opt; do
       ;;
     v)
       verbose=1
+      ;;
+    n)
+      name="$OPTARG"
       ;;
     u)
       uri="$OPTARG"
@@ -48,15 +53,20 @@ while :
 do
   result=
   if type curl >/dev/null 2>&1; then
-    result=`curl -s -o - ${uri}`
+    result=`curl -I -s -o /dev/null -w "%{http_code}" ${uri}`
   elif type wget >/dev/null 2>&1; then
-    result=`wget -qO- ${uri}`
+    result=`wget -q -S --spider ${uri} 2>&1 | grep "HTTP/" | awk '{print $2}'`
   else
     echo "ERROR: No supported http query command found!"
     exit 1
   fi
+  if [ "${result}" == "200" ]; then
+    result="HEALTHY"
+  else
+    result="UNKNOWN"
+  fi
   if [ -n "$verbose" ]; then
-    echo "Pinging ${uri}... $result"
+    echo "Pinging ${uri} ${result} (${name})"
   fi
   sleep 0.5
 done
