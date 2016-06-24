@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  # Base Centos7 Image
+  config.vm.box = "centos/7"
+  # Graphana
+  config.vm.network "forwarded_port", guest: 3000, host: 8081
+  # KairosDb
+  config.vm.network "forwarded_port", guest: 8080, host: 8082
+
+  # NOTE:
+  # - Metric Portal runs locally on port 8080
+  # - Metrics Aggregator Daemon runs locally on port 7090
+  # - Cluster Aggregator runs locally on ports 7065 and 7066
+
+  # System preparation
+  config.vm.provision "shell", inline: "sudo yum -y install git java vim wget"
+
+  # Install Cassandra
+  config.vm.provision "shell", inline: "echo '[datastax]' > /etc/yum.repos.d/datastax.repo"
+  config.vm.provision "shell", inline: "echo 'name = DataStax Repo for Apache Cassandra' >> /etc/yum.repos.d/datastax.repo"
+  config.vm.provision "shell", inline: "echo 'baseurl = http://rpm.datastax.com/community' >> /etc/yum.repos.d/datastax.repo"
+  config.vm.provision "shell", inline: "echo 'enabled = 1' >> /etc/yum.repos.d/datastax.repo"
+  config.vm.provision "shell", inline: "echo 'gpgcheck = 0' >> /etc/yum.repos.d/datastax.repo"
+  config.vm.provision "shell", inline: "sudo yum -y install dsc20"
+
+  # Install KairosDb
+  config.vm.provision "shell", inline: "wget https://github.com/kairosdb/kairosdb/releases/download/v1.1.1/kairosdb-1.1.1-1.rpm"
+  config.vm.provision "shell", inline: "sudo rpm -i kairosdb-1.1.1-1.rpm"
+  config.vm.provision "shell", inline: "sudo sed -i 's/^\(kairosdb.service.datastore=org.kairosdb.datastore.h2.H2Module\)$/#\1/' /opt/kairosdb/conf/kairosdb.properties"
+  config.vm.provision "shell", inline: "sudo sed -i 's/^#\(kairosdb.service.datastore=org.kairosdb.datastore.cassandra.CassandraModule\)$/\1/' /opt/kairosdb/conf/kairosdb.properties"
+
+  # Install Graphana
+  config.vm.provision "shell", inline: "sudo yum -y install https://grafanarel.s3.amazonaws.com/builds/grafana-3.0.4-1464167696.x86_64.rpm"
+  config.vm.provision "shell", inline: "sudo mkdir /var/lib/grafana/plugins; pushd /var/lib/grafana/plugins; sudo git clone https://github.com/grafana/kairosdb-datasource.git; popd; sudo chown -R grafana:grafana /var/lib/grafana/plugins"
+
+  # Create control script
+  config.vm.provision "shell", inline: "echo '#!/bin/bash' > ./start"
+  config.vm.provision "shell", inline: "echo 'sleep 5; sudo service cassandra start' >> ./start"
+  config.vm.provision "shell", inline: "echo 'sleep 5; sudo /opt/kairosdb/bin/kairosdb.sh start' >> ./start"
+  config.vm.provision "shell", inline: "echo 'sleep 5; sudo service grafana-server start' >> ./start"
+  config.vm.provision "shell", inline: "chmod +x ./start"
+
+  # Start the stack
+  config.vm.provision "shell", inline: "./start"
+ 
+end

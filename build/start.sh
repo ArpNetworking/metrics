@@ -24,6 +24,7 @@ start_cluster_agg=0
 pid_cluster_agg=
 start_metrics_portal=0
 pid_metrics_portal=
+start_ckg=0
 clear_logs=
 pinger=
 
@@ -39,6 +40,7 @@ function show_help {
   echo "                 mad"
   echo "                 cluster-aggregator"
   echo "                 metrics-portal"
+  echo "                 ckg"
   echo " -a -- start all services"
   echo " -c -- clear logs"
   echo " -p -- run pinger"
@@ -51,6 +53,11 @@ function is_dead() {
 }
 
 function handle_interrupt {
+  if [ $start_ckg -gt 0 ]; then
+    pushd ${dir} &> /dev/null
+    vagrant suspend
+    popd &> /dev/null
+  fi
   kill $(jobs -p -r)
 }
 
@@ -114,6 +121,8 @@ while getopts ":h?vpacs:" opt; do
       start_cluster_agg=1
       services+=("metrics-portal")
       start_metrics_portal=1
+      services+=("ckg")
+      start_ckg=1
       ;;
     s)
       lower_service=$(echo "$OPTARG" | tr '[:upper:]' '[:lower:]')
@@ -126,6 +135,9 @@ while getopts ":h?vpacs:" opt; do
       elif [ ${lower_service} == "metrics-portal" ]; then
         services+=("metrics-portal")
         start_metrics_portal=1
+      elif [ ${lower_service} == "ckg" ]; then
+        services+=("ckg")
+        start_ckg=1
       else
         echo "Unknown service ${OPTARG}"
         exit 1
@@ -207,7 +219,25 @@ if [ $start_cluster_agg -gt 0 ]; then
   popd &> /dev/null
 fi
 
+if [ $start_ckg -gt 0 ]; then
+  pushd ${dir} &> /dev/null
+  vagrant up
+  if [ "$?" -ne 0 ]; then echo "Build failed: ckg"; exit 1; fi
+  popd &> /dev/null
+fi
+
 # Run projects
+if [ $start_ckg -gt 0 ]; then
+  pushd ${dir} &> /dev/null
+  if [ -n "$pinger" ]; then
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8082     " -n "kairos" &
+    # TODO(ville): No unauthenticated endpoint available on Graphana
+    # See: https://github.com/grafana/grafana/issues/3302
+    #${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8081" -n "graphana" &
+  fi
+  popd &> /dev/null
+fi
+
 if [ $start_cluster_agg -gt 0 ]; then
   pushd ${dir_cluster_agg} &> /dev/null
   if [ -n "$clear_logs" ]; then
@@ -220,7 +250,7 @@ if [ $start_cluster_agg -gt 0 ]; then
   pid_cluster_agg=$!
   echo "Started: cluster-aggregator ($pid_cluster_agg)"
   if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7066/ping" &
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7066/ping" -n "cagg" &
   fi
   popd &> /dev/null
 fi
@@ -235,7 +265,7 @@ if [ $start_mad -gt 0 ]; then
   pid_mad=$!
   echo "Started: mad ($pid_mad)"
   if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7090/ping" &
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7090/ping" -n "mad" &
   fi
   popd &> /dev/null
 fi
@@ -260,7 +290,7 @@ if [ $start_metrics_portal -gt 0 ]; then
   pid_metrics_portal=$!
   echo "Started: metrics-portal ($pid_metrics_portal)"
   if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8080/ping" &
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8080/ping" -n "mportal" &
   fi
   popd &> /dev/null
 fi
