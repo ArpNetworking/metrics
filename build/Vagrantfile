@@ -15,31 +15,35 @@ Vagrant.configure(2) do |config|
   # - Cluster Aggregator runs locally on ports 7065 and 7066
 
   # System preparation
-  config.vm.provision "shell", inline: "sudo yum -y install git java vim wget"
+  config.vm.provision "shell", inline: "sudo yum -y install epel-release 2>&1"
+  config.vm.provision "shell", inline: "sudo yum -y install git java vim wget dnf"
 
-  # Install Cassandra
-  config.vm.provision "shell", inline: "echo '[datastax]' > /etc/yum.repos.d/datastax.repo"
-  config.vm.provision "shell", inline: "echo 'name = DataStax Repo for Apache Cassandra' >> /etc/yum.repos.d/datastax.repo"
-  config.vm.provision "shell", inline: "echo 'baseurl = http://rpm.datastax.com/community' >> /etc/yum.repos.d/datastax.repo"
-  config.vm.provision "shell", inline: "echo 'enabled = 1' >> /etc/yum.repos.d/datastax.repo"
-  config.vm.provision "shell", inline: "echo 'gpgcheck = 0' >> /etc/yum.repos.d/datastax.repo"
-  config.vm.provision "shell", inline: "sudo yum -y install dsc20"
+  # Install Scylla
+  config.vm.provision "shell", inline: "sudo wget -O /etc/yum.repos.d/scylla.repo http://downloads.scylladb.com/rpm/centos/scylla-1.6.repo 2>&1"
+  config.vm.provision "shell", inline: "sudo dnf -y remove abrt; true"
+  config.vm.provision "shell", inline: "sudo dnf -y install scylla"
+  config.vm.provision "shell", inline: "sudo sed -i 's/# start_rpc: true/start_rpc: true/' /etc/scylla/scylla.yaml"
+  config.vm.provision "shell", inline: "sudo scylla_setup --no-raid-setup --nic eth0 --ntp-domain centos 
+"
 
   # Install KairosDb
-  config.vm.provision "shell", inline: "wget https://github.com/kairosdb/kairosdb/releases/download/v1.1.1/kairosdb-1.1.1-1.rpm"
-  config.vm.provision "shell", inline: "sudo rpm -i kairosdb-1.1.1-1.rpm"
-  config.vm.provision "shell", inline: "sudo sed -i 's/^\(kairosdb.service.datastore=org.kairosdb.datastore.h2.H2Module\)$/#\1/' /opt/kairosdb/conf/kairosdb.properties"
-  config.vm.provision "shell", inline: "sudo sed -i 's/^#\(kairosdb.service.datastore=org.kairosdb.datastore.cassandra.CassandraModule\)$/\1/' /opt/kairosdb/conf/kairosdb.properties"
+  config.vm.provision "shell", inline: "sudo dnf -y install https://github.com/kairosdb/kairosdb/releases/download/v1.1.3/kairosdb-1.1.3-1.rpm"
+  config.vm.provision "shell", inline: "sudo service kairosdb stop"
+  config.vm.provision "shell", inline: "sudo sed -i 's/^\\(kairosdb.service.datastore=org.kairosdb.datastore.h2.H2Module\\)$/#\\1/' /opt/kairosdb/conf/kairosdb.properties"
+  config.vm.provision "shell", inline: "sudo sed -i 's/^#\\(kairosdb.service.datastore=org.kairosdb.datastore.cassandra.CassandraModule\\)$/\\1/' /opt/kairosdb/conf/kairosdb.properties"
 
   # Install Graphana
-  config.vm.provision "shell", inline: "sudo yum -y install https://grafanarel.s3.amazonaws.com/builds/grafana-3.0.4-1464167696.x86_64.rpm"
+  config.vm.provision "shell", inline: "sudo dnf -y install https://grafanarel.s3.amazonaws.com/builds/grafana-3.0.4-1464167696.x86_64.rpm"
   config.vm.provision "shell", inline: "sudo mkdir /var/lib/grafana/plugins; pushd /var/lib/grafana/plugins; sudo git clone https://github.com/grafana/kairosdb-datasource.git; popd; sudo chown -R grafana:grafana /var/lib/grafana/plugins"
 
   # Create control script
   config.vm.provision "shell", inline: "echo '#!/bin/bash' > ./start"
-  config.vm.provision "shell", inline: "echo 'sleep 5; sudo service cassandra start' >> ./start"
-  config.vm.provision "shell", inline: "echo 'sleep 5; sudo /opt/kairosdb/bin/kairosdb.sh start' >> ./start"
-  config.vm.provision "shell", inline: "echo 'sleep 5; sudo service grafana-server start' >> ./start"
+  config.vm.provision "shell", inline: "echo 'sudo systemctl enable scylla-server' >> ./start"
+  config.vm.provision "shell", inline: "echo 'sudo systemctl enable kairosdb' >> ./start"
+  config.vm.provision "shell", inline: "echo 'sudo systemctl enable grafana-server' >> ./start"
+  config.vm.provision "shell", inline: "echo 'sleep 5; sudo systemctl start scylla-server' >> ./start"
+  config.vm.provision "shell", inline: "echo 'sleep 5; sudo systemctl start kairosdb' >> ./start"
+  config.vm.provision "shell", inline: "echo 'sleep 5; sudo systemctl start grafana-server' >> ./start"
   config.vm.provision "shell", inline: "chmod +x ./start"
 
   # Start the stack
