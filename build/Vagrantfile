@@ -9,6 +9,15 @@ Vagrant.configure(2) do |config|
   # KairosDb
   config.vm.network "forwarded_port", guest: 8080, host: 8082
 
+  config.vm.provider :virtualbox do |vb|
+    vb.memory = "2048"
+    vb.cpus = "2"
+  end
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.memory = 2048
+    libvirt.cpus = 2
+  end
+
   # NOTE:
   # - Metric Portal runs locally on port 8080
   # - Metrics Aggregator Daemon runs locally on port 7090
@@ -19,7 +28,7 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", inline: "sudo yum -y install git java vim wget dnf"
 
   # Install Scylla
-  config.vm.provision "shell", inline: "sudo wget -O /etc/yum.repos.d/scylla.repo http://downloads.scylladb.com/rpm/centos/scylla-1.6.repo 2>&1"
+  config.vm.provision "shell", inline: "sudo wget -O /etc/yum.repos.d/scylla.repo http://downloads.scylladb.com/rpm/centos/scylla-1.7.repo 2>&1"
   config.vm.provision "shell", inline: "sudo dnf -y remove abrt; true"
   config.vm.provision "shell", inline: "sudo dnf -y install scylla"
   config.vm.provision "shell", inline: "sudo sed -i 's/# start_rpc: true/start_rpc: true/' /etc/scylla/scylla.yaml"
@@ -32,8 +41,10 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", inline: "sudo sed -i 's/^#\\(kairosdb.service.datastore=org.kairosdb.datastore.cassandra.CassandraModule\\)$/\\1/' /opt/kairosdb/conf/kairosdb.properties"
 
   # Install Graphana
-  config.vm.provision "shell", inline: "sudo dnf -y install https://grafanarel.s3.amazonaws.com/builds/grafana-3.0.4-1464167696.x86_64.rpm"
-  config.vm.provision "shell", inline: "sudo mkdir /var/lib/grafana/plugins; pushd /var/lib/grafana/plugins; sudo git clone https://github.com/grafana/kairosdb-datasource.git; popd; sudo chown -R grafana:grafana /var/lib/grafana/plugins"
+  config.vm.provision "shell", inline: "sudo dnf -y install npm"
+  config.vm.provision "shell", inline: "sudo dnf -y install https://s3-us-west-2.amazonaws.com/grafana-releases/master/grafana-4.4.0-8177pre1.x86_64.rpm"
+  config.vm.provision "shell", inline: "sudo mkdir /var/lib/grafana/plugins; pushd /var/lib/grafana/plugins; sudo git clone https://github.com/BrandonArp/kairosdb-datasource.git; pushd kairosdb-datasource; sudo npm install -g grunt; sudo npm install; grunt; popd; popd; sudo chown -R grafana:grafana /var/lib/grafana/plugins"
+  config.vm.provision "shell", inline: "sudo sed -i 's/^SCYLLA_ARGS=\"/SCYLLA_ARGS=\"--developer-mode 1 /' /etc/sysconfig/scylla-server"
 
   # Create control script
   config.vm.provision "shell", inline: "echo '#!/bin/bash' > ./start"
@@ -47,5 +58,7 @@ Vagrant.configure(2) do |config|
 
   # Start the stack
   config.vm.provision "shell", inline: "./start"
- 
+
+  # Create Kairos datasource in Grafana
+  config.vm.provision "shell", inline: "curl -X POST --user admin:admin -H 'content-type: application/json;charset=UTF-8' -d '{\"name\":\"Kairos\",\"type\":\"grafana-kairosdb-datasource\",\"url\":\"http://localhost:8080\",\"access\":\"proxy\",\"jsonData\":{},\"secureJsonFields\":{},\"isDefault\":true}' http://localhost:3000/api/datasources"
 end
