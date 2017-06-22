@@ -45,6 +45,6 @@ dnf install -y cluster-aggregator*.rpm
 
 # Install Kairos Histograms
 curl https://api.github.com/repos/ArpNetworking/kairosdb-histograms/releases/latest | jq -r .assets[].browser_download_url | grep 'rpm$' | xargs wget -nv
-dnf install -y kairosdb-histograms*.rpm
+yum install -y kairosdb-histograms*.rpm
 
 

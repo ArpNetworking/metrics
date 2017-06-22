@@ -29,10 +29,10 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", path: "./install"
 
   # Configure
-  config.vm.provision "file", source: "config/mad/pipelines/http_pipeline.conf", destination: "http_pipeline.conf"
-  config.vm.provision "shell", inline: "mv http_pipeline.conf /opt/mad/config/pipelines/http_pipeline.conf"
-  config.vm.provision "file", source: "config/clusteragg/hostPipeline.conf", destination: "hostPipeline.conf"
-  config.vm.provision "shell", inline: "mv hostPipeline.conf /opt/cluster-aggregator/config/hostPipeline.conf"
+  config.vm.provision "file", source: "config/mad/pipelines/http_pipeline.conf", destination: "/tmp/http_pipeline.conf"
+  config.vm.provision "shell", inline: "mv /tmp/http_pipeline.conf /opt/mad/config/pipelines/http_pipeline.conf"
+  config.vm.provision "file", source: "config/clusteragg/hostPipeline.conf", destination: "/tmp/hostPipeline.conf"
+  config.vm.provision "shell", inline: "mv /tmp/hostPipeline.conf /opt/cluster-aggregator/config/hostPipeline.conf"
   config.vm.provision "shell", inline: "sed -i 's/localhost:8080/localhost:9000/' /opt/cluster-aggregator/config/hostPipeline.conf"
   config.vm.provision "shell", inline: "sed -i 's/localhost:8082/localhost:8080/' /opt/cluster-aggregator/config/hostPipeline.conf"
 
