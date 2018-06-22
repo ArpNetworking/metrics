@@ -1,6 +1,20 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# Copyright 2014 Groupon
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 Vagrant.configure(2) do |config|
   # Base Centos7 Image
   config.vm.box = "centos/7"
@@ -8,8 +22,6 @@ Vagrant.configure(2) do |config|
   config.vm.network "forwarded_port", guest: 3000, host: 8081
   # KairosDb
   config.vm.network "forwarded_port", guest: 8080, host: 8082
-  # MAD
-  config.vm.network "forwarded_port", guest: 7090, host: 7090
 
   config.vm.provider :virtualbox do |vb|
     vb.memory = "2048"
@@ -23,20 +35,14 @@ Vagrant.configure(2) do |config|
   # NOTE:
   # - Metric Portal runs locally on port 8080
   # - Metrics Aggregator Daemon runs locally on port 7090
-  # - Cluster Aggregator runs locally on ports 7065 and 7066
+  # - Cluster Aggregator runs locally on ports 7065 (TCP) and 7066 (HTTP)
+
+  # Default sync folder
+  config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
 
   # Install packages
-  config.vm.provision "shell", path: "./install"
-
-  # Configure
-  config.vm.provision "file", source: "config/mad/pipelines/http_pipeline.conf", destination: "/tmp/http_pipeline.conf"
-  config.vm.provision "shell", inline: "mv /tmp/http_pipeline.conf /opt/mad/config/pipelines/http_pipeline.conf"
-  config.vm.provision "file", source: "config/clusteragg/hostPipeline.conf", destination: "/tmp/hostPipeline.conf"
-  config.vm.provision "shell", inline: "mv /tmp/hostPipeline.conf /opt/cluster-aggregator/config/hostPipeline.conf"
-  config.vm.provision "shell", inline: "sed -i 's/localhost:8080/localhost:9000/' /opt/cluster-aggregator/config/hostPipeline.conf"
-  config.vm.provision "shell", inline: "sed -i 's/localhost:8082/localhost:8080/' /opt/cluster-aggregator/config/hostPipeline.conf"
+  config.vm.provision "shell", path: "./vagrant-provision.sh"
 
   # Start the stack
-  config.vm.provision "shell", path: "./start"
-
+  config.vm.provision "shell", path: "./vagrant-run.sh", run: 'always'
 end
