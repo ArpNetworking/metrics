@@ -1,0 +1,2525 @@
+{
+  "overwrite": true,
+  "dashboard":{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "iteration": 1529626111491,
+  "links": [],
+  "panels": [
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 16,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 4,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "age",
+          "bars": true,
+          "color": "#58140c",
+          "lines": false,
+          "yaxis": 2,
+          "zindex": -1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "samples",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "sinks/periodic_statistics/http_periodic_statistics_sink/metric_samples",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "metrics",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "sinks/periodic_statistics/http_periodic_statistics_sink/unique_metrics",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "statistics",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "sinks/periodic_statistics/http_periodic_statistics_sink/unique_statistics",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "age",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "sinks/periodic_statistics/http_periodic_statistics_sink/age",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Metrics Data",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": "Volume Per Second",
+          "logBase": 10,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "decimals": null,
+          "format": "s",
+          "label": "Max Age",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 5,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 0,
+        "y": 8
+      },
+      "id": 2,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "count",
+          "color": "#f2c96d",
+          "fill": 0,
+          "linewidth": 2,
+          "yaxis": 2
+        },
+        {
+          "alias": "p50",
+          "color": "#e0752d",
+          "zindex": 3
+        },
+        {
+          "alias": "p75",
+          "color": "#99440a",
+          "zindex": 2
+        },
+        {
+          "alias": "p90",
+          "color": "#58140c",
+          "zindex": 1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "addFilterTagMode": false,
+          "addGroupByMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "count",
+          "aliasMode": "custom",
+          "currentGroupByType": "tag",
+          "currentHorizontalAggregatorName": "count",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "tagKey": "",
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "count",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "isGroupByValid": false,
+          "isTagGroupBy": false,
+          "isTimeGroupBy": false,
+          "isValueGroupBy": false,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "p50",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "percentile",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "percentile",
+              "percentile": "0.50",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "p75",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "percentile",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "percentile",
+              "percentile": "0.75",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "p90",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "percentile",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "percentile",
+              "percentile": "0.90",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "V1 Post Requests",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": "Request Latency",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": "Request Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "timeseries",
+      "datasource": null,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 6,
+        "y": 8
+      },
+      "heatmap": {},
+      "highlightCards": true,
+      "id": 5,
+      "legend": {
+        "show": false
+      },
+      "links": [],
+      "targets": [
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "rest_service/POST/metrics/v1/application/request",
+          "aliasMode": "default",
+          "currentHorizontalAggregatorName": "merge",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "merge",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "title": "V1 Post Request Latency",
+      "tooltip": {
+        "show": true,
+        "showHistogram": true
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "s",
+        "logBase": 2,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "timeseries",
+      "datasource": null,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 12,
+        "y": 8
+      },
+      "heatmap": {},
+      "highlightCards": true,
+      "id": 6,
+      "legend": {
+        "show": false
+      },
+      "links": [],
+      "targets": [
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "rest_service/POST/metrics/v1/application/body_size",
+          "aliasMode": "default",
+          "currentHorizontalAggregatorName": "merge",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "merge",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/body_size",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "title": "V1 Post Request Payload Size",
+      "tooltip": {
+        "show": true,
+        "showHistogram": true
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "decbytes",
+        "logBase": 1,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 5,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 18,
+        "y": 8
+      },
+      "id": 10,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "2xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/status/2xx",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "3xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/status/3xx",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "4xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/status/4xx",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "5xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/status/5xx",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "V1 Post Responses",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "short",
+          "label": "Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": "Request Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 5,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 0,
+        "y": 17
+      },
+      "id": 3,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "count",
+          "color": "#f2c96d",
+          "fill": 0,
+          "linewidth": 2,
+          "yaxis": 2
+        },
+        {
+          "alias": "p50",
+          "color": "#e0752d",
+          "zindex": 3
+        },
+        {
+          "alias": "p75",
+          "color": "#99440a",
+          "zindex": 2
+        },
+        {
+          "alias": "p90",
+          "color": "#58140c",
+          "zindex": 1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "count",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "count",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "count",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/request",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "p50",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "percentile",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "percentile",
+              "percentile": "0.50",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/request",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "p75",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "percentile",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "percentile",
+              "percentile": "0.75",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/request",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "p90",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "percentile",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "percentile",
+              "percentile": "0.90",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/request",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "V2 Post Requests",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": "Request Latency",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": "Request Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "timeseries",
+      "datasource": null,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 6,
+        "y": 17
+      },
+      "heatmap": {},
+      "highlightCards": true,
+      "id": 7,
+      "legend": {
+        "show": false
+      },
+      "links": [],
+      "targets": [
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "rest_service/POST/metrics/v2/application/request",
+          "aliasMode": "default",
+          "currentHorizontalAggregatorName": "merge",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "merge",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/request",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "title": "V2 Post Request Latency",
+      "tooltip": {
+        "show": true,
+        "showHistogram": true
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "s",
+        "logBase": 2,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "timeseries",
+      "datasource": null,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 12,
+        "y": 17
+      },
+      "heatmap": {},
+      "highlightCards": true,
+      "id": 9,
+      "legend": {
+        "show": false
+      },
+      "links": [],
+      "targets": [
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "rest_service/POST/metrics/v2/application/body_size",
+          "aliasMode": "default",
+          "currentHorizontalAggregatorName": "merge",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "merge",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/body_size",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "title": "V2 Post Request Payload Size",
+      "tooltip": {
+        "show": true,
+        "showHistogram": true
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "decbytes",
+        "logBase": 1,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 5,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 18,
+        "y": 17
+      },
+      "id": 11,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "2xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/status/2xx",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "3xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/status/3xx",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "4xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/status/4xx",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "5xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v2/application/status/5xx",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "V2 Post Responses",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "short",
+          "label": "Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": "Request Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "id": 13,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 4,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "g1_old_generation_count",
+          "bars": true,
+          "color": "#052b51",
+          "lines": false,
+          "yaxis": 2
+        },
+        {
+          "alias": "g1_young_generation_count",
+          "bars": true,
+          "color": "#58140c",
+          "lines": false,
+          "yaxis": 2
+        },
+        {
+          "alias": "g1_old_generation_time",
+          "color": "#64b0c8"
+        },
+        {
+          "alias": "g1_young_generation_time",
+          "color": "#e0752d"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "$$hashKey": "object:157",
+          "addHorizontalAggregatorMode": false,
+          "alias": "g1_old_generation_count",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/garbage_collector/g1_old_generation/collection_count_delta",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:158",
+          "addHorizontalAggregatorMode": false,
+          "alias": "g1_young_generation_count",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1s"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/garbage_collector/g1_young_generation/collection_count_delta",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:159",
+          "addHorizontalAggregatorMode": false,
+          "alias": "g1_old_generation_time",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/garbage_collector/g1_old_generation/collection_time",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:160",
+          "addHorizontalAggregatorMode": false,
+          "alias": "g1_young_generation_time",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/garbage_collector/g1_young_generation/collection_time",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "JVM Garbage Collection",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:271",
+          "format": "s",
+          "label": "Total Collection Time",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:272",
+          "decimals": null,
+          "format": "short",
+          "label": "Collections Per Second",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 4,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "id": 14,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 0,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "code_cache",
+          "color": "#052b51",
+          "yaxis": 2
+        },
+        {
+          "alias": "compressed_class_space",
+          "color": "#7eb26d",
+          "yaxis": 2
+        },
+        {
+          "alias": "g1_eden_space",
+          "color": "#ba43a9",
+          "yaxis": 2
+        },
+        {
+          "alias": "g1_old_gen",
+          "color": "#5195ce",
+          "yaxis": 2
+        },
+        {
+          "alias": "g1_survivor_space",
+          "color": "#fce2de",
+          "yaxis": 2
+        },
+        {
+          "alias": "metaspace",
+          "color": "#58140c",
+          "yaxis": 2
+        },
+        {
+          "alias": "heap",
+          "bars": false,
+          "color": "#e0752d",
+          "fill": 0,
+          "lines": true,
+          "linewidth": 4,
+          "stack": false,
+          "zindex": 3
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "heap",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/heap_memory/used",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "code_cache",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/non_heap_memory/code_cache/used",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "compressed_class_space",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/non_heap_memory/compressed_class_space/used",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "g1_eden_space",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/non_heap_memory/g1_eden_space/used",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "g1_old_gen",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/non_heap_memory/g1_old_gen/used",
+          "refId": "E",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "g1_survivor_space",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/non_heap_memory/g1_survivor_space/used",
+          "refId": "F",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "metaspace",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "jvm/non_heap_memory/metaspace/used",
+          "refId": "G",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "JVM Memory Utilization",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decbytes",
+          "label": "Heap Memory",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "decimals": null,
+          "format": "decbytes",
+          "label": "Non-Heap Memory",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": 50
+      }
+    }
+  ],
+  "schemaVersion": 16,
+  "style": "dark",
+  "tags": [
+    "MAD"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "mad",
+          "value": "mad"
+        },
+        "hide": 2,
+        "label": null,
+        "name": "service",
+        "options": [
+          {
+            "selected": true,
+            "text": "mad",
+            "value": "mad"
+          }
+        ],
+        "query": "mad",
+        "type": "constant"
+      },
+      {
+        "current": {
+          "text": "metrics_dev",
+          "value": "metrics_dev"
+        },
+        "hide": 2,
+        "label": null,
+        "name": "cluster",
+        "options": [
+          {
+            "selected": true,
+            "text": "metrics_dev",
+            "value": "metrics_dev"
+          }
+        ],
+        "query": "metrics_dev",
+        "type": "constant"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "",
+  "title": "Metrics Aggregator Daemon",
+  "uid": "hO194aHik",
+  "version": 9
+}}

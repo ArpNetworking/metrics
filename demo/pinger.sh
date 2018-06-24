@@ -16,7 +16,6 @@
 
 uri=
 name=
-pid=
 
 function show_help {
   echo "Usage:"
@@ -26,13 +25,12 @@ function show_help {
   echo " -h|-? -- print this help message"
   echo " -u uri -- specify a uri to ping"
   echo " -n name -- specify the name of the service"
-  echo " -p pid -- specify the process id of the service"
   echo " -v -- verbose mode"
 }
 
 # Parse Options
 OPTIND=1
-while getopts ":h?vu:n:p:" opt; do
+while getopts ":h?vu:n:" opt; do
   case "$opt" in
     h|\?)
       show_help
@@ -43,9 +41,6 @@ while getopts ":h?vu:n:p:" opt; do
       ;;
     n)
       name="$OPTARG"
-      ;;
-    p)
-      pid="$OPTARG"
       ;;
     u)
       uri="$OPTARG"
@@ -71,7 +66,7 @@ do
     result="FAILING"
   fi
   if [ -n "$verbose" ]; then
-    echo "Pinging ${uri} ${result} (${name}:${pid:-?})"
+    echo "Pinging ${uri} ${result} (${name})"
   else
     if [ "$result" == "FAILING" ]; then
       echo "${name}:${pid:-?} failing!"

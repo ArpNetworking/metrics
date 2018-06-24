@@ -1,0 +1,9 @@
+{
+  "name": "Kairos",
+  "type": "grafana-kairosdb-datasource",
+  "url": "http://localhost:8080",
+  "access": "proxy",
+  "jsonData": {},
+  "secureJsonFields": {},
+  "isDefault": true
+}
