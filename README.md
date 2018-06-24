@@ -11,8 +11,10 @@ Demo
 ----
 
 The `demo` directory contains scripts for running a fully encapsulated end-to-end environment for demonstration
-purposes. All components are executed from binaries within a Vagrant controlled virtual machine. The versions of the
-components are fixed to ensure stability and the stack is prepopulated with data.
+purposes. All components are executed from binaries within a Vagrant controlled virtual machine. During provisioning
+the _latest_ versions of Metrics Aggregator Daemon, Cluster Aggregator and Metrics Portal will be installed. If you
+wish to update these components in your demo environment, simply destroy the environment with `vagrant destroy` and
+then launch again.
 
 To launch the stack execute:
 ```
@@ -20,6 +22,11 @@ demo> ./start.sh
 ```
 
 To terminate the stack simply press `Ctrl+c`.
+
+Options for `start.sh` are:
+
+* `-p` -- run pinger
+* `-v` -- verbose mode
 
 The components are available at the following addresses:
 

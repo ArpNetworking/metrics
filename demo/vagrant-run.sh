@@ -23,6 +23,29 @@ sleep 5
 /usr/bin/systemctl start grafana-server
 sleep 5
 
+ln -s /opt/mad/logs /var/log/mad
+rm -rf /opt/mad/config/*
+cp -r /vagrant/config/mad/* /opt/mad/config/
+
+mkdir -p /opt/cluster-aggregator/target
+chown cagg:cagg -R /opt/cluster-aggregator/target
+ln -s /opt/cluster-aggregator/logs /var/log/cluster-aggregator
+rm -rf /opt/cluster-aggregator/config/*
+cp -r /vagrant/config/cagg/* /opt/cluster-aggregator/config/
+
+mkdir -p /usr/share/metrics-portal/target
+chown metrics-portal:metrics-portal -R /usr/share/metrics-portal/target
+cp -r /vagrant/config/metrics-portal/* /usr/share/metrics-portal/conf/
+
+cp /vagrant/config/telegraf/telegraf.conf /etc/telegraf/telegraf.conf
+
+/usr/bin/systemctl restart cluster-aggregator
+sleep 5
+/usr/bin/systemctl restart mad
+sleep 5
+/usr/bin/systemctl restart metrics-portal
+/usr/bin/systemctl restart telegraf
+
 # Setup Grafana KairosDb data source
 for file in /vagrant/data/grafana/data-sources/*.json; do
   [ -e "${file}" ] || continue

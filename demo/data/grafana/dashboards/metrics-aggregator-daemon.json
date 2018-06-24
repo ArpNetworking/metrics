@@ -1470,7 +1470,7 @@
           }
         }
       ],
-      "title": "V2 Post Request Payload Size",
+      "title": "V1 Post Request Payload Size",
       "tooltip": {
         "show": true,
         "showHistogram": true

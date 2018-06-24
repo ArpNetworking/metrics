@@ -1,0 +1,36 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  # Base Centos7 Image
+  config.vm.box = "centos/7"
+  # Grafana
+  config.vm.network "forwarded_port", guest: 3000, host: 8081
+  # KairosDb
+  config.vm.network "forwarded_port", guest: 8080, host: 8082
+  # Metrics Portal
+  config.vm.network "forwarded_port", guest: 8079, host: 8080
+  # MAD
+  config.vm.network "forwarded_port", guest: 7090, host: 7090
+  # CAGG
+  config.vm.network "forwarded_port", guest: 7066, host: 7066
+
+  config.vm.provider :virtualbox do |vb|
+    vb.memory = "2048"
+    vb.cpus = "2"
+  end
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.memory = 2048
+    libvirt.cpus = 2
+  end
+
+  # Default sync folder
+  config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+
+  # Install packages
+  config.vm.provision "shell", path: "./vagrant-provision.sh"
+
+  # Start the stack
+  config.vm.provision "shell", path: "./vagrant-run.sh", run: 'always'
+
+end
