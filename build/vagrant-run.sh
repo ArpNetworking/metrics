@@ -23,6 +23,10 @@ sleep 5
 /usr/bin/systemctl start grafana-server
 sleep 5
 
+cp /vagrant/config/telegraf/telegraf.conf /etc/telegraf/telegraf.conf
+
+/usr/bin/systemctl restart telegraf
+
 # Setup Grafana KairosDb data source
 for file in /vagrant/data/grafana/data-sources/*.json; do
   [ -e "${file}" ] || continue

@@ -95,7 +95,7 @@ Similarly, configuration of each component is found in `config/<component>/`.
 
 Finally, all three development components are started with remote debugging enabled. The ports for each service are:
 
-* Metrics Aggregator Demon - 9001
+* Metrics Aggregator Daemon - 9001
 * Cluster Aggregator - 9002
 * Metrics Portal - 9003
 
