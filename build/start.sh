@@ -247,6 +247,9 @@ fi
 # Run projects
 if [ $start_ckg -gt 0 ]; then
   pushd ${dir} &> /dev/null
+  vagrant ssh -- -N -R 7090:localhost:7090 &
+  vagrant ssh -- -N -R 8094:localhost:8094 &
+  vagrant ssh -- -N -R 2003:localhost:2003 &
   if [ -n "$pinger" ]; then
     ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8082           " -n "kairos" &
     ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8081/api/health" -n "graphana" &

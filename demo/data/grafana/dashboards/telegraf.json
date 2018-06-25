@@ -1,0 +1,2246 @@
+{
+  "overwrite": true,
+  "dashboard": {
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "Utilization across all cores",
+      "fill": 5,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": true,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:2040",
+          "alias": "idle",
+          "color": "#7eb26d"
+        },
+        {
+          "$$hashKey": "object:2048",
+          "alias": "user",
+          "color": "#5195ce"
+        },
+        {
+          "$$hashKey": "object:2056",
+          "alias": "system",
+          "color": "#bf1b00"
+        },
+        {
+          "$$hashKey": "object:2064",
+          "alias": "iowait",
+          "color": "#ba43a9"
+        },
+        {
+          "$$hashKey": "object:2072",
+          "alias": "softirq",
+          "color": "#962d82"
+        },
+        {
+          "$$hashKey": "object:2077",
+          "alias": "irq",
+          "color": "#511749"
+        },
+        {
+          "$$hashKey": "object:2090",
+          "alias": "nice",
+          "color": "#f2c96d"
+        },
+        {
+          "$$hashKey": "object:2098",
+          "alias": "guest_nice",
+          "color": "#967302"
+        },
+        {
+          "$$hashKey": "object:2106",
+          "alias": "guest",
+          "color": "#c15c17"
+        },
+        {
+          "$$hashKey": "object:2111",
+          "alias": "steal",
+          "color": "#58140c"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "$$hashKey": "object:177",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "nice",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_nice",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:276",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "guest_nice",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_guest_nice",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:299",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "steal",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_steal",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:322",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "guest",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "min",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "min",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_guest",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:345",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "iowait",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_iowait",
+          "refId": "E",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:368",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "irq",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_irq",
+          "refId": "F",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:391",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "softirq",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_softirq",
+          "refId": "G",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:414",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "system",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "avg",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_system",
+          "refId": "H",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:437",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "user",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "hide": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_user",
+          "refId": "I",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:460",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "idle",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "cpu/usage_idle",
+          "refId": "J",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "CPU",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1066",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1067",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "decimals": 1,
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 5,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": false,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:2623",
+          "alias": "available_percent_min",
+          "bars": false,
+          "fill": 0,
+          "lines": true,
+          "linewidth": 3,
+          "stack": false,
+          "yaxis": 2
+        },
+        {
+          "$$hashKey": "object:2811",
+          "alias": "available_percent_max",
+          "bars": false,
+          "fill": 0,
+          "fillBelowTo": "available_percent_min",
+          "lines": true,
+          "linewidth": 3,
+          "stack": false,
+          "yaxis": 2
+        },
+        {
+          "$$hashKey": "object:3705",
+          "alias": "slab",
+          "color": "#ea6460",
+          "zindex": -1
+        },
+        {
+          "$$hashKey": "object:3710",
+          "alias": "wired",
+          "color": "#e24d42",
+          "zindex": -1
+        },
+        {
+          "$$hashKey": "object:3715",
+          "alias": "cached",
+          "color": "#3f2b5b",
+          "zindex": -1
+        },
+        {
+          "$$hashKey": "object:3720",
+          "alias": "buffered",
+          "color": "#052b51",
+          "zindex": -1
+        },
+        {
+          "$$hashKey": "object:3725",
+          "alias": "free",
+          "color": "#3f6833",
+          "zindex": -1
+        },
+        {
+          "$$hashKey": "object:3730",
+          "alias": "used",
+          "color": "#bf1b00",
+          "zindex": -1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "$$hashKey": "object:2551",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "available_percent_min",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "min",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "min",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "mem/available_percent",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:2743",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "available_percent_max",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "mem/available_percent",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:2769",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "used",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "mem/used",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:2998",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "wired",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "hide": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "mem/wired",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:3024",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "slab",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "mem/slab",
+          "refId": "E",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:3050",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "cached",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "mem/cached",
+          "refId": "F",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:3128",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "buffered",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "mem/buffered",
+          "refId": "I",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:3154",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "free",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "hide": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "mem/free",
+          "refId": "J",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Memory",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:2579",
+          "format": "decbytes",
+          "label": "Bytes",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:2580",
+          "format": "percent",
+          "label": "Percent Available",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "Across all non-loopback interfaces",
+      "fill": 7,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 7,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 3,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "$$hashKey": "object:5650",
+          "addFilterTagMode": false,
+          "addGroupByMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "bytes_sent",
+          "aliasMode": "custom",
+          "currentGroupByType": "tag",
+          "currentHorizontalAggregatorName": "scale",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            },
+            {
+              "name": "diff"
+            },
+            {
+              "factor": "0.016666666666667",
+              "name": "scale"
+            }
+          ],
+          "isAggregatorValid": true,
+          "isGroupByValid": false,
+          "isTagGroupBy": false,
+          "isTimeGroupBy": false,
+          "isValueGroupBy": false,
+          "metric": "net/bytes_sent",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:5679",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "bytes_recv",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "scale",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            },
+            {
+              "name": "diff"
+            },
+            {
+              "factor": "0.016666666666667",
+              "name": "scale"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "net/bytes_recv",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Network",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:5743",
+          "format": "decbytes",
+          "label": "Bytes Per Second",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:5744",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 13,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "$$hashKey": "object:9076",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "closing",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "netstat/tcp_closing",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:9102",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "close",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "netstat/tcp_close",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:9128",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "close_wait",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "netstat/tcp_close_wait",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:9154",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "fin_wait1",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "netstat/tcp_fin_wait1",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:9180",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "fin_wait2",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "netstat/tcp_fin_wait2",
+          "refId": "E",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:9206",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "time_wait",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "netstat/tcp_time_wait",
+          "refId": "F",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:9232",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "listen",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "netstat/tcp_listen",
+          "refId": "G",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:9510",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "established",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "netstat/tcp_established",
+          "refId": "H",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "TCP",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:9295",
+          "decimals": null,
+          "format": "short",
+          "label": "Sockets",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:9296",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 7,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "id": 11,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 3,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": true,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:8647",
+          "alias": "used",
+          "color": "#eab839"
+        },
+        {
+          "$$hashKey": "object:8652",
+          "alias": "free",
+          "color": "#7eb26d"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "$$hashKey": "object:8502",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "used",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "disk/used",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:8528",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "free",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "max",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "disk/free",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Disk Space",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:8580",
+          "decimals": null,
+          "format": "decbytes",
+          "label": "Utilization",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:8581",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "Across all disks",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 9,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": false,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:6940",
+          "alias": "read_time",
+          "bars": false,
+          "color": "#7eb26d",
+          "fill": 0,
+          "lines": true,
+          "linewidth": 3,
+          "stack": false,
+          "yaxis": 2
+        },
+        {
+          "$$hashKey": "object:6945",
+          "alias": "write_time",
+          "bars": false,
+          "color": "#eab839",
+          "fill": 0,
+          "lines": true,
+          "linewidth": 3,
+          "stack": false,
+          "yaxis": 2
+        },
+        {
+          "$$hashKey": "object:7356",
+          "alias": "read_bytes",
+          "color": "#3f6833"
+        },
+        {
+          "$$hashKey": "object:7361",
+          "alias": "write_bytes",
+          "color": "#967302"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "$$hashKey": "object:6564",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "read_bytes",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "scale",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            },
+            {
+              "name": "diff"
+            },
+            {
+              "factor": "0.016666666666667",
+              "name": "scale"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "diskio/read_bytes",
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:6701",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "write_bytes",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "scale",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            },
+            {
+              "name": "diff"
+            },
+            {
+              "factor": "0.016666666666667",
+              "name": "scale"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "diskio/write_bytes",
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:6828",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "read_time",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "scale",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            },
+            {
+              "name": "diff"
+            },
+            {
+              "factor": "0.016666666666667",
+              "name": "scale"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "diskio/read_time",
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        },
+        {
+          "$$hashKey": "object:6860",
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "write_time",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "scale",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "max",
+              "sampling_rate": "1m"
+            },
+            {
+              "name": "diff"
+            },
+            {
+              "factor": "0.016666666666667",
+              "name": "scale"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "diskio/write_time",
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "metrics_dev"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Disk IO",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:6641",
+          "decimals": null,
+          "format": "decbytes",
+          "label": "Bytes Per Second",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:6642",
+          "decimals": null,
+          "format": "ms",
+          "label": "Milliseconds Per Second",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 16,
+  "style": "dark",
+  "tags": [
+    "Telegraf"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "",
+  "title": "Telegraf",
+  "uid": null,
+  "version": 0
+} }

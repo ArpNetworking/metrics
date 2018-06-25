@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+/usr/bin/systemctl stop telegraf
 /usr/bin/systemctl stop grafana-server
 /usr/bin/systemctl stop kairosdb
 /usr/bin/systemctl stop scylla-server

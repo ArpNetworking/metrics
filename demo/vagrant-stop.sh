@@ -15,7 +15,7 @@
 # limitations under the License.
 
 /usr/bin/systemctl stop telegraf
-#/usr/bin/systemctl stop metrics-portal
+/usr/bin/systemctl stop metrics-portal
 /usr/bin/systemctl stop cluster-aggregator
 /usr/bin/systemctl stop mad
 /usr/bin/systemctl stop grafana-server

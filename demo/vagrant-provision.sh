@@ -17,7 +17,7 @@ set -x
 
 # Install epel and dnf
 yum -y install epel-release 2>&1
-yum -y install git java vim wget dnf jq net-tools lsof telegraf
+yum -y install git java vim wget dnf jq net-tools lsof nmap-ncat
 
 # Install Scylla
 wget -O /etc/yum.repos.d/scylla.repo http://downloads.scylladb.com/rpm/centos/scylla-1.7.repo 2>&1

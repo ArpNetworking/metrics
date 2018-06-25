@@ -17,7 +17,7 @@ set -x
 
 # Install epel and dnf
 yum -y install epel-release 2>&1
-yum -y install git java vim wget dnf jq net-tools lsof
+yum -y install git java vim wget dnf jq net-tools lsof nmap-ncat
 
 # Install Scylla
 wget -O /etc/yum.repos.d/scylla.repo http://downloads.scylladb.com/rpm/centos/scylla-1.7.repo 2>&1
@@ -52,9 +52,21 @@ chown -R grafana:grafana /var/lib/grafana/plugins
 yum install -y https://github.com/ArpNetworking/kairosdb-histograms/releases/download/kairosdb-histograms-2.0.0/kairosdb-histograms-2.0.0-1.noarch.rpm
 yum install -y kairosdb-histograms*.rpm
 
+# Install Telegraf
+cat <<EOF | tee /etc/yum.repos.d/influxdb.repo
+[influxdb]
+name = InfluxDB Repository - RHEL \$releasever
+baseurl = https://repos.influxdata.com/centos/\$releasever/\$basearch/stable
+enabled = 1
+gpgcheck = 1
+gpgkey = https://repos.influxdata.com/influxdb.key
+EOF
+yum -y install telegraf
+
 # Enable services
 /usr/bin/systemctl enable scylla-server
 /usr/bin/systemctl enable kairosdb
 /usr/bin/systemctl enable grafana-server
+/usr/bin/systemctl enable telegraf
 
 exit 0
