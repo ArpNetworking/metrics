@@ -22,6 +22,9 @@ Vagrant.configure(2) do |config|
   config.vm.network "forwarded_port", guest: 3000, host: 8081
   # KairosDb
   config.vm.network "forwarded_port", guest: 8080, host: 8082
+  # Cassandra
+  config.vm.network "forwarded_port", guest: 9042, host: 9042
+  config.vm.network "forwarded_port", guest: 9160, host: 9160
 
   config.vm.provider :virtualbox do |vb|
     vb.memory = "2048"
