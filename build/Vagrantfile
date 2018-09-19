@@ -18,6 +18,9 @@
 Vagrant.configure(2) do |config|
   # Base Centos7 Image
   config.vm.box = "centos/7"
+  # HAProxy (CAGG Load Balancer)
+  config.vm.network "forwarded_port", guest: 8066, host: 8066
+  config.vm.network "forwarded_port", guest: 7066, host: 7066
   # Grafana
   config.vm.network "forwarded_port", guest: 3000, host: 8081
   # KairosDb

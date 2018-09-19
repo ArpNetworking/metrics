@@ -15,6 +15,10 @@ set -x
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cp /vagrant/config/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg
+
+/usr/bin/systemctl start haproxy
+
 sleep 5
 #/usr/bin/systemctl start scylla-server
 /usr/bin/systemctl start cassandra

@@ -29,6 +29,11 @@ clear_logs=
 pinger=
 skip_build=
 
+min_cagg_count=1
+max_cagg_count=3
+default_cagg_count=1
+cagg_count=${default_cagg_count}
+
 mad_jvm_xms="64m"
 mad_jvm_xmx="1024m"
 cagg_jvm_xms="64m"
@@ -37,14 +42,17 @@ mportal_jvm_xms="64m"
 mportal_jvm_xmx="1024m"
 
 mad_debug_port=9001
-cagg_debug_port=9002
-mportal_debug_port=9003
+mportal_debug_port=9002
+
+# Cluster aggregator debug ports are sequentially opened with an offset from
+# the base port below. The first cluster aggregator process opens 9101.
+cagg_debug_base_port=9100
 
 function show_help {
   echo "Usage:"
   echo "./build.sh -h|-?"
-  echo "./build.sh -s SERVICE [-c] [-p] [-n] [-v]"
-  echo "./build.sh -a [-c] [-p] [n-] [-v]"
+  echo "./build.sh -s SERVICE [-t COUNT] [-c] [-p] [-n] [-v]"
+  echo "./build.sh -a [-c] [-p] [-n] [-v]"
   echo ""
   echo " -h|-? -- print this help message"
   echo " -s service -- specify a service to start "
@@ -54,6 +62,7 @@ function show_help {
   echo "                 mportal"
   echo "                 ckg"
   echo " -a -- start all services"
+  echo " -t -- the number of cagg instances from ${min_cagg_count} to ${max_cagg_count}; default is ${default_cagg_count}"
   echo " -c -- clear logs"
   echo " -p -- run pinger"
   echo " -n -- don't build"
@@ -77,23 +86,27 @@ function handle_interrupt {
 
 function handle_childexit {
   if [ -n "$pid_mad" ]; then
-     if is_dead "$pid_mad"; then
-        echo "Exited: mad ($pid_mad)"
-        pid_mad=
-     fi
-  fi
-  if [ -n "$pid_cluster_agg" ]; then
-     if is_dead "$pid_cluster_agg"; then
-        echo "Exited: cluster-aggregator ($pid_cluster_agg)"
-        pid_cluster_agg=
-     fi
+    if is_dead "$pid_mad"; then
+      echo "Exited: mad ($pid_mad)"
+      pid_mad=
+    fi
   fi
   if [ -n "$pid_metrics_portal" ]; then
-     if is_dead "$pid_metrics_portal"; then
-        echo "Exited: metrics-portal ($pid_metrics_portal)"
-        pid_metrics_portal=
-     fi
+    if is_dead "$pid_metrics_portal"; then
+      echo "Exited: metrics-portal ($pid_metrics_portal)"
+      pid_metrics_portal=
+    fi
   fi
+  for i in `seq 1 ${cagg_count}`; do
+    var="pid_cluster_agg_${i}"
+    pid="${!var}"
+    if [ -n "$pid" ]; then
+      if is_dead "$pid"; then
+        echo "Exited: cluster-aggregator ${i} ($pid)"
+        declare "pid_cluster_agg_${i}="
+      fi
+    fi
+  done
 }
 
 function find_path_up {
@@ -113,7 +126,7 @@ function find_path_up {
 
 # Parse Options
 OPTIND=1
-while getopts ":h?vnpacs:" opt; do
+while getopts ":h?vnpacs:t:" opt; do
   case "$opt" in
     h|\?)
       show_help
@@ -157,6 +170,22 @@ while getopts ":h?vnpacs:" opt; do
         start_ckg=1
       else
         echo "Unknown service ${OPTARG}"
+        exit 1
+      fi
+      ;;
+    t)
+      cagg_count="$OPTARG"
+      if ! [ "${cagg_count}" -eq "${cagg_count}" ] 2> /dev/null
+      then
+        echo "The number of cagg instances must be an integer."
+        exit 1
+      fi
+      if [ ${cagg_count} -lt ${min_cagg_count} ]; then
+        echo "The number of cagg instances must be at least ${min_cagg_count}."
+        exit 1
+      fi
+      if [ ${cagg_count} -gt ${max_cagg_count} ]; then
+        echo "The number of cagg instances must be at most ${max_cagg_count}."
         exit 1
       fi
       ;;
@@ -265,30 +294,62 @@ if [ $start_cluster_agg -gt 0 ]; then
   rm -rf ./target/h2
   rm -rf ./journal
   mkdir -p "${dir_cluster_agg}/logs"
-  ./target/appassembler/bin/cluster-aggregator \
-      "-Xdebug" \
-      "-XX:+HeapDumpOnOutOfMemoryError" \
-      "-XX:HeapDumpPath=${dir_cluster_agg}/logs/cagg.oom.hprof" \
-      "-XX:+PrintGCDetails" \
-      "-XX:+PrintGCDateStamps" \
-      "-Xloggc:${dir_cluster_agg}/logs/cagg.gc.log" \
-      "-XX:NumberOfGCLogFiles=2" \
-      "-XX:GCLogFileSize=50M" \
-      "-XX:+UseGCLogFileRotation" \
-      "-Xms${cagg_jvm_xms}" \
-      "-Xmx${cagg_jvm_xmx}" \
-      "-XX:+UseStringDeduplication" \
-      "-XX:+UseG1GC" \
-      "-Duser.timezone=UTC" \
-      "-Xrunjdwp:server=y,transport=dt_socket,address=${cagg_debug_port},suspend=n" \
-      "-Dlogback.configurationFile=${dir}/config/cagg/logback.xml" \
-      -- \
-      "${dir}/config/cagg/config.conf" &
-  pid_cluster_agg=$!
-  echo "Started: cluster-aggregator ($pid_cluster_agg)"
-  if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7066/ping      " -n "cagg" -p "${pid_cluster_agg}" &
-  fi
+  akka_seed_nodes=""
+  array_index=0
+  for i in `seq 1 ${cagg_count}`; do
+    cagg_akka_port=$(( 2551 + ${i}))
+    akka_seed_nodes+="\"-Dakka.cluster.seed-nodes.${array_index}=akka.tcp://Metrics@127.0.0.1:${cagg_akka_port}\" "
+    array_index=$(( ${array_index} + 1 ))
+  done
+  for i in `seq 1 ${cagg_count}`; do
+    double_i=$(( 2 * ${i}))
+
+    cagg_http_port=$(( 7066 + ${double_i}))
+    cagg_tcp_port=$(( 7065 + ${double_i}))
+    cagg_akka_port=$(( 2551 + ${i}))
+    cagg_debug_port=$(( ${cagg_debug_base_port} + ${i}))
+
+    ./target/appassembler/bin/cluster-aggregator \
+        "-Xdebug" \
+        "-XX:+HeapDumpOnOutOfMemoryError" \
+        "-XX:HeapDumpPath=${dir_cluster_agg}/logs/cagg.${i}.oom.hprof" \
+        "-XX:+PrintGCDetails" \
+        "-XX:+PrintGCDateStamps" \
+        "-Xloggc:${dir_cluster_agg}/logs/cagg.${i}.gc.log" \
+        "-XX:NumberOfGCLogFiles=2" \
+        "-XX:GCLogFileSize=50M" \
+        "-XX:+UseGCLogFileRotation" \
+        "-Xms${cagg_jvm_xms}" \
+        "-Xmx${cagg_jvm_xmx}" \
+        "-XX:+UseStringDeduplication" \
+        "-XX:+UseG1GC" \
+        ${akka_seed_nodes} \
+        "-Duser.timezone=UTC" \
+        "-DCAGG_ID=${i}" \
+        "-DhttpPort=${cagg_http_port}" \
+        "-DaggregationPort=${cagg_tcp_port}" \
+        "-DakkaConfiguration.akka.remote.netty.tcp.port=${cagg_akka_port}" \
+        "-Dcassandra-snapshot-store.contact-points.0=localhost" \
+        "-Dcassandra-journal.contact-points.0=localhost" \
+        "-Xrunjdwp:server=y,transport=dt_socket,address=${cagg_debug_port},suspend=n" \
+        "-Dlogback.configurationFile=${dir}/config/cagg/logback.xml" \
+        -- \
+        "${dir}/config/cagg/config.conf" &
+    pid=$!
+    declare "pid_cluster_agg_${i}=${pid}"
+    echo "Started: cluster-aggregator ${i} of ${cagg_count} ($pid)"
+    if [ -n "$pinger" ]; then
+      ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:${cagg_http_port}/ping      " -n "cagg-${i}" -p "${pid}" &
+    fi
+
+  done
+  popd &> /dev/null
+  pushd ${dir} &> /dev/null
+  for i in `seq 1 ${cagg_count}`; do
+      double_i=$(( 2 * ${i}))
+      cagg_http_port=$(( 7066 + ${double_i}))
+      vagrant ssh -- -N -R ${cagg_http_port}:localhost:${cagg_http_port} &
+  done
   popd &> /dev/null
 fi
 
