@@ -19,3 +19,4 @@
 /usr/bin/systemctl stop kairosdb
 /usr/bin/systemctl stop cassandra
 #/usr/bin/systemctl stop scylla-server
+/usr/bin/systemctl stop haproxy

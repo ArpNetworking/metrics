@@ -14,15 +14,15 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<configuration>
+<configuration scan="true" scanPeriod="30 seconds">
     <appender name="cagg-logger" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/cluster-aggregator.log</file>
+        <file>logs/cluster-aggregator.${CAGG_ID}.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.SizeAndRandomizedTimeBasedFNATP">
                 <maxOffsetInMillis>900000</maxOffsetInMillis>
                 <maxFileSize>100MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
-            <fileNamePattern>logs/cluster-aggregator.%d{yyyy-MM-dd_HH}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>logs/cluster-aggregator.${CAGG_ID}.%d{yyyy-MM-dd_HH}.%i.log.gz</fileNamePattern>
             <maxHistory>4</maxHistory>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>

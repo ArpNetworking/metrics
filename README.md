@@ -55,6 +55,7 @@ Options for `start.sh` are:
 
 * `-s service` -- specify a service to start; valid services are: mad, cagg, mportal, ckg
 * `-a` -- start all services
+* `-t count` -- start `count` instances of cagg from 1 to 3; default is 1
 * `-c` -- clear logs
 * `-p` -- run pinger
 * `-n` -- don't build
@@ -66,7 +67,13 @@ The components are available at the following addresses:
 * Grafana: [localhost:8081](http://localhost:8081)
 * Metrics Portal: [localhost:8080](http://localhost:8080)
 * Metrics Aggregator Daemon: [localhost:7090](http://localhost:7090/ping)
-* Cluster Aggregator: [localhost:7066](http://localhost:7066/ping)
+* Cluster Aggregator:
+  * Host 1: [localhost:7068](http://localhost:7068/ping)
+  * Host 2: [localhost:7070](http://localhost:7070/ping)
+  * Host 3: [localhost:7072](http://localhost:7072/ping)
+* HAProxy:
+  * Load Balanced Cluster Aggregator HTTP: [localhost:7066](http://localhost:7066/ping)
+  * HAProxy Status: [localhost:8066/stats](http://localhost:8066/stats)
 
 Component configuration is available in `build/config/<component>` and is automatically reloaded by Metrics Aggregator
 Daemon and Cluster Aggregator.
@@ -96,8 +103,8 @@ Similarly, configuration of each component is found in `config/<component>/`.
 Finally, all three development components are started with remote debugging enabled. The ports for each service are:
 
 * Metrics Aggregator Daemon - 9001
-* Cluster Aggregator - 9002
-* Metrics Portal - 9003
+* Metrics Portal - 9002
+* Cluster Aggregator - 9101 through 9103 (depending on how many instances are launched)
 
 Prerequisites
 -------------
@@ -111,7 +118,8 @@ Q: _What is the username and password to Grafana?_
 A: The default username and password are both `admin`.
 
 Q: _How do I resolve the error: `Vagrant was unable to mount VirtualBox shared folders.`?
-A: You need to install the Virtual Box Guest extension for Vagrant by running `vagrant plugin install vagrant-vbguest` from the `demo` or `build` directory.
+A: You need to install the Virtual Box Guest extension for Vagrant by running `vagrant plugin install vagrant-vbguest`
+from the `demo` or `build` directory.
 
 Q. _Why does my dashboard json creation fail with `"fieldNames":["Dashboard"],"classification":"RequiredError"`?_
 A. You need to wrap the dashboard json from the Grafana user interface with the following JSON:
@@ -124,6 +132,10 @@ A. You need to wrap the dashboard json from the Grafana user interface with the 
 
 Q. _Why does my dashboard json creation fail with `"Dashboard not found","status":"not-found"`?_
 A. You need to remove the top-level `"id":<INT>` field from the dashboard json from the Grafana user interface.
+
+Q. _How do I get Cluster Aggregator to reaggregate data?_
+A. Cluster Aggregator's persist vs reaggregate behavior is controlled by the endpoint that MAD sends data to. You can
+change this by swapping the active `uri` field in `build/config/mad/pipelines/pipeline.conf` for `http_cluster_sink`.
 
 License
 -------

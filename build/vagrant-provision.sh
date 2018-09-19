@@ -19,6 +19,10 @@ set -x
 yum -y install epel-release 2>&1
 yum -y install git java vim wget dnf jq net-tools lsof nmap-ncat
 
+# Install HAProxy
+yum -y install haproxy
+setsebool -P haproxy_connect_any=1
+
 # Install Cassandra
 echo '[cassandra]' > /etc/yum.repos.d/cassandra.repo
 echo 'name=Apache Cassandra' >> /etc/yum.repos.d/cassandra.repo
@@ -85,6 +89,7 @@ EOF
 yum -y install telegraf
 
 # Enable services
+/usr/bin/systemctl enable haproxy
 #/usr/bin/systemctl enable scylla-server
 /usr/bin/systemctl enable cassandra
 /usr/bin/systemctl enable kairosdb

@@ -14,7 +14,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<configuration>
+<configuration scan="true" scanPeriod="30 seconds">
     <appender name="mad-logger" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/mad.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
