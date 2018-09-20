@@ -19,12 +19,33 @@ set -x
 yum -y install epel-release 2>&1
 yum -y install git java vim wget dnf jq net-tools lsof nmap-ncat
 
+# Install Cassandra
+echo '[cassandra]' > /etc/yum.repos.d/cassandra.repo
+echo 'name=Apache Cassandra' >> /etc/yum.repos.d/cassandra.repo
+echo 'baseurl=https://www.apache.org/dist/cassandra/redhat/311x/' >> /etc/yum.repos.d/cassandra.repo
+echo 'gpgcheck=0' >> /etc/yum.repos.d/cassandra.repo
+echo 'repo_gpgcheck=0' >> /etc/yum.repos.d/cassandra.repo
+yum -y install cassandra
+LOCAL_IP_ADDRESS=$(ip route get 1 | awk '{print $NF;exit}')
+sed -i "s/start_rpc: false/start_rpc: true/" /etc/cassandra/conf/cassandra.yaml
+sed -i "s/listen_address: localhost/listen_address: \"${LOCAL_IP_ADDRESS}\"/" /etc/cassandra/conf/cassandra.yaml
+sed -i "s/rpc_address: localhost/rpc_address: \"${LOCAL_IP_ADDRESS}\"/" /etc/cassandra/conf/cassandra.yaml
+sed -i "s/# broadcast_address: 1.2.3.4/broadcast_address: \"${LOCAL_IP_ADDRESS}\"/" /etc/cassandra/conf/cassandra.yaml
+sed -i "s/# broadcast_rpc_address: 1.2.3.4/broadcast_rpc_address: \"${LOCAL_IP_ADDRESS}\"/" /etc/cassandra/conf/cassandra.yaml
+sed -i "s/          - seeds: \"127.0.0.1\"/          - seeds: \"${LOCAL_IP_ADDRESS}\"/" /etc/cassandra/conf/cassandra.yaml
+
 # Install Scylla
-wget -O /etc/yum.repos.d/scylla.repo http://downloads.scylladb.com/rpm/centos/scylla-1.7.repo 2>&1
-yum -y remove abrt; true
-yum -y install scylla
-sed -i 's/# start_rpc: true/start_rpc: true/' /etc/scylla/scylla.yaml
-sed -i 's/^SCYLLA_ARGS=\"/SCYLLA_ARGS=\"--developer-mode 1 /' /etc/sysconfig/scylla-server
+# Note: This is not compatible with Akka Persistence
+# See: https://github.com/akka/akka-persistence-cassandra/issues/366
+#wget -O /etc/yum.repos.d/scylla.repo http://downloads.scylladb.com/rpm/centos/scylla-1.7.repo 2>&1
+#yum -y remove abrt; true
+#yum -y install scylla
+#sed -i 's/# start_rpc: true/start_rpc: true/' /etc/scylla/scylla.yaml
+#sed -i 's/listen_address: localhost/listen_address: "0.0.0.0"/' /etc/scylla/scylla.yaml
+#sed -i 's/rpc_address: localhost/rpc_address: "0.0.0.0"/' /etc/scylla/scylla.yaml
+#sed -i 's/# broadcast_address: 1.2.3.4/broadcast_address: "127.0.0.1"/' /etc/scylla/scylla.yaml
+#sed -i 's/# broadcast_rpc_address: 1.2.3.4/broadcast_rpc_address: "127.0.0.1"/' /etc/scylla/scylla.yaml
+#sed -i 's/^SCYLLA_ARGS=\"/SCYLLA_ARGS=\"--developer-mode 1 /' /etc/sysconfig/scylla-server
 
 # Install KairosDb
 yum -y install https://github.com/kairosdb/kairosdb/releases/download/v1.2.1/kairosdb-1.2.1-1.rpm
@@ -64,7 +85,8 @@ EOF
 yum -y install telegraf
 
 # Enable services
-/usr/bin/systemctl enable scylla-server
+#/usr/bin/systemctl enable scylla-server
+/usr/bin/systemctl enable cassandra
 /usr/bin/systemctl enable kairosdb
 /usr/bin/systemctl enable grafana-server
 /usr/bin/systemctl enable telegraf

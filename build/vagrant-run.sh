@@ -16,7 +16,8 @@ set -x
 # limitations under the License.
 
 sleep 5
-/usr/bin/systemctl start scylla-server
+#/usr/bin/systemctl start scylla-server
+/usr/bin/systemctl start cassandra
 sleep 15
 /usr/bin/systemctl start kairosdb
 sleep 5
