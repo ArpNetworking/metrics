@@ -246,7 +246,7 @@ fi
 # Build projects
 if [ $start_metrics_portal -gt 0 ] && [ -z "$skip_build" ]; then
   pushd ${dir_metrics_portal} &> /dev/null
-  ./activator stage
+  ./jdk-wrapper.sh ./mvnw install -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
   if [ "$?" -ne 0 ]; then echo "Build failed: metrics-portal"; exit 1; fi
   popd &> /dev/null
 fi
@@ -309,7 +309,7 @@ if [ $start_cluster_agg -gt 0 ]; then
     cagg_akka_port=$(( 2551 + ${i}))
     cagg_debug_port=$(( ${cagg_debug_base_port} + ${i}))
 
-    ./target/appassembler/bin/cluster-aggregator \
+    ./jdk-wrapper.sh ./target/appassembler/bin/cluster-aggregator \
         "-Xdebug" \
         "-XX:+HeapDumpOnOutOfMemoryError" \
         "-XX:HeapDumpPath=${dir_cluster_agg}/logs/cagg.${i}.oom.hprof" \
@@ -359,7 +359,7 @@ if [ $start_mad -gt 0 ]; then
     rm -rf ./logs
   fi
   mkdir -p "${dir_mad}/logs"
-  ./target/appassembler/bin/mad \
+  ./jdk-wrapper.sh ./target/appassembler/bin/mad \
       "-Dlogback.configurationFile=${dir}/config/mad/logback.xml" \
       "-XX:+HeapDumpOnOutOfMemoryError" \
       "-XX:HeapDumpPath=${dir_mad}/logs/mad.oom.hprof" \
@@ -391,26 +391,27 @@ if [ $start_metrics_portal -gt 0 ]; then
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
   fi
-  rm -rf ./target/h2
   mkdir -p "${dir_metrics_portal}/logs"
-  ./target/universal/stage/bin/metrics-portal \
+  ./jdk-wrapper.sh ./target/appassembler/bin/metrics-portal \
       "-Dconfig.file=${dir}/config/metrics-portal/dev.conf" \
       "-Dlogger.file=${dir}/config/metrics-portal/logback.xml" \
-      "-J-XX:+HeapDumpOnOutOfMemoryError" \
-      "-J-XX:HeapDumpPath=${dir_metrics_portal}/logs/metrics-portal.oom.hprof" \
-      "-J-XX:+PrintGCDetails" \
-      "-J-XX:+PrintGCDateStamps" \
-      "-J-Xloggc:${dir_metrics_portal}/logs/metrics-portal.gc.log" \
-      "-J-XX:NumberOfGCLogFiles=2" \
-      "-J-XX:GCLogFileSize=50M" \
-      "-J-XX:+UseGCLogFileRotation" \
-      "-J-Xms${mportal_jvm_xms}" \
-      "-J-Xmx${mportal_jvm_xmx}" \
-      "-J-XX:+UseStringDeduplication" \
-      "-J-XX:+UseG1GC" \
-      "-J-Duser.timezone=UTC" \
-      "-J-Xdebug" \
-      "-J-Xrunjdwp:server=y,transport=dt_socket,address=${mportal_debug_port},suspend=n" &
+      "-XX:+HeapDumpOnOutOfMemoryError" \
+      "-XX:HeapDumpPath=${dir_metrics_portal}/logs/metrics-portal.oom.hprof" \
+      "-XX:+PrintGCDetails" \
+      "-XX:+PrintGCDateStamps" \
+      "-Xloggc:${dir_metrics_portal}/logs/metrics-portal.gc.log" \
+      "-XX:NumberOfGCLogFiles=2" \
+      "-XX:GCLogFileSize=50M" \
+      "-XX:+UseGCLogFileRotation" \
+      "-Xms${mportal_jvm_xms}" \
+      "-Xmx${mportal_jvm_xmx}" \
+      "-XX:+UseStringDeduplication" \
+      "-XX:+UseG1GC" \
+      "-Duser.timezone=UTC" \
+      "-Xdebug" \
+      "-Xrunjdwp:server=y,transport=dt_socket,address=${mportal_debug_port},suspend=n" \
+      "--" \
+      "${dir_metrics_portal}" &
   pid_metrics_portal=$!
   echo "Started: metrics-portal ($pid_metrics_portal)"
   if [ -n "$pinger" ]; then
