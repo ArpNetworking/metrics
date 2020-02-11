@@ -121,7 +121,11 @@ function find_path_up {
       l_path=$(dirname "${l_path}")
     fi
   done
-  echo ${l_path};
+  if $l_found; then
+      echo ${l_path};
+  else
+      echo "Not found";  # some non-"/" sentinel value that'll fail a `-d` check later
+  fi
 }
 
 # Parse Options
@@ -224,18 +228,24 @@ dir_cluster_agg=`find_path_up metrics-cluster-aggregator`
 dir_metrics_portal=`find_path_up metrics-portal`
 
 # Verify locations for each requested project
-if [ "${start_mad}" -gt 0 ] && [ ! -d "${dir_mad}" ]; then
-  echo "No directory found for requested project mad"
-  exit 1
-fi
-if [ "${start_cluster_agg}" -gt 0 ] && [ ! -d "${dir_cluster_agg}" ]; then
-  echo "No directory found for requested project cluster-aggregator"
-  exit 1
-fi
-if [ "${start_metrics_portal}" -gt 0 ] && [ ! -d "${dir_metrics_portal}" ]; then
-  echo "No directory found for requested project metrics-portal"
-  exit 1
-fi
+function assert_valid_directory {
+  local project_label=$1
+  local should_start=$2
+  local dir=$3
+
+  if [ "${should_start}" -eq 0 ]; then
+     return 0
+  fi
+  if [ ! -d "${dir}" ]; then
+    echo "No directory found for requested project $project_label"
+    exit 1
+  fi
+}
+
+# Verify locations for each requested project
+assert_valid_directory "mad" $start_mad $dir_mad
+assert_valid_directory "cluster-aggregator" $start_cluster_agg $dir_cluster_agg
+assert_valid_directory "metrics-portal" $start_metrics_portal $dir_metrics_portal
 
 # Build verbose argument to child programs
 verbose_arg=
