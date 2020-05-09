@@ -10,6 +10,9 @@ organizations.
 Demo
 ----
 
+** THIS IS CURRENTLY NOT WORKING **
+https://github.com/ArpNetworking/metrics/issues/31
+
 The `demo` directory contains scripts for running a fully encapsulated end-to-end environment for demonstration
 purposes. All components are executed from binaries within a Vagrant controlled virtual machine. During provisioning
 the _latest_ versions of Metrics Aggregator Daemon, Cluster Aggregator and Metrics Portal will be installed. If you
@@ -37,12 +40,28 @@ The components are available at the following addresses:
 Build
 -----
 
-The `build` directory contains scripts for running an end-to-end development environment for development of our
-components: Metrics Aggregator Daemon, Cluster Aggregator Daemon and Metrics Portal. These development components are
-executed from source code directories expected as siblings to the metrics project directory (e.g. `git clone` into the
-same parent directory). The other three components, [Syclla](https://www.scylladb.com/open-source/) (Cassandra
-equivalent), [KairosDb](https://kairosdb.github.io/) and [Grafana](https://grafana.com/) are executed from binaries
-within a Vagrant controlled virtual machine.
+The `build` directory contains scripts for running an end-to-end development
+environment for development of our components:
+
+* Metrics Aggregator Daemon
+* Cluster Aggregator Daemon
+* Metrics Portal
+* KairosDb Data Source
+
+These development components are executed from source code directories expected
+as siblings to the metrics project directory (e.g. `git clone` into the
+same parent directory). The other three components:
+
+* [Cassandra](https://cassandra.apache.org/)
+* [KairosDb](https://kairosdb.github.io/)
+* [Grafana](https://grafana.com/)
+
+Are executed from docker images on the local host. The [Grafana](https://hub.docker.com/r/grafana/grafana)
+and [Cassandra](https://hub.docker.com/_/cassandra) use common public images.
+However, the KairosDb installation uses the [KairosDb-Extensions](https://hub.docker.com/r/inscopemetrics/kairosdb-extensions)
+generated image.
+
+Ideally, we would build this from source as well.
 
 To launch the stack execute:
 ```
@@ -108,18 +127,14 @@ Finally, all three development components are started with remote debugging enab
 
 Prerequisites
 -------------
-* [Vagrant](https://www.vagrantup.com/)
-* [Virtual Box](https://www.virtualbox.org/)
+* [Docker](https://www.docker.com/)
+* All compilation tools required by projects
 
 FAQ
 ---
 
 Q: _What is the username and password to Grafana?_
 A: The default username and password are both `admin`.
-
-Q: _How do I resolve the error: `Vagrant was unable to mount VirtualBox shared folders.`?
-A: You need to install the Virtual Box Guest extension for Vagrant by running `vagrant plugin install vagrant-vbguest`
-from the `demo` or `build` directory.
 
 Q. _Why does my dashboard json creation fail with `"fieldNames":["Dashboard"],"classification":"RequiredError"`?_
 A. You need to wrap the dashboard json from the Grafana user interface with the following JSON:
