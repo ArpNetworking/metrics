@@ -17,9 +17,23 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
-  "iteration": 1529626111491,
+  "iteration": 1589005066226,
   "links": [],
   "panels": [
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 24,
+      "panels": [],
+      "title": "KPI",
+      "type": "row"
+    },
     {
       "aliasColors": {},
       "bars": false,
@@ -27,12 +41,14 @@
       "dashes": false,
       "datasource": null,
       "fill": 0,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 1
       },
+      "hiddenSeries": false,
       "id": 16,
       "legend": {
         "avg": false,
@@ -47,6 +63,9 @@
       "linewidth": 4,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -252,6 +271,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Metrics Data",
       "tooltip": {
@@ -292,18 +312,42 @@
       }
     },
     {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 20,
+      "panels": [],
+      "repeat": "version",
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v1",
+          "value": "v1"
+        }
+      },
+      "title": "Endpoint: $version",
+      "type": "row"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
       "fill": 5,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 6,
         "x": 0,
-        "y": 8
+        "y": 10
       },
+      "hiddenSeries": false,
       "id": 2,
       "legend": {
         "avg": false,
@@ -318,10 +362,20 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v1",
+          "value": "v1"
+        }
+      },
       "seriesOverrides": [
         {
           "alias": "count",
@@ -393,6 +447,92 @@
           "isTimeGroupBy": false,
           "isValueGroupBy": false,
           "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "count",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "count",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "A",
           "tags": {
             "cluster": [
@@ -440,6 +580,98 @@
           ],
           "isAggregatorValid": true,
           "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "percentile",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  },
+                  {
+                    "name": "percentile",
+                    "text": "percentile (0,1]",
+                    "type": "any",
+                    "value": "0.50"
+                  }
+                ]
+              }
+            ],
+            "alias": "p50",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "B",
           "tags": {
             "cluster": [
@@ -487,6 +719,98 @@
           ],
           "isAggregatorValid": true,
           "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "percentile",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  },
+                  {
+                    "name": "percentile",
+                    "text": "percentile (0,1]",
+                    "type": "any",
+                    "value": "0.75"
+                  }
+                ]
+              }
+            ],
+            "alias": "p75",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "C",
           "tags": {
             "cluster": [
@@ -534,6 +858,98 @@
           ],
           "isAggregatorValid": true,
           "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "percentile",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  },
+                  {
+                    "name": "percentile",
+                    "text": "percentile (0,1]",
+                    "type": "any",
+                    "value": "0.90"
+                  }
+                ]
+              }
+            ],
+            "alias": "p90",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "D",
           "tags": {
             "cluster": [
@@ -547,8 +963,9 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
-      "title": "V1 Post Requests",
+      "title": "$version Post Requests",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -603,61 +1020,115 @@
         "h": 9,
         "w": 6,
         "x": 6,
-        "y": 8
+        "y": 10
       },
       "heatmap": {},
+      "hideZeroBuckets": false,
       "highlightCards": true,
       "id": 5,
       "legend": {
         "show": false
       },
       "links": [],
+      "reverseYBuckets": false,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v1",
+          "value": "v1"
+        }
+      },
       "targets": [
         {
-          "addHorizontalAggregatorMode": false,
-          "alias": "rest_service/POST/metrics/v1/application/request",
-          "aliasMode": "default",
-          "currentHorizontalAggregatorName": "merge",
-          "downsampling": "avg",
-          "errors": {},
-          "groupBy": {
-            "timeInterval": "1s"
-          },
-          "hasFactor": false,
-          "hasNothing": false,
-          "hasPercentile": false,
-          "hasSamplingRate": false,
-          "hasTarget": false,
-          "hasTrim": false,
-          "hasUnit": false,
-          "horAggregator": {
-            "factor": "1",
-            "percentile": "0.75",
-            "samplingRate": "1s",
-            "target": "0.25",
-            "trim": "both",
-            "unit": "millisecond"
-          },
-          "horizontalAggregators": [
-            {
-              "name": "merge",
-              "sampling_rate": "1m"
-            }
-          ],
-          "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v1/application/request",
-          "refId": "A",
-          "tags": {
-            "cluster": [
-              "$cluster"
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "merge",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
             ],
-            "service": [
-              "$service"
-            ]
-          }
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "A"
         }
       ],
-      "title": "V1 Post Request Latency",
+      "title": "$version Post Request Latency",
       "tooltip": {
         "show": true,
         "showHistogram": true
@@ -699,61 +1170,115 @@
         "h": 9,
         "w": 6,
         "x": 12,
-        "y": 8
+        "y": 10
       },
       "heatmap": {},
+      "hideZeroBuckets": false,
       "highlightCards": true,
       "id": 6,
       "legend": {
         "show": false
       },
       "links": [],
+      "reverseYBuckets": false,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v1",
+          "value": "v1"
+        }
+      },
       "targets": [
         {
-          "addHorizontalAggregatorMode": false,
-          "alias": "rest_service/POST/metrics/v1/application/body_size",
-          "aliasMode": "default",
-          "currentHorizontalAggregatorName": "merge",
-          "downsampling": "avg",
-          "errors": {},
-          "groupBy": {
-            "timeInterval": "1s"
-          },
-          "hasFactor": false,
-          "hasNothing": false,
-          "hasPercentile": false,
-          "hasSamplingRate": false,
-          "hasTarget": false,
-          "hasTrim": false,
-          "hasUnit": false,
-          "horAggregator": {
-            "factor": "1",
-            "percentile": "0.75",
-            "samplingRate": "1s",
-            "target": "0.25",
-            "trim": "both",
-            "unit": "millisecond"
-          },
-          "horizontalAggregators": [
-            {
-              "name": "merge",
-              "sampling_rate": "1m"
-            }
-          ],
-          "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v1/application/body_size",
-          "refId": "A",
-          "tags": {
-            "cluster": [
-              "$cluster"
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "merge",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
             ],
-            "service": [
-              "$service"
-            ]
-          }
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/body_size",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "A"
         }
       ],
-      "title": "V1 Post Request Payload Size",
+      "title": "$version Post Request Payload Size",
       "tooltip": {
         "show": true,
         "showHistogram": true
@@ -784,12 +1309,14 @@
       "dashes": false,
       "datasource": null,
       "fill": 5,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 6,
         "x": 18,
-        "y": 8
+        "y": 10
       },
+      "hiddenSeries": false,
       "id": 10,
       "legend": {
         "avg": false,
@@ -804,10 +1331,20 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v1",
+          "value": "v1"
+        }
+      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": true,
@@ -846,6 +1383,92 @@
           ],
           "isAggregatorValid": true,
           "metric": "rest_service/POST/metrics/v1/application/status/2xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "2xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/2xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "A",
           "tags": {
             "cluster": [
@@ -889,6 +1512,92 @@
           ],
           "isAggregatorValid": true,
           "metric": "rest_service/POST/metrics/v1/application/status/3xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "3xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/3xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "B",
           "tags": {
             "cluster": [
@@ -932,6 +1641,92 @@
           ],
           "isAggregatorValid": true,
           "metric": "rest_service/POST/metrics/v1/application/status/4xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "4xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/4xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "C",
           "tags": {
             "cluster": [
@@ -975,6 +1770,92 @@
           ],
           "isAggregatorValid": true,
           "metric": "rest_service/POST/metrics/v1/application/status/5xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "5xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/5xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "D",
           "tags": {
             "cluster": [
@@ -988,8 +1869,9 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
-      "title": "V1 Post Responses",
+      "title": "$version Post Responses",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1028,19 +1910,45 @@
       }
     },
     {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 25,
+      "panels": [],
+      "repeat": null,
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 20,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v2",
+          "value": "v2"
+        }
+      },
+      "title": "Endpoint: $version",
+      "type": "row"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
       "fill": 5,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 6,
         "x": 0,
-        "y": 17
+        "y": 20
       },
-      "id": 3,
+      "hiddenSeries": false,
+      "id": 26,
       "legend": {
         "avg": false,
         "current": false,
@@ -1054,10 +1962,23 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 2,
+      "repeatedByRow": true,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v2",
+          "value": "v2"
+        }
+      },
       "seriesOverrides": [
         {
           "alias": "count",
@@ -1087,13 +2008,19 @@
       "steppedLine": false,
       "targets": [
         {
+          "addFilterTagMode": false,
+          "addGroupByMode": false,
           "addHorizontalAggregatorMode": false,
           "alias": "count",
           "aliasMode": "custom",
+          "currentGroupByType": "tag",
           "currentHorizontalAggregatorName": "count",
+          "currentTagKey": "",
+          "currentTagValue": "",
           "downsampling": "avg",
           "errors": {},
           "groupBy": {
+            "tagKey": "",
             "timeInterval": "1s"
           },
           "hasFactor": false,
@@ -1118,7 +2045,97 @@
             }
           ],
           "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/request",
+          "isGroupByValid": false,
+          "isTagGroupBy": false,
+          "isTimeGroupBy": false,
+          "isValueGroupBy": false,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "count",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "count",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "A",
           "tags": {
             "cluster": [
@@ -1130,10 +2147,13 @@
           }
         },
         {
+          "addFilterTagMode": false,
           "addHorizontalAggregatorMode": false,
           "alias": "p50",
           "aliasMode": "custom",
           "currentHorizontalAggregatorName": "percentile",
+          "currentTagKey": "",
+          "currentTagValue": "",
           "downsampling": "avg",
           "errors": {},
           "groupBy": {
@@ -1162,7 +2182,99 @@
             }
           ],
           "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/request",
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "percentile",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  },
+                  {
+                    "name": "percentile",
+                    "text": "percentile (0,1]",
+                    "type": "any",
+                    "value": "0.50"
+                  }
+                ]
+              }
+            ],
+            "alias": "p50",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "B",
           "tags": {
             "cluster": [
@@ -1174,10 +2286,13 @@
           }
         },
         {
+          "addFilterTagMode": false,
           "addHorizontalAggregatorMode": false,
           "alias": "p75",
           "aliasMode": "custom",
           "currentHorizontalAggregatorName": "percentile",
+          "currentTagKey": "",
+          "currentTagValue": "",
           "downsampling": "avg",
           "errors": {},
           "groupBy": {
@@ -1206,7 +2321,99 @@
             }
           ],
           "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/request",
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "percentile",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  },
+                  {
+                    "name": "percentile",
+                    "text": "percentile (0,1]",
+                    "type": "any",
+                    "value": "0.75"
+                  }
+                ]
+              }
+            ],
+            "alias": "p75",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "C",
           "tags": {
             "cluster": [
@@ -1218,10 +2425,13 @@
           }
         },
         {
+          "addFilterTagMode": false,
           "addHorizontalAggregatorMode": false,
           "alias": "p90",
           "aliasMode": "custom",
           "currentHorizontalAggregatorName": "percentile",
+          "currentTagKey": "",
+          "currentTagValue": "",
           "downsampling": "avg",
           "errors": {},
           "groupBy": {
@@ -1250,7 +2460,99 @@
             }
           ],
           "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/request",
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "percentile",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  },
+                  {
+                    "name": "percentile",
+                    "text": "percentile (0,1]",
+                    "type": "any",
+                    "value": "0.90"
+                  }
+                ]
+              }
+            ],
+            "alias": "p90",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "D",
           "tags": {
             "cluster": [
@@ -1264,8 +2566,9 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
-      "title": "V2 Post Requests",
+      "title": "$version Post Requests",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1320,61 +2623,118 @@
         "h": 9,
         "w": 6,
         "x": 6,
-        "y": 17
+        "y": 20
       },
       "heatmap": {},
+      "hideZeroBuckets": false,
       "highlightCards": true,
-      "id": 7,
+      "id": 27,
       "legend": {
         "show": false
       },
       "links": [],
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 5,
+      "repeatedByRow": true,
+      "reverseYBuckets": false,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v2",
+          "value": "v2"
+        }
+      },
       "targets": [
         {
-          "addHorizontalAggregatorMode": false,
-          "alias": "rest_service/POST/metrics/v2/application/request",
-          "aliasMode": "default",
-          "currentHorizontalAggregatorName": "merge",
-          "downsampling": "avg",
-          "errors": {},
-          "groupBy": {
-            "timeInterval": "1s"
-          },
-          "hasFactor": false,
-          "hasNothing": false,
-          "hasPercentile": false,
-          "hasSamplingRate": false,
-          "hasTarget": false,
-          "hasTrim": false,
-          "hasUnit": false,
-          "horAggregator": {
-            "factor": "1",
-            "percentile": "0.75",
-            "samplingRate": "1s",
-            "target": "0.25",
-            "trim": "both",
-            "unit": "millisecond"
-          },
-          "horizontalAggregators": [
-            {
-              "name": "merge",
-              "sampling_rate": "1m"
-            }
-          ],
-          "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/request",
-          "refId": "A",
-          "tags": {
-            "cluster": [
-              "$cluster"
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "merge",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
             ],
-            "service": [
-              "$service"
-            ]
-          }
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "A"
         }
       ],
-      "title": "V2 Post Request Latency",
+      "title": "$version Post Request Latency",
       "tooltip": {
         "show": true,
         "showHistogram": true
@@ -1416,61 +2776,118 @@
         "h": 9,
         "w": 6,
         "x": 12,
-        "y": 17
+        "y": 20
       },
       "heatmap": {},
+      "hideZeroBuckets": false,
       "highlightCards": true,
-      "id": 9,
+      "id": 28,
       "legend": {
         "show": false
       },
       "links": [],
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 6,
+      "repeatedByRow": true,
+      "reverseYBuckets": false,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v2",
+          "value": "v2"
+        }
+      },
       "targets": [
         {
-          "addHorizontalAggregatorMode": false,
-          "alias": "rest_service/POST/metrics/v2/application/body_size",
-          "aliasMode": "default",
-          "currentHorizontalAggregatorName": "merge",
-          "downsampling": "avg",
-          "errors": {},
-          "groupBy": {
-            "timeInterval": "1s"
-          },
-          "hasFactor": false,
-          "hasNothing": false,
-          "hasPercentile": false,
-          "hasSamplingRate": false,
-          "hasTarget": false,
-          "hasTrim": false,
-          "hasUnit": false,
-          "horAggregator": {
-            "factor": "1",
-            "percentile": "0.75",
-            "samplingRate": "1s",
-            "target": "0.25",
-            "trim": "both",
-            "unit": "millisecond"
-          },
-          "horizontalAggregators": [
-            {
-              "name": "merge",
-              "sampling_rate": "1m"
-            }
-          ],
-          "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/body_size",
-          "refId": "A",
-          "tags": {
-            "cluster": [
-              "$cluster"
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "merge",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
             ],
-            "service": [
-              "$service"
-            ]
-          }
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/body_size",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "A"
         }
       ],
-      "title": "V2 Post Request Payload Size",
+      "title": "$version Post Request Payload Size",
       "tooltip": {
         "show": true,
         "showHistogram": true
@@ -1501,13 +2918,15 @@
       "dashes": false,
       "datasource": null,
       "fill": 5,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 6,
         "x": 18,
-        "y": 17
+        "y": 20
       },
-      "id": 11,
+      "hiddenSeries": false,
+      "id": 29,
       "legend": {
         "avg": false,
         "current": false,
@@ -1521,10 +2940,23 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 10,
+      "repeatedByRow": true,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v2",
+          "value": "v2"
+        }
+      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": true,
@@ -1562,7 +2994,93 @@
             }
           ],
           "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/status/2xx",
+          "metric": "rest_service/POST/metrics/v1/application/status/2xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "2xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/2xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "A",
           "tags": {
             "cluster": [
@@ -1605,7 +3123,93 @@
             }
           ],
           "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/status/3xx",
+          "metric": "rest_service/POST/metrics/v1/application/status/3xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "3xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/3xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "B",
           "tags": {
             "cluster": [
@@ -1648,7 +3252,93 @@
             }
           ],
           "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/status/4xx",
+          "metric": "rest_service/POST/metrics/v1/application/status/4xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "4xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/4xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "C",
           "tags": {
             "cluster": [
@@ -1691,7 +3381,93 @@
             }
           ],
           "isAggregatorValid": true,
-          "metric": "rest_service/POST/metrics/v2/application/status/5xx",
+          "metric": "rest_service/POST/metrics/v1/application/status/5xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "5xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/5xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
           "refId": "D",
           "tags": {
             "cluster": [
@@ -1705,8 +3481,9 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
-      "title": "V2 Post Responses",
+      "title": "$version Post Responses",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1745,18 +3522,1646 @@
       }
     },
     {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 30,
+      "panels": [],
+      "repeat": null,
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 20,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v3",
+          "value": "v3"
+        }
+      },
+      "title": "Endpoint: $version",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 5,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 0,
+        "y": 30
+      },
+      "hiddenSeries": false,
+      "id": 31,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 2,
+      "repeatedByRow": true,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v3",
+          "value": "v3"
+        }
+      },
+      "seriesOverrides": [
+        {
+          "alias": "count",
+          "color": "#f2c96d",
+          "fill": 0,
+          "linewidth": 2,
+          "yaxis": 2
+        },
+        {
+          "alias": "p50",
+          "color": "#e0752d",
+          "zindex": 3
+        },
+        {
+          "alias": "p75",
+          "color": "#99440a",
+          "zindex": 2
+        },
+        {
+          "alias": "p90",
+          "color": "#58140c",
+          "zindex": 1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "addFilterTagMode": false,
+          "addGroupByMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "count",
+          "aliasMode": "custom",
+          "currentGroupByType": "tag",
+          "currentHorizontalAggregatorName": "count",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "tagKey": "",
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "count",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "isGroupByValid": false,
+          "isTagGroupBy": false,
+          "isTimeGroupBy": false,
+          "isValueGroupBy": false,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "count",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "count",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "p50",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "percentile",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "percentile",
+              "percentile": "0.50",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "percentile",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  },
+                  {
+                    "name": "percentile",
+                    "text": "percentile (0,1]",
+                    "type": "any",
+                    "value": "0.50"
+                  }
+                ]
+              }
+            ],
+            "alias": "p50",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "p75",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "percentile",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "percentile",
+              "percentile": "0.75",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "percentile",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  },
+                  {
+                    "name": "percentile",
+                    "text": "percentile (0,1]",
+                    "type": "any",
+                    "value": "0.75"
+                  }
+                ]
+              }
+            ],
+            "alias": "p75",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addFilterTagMode": false,
+          "addHorizontalAggregatorMode": false,
+          "alias": "p90",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "percentile",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "percentile",
+              "percentile": "0.90",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/request",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "percentile",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  },
+                  {
+                    "name": "percentile",
+                    "text": "percentile (0,1]",
+                    "type": "any",
+                    "value": "0.90"
+                  }
+                ]
+              }
+            ],
+            "alias": "p90",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "$version Post Requests",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": "Request Latency",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": "Request Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "timeseries",
+      "datasource": null,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 6,
+        "y": 30
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 32,
+      "legend": {
+        "show": false
+      },
+      "links": [],
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 5,
+      "repeatedByRow": true,
+      "reverseYBuckets": false,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v3",
+          "value": "v3"
+        }
+      },
+      "targets": [
+        {
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "merge",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/request",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "$version Post Request Latency",
+      "tooltip": {
+        "show": true,
+        "showHistogram": true
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "s",
+        "logBase": 2,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "timeseries",
+      "datasource": null,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 12,
+        "y": 30
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 33,
+      "legend": {
+        "show": false
+      },
+      "links": [],
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 6,
+      "repeatedByRow": true,
+      "reverseYBuckets": false,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v3",
+          "value": "v3"
+        }
+      },
+      "targets": [
+        {
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "merge",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/body_size",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "$version Post Request Payload Size",
+      "tooltip": {
+        "show": true,
+        "showHistogram": true
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "decbytes",
+        "logBase": 1,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 5,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 18,
+        "y": 30
+      },
+      "hiddenSeries": false,
+      "id": 34,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeatIteration": 1589005066226,
+      "repeatPanelId": 10,
+      "repeatedByRow": true,
+      "scopedVars": {
+        "version": {
+          "selected": false,
+          "text": "v3",
+          "value": "v3"
+        }
+      },
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "2xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/status/2xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "2xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/2xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "A",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "3xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/status/3xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "3xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/3xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "B",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "4xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/status/4xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "4xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/4xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "C",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        },
+        {
+          "addHorizontalAggregatorMode": false,
+          "alias": "5xx",
+          "aliasMode": "custom",
+          "currentHorizontalAggregatorName": "sum",
+          "downsampling": "avg",
+          "errors": {},
+          "groupBy": {
+            "timeInterval": "1s"
+          },
+          "hasFactor": false,
+          "hasNothing": false,
+          "hasPercentile": false,
+          "hasSamplingRate": false,
+          "hasTarget": false,
+          "hasTrim": false,
+          "hasUnit": false,
+          "horAggregator": {
+            "factor": "1",
+            "percentile": "0.75",
+            "samplingRate": "1s",
+            "target": "0.25",
+            "trim": "both",
+            "unit": "millisecond"
+          },
+          "horizontalAggregators": [
+            {
+              "name": "sum",
+              "sampling_rate": "1m"
+            }
+          ],
+          "isAggregatorValid": true,
+          "metric": "rest_service/POST/metrics/v1/application/status/5xx",
+          "query": {
+            "aggregators": [
+              {
+                "autoValueSwitch": {
+                  "dependentParameters": [
+                    {
+                      "name": "value",
+                      "text": "every",
+                      "type": "sampling",
+                      "value": "1"
+                    },
+                    {
+                      "allowedValues": {
+                        "0": "MILLISECONDS",
+                        "1": "SECONDS",
+                        "2": "MINUTES",
+                        "3": "HOURS",
+                        "4": "DAYS",
+                        "5": "WEEKS",
+                        "6": "MONTHS",
+                        "7": "YEARS"
+                      },
+                      "name": "unit",
+                      "text": "unit",
+                      "type": "sampling_unit",
+                      "value": "MINUTES"
+                    }
+                  ],
+                  "enabled": false
+                },
+                "name": "sum",
+                "parameters": [
+                  {
+                    "allowedValues": {
+                      "0": "NONE",
+                      "1": "START_TIME",
+                      "2": "SAMPLING",
+                      "3": "PERIOD"
+                    },
+                    "name": "sampling",
+                    "text": "align by",
+                    "type": "alignment",
+                    "value": "PERIOD"
+                  },
+                  {
+                    "name": "value",
+                    "text": "every",
+                    "type": "sampling",
+                    "value": "1"
+                  },
+                  {
+                    "allowedValues": {
+                      "0": "MILLISECONDS",
+                      "1": "SECONDS",
+                      "2": "MINUTES",
+                      "3": "HOURS",
+                      "4": "DAYS",
+                      "5": "WEEKS",
+                      "6": "MONTHS",
+                      "7": "YEARS"
+                    },
+                    "name": "unit",
+                    "text": "unit",
+                    "type": "sampling_unit",
+                    "value": "MINUTES"
+                  }
+                ]
+              }
+            ],
+            "alias": "5xx",
+            "groupBy": {
+              "tags": [],
+              "time": [],
+              "value": []
+            },
+            "metricName": "rest_service/POST/metrics/$version/application/status/5xx",
+            "tags": {
+              "cluster": [
+                "$cluster"
+              ],
+              "host": [],
+              "service": [
+                "$service"
+              ]
+            }
+          },
+          "refId": "D",
+          "tags": {
+            "cluster": [
+              "$cluster"
+            ],
+            "service": [
+              "$service"
+            ]
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "$version Post Responses",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "short",
+          "label": "Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": "Request Count",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 39
+      },
+      "id": 22,
+      "panels": [],
+      "title": "JVM",
+      "type": "row"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
       "fill": 0,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 26
+        "y": 40
       },
+      "hiddenSeries": false,
       "id": 13,
       "legend": {
         "avg": false,
@@ -1771,6 +5176,9 @@
       "linewidth": 4,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1804,7 +5212,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:157",
           "addHorizontalAggregatorMode": false,
           "alias": "g1_old_generation_count",
           "aliasMode": "custom",
@@ -1848,7 +5255,6 @@
           }
         },
         {
-          "$$hashKey": "object:158",
           "addHorizontalAggregatorMode": false,
           "alias": "g1_young_generation_count",
           "aliasMode": "custom",
@@ -1892,7 +5298,6 @@
           }
         },
         {
-          "$$hashKey": "object:159",
           "addHorizontalAggregatorMode": false,
           "alias": "g1_old_generation_time",
           "aliasMode": "custom",
@@ -1936,7 +5341,6 @@
           }
         },
         {
-          "$$hashKey": "object:160",
           "addHorizontalAggregatorMode": false,
           "alias": "g1_young_generation_time",
           "aliasMode": "custom",
@@ -1982,6 +5386,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "JVM Garbage Collection",
       "tooltip": {
@@ -1999,7 +5404,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:271",
           "format": "s",
           "label": "Total Collection Time",
           "logBase": 1,
@@ -2008,7 +5412,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:272",
           "decimals": null,
           "format": "short",
           "label": "Collections Per Second",
@@ -2030,12 +5433,14 @@
       "dashes": false,
       "datasource": null,
       "fill": 4,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 26
+        "y": 40
       },
+      "hiddenSeries": false,
       "id": 14,
       "legend": {
         "avg": false,
@@ -2050,6 +5455,9 @@
       "linewidth": 0,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -2404,6 +5812,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "JVM Memory Utilization",
       "tooltip": {
@@ -2444,7 +5853,8 @@
       }
     }
   ],
-  "schemaVersion": 16,
+  "refresh": false,
+  "schemaVersion": 22,
   "style": "dark",
   "tags": [
     "MAD"
@@ -2453,6 +5863,7 @@
     "list": [
       {
         "current": {
+          "selected": true,
           "text": "mad",
           "value": "mad"
         },
@@ -2467,10 +5878,12 @@
           }
         ],
         "query": "mad",
+        "skipUrlSync": false,
         "type": "constant"
       },
       {
         "current": {
+          "selected": true,
           "text": "metrics_dev",
           "value": "metrics_dev"
         },
@@ -2485,12 +5898,51 @@
           }
         ],
         "query": "metrics_dev",
+        "skipUrlSync": false,
         "type": "constant"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "hide": 2,
+        "includeAll": true,
+        "label": "version",
+        "multi": false,
+        "name": "version",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "v1",
+            "value": "v1"
+          },
+          {
+            "selected": false,
+            "text": "v2",
+            "value": "v2"
+          },
+          {
+            "selected": false,
+            "text": "v3",
+            "value": "v3"
+          }
+        ],
+        "query": "v1,v2,v3",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -2521,5 +5973,8 @@
   "timezone": "",
   "title": "Metrics Aggregator Daemon",
   "uid": "hO194aHik",
-  "version": 9
+  "variables": {
+    "list": []
+  },
+  "version": 7
 }}
