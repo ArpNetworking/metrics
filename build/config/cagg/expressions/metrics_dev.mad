@@ -1,8 +1,0 @@
-[
-    {
-        "metric": "constants/two",
-        "cluster": "metrics_dev",
-        "service": "mad",
-        "script": "return 2"
-    }
-]

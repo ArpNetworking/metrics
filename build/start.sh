@@ -99,7 +99,7 @@ function show_help {
 
 function is_dead() {
   local l_pid=$1
-  kill -0 $l_pid &> /dev/null && return 1 || return 0
+  kill -0 "${l_pid}" &> /dev/null && return 1 || return 0
 }
 
 function handle_exit {
@@ -143,24 +143,24 @@ function handle_exit {
 }
 
 function handle_childexit {
-  if [ -n "$pid_mad" ]; then
-    if is_dead "$pid_mad"; then
-      echo "Exited: metrics-aggregator-daemon ($pid_mad)"
+  if [ -n "${pid_mad}" ]; then
+    if is_dead "${pid_mad}"; then
+      echo "Exited: metrics-aggregator-daemon (${pid_mad})"
       pid_mad=
     fi
   fi
-  if [ -n "$pid_metrics_portal" ]; then
-    if is_dead "$pid_metrics_portal"; then
-      echo "Exited: metrics-portal ($pid_metrics_portal)"
+  if [ -n "${pid_metrics_portal}" ]; then
+    if is_dead "${pid_metrics_portal}"; then
+      echo "Exited: metrics-portal (${pid_metrics_portal})"
       pid_metrics_portal=
     fi
   fi
   for i in `seq 1 ${cagg_count}`; do
     var="pid_cluster_agg_${i}"
     pid="${!var}"
-    if [ -n "$pid" ]; then
-      if is_dead "$pid"; then
-        echo "Exited: cluster-aggregator ${i} ($pid)"
+    if [ -n "${pid}" ]; then
+      if is_dead "${pid}"; then
+        echo "Exited: cluster-aggregator ${i} (${pid})"
         unset "pid_cluster_agg_${i}"
       fi
     fi
@@ -493,6 +493,9 @@ if [ $start_mad -gt 0 ]; then
     rm -rf ./logs
   fi
   mkdir -p "${dir_mad}/logs"
+  # NOTE: To switch from mad 1.0 (branch: master) to 2.0 (branch: master-2.0) change:
+  # FROM: "${dir}/config/mad/config.conf"
+  # TO:   "${dir}/config/mad-2.0/config.conf"
   ./jdk-wrapper.sh ./target/appassembler/bin/mad \
       "-Dlogback.configurationFile=${dir}/config/mad/logback.xml" \
       "-XX:+HeapDumpOnOutOfMemoryError" \
@@ -512,9 +515,6 @@ if [ $start_mad -gt 0 ]; then
       "-Xrunjdwp:server=y,transport=dt_socket,address=${mad_debug_port},suspend=n" \
       -- \
       "${dir}/config/mad/config.conf" &
-  # NOTE: To switch from mad 1.0 (branch: master) to 2.0 (branch: master-2.0) change:
-  # FROM: "${dir}/config/mad/config.conf"
-  # TO:   "${dir}/config/mad-2.0/config.conf"
   pid_mad=$!
   echo "Started: mad ($pid_mad)"
   if [ -n "$pinger" ]; then
