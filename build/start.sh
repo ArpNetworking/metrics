@@ -202,10 +202,12 @@ function assert_valid_path {
 }
 
 function replace_id_address {
+  # TODO(ville): Clean this up to just use src->dest without inline backup
   local l_src=$1
   local l_dest=$2
   cp "${l_src}" "${l_dest}"
-  sed -i "s/<HOST_IP_ADDRESS>/${host_ip_address}/g" "${l_dest}"
+  sed -i.bak "s/<HOST_IP_ADDRESS>/${host_ip_address}/g" "${l_dest}"
+  rm "${l_dest}.bak"
 }
 
 # Parse Options
