@@ -220,7 +220,7 @@ function replace_id_address {
 }
 
 function getProjectVersion {
-  ./jdk-wrapper.sh ./mvnw org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout
+  ./jdk-wrapper.sh ./mvnw org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout 2> /dev/null | tail -n 1
 }
 
 # Parse Options
@@ -405,24 +405,8 @@ if [ ${start_cg} -gt 0 ]; then
   # Cassandra
   pid_cassandra=$(docker run -d -p 7000:7000 -p 9042:9042 cassandra:${docker_cassandra_version})
   printf "Started: cassandra (${pid_cassandra:0:12})\n"
-
-  # TODO(ville): We need to wait for cassandra; otherwise kairosdb just exits
-  # https://github.com/InscopeMetrics/kairosdb-extensions/issues/26
-  if [ ${start_kairosdb} -gt 0 ]; then
-    cassandra_healthy=0
-    while [ ${cassandra_healthy} -eq 0 ]
-    do
-      printf "Waiting for cassandra to become healthy...\n"
-      sleep 2
-      if docker exec ${pid_cassandra} cqlsh &> /dev/null ; then
-        cassandra_healthy=1
-      fi
-    done
-    printf "Cassandra is healthy!\n"
-  fi
-
   if [ -n "${pinger}" ]; then
-    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_cassandra}                             " -n "cassandra" -p "${pid_cassandra:0:12}" &
+    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_cassandra}" -n "cassandra" -p "${pid_cassandra:0:12}" &
   fi
 
   # Grafana
@@ -439,7 +423,7 @@ if [ ${start_kairosdb} -gt 0 ]; then
 
   pushd ${dir_kairosdb} &> /dev/null
   kairosdb_version=$(getProjectVersion)
-  pid_kairosdb=$(docker run -d -p 8082:8080 \
+  pid_kairosdb=$(docker run -d -p 8082:8080 --restart unless-stopped \
       -v "${dir_kairosdb}/logs/docker:/opt/kairosdb/log" \
       -v "${target}/kairosdb.properties:/opt/kairosdb/conf/kairosdb.properties:ro" \
       inscopemetrics/kairosdb-extensions:${kairosdb_version})
@@ -503,7 +487,7 @@ if [ ${start_cluster_agg} -gt 0 ]; then
     eval "pid_cluster_agg_${i}=\"\${pid}\""
     printf "Started: cluster-aggregator ${i} of ${cagg_count} ($pid)\n"
     if [ -n "$pinger" ]; then
-      ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:${cagg_http_port}/ping      " -n "cagg-${i}" -p "${pid}" &
+      ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:${cagg_http_port}/ping" -n "cagg-${i}" -p "${pid}" &
     fi
   done
   popd &> /dev/null
@@ -516,7 +500,7 @@ if [ ${start_cluster_agg} -gt 0 ]; then
       haproxy:${docker_haproxy_version})
   printf "Started: haproxy (${pid_haproxy:0:12})\n"
   if [ -n "${pinger}" ]; then
-    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_haproxy}                               " -n "haproxy" -p "${pid_haproxy:0:12}" &
+    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_haproxy}" -n "haproxy" -p "${pid_haproxy:0:12}" &
   fi
   popd &> /dev/null
 fi
@@ -552,7 +536,7 @@ if [ ${start_mad} -gt 0 ]; then
   pid_mad=$!
   printf "Started: mad ($pid_mad)\n"
   if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7090/ping      " -n "mad" -p "${pid_mad}" &
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7090/ping" -n "mad" -p "${pid_mad}" &
   fi
   popd &> /dev/null
 fi
@@ -586,7 +570,7 @@ if [ ${start_metrics_portal} -gt 0 ]; then
   pid_metrics_portal=$!
   printf "Started: metrics-portal ($pid_metrics_portal)\n"
   if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8080/ping      " -n "mportal" -p "${pid_metrics_portal}" &
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8080/ping" -n "mportal" -p "${pid_metrics_portal}" &
   fi
   popd &> /dev/null
 fi
@@ -599,7 +583,7 @@ if [ ${start_telegraf} -gt 0 ]; then
       telegraf:${docker_telegraf_version})
   printf "Started: telegraf (${pid_telegraf:0:12})\n"
   if [ -n "${pinger}" ]; then
-    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_telegraf}                              " -n "telegraf" -p "${pid_telegraf:0:12}" &
+    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_telegraf}" -n "telegraf" -p "${pid_telegraf:0:12}" &
   fi
 fi
 
