@@ -25,9 +25,10 @@ pid_cluster_agg=
 pid_haproxy=
 start_metrics_portal=0
 pid_metrics_portal=
-start_ckg=0
-pid_cassandra=
+start_kairosdb=0
 pid_kairosdb=
+start_cg=0
+pid_cassandra=
 pid_grafana=
 start_telegraf=0
 pid_telegraf=
@@ -42,7 +43,6 @@ cagg_count=${default_cagg_count}
 
 docker_haproxy_version=2.1.4-alpine
 docker_cassandra_version=3.11
-docker_kairosdb_version=2.1.7
 docker_grafana_version=6.7.3
 docker_telegraf_version=1.14.2
 
@@ -60,41 +60,45 @@ mportal_debug_port=9002
 # the base port below. The first cluster aggregator process opens 9101.
 cagg_debug_base_port=9100
 
-host_ip_address=127.0.0.1
+host_ip_address=""
 if command -v ip > /dev/null; then
   # Linux
   host_ip_address=$(ip route get 8.8.8.8 | sed -n '/src/{s/.*src *\([^ ]*\).*/\1/p;q}')
 elif command -v dig > /dev/null; then
   # FreeBSD (e.g. Mac)
   host_ip_address=$(dig +short `hostname -f`)
-else
-  echo "Warning: Unable to determine local ip address; consider using the argument '-i <address>'"
+fi
+
+if [ -z "${host_ip_address}" ]; then
+  printf "\e[0;31mError\e[0m: Unable to determine local ip address; please add the argument '-i <address>'\n"
+  exit 1
 fi
 
 target="${dir}/../target"
 mkdir -p "${target}"
 
 function show_help {
-  echo "Usage:"
-  echo "./build.sh -h|-?"
-  echo "./build.sh -s SERVICE [-t COUNT] [-c] [-p] [-n] [-v] [-i address]"
-  echo "./build.sh -a [-c] [-p] [-n] [-v] [-i address]"
-  echo ""
-  echo " -h|-? -- print this help message"
-  echo " -s service -- specify a service to start "
-  echo "               services accepted:"
-  echo "                 mad"
-  echo "                 cagg"
-  echo "                 mportal"
-  echo "                 ckg"
-  echo "                 telegraf"
-  echo " -a -- start all services"
-  echo " -c -- clear logs"
-  echo " -i address -- specify the ip address"
-  echo " -n -- don't build"
-  echo " -p -- run pinger"
-  echo " -t -- the number of cagg instances from ${min_cagg_count} to ${max_cagg_count}; default is ${default_cagg_count}"
-  echo " -v -- verbose mode"
+  printf "Usage:\n"
+  printf "./build.sh -h|-?\n"
+  printf "./build.sh -s SERVICE [-t COUNT] [-c] [-p] [-n] [-v] [-i address]\n"
+  printf "./build.sh -a [-c] [-p] [-n] [-v] [-i address]\n"
+  printf "\n"
+  printf " -h|-? -- print this help message\n"
+  printf " -s service -- specify a service to start\n"
+  printf "               services accepted:\n"
+  printf "                 mad\n"
+  printf "                 cagg\n"
+  printf "                 mportal\n"
+  printf "                 kairosdb\n"
+  printf "                 cg\n"
+  printf "                 telegraf\n"
+  printf " -a -- start all services\n"
+  printf " -c -- clear logs\n"
+  printf " -i address -- specify the ip address\n"
+  printf " -n -- don't build\n"
+  printf " -p -- run pinger\n"
+  printf " -t -- the number of cagg instances from ${min_cagg_count} to ${max_cagg_count}; default is ${default_cagg_count}\n"
+  printf " -v -- verbose mode\n"
 }
 
 function is_dead() {
@@ -105,38 +109,40 @@ function is_dead() {
 function handle_exit {
   if [ ${start_telegraf} -gt 0 ]; then
     if [ -n "${pid_telegraf}" ]; then
-      echo "Stopping telegraf..."
+      printf "Stopping telegraf...\n"
       docker kill "${pid_telegraf}" &> /dev/null || true
       pid_telegraf=
     fi
   fi
   if [ ${start_cluster_agg} -gt 0 ]; then
     if [ -n "${pid_haproxy}" ]; then
-      echo "Stopping haproxy..."
+      printf "Stopping haproxy...\n"
       docker kill "${pid_haproxy}" &> /dev/null || true
       pid_haproxy=
     fi
   fi
-  if [ $start_ckg -gt 0 ]; then
-    if [ -n "${pid_grafana}" ]; then
-      echo "Stopping grafana..."
-      docker kill "${pid_grafana}" &> /dev/null || true
-      pid_grafana=
-    fi
+  if [ ${start_kairosdb} -gt 0 ]; then
     if [ -n "${pid_kairosdb}" ]; then
-      echo "Stopping kairosdb..."
+      printf "Stopping kairosdb...\n"
       docker kill "${pid_kairosdb}" &> /dev/null || true
       pid_kairosdb=
     fi
+  fi
+  if [ $start_cg -gt 0 ]; then
+    if [ -n "${pid_grafana}" ]; then
+      printf "Stopping grafana...\n"
+      docker kill "${pid_grafana}" &> /dev/null || true
+      pid_grafana=
+    fi
     if [ -n "${pid_cassandra}" ]; then
-      echo "Stopping cassandra..."
+      printf "Stopping cassandra...\n"
       docker kill "${pid_cassandra}" &> /dev/null || true
       pid_cassandra=
     fi
   fi
   job_list=$(jobs -p -r)
   if [ -n "${job_list}" ]; then
-    echo "Stopping other jobs..."
+    printf "Stopping other jobs...\n"
     kill ${job_list} &> /dev/null
     wait ${job_list} 2>/dev/null
   fi
@@ -145,13 +151,13 @@ function handle_exit {
 function handle_childexit {
   if [ -n "${pid_mad}" ]; then
     if is_dead "${pid_mad}"; then
-      echo "Exited: metrics-aggregator-daemon (${pid_mad})"
+      printf "Exited: metrics-aggregator-daemon (${pid_mad})\n"
       pid_mad=
     fi
   fi
   if [ -n "${pid_metrics_portal}" ]; then
     if is_dead "${pid_metrics_portal}"; then
-      echo "Exited: metrics-portal (${pid_metrics_portal})"
+      printf "Exited: metrics-portal (${pid_metrics_portal})\n"
       pid_metrics_portal=
     fi
   fi
@@ -160,7 +166,7 @@ function handle_childexit {
     pid="${!var}"
     if [ -n "${pid}" ]; then
       if is_dead "${pid}"; then
-        echo "Exited: cluster-aggregator ${i} (${pid})"
+        printf "Exited: cluster-aggregator ${i} (${pid})\n"
         unset "pid_cluster_agg_${i}"
       fi
     fi
@@ -175,6 +181,12 @@ function find_path_up {
     if [[ -e "${l_path}/${l_name}" ]]; then
       l_found=true
       l_path="${l_path}/${l_name}"
+    elif [[ -e "${l_path}/ArpNetworking/${l_name}" ]]; then
+      l_found=true
+      l_path="${l_path}/ArpNetworking/${l_name}"
+    elif [[ -e "${l_path}/InscopeMetrics/${l_name}" ]]; then
+      l_found=true
+      l_path="${l_path}/InscopeMetrics/${l_name}"
     else
       l_path=$(dirname "${l_path}")
     fi
@@ -194,7 +206,7 @@ function assert_valid_path {
 
   if [ "${l_required}" -eq 1 ]; then
     if [ ! -d "${l_path}" ]; then
-      echo "Required directory not found for ${l_name}"
+      printf "\e[0;31mError:\e[0m Required directory not found for ${l_name}\n"
       exit 1
     fi
   fi
@@ -202,12 +214,13 @@ function assert_valid_path {
 }
 
 function replace_id_address {
-  # TODO(ville): Clean this up to just use src->dest without inline backup
   local l_src=$1
   local l_dest=$2
-  cp "${l_src}" "${l_dest}"
-  sed -i.bak "s/<HOST_IP_ADDRESS>/${host_ip_address}/g" "${l_dest}"
-  rm "${l_dest}.bak"
+  sed "s/<HOST_IP_ADDRESS>/${host_ip_address}/g" "${l_src}" > "${l_dest}"
+}
+
+function getProjectVersion {
+  ./jdk-wrapper.sh ./mvnw org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout 2> /dev/null | tail -n 1
 }
 
 # Parse Options
@@ -237,8 +250,10 @@ while getopts ":h?vnpacs:t:i:" opt; do
       start_cluster_agg=1
       services+=("mportal")
       start_metrics_portal=1
-      services+=("ckg")
-      start_ckg=1
+      services+=("kairosdb")
+      start_kairosdb=1
+      services+=("cg")
+      start_cg=1
       services+=("telegraf")
       start_telegraf=1
       ;;
@@ -253,14 +268,17 @@ while getopts ":h?vnpacs:t:i:" opt; do
       elif [ ${lower_service} == "mportal" ] || [ ${lower_service} == "metrics-portal" ]; then
         services+=("metrics-portal")
         start_metrics_portal=1
-      elif [ ${lower_service} == "ckg" ]; then
-        services+=("ckg")
-        start_ckg=1
+      elif [ ${lower_service} == "kdb" ] || [ ${lower_service} == "kairosdb" ]; then
+        services+=("kairosdb")
+        start_kairosdb=1
+      elif [ ${lower_service} == "cg" ]; then
+        services+=("cg")
+        start_cg=1
       elif [ ${lower_service} == "telegraf" ]; then
         services+=("telegraf")
         start_telegraf=1
       else
-        echo "Unknown service ${OPTARG}"
+        printf "\e[0;31mError\e[0m: Unknown service ${OPTARG}\n"
         exit 1
       fi
       ;;
@@ -271,37 +289,37 @@ while getopts ":h?vnpacs:t:i:" opt; do
       cagg_count="$OPTARG"
       if ! [ "${cagg_count}" -eq "${cagg_count}" ] 2> /dev/null
       then
-        echo "The number of cagg instances must be an integer."
+        printf "\e[0;31mError\e[0m: The number of cagg instances must be an integer.\n"
         exit 1
       fi
       if [ ${cagg_count} -lt ${min_cagg_count} ]; then
-        echo "The number of cagg instances must be at least ${min_cagg_count}."
+        printf "\e[0;31mError\e[0m: The number of cagg instances must be at least ${min_cagg_count}.\n"
         exit 1
       fi
       if [ ${cagg_count} -gt ${max_cagg_count} ]; then
-        echo "The number of cagg instances must be at most ${max_cagg_count}."
+        printf "\e[0;31mError\e[0m: The number of cagg instances must be at most ${max_cagg_count}.\n"
         exit 1
       fi
       ;;
     ?)
-      echo "ERROR: invalid option -$OPTARG"
+      printf "\e[0;31mError\e[0m: Invalid option -$OPTARG\n"
       show_help
       exit 1
       ;;
     :)
-      echo "ERROR: option -$OPTARG requires value"
+      printf "\e[0;31mError\e[0m: Option -$OPTARG requires value\n"
       show_help
       exit 1
       ;;
   esac
 done
 
-if [ -n "$verbose" ]; then
-  echo "services = ${services[@]}"
+if [ -n "${verbose}" ]; then
+  printf "services = ${services[@]}\n"
 fi
 if [ -z ${services} ]; then
-  echo "no services to start"
-  exit 1
+  printf "No services to start\n"
+  exit 0
 fi
 
 # Root directory
@@ -318,13 +336,20 @@ trap handle_childexit SIGCHLD
 dir_mad=`find_path_up metrics-aggregator-daemon $start_mad`
 dir_cluster_agg=`find_path_up metrics-cluster-aggregator $start_cluster_agg`
 dir_metrics_portal=`find_path_up metrics-portal $start_metrics_portal`
-dir_kairosdb_datasource=`find_path_up kairosdb-datasource $start_ckg`
+dir_kairosdb=`find_path_up kairosdb-extensions $start_kairosdb`
+dir_kairosdb_datasource=`find_path_up kairosdb-datasource $start_cg`
 
 # Verify locations for each requested project
 assert_valid_path "metrics-aggregator" "${start_mad}" "${dir_mad}"
 assert_valid_path "cluster-aggregator" "${start_cluster_agg}" "${dir_cluster_agg}"
 assert_valid_path "metrics-portal" "${start_metrics_portal}" "${dir_metrics_portal}"
-assert_valid_path "kairosdb-datasource" "${start_ckg}" "${dir_kairosdb_datasource}"
+assert_valid_path "kairosdb" "${start_kairosdb}" "${dir_kairosdb}"
+assert_valid_path "kairosdb-datasource" "${start_cg}" "${dir_kairosdb_datasource}"
+
+# KairosDb should usually be run with Cassandra
+if [ ${start_kairosdb} -gt 0 ] && [ ${start_cg} -eq 0 ]; then
+  printf "\e[0;31mWarning\e[0m: Launching Kairosdb without Cassandra!\n"
+fi
 
 # Build verbose argument to child programs
 verbose_arg=
@@ -333,89 +358,83 @@ if [ -n "$verbose" ]; then
 fi
 
 # Build projects
-if [ $start_ckg -gt 0 ] && [ -z "$skip_build" ]; then
+if [ $start_cg -gt 0 ] && [ -z "$skip_build" ]; then
   # Build KairosDb Datasource (for Grafana)
-  echo "Building kairosdb-datasource..."
+  printf "Building kairosdb-datasource...\n"
   pushd ${dir_kairosdb_datasource} &> /dev/null
-  npm install -g grunt
+  npm install
   grunt
-  if [ "$?" -ne 0 ]; then echo "Build failed: kairosdb-datasource"; exit 1; fi
+  if [ "$?" -ne 0 ]; then printf "\e[0;31mError\e[0m: Build failed of kairosdb-datasource\n"; exit 1; fi
   popd &> /dev/null
+fi
 
-  # Build KairosDb Docker Image (with KairosDb-Extensions)
-  # TODO(ville): Build this from source instead of using released version
-  # https://github.com/ArpNetworking/metrics/issues/30
-  #echo "Building kairosdb-extensions..."
+if [ $start_kairosdb -gt 0 ] && [ -z "$skip_build" ]; then
+  pushd ${dir_kairosdb} &> /dev/null
+  printf "Building kairosdb...\n"
+  ./jdk-wrapper.sh ./mvnw package -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
+  if [ "$?" -ne 0 ]; then printf "\e[0;31mError\e[0m: Build failed of kairosdb\n"; exit 1; fi
+  popd &> /dev/null
 fi
 
 if [ $start_metrics_portal -gt 0 ] && [ -z "$skip_build" ]; then
   pushd ${dir_metrics_portal} &> /dev/null
-  echo "Building metrics-portal..."
+  printf "Building metrics-portal...\n"
   ./jdk-wrapper.sh ./mvnw package -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
-  if [ "$?" -ne 0 ]; then echo "Build failed: metrics-portal"; exit 1; fi
+  if [ "$?" -ne 0 ]; then printf "\e[0;31mError\e[0m: Build failed of metrics-portal\n"; exit 1; fi
   popd &> /dev/null
 fi
 
 if [ $start_mad -gt 0 ] && [ -z "$skip_build" ]; then
   pushd ${dir_mad} &> /dev/null
-  echo "Building metrics-aggregator-daemon..."
+  printf "Building metrics-aggregator-daemon...\n"
   ./jdk-wrapper.sh ./mvnw package -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
-  if [ "$?" -ne 0 ]; then echo "Build failed: metrics-aggregator-daemon"; exit 1; fi
+  if [ "$?" -ne 0 ]; then printf "\e[0;31mError\e[0m: Build failed of metrics-aggregator-daemon\n"; exit 1; fi
   popd &> /dev/null
 fi
 
 if [ $start_cluster_agg -gt 0 ] && [ -z "$skip_build" ]; then
   pushd ${dir_cluster_agg} &> /dev/null
-  echo "Building metrics-cluster-aggregator..."
+  printf "Building metrics-cluster-aggregator...\n"
   ./jdk-wrapper.sh ./mvnw package -DskipAllVerification=true -DskipSources=true -DskipJavaDoc=true
-  if [ "$?" -ne 0 ]; then echo "Build failed: cluster-aggregator"; exit 1; fi
+  if [ "$?" -ne 0 ]; then printf "\e[0;31mError\e[0m: Build failed of cluster-aggregator\n"; exit 1; fi
   popd &> /dev/null
 fi
 
 # Run projects
-if [ ${start_ckg} -gt 0 ]; then
-  rm -f "${target}/kairosdb.properties"
-
+if [ ${start_cg} -gt 0 ]; then
   # Cassandra
   pid_cassandra=$(docker run -d -p 7000:7000 -p 9042:9042 cassandra:${docker_cassandra_version})
-  echo "Started: cassandra (${pid_cassandra:0:12})"
-
-  # TODO(ville): We need to wait for cassandra; otherwise kairosdb just exits
-  # https://github.com/InscopeMetrics/kairosdb-extensions/issues/26
-  cassandra_healthy=0
-  while [ ${cassandra_healthy} -eq 0 ]
-  do
-    echo "Waiting for cassandra to become healthy..."
-    sleep 2
-    if docker exec ${pid_cassandra} cqlsh &> /dev/null ; then
-      cassandra_healthy=1
-    fi
-  done
-  echo "Cassandra is healthy!"
-
+  printf "Started: cassandra (${pid_cassandra:0:12})\n"
   if [ -n "${pinger}" ]; then
-    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_cassandra}                             " -n "cassandra" -p "${pid_cassandra:0:12}" &
-  fi
-
-  # KairosDb
-  # TODO(ville): Launch KairosDb from KairosDb-Extensions compiled source code
-  # https://github.com/ArpNetworking/metrics/issues/30
-  replace_id_address "${dir}/config/kairosdb/kairosdb.properties" "${target}/kairosdb.properties"
-  pid_kairosdb=$(docker run -d -p 8082:8080 -v "${target}/kairosdb.properties:/opt/kairosdb/conf/kairosdb.properties:ro" inscopemetrics/kairosdb-extensions:${docker_kairosdb_version})
-  echo "Started: kairosdb (${pid_kairosdb:0:12})"
-  if [ -n "${pinger}" ]; then
-    "${dir}/pinger.sh" ${verbose_arg} -u "http://localhost:8082/api/v1/health/status" -n "kairosdb" -p "${pid_kairosdb:0:12}" &
+    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_cassandra}" -n "cassandra" -p "${pid_cassandra:0:12}" &
   fi
 
   # Grafana
   pid_grafana=$(docker run -d -p 8081:3000 -v "${dir_kairosdb_datasource}:/var/lib/grafana/plugins/kairosdb-datasource:ro" grafana/grafana:${docker_grafana_version})
-  echo "Started: grafana (${pid_grafana:0:12})"
+  printf "Started: grafana (${pid_grafana:0:12})\n"
   if [ -n "${pinger}" ]; then
     "${dir}/pinger.sh" ${verbose_arg} -u "http://localhost:8081/api/health" -n "grafana" -p "${pid_grafana:0:12}" &
   fi
 fi
 
-if [ $start_cluster_agg -gt 0 ]; then
+if [ ${start_kairosdb} -gt 0 ]; then
+  rm -f "${target}/kairosdb.properties"
+  replace_id_address "${dir}/config/kairosdb/kairosdb.properties" "${target}/kairosdb.properties"
+
+  pushd ${dir_kairosdb} &> /dev/null
+  kairosdb_version=$(getProjectVersion)
+  pid_kairosdb=$(docker run -d -p 8082:8080 --restart unless-stopped \
+      -v "${dir_kairosdb}/logs/docker:/opt/kairosdb/log" \
+      -v "${target}/kairosdb.properties:/opt/kairosdb/conf/kairosdb.properties:ro" \
+      inscopemetrics/kairosdb-extensions:${kairosdb_version})
+  printf "Started: kairosdb (${pid_kairosdb:0:12})\n"
+  if [ -n "${pinger}" ]; then
+    "${dir}/pinger.sh" ${verbose_arg} -u "http://localhost:8082/api/v1/health/status" -n "kairosdb" -p "${pid_kairosdb:0:12}" &
+  fi
+  popd &> /dev/null
+fi
+
+if [ ${start_cluster_agg} -gt 0 ]; then
   pushd ${dir_cluster_agg} &> /dev/null
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
@@ -466,9 +485,9 @@ if [ $start_cluster_agg -gt 0 ]; then
         "${dir}/config/cagg/config.conf" &
     pid=$!
     eval "pid_cluster_agg_${i}=\"\${pid}\""
-    echo "Started: cluster-aggregator ${i} of ${cagg_count} ($pid)"
+    printf "Started: cluster-aggregator ${i} of ${cagg_count} ($pid)\n"
     if [ -n "$pinger" ]; then
-      ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:${cagg_http_port}/ping      " -n "cagg-${i}" -p "${pid}" &
+      ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:${cagg_http_port}/ping" -n "cagg-${i}" -p "${pid}" &
     fi
   done
   popd &> /dev/null
@@ -476,20 +495,17 @@ if [ $start_cluster_agg -gt 0 ]; then
   # Start haproxy over cluster aggregator hosts
   pushd ${dir} &> /dev/null
   replace_id_address "${dir}/config/haproxy/haproxy.cfg" "${target}/haproxy.cfg"
-  echo docker run -d -p 7066:7066 \
-             -v "${target}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro" \
-             haproxy:${docker_haproxy_version}
   pid_haproxy=$(docker run -d -p 7066:7066 \
       -v "${target}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro" \
       haproxy:${docker_haproxy_version})
-  echo "Started: haproxy (${pid_haproxy:0:12})"
+  printf "Started: haproxy (${pid_haproxy:0:12})\n"
   if [ -n "${pinger}" ]; then
-    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_haproxy}                               " -n "haproxy" -p "${pid_haproxy:0:12}" &
+    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_haproxy}" -n "haproxy" -p "${pid_haproxy:0:12}" &
   fi
   popd &> /dev/null
 fi
 
-if [ $start_mad -gt 0 ]; then
+if [ ${start_mad} -gt 0 ]; then
   pushd ${dir_mad} &> /dev/null
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
@@ -518,14 +534,14 @@ if [ $start_mad -gt 0 ]; then
       -- \
       "${dir}/config/mad/config.conf" &
   pid_mad=$!
-  echo "Started: mad ($pid_mad)"
+  printf "Started: mad ($pid_mad)\n"
   if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7090/ping      " -n "mad" -p "${pid_mad}" &
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7090/ping" -n "mad" -p "${pid_mad}" &
   fi
   popd &> /dev/null
 fi
 
-if [ $start_metrics_portal -gt 0 ]; then
+if [ ${start_metrics_portal} -gt 0 ]; then
   pushd ${dir_metrics_portal} &> /dev/null
   if [ -n "$clear_logs" ]; then
     rm -rf ./logs
@@ -552,38 +568,38 @@ if [ $start_metrics_portal -gt 0 ]; then
       "--" \
       "${dir_metrics_portal}" &
   pid_metrics_portal=$!
-  echo "Started: metrics-portal ($pid_metrics_portal)"
+  printf "Started: metrics-portal ($pid_metrics_portal)\n"
   if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8080/ping      " -n "mportal" -p "${pid_metrics_portal}" &
+    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8080/ping" -n "mportal" -p "${pid_metrics_portal}" &
   fi
   popd &> /dev/null
 fi
 
 if [ ${start_telegraf} -gt 0 ]; then
   replace_id_address "${dir}/config/telegraf/telegraf.conf" "${target}/telegraf.conf"
-  pid_telegraf=$(docker run -d --net=host \
+  pid_telegraf=$(docker run -d --net=host --restart unless-stopped \
       -e HOST_PROC=/host/proc -v /proc:/host/proc:ro \
       -v "${target}/telegraf.conf:/etc/telegraf/telegraf.conf:ro" \
       telegraf:${docker_telegraf_version})
-  echo "Started: telegraf (${pid_telegraf:0:12})"
+  printf "Started: telegraf (${pid_telegraf:0:12})\n"
   if [ -n "${pinger}" ]; then
-    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_telegraf}                              " -n "telegraf" -p "${pid_telegraf:0:12}" &
+    "${dir}/pinger.sh" ${verbose_arg} -c "${pid_telegraf}" -n "telegraf" -p "${pid_telegraf:0:12}" &
   fi
 fi
 
 # Upload data
-if [ ${start_ckg} -gt 0 ]; then
+if [ ${start_cg} -gt 0 ]; then
   # Wait for grafana to be healthy
   grafana_healthy=0
   while [ ${grafana_healthy} -eq 0 ]
     do
-    echo "Waiting for grafana to become healthy..."
+    printf "Waiting for grafana to become healthy...\n"
     sleep 2
     if curl http://localhost:8081/api/health &> /dev/null ; then
       grafana_healthy=1
     fi
   done
-  echo "Grafana is healthy!"
+  printf "Grafana is healthy!\n"
 
   # Upload Grafana assets
   mkdir -p "${target}/grafana/data-sources"
