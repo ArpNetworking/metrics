@@ -69,11 +69,6 @@ elif command -v dig > /dev/null; then
   host_ip_address=$(dig +short `hostname -f`)
 fi
 
-if [ -z "${host_ip_address}" ]; then
-  printf "\e[0;31mError\e[0m: Unable to determine local ip address; please add the argument '-i <address>'\n"
-  exit 1
-fi
-
 target="${dir}/../target"
 mkdir -p "${target}"
 
@@ -313,6 +308,11 @@ while getopts ":h?vnpacs:t:i:" opt; do
       ;;
   esac
 done
+
+if [ -z "${host_ip_address}" ]; then
+  printf "\e[0;31mError\e[0m: Unable to determine local ip address; please add the argument '-i <address>'\n"
+  exit 1
+fi
 
 if [ -n "${verbose}" ]; then
   printf "services = ${services[@]}\n"
