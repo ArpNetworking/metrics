@@ -38,7 +38,7 @@ skip_build=
 
 min_cagg_count=1
 max_cagg_count=3
-default_cagg_count=1
+default_cagg_count=3
 cagg_count=${default_cagg_count}
 
 docker_haproxy_version=2.1.4-alpine
@@ -56,6 +56,8 @@ mportal_jvm_xmx="1024m"
 mad_debug_port=9001
 mportal_debug_port=9002
 
+docker_network="metrics"
+
 # Cluster aggregator debug ports are sequentially opened with an offset from
 # the base port below. The first cluster aggregator process opens 9101.
 cagg_debug_base_port=9100
@@ -67,6 +69,10 @@ if command -v ip > /dev/null; then
 elif command -v dig > /dev/null; then
   # FreeBSD (e.g. Mac)
   host_ip_address=$(dig +short `hostname -f`)
+fi
+if grep -q -i microsoft /proc/version; then
+  # Windows Subsystem for Linux (WSL)
+  host_ip_address=$(dig +short "host.docker.internal")
 fi
 
 target="${dir}/../target"
@@ -106,20 +112,49 @@ function handle_exit {
     if [ -n "${pid_telegraf}" ]; then
       printf "Stopping telegraf...\n"
       docker kill "${pid_telegraf}" &> /dev/null || true
+      docker rm telegraf || true
       pid_telegraf=
+    fi
+  fi
+  if [ ${start_mad} -gt 0 ]; then
+    if [ -n "${pid_mad}" ]; then
+      printf "Stopping mad...\n"
+      docker kill "${pid_mad}" &> /dev/null || true
+      docker rm mad || true
+      pid_mad=
     fi
   fi
   if [ ${start_cluster_agg} -gt 0 ]; then
     if [ -n "${pid_haproxy}" ]; then
       printf "Stopping haproxy...\n"
       docker kill "${pid_haproxy}" &> /dev/null || true
+      docker rm haproxy || true
       pid_haproxy=
+    fi
+    for i in `seq 1 ${cagg_count}`; do
+      var="pid_cluster_agg_${i}"
+      pid="${!var}"
+      if [ -n "${pid}" ]; then
+        printf "Stopping cagg${i}...\n"
+        docker kill "${pid}" &> /dev/null || true
+        docker rm "cagg${i}" || true
+        unset "pid_cluster_agg_${i}"
+      fi
+    done
+  fi
+  if [ ${start_metrics_portal} -gt 0 ]; then
+    if [ -n "${pid_metrics_portal}" ]; then
+      printf "Stopping metrics portal...\n"
+      docker kill "${pid_metrics_portal}" &> /dev/null || true
+      docker rm metrics_portal || true
+      pid_metrics_portal=
     fi
   fi
   if [ ${start_kairosdb} -gt 0 ]; then
     if [ -n "${pid_kairosdb}" ]; then
       printf "Stopping kairosdb...\n"
       docker kill "${pid_kairosdb}" &> /dev/null || true
+      docker rm kairosdb || true
       pid_kairosdb=
     fi
   fi
@@ -127,11 +162,13 @@ function handle_exit {
     if [ -n "${pid_grafana}" ]; then
       printf "Stopping grafana...\n"
       docker kill "${pid_grafana}" &> /dev/null || true
+      docker rm grafana || true
       pid_grafana=
     fi
     if [ -n "${pid_cassandra}" ]; then
       printf "Stopping cassandra...\n"
       docker kill "${pid_cassandra}" &> /dev/null || true
+      docker rm cassandra || true
       pid_cassandra=
     fi
   fi
@@ -141,31 +178,6 @@ function handle_exit {
     kill ${job_list} &> /dev/null
     wait ${job_list} 2>/dev/null
   fi
-}
-
-function handle_childexit {
-  if [ -n "${pid_mad}" ]; then
-    if is_dead "${pid_mad}"; then
-      printf "Exited: metrics-aggregator-daemon (${pid_mad})\n"
-      pid_mad=
-    fi
-  fi
-  if [ -n "${pid_metrics_portal}" ]; then
-    if is_dead "${pid_metrics_portal}"; then
-      printf "Exited: metrics-portal (${pid_metrics_portal})\n"
-      pid_metrics_portal=
-    fi
-  fi
-  for i in `seq 1 ${cagg_count}`; do
-    var="pid_cluster_agg_${i}"
-    pid="${!var}"
-    if [ -n "${pid}" ]; then
-      if is_dead "${pid}"; then
-        printf "Exited: cluster-aggregator ${i} (${pid})\n"
-        unset "pid_cluster_agg_${i}"
-      fi
-    fi
-  done
 }
 
 function find_path_up {
@@ -208,14 +220,17 @@ function assert_valid_path {
   return 0
 }
 
-function replace_id_address {
-  local l_src=$1
-  local l_dest=$2
-  sed "s/<HOST_IP_ADDRESS>/${host_ip_address}/g" "${l_src}" > "${l_dest}"
-}
-
 function getProjectVersion {
   ./jdk-wrapper.sh ./mvnw org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout 2> /dev/null | tail -n 1
+}
+
+function removeContainerByName {
+  local l_name=$1
+  local l_id=$(docker ps -a -q -f "name=${l_name}" --no-trunc)
+  if [ -n "${l_id}" ]; then
+    printf "Removing previous container with name '${l_name}' (${l_id:0:12})\n"
+    docker rm -f "${l_id}" || true
+  fi
 }
 
 # Parse Options
@@ -313,6 +328,9 @@ if [ -z "${host_ip_address}" ]; then
   printf "\e[0;31mError\e[0m: Unable to determine local ip address; please add the argument '-i <address>'\n"
   exit 1
 fi
+if [ -n "${verbose}" ]; then
+  printf "host ip address = ${host_ip_address}\n"
+fi
 
 if [ -n "${verbose}" ]; then
   printf "services = ${services[@]}\n"
@@ -330,7 +348,6 @@ cd ..
 set -m
 set -e
 trap handle_exit EXIT
-trap handle_childexit SIGCHLD
 
 # Find project directories
 dir_mad=`find_path_up metrics-aggregator-daemon $start_mad`
@@ -356,6 +373,15 @@ verbose_arg=
 if [ -n "$verbose" ]; then
   verbose_arg="-v"
 fi
+
+# Create Docker network
+docker network inspect "${docker_network}" &> /dev/null
+if [ $? -eq 0 ]; then
+  printf "Clearing previous docker network...\n"
+  docker network rm "${docker_network}"
+fi
+printf "Creating docker network...\n"
+docker network create "${docker_network}"
 
 # Build projects
 if [ $start_cg -gt 0 ] && [ -z "$skip_build" ]; then
@@ -403,14 +429,20 @@ fi
 # Run projects
 if [ ${start_cg} -gt 0 ]; then
   # Cassandra
-  pid_cassandra=$(docker run -d -p 7000:7000 -p 9042:9042 cassandra:${docker_cassandra_version})
+  removeContainerByName "cassandra"
+  pid_cassandra=$(docker run -d --name cassandra --network "${docker_network}" -p 7000:7000 -p 9042:9042 cassandra:${docker_cassandra_version})
   printf "Started: cassandra (${pid_cassandra:0:12})\n"
   if [ -n "${pinger}" ]; then
     "${dir}/pinger.sh" ${verbose_arg} -c "${pid_cassandra}" -n "cassandra" -p "${pid_cassandra:0:12}" &
   fi
 
   # Grafana
-  pid_grafana=$(docker run -d -p 8081:3000 -v "${dir_kairosdb_datasource}:/var/lib/grafana/plugins/kairosdb-datasource:ro" grafana/grafana:${docker_grafana_version})
+  removeContainerByName "grafana"
+  pid_grafana=$(docker run -d --name grafana --network "${docker_network}" -p 8081:3000 \
+      -e "GF_AUTH_ANONYMOUS_ENABLED=true" \
+      -e "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin" \
+      -v "${dir_kairosdb_datasource}:/var/lib/grafana/plugins/kairosdb-datasource:ro" \
+      grafana/grafana:${docker_grafana_version})
   printf "Started: grafana (${pid_grafana:0:12})\n"
   if [ -n "${pinger}" ]; then
     "${dir}/pinger.sh" ${verbose_arg} -u "http://localhost:8081/api/health" -n "grafana" -p "${pid_grafana:0:12}" &
@@ -418,14 +450,12 @@ if [ ${start_cg} -gt 0 ]; then
 fi
 
 if [ ${start_kairosdb} -gt 0 ]; then
-  rm -f "${target}/kairosdb.properties"
-  replace_id_address "${dir}/config/kairosdb/kairosdb.properties" "${target}/kairosdb.properties"
-
   pushd ${dir_kairosdb} &> /dev/null
+  removeContainerByName "kairosdb"
   kairosdb_version=$(getProjectVersion)
-  pid_kairosdb=$(docker run -d -p 8082:8080 --restart unless-stopped \
-      -v "${dir_kairosdb}/logs/docker:/opt/kairosdb/log" \
-      -v "${target}/kairosdb.properties:/opt/kairosdb/conf/kairosdb.properties:ro" \
+  pid_kairosdb=$(docker run -d --name kairosdb --network "${docker_network}" -p 8082:8080 --restart unless-stopped \
+      -v "${dir_kairosdb}/logs/docker:/opt/kairosdb/logs" \
+      -v "${dir}/config/kairosdb/kairosdb.properties:/opt/kairosdb/config/kairosdb.properties:ro" \
       inscopemetrics/kairosdb-extensions:${kairosdb_version})
   printf "Started: kairosdb (${pid_kairosdb:0:12})\n"
   if [ -n "${pinger}" ]; then
@@ -442,61 +472,39 @@ if [ ${start_cluster_agg} -gt 0 ]; then
   rm -rf ./target/h2
   rm -rf ./journal
   mkdir -p "${dir_cluster_agg}/logs"
+  cagg_version=$(getProjectVersion)
   akka_seed_nodes=""
   array_index=0
   for i in `seq 1 ${cagg_count}`; do
-    cagg_akka_port=$(( 2551 + ${i}))
-    akka_seed_nodes+="\"-Dakka.cluster.seed-nodes.${array_index}=akka.tcp://Metrics@127.0.0.1:${cagg_akka_port}\" "
+    akka_seed_nodes+="-Dakka.cluster.seed-nodes.${array_index}=akka.tcp://Metrics@cagg${i}:2552 "
     array_index=$(( ${array_index} + 1 ))
   done
   for i in `seq 1 ${cagg_count}`; do
     double_i=$(( 2 * ${i}))
-
     cagg_http_port=$(( 7066 + ${double_i}))
-    cagg_tcp_port=$(( 7065 + ${double_i}))
-    cagg_akka_port=$(( 2551 + ${i}))
     cagg_debug_port=$(( ${cagg_debug_base_port} + ${i}))
 
-    ./jdk-wrapper.sh ./target/appassembler/bin/cluster-aggregator \
-        "-Xdebug" \
-        "-XX:+HeapDumpOnOutOfMemoryError" \
-        "-XX:HeapDumpPath=${dir_cluster_agg}/logs/cagg.${i}.oom.hprof" \
-        "-XX:+PrintGCDetails" \
-        "-XX:+PrintGCDateStamps" \
-        "-Xloggc:${dir_cluster_agg}/logs/cagg.${i}.gc.log" \
-        "-XX:NumberOfGCLogFiles=2" \
-        "-XX:GCLogFileSize=50M" \
-        "-XX:+UseGCLogFileRotation" \
-        "-Xms${cagg_jvm_xms}" \
-        "-Xmx${cagg_jvm_xmx}" \
-        "-XX:+UseStringDeduplication" \
-        "-XX:+UseG1GC" \
-        ${akka_seed_nodes} \
-        "-Duser.timezone=UTC" \
-        "-DCAGG_ID=${i}" \
-        "-DhttpPort=${cagg_http_port}" \
-        "-DaggregationPort=${cagg_tcp_port}" \
-        "-DakkaConfiguration.akka.remote.netty.tcp.port=${cagg_akka_port}" \
-        "-Dcassandra-snapshot-store.contact-points.0=localhost" \
-        "-Dcassandra-journal.contact-points.0=localhost" \
-        "-Xrunjdwp:server=y,transport=dt_socket,address=${cagg_debug_port},suspend=n" \
-        "-Dlogback.configurationFile=${dir}/config/cagg/logback.xml" \
-        -- \
-        "${dir}/config/cagg/config.conf" &
-    pid=$!
+    removeContainerByName "cagg${i}"
+    pid=$(docker run -d --name "cagg${i}" --network "${docker_network}" -p "${cagg_http_port}:${cagg_http_port}" -p "${cagg_debug_port}:${cagg_debug_port}" \
+        -v "${dir_cluster_agg}/logs/docker:/opt/cluster-aggregator/logs" \
+        -v "${dir}/config/cagg:/opt/cluster-aggregator/config:ro" \
+        -e "JVM_XMS=${cagg_jvm_xms}" \
+        -e "JVM_XMX=${cagg_jvm_xmx}" \
+        -e "JAVA_OPTS=${akka_seed_nodes} -Dakka.remote.netty.tcp.hostname=cagg${i} -DhttpPort=${cagg_http_port} -DCAGG_ID=${i} -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=${cagg_debug_port},suspend=n" \
+        arpnetworking/cluster-aggregator:${cagg_version})
     eval "pid_cluster_agg_${i}=\"\${pid}\""
-    printf "Started: cluster-aggregator ${i} of ${cagg_count} ($pid)\n"
+    printf "Started: cluster-aggregator ${i} of ${cagg_count} (${pid:0:12})\n"
     if [ -n "$pinger" ]; then
-      ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:${cagg_http_port}/ping" -n "cagg-${i}" -p "${pid}" &
+      ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:${cagg_http_port}/ping" -n "cagg${i}" -p "${pid:0:12}" &
     fi
   done
   popd &> /dev/null
 
   # Start haproxy over cluster aggregator hosts
   pushd ${dir} &> /dev/null
-  replace_id_address "${dir}/config/haproxy/haproxy.cfg" "${target}/haproxy.cfg"
-  pid_haproxy=$(docker run -d -p 7066:7066 \
-      -v "${target}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro" \
+  removeContainerByName "haproxy"
+  pid_haproxy=$(docker run -d --name haproxy --network "${docker_network}" -p 7066:7066 \
+      -v "${dir}/config/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro" \
       haproxy:${docker_haproxy_version})
   printf "Started: haproxy (${pid_haproxy:0:12})\n"
   if [ -n "${pinger}" ]; then
@@ -511,32 +519,22 @@ if [ ${start_mad} -gt 0 ]; then
     rm -rf ./logs
   fi
   mkdir -p "${dir_mad}/logs"
+
   # NOTE: To switch from mad 1.0 (branch: master) to 2.0 (branch: master-2.0) change:
   # FROM: "${dir}/config/mad/config.conf"
   # TO:   "${dir}/config/mad-2.0/config.conf"
-  ./jdk-wrapper.sh ./target/appassembler/bin/mad \
-      "-Dlogback.configurationFile=${dir}/config/mad/logback.xml" \
-      "-XX:+HeapDumpOnOutOfMemoryError" \
-      "-XX:HeapDumpPath=${dir_mad}/logs/mad.oom.hprof" \
-      "-XX:+PrintGCDetails" \
-      "-XX:+PrintGCDateStamps" \
-      "-Xloggc:${dir_mad}/logs/mad.gc.log" \
-      "-XX:NumberOfGCLogFiles=2" \
-      "-XX:GCLogFileSize=50M" \
-      "-XX:+UseGCLogFileRotation" \
-      "-Xms${mad_jvm_xms}" \
-      "-Xmx${mad_jvm_xmx}" \
-      "-XX:+UseStringDeduplication" \
-      "-XX:+UseG1GC" \
-      "-Duser.timezone=UTC" \
-      "-Xdebug" \
-      "-Xrunjdwp:server=y,transport=dt_socket,address=${mad_debug_port},suspend=n" \
-      -- \
-      "${dir}/config/mad/config.conf" &
-  pid_mad=$!
-  printf "Started: mad ($pid_mad)\n"
-  if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:7090/ping" -n "mad" -p "${pid_mad}" &
+  removeContainerByName "mad"
+  mad_version=$(getProjectVersion)
+  pid_mad=$(docker run -d --name mad --network "${docker_network}" -p 7090:7090 \
+      -v "${dir_mad}/logs/docker:/opt/mad/logs" \
+      -v "${dir}/config/mad:/opt/mad/config:ro" \
+      -e "JVM_XMS=${mad_jvm_xms}" \
+      -e "JVM_XMX=${mad_jvm_xmx}" \
+      -e "JAVA_OPTS=-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=${mad_debug_port},suspend=n" \
+      arpnetworking/mad:${mad_version})
+  printf "Started: mad (${pid_mad:0:12})\n"
+  if [ -n "${pinger}" ]; then
+    "${dir}/pinger.sh" ${verbose_arg} -u "http://localhost:7090/ping" -n "mad" -p "${pid_mad:0:12}" &
   fi
   popd &> /dev/null
 fi
@@ -547,39 +545,29 @@ if [ ${start_metrics_portal} -gt 0 ]; then
     rm -rf ./logs
   fi
   mkdir -p "${dir_metrics_portal}/logs"
-  ./jdk-wrapper.sh ./target/appassembler/bin/metrics-portal \
-      "-Dconfig.file=${dir}/config/metrics-portal/dev.conf" \
-      "-Dlogger.file=${dir}/config/metrics-portal/logback.xml" \
-      "-XX:+HeapDumpOnOutOfMemoryError" \
-      "-XX:HeapDumpPath=${dir_metrics_portal}/logs/metrics-portal.oom.hprof" \
-      "-XX:+PrintGCDetails" \
-      "-XX:+PrintGCDateStamps" \
-      "-Xloggc:${dir_metrics_portal}/logs/metrics-portal.gc.log" \
-      "-XX:NumberOfGCLogFiles=2" \
-      "-XX:GCLogFileSize=50M" \
-      "-XX:+UseGCLogFileRotation" \
-      "-Xms${mportal_jvm_xms}" \
-      "-Xmx${mportal_jvm_xmx}" \
-      "-XX:+UseStringDeduplication" \
-      "-XX:+UseG1GC" \
-      "-Duser.timezone=UTC" \
-      "-Xdebug" \
-      "-Xrunjdwp:server=y,transport=dt_socket,address=${mportal_debug_port},suspend=n" \
-      "--" \
-      "${dir_metrics_portal}" &
-  pid_metrics_portal=$!
-  printf "Started: metrics-portal ($pid_metrics_portal)\n"
-  if [ -n "$pinger" ]; then
-    ${dir}/pinger.sh ${verbose_arg} -u "http://localhost:8080/ping" -n "mportal" -p "${pid_metrics_portal}" &
+
+  metrics_portal_version=$(getProjectVersion)
+  pid_metrics_portal=$(docker run -d --name metrics_portal --network "${docker_network}" -p 8080:8080 \
+      -v "${dir_metrics_portal}/logs/docker:/opt/metrics-portal/logs" \
+      -v "${dir}/config/metrics-portal/dev.conf:/opt/metrics-portal/config/dev.conf:ro" \
+      -v "${dir}/config/metrics-portal/logback.xml:/opt/metrics-portal/config/logback.xml:ro" \
+      -e "JVM_XMS=${mportal_jvm_xms}" \
+      -e "JVM_XMX=${mportal_jvm_xmx}" \
+      -e "METRICS_PORTAL_CONFIG=-Dconfig.file=/opt/metrics-portal/config/dev.conf" \
+      -e "ADDITIONAL_JAVA_OPTS=-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=${mportal_debug_port},suspend=n" \
+      arpnetworking/metrics-portal:${metrics_portal_version})
+  printf "Started: metrics portal (${pid_metrics_portal:0:12})\n"
+  if [ -n "${pinger}" ]; then
+    "${dir}/pinger.sh" ${verbose_arg} -u "http://localhost:8080/ping" -n "mportal" -p "${pid_metrics_portal:0:12}" &
   fi
   popd &> /dev/null
 fi
 
 if [ ${start_telegraf} -gt 0 ]; then
-  replace_id_address "${dir}/config/telegraf/telegraf.conf" "${target}/telegraf.conf"
-  pid_telegraf=$(docker run -d --net=host --restart unless-stopped \
+  removeContainerByName "telegraf"
+  pid_telegraf=$(docker run -d --name telegraf --network "${docker_network}" --restart unless-stopped \
       -e HOST_PROC=/host/proc -v /proc:/host/proc:ro \
-      -v "${target}/telegraf.conf:/etc/telegraf/telegraf.conf:ro" \
+      -v "${dir}/config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro" \
       telegraf:${docker_telegraf_version})
   printf "Started: telegraf (${pid_telegraf:0:12})\n"
   if [ -n "${pinger}" ]; then
@@ -605,11 +593,9 @@ if [ ${start_cg} -gt 0 ]; then
   mkdir -p "${target}/grafana/data-sources"
   for file in ${dir}/data/grafana/data-sources/*.json; do
     [ -e "${file}" ] || continue
-    replace_id_address "${file}" "${target}/grafana/data-sources/$(basename ${file})"
-  done
-  for file in ${target}/grafana/data-sources/*.json; do
-    [ -e "${file}" ] || continue
+    # To see server response remove '-o /dev/null'
     curl -X POST \
+      -o /dev/null \
       --user admin:admin \
       -H 'content-type: application/json;charset=UTF-8' \
       --data "@${file}" \
@@ -617,7 +603,9 @@ if [ ${start_cg} -gt 0 ]; then
   done
   for file in ${dir}/data/grafana/dashboards/*.json; do
     [ -e "${file}" ] || continue
+    # To see server response remove '-o /dev/null'
     curl -X POST \
+      -o /dev/null \
       --user admin:admin \
       -H 'content-type: application/json' \
       --data "@${file}" \
